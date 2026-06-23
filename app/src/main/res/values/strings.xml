@@ -1,0 +1,509 @@
+<resources>
+    <string name="app_name">Lumi</string>
+
+    <string name="home_greeting">Hola</string>
+    <string name="home_subtitle">¿Cómo te sientes hoy?</string>
+    <string name="balloon_breathe">Respira hondo… ya casi</string>
+    <string name="reminder_title">Recordatorio</string>
+    <string name="settings_phase_colors">Colores del ciclo</string>
+    <string name="settings_phase_colors_desc">Elige cómo se ven las fases en tu calendario e inicio.</string>
+    <string name="settings_phase_custom">Personalizar cada fase</string>
+    <!-- Predicción -->
+    <string name="predict_ovulation_in">Ovulación en %1$d días</string>
+    <string name="predict_period_in">Periodo en %1$d días</string>
+    <string name="predict_today">Es hoy</string>
+    <string name="cal_cycle_day">Día %1$d de %2$d</string>
+    <string name="cal_next_phase_days">en %1$d días</string>
+    <string name="cal_next_phase_tomorrow">mañana</string>
+    <string name="cal_legend_prediction">Predicción estimada</string>
+    <string name="nav_chat">Chat</string>
+
+    <string name="chat_subtitle">Tu acompañante de ciclo</string>
+    <string name="chat_empty_title">Aún no hay mensajes</string>
+    <string name="chat_empty_desc">Cuando actives recordatorios, aparecerán aquí también</string>
+    <string name="chat_label_supply">Recordatorio</string>
+    <string name="chat_label_method">Método</string>
+    <string name="chat_label_custom">Personalizado</string>
+
+    <string name="reminder_supply">Llevar mi método</string>
+    <string name="reminder_supply_desc">Aviso 3 días antes de tu periodo para que lo tengas a mano</string>
+    <string name="notif_supply_title">No olvides tu método</string>
+    <string name="notif_supply_desc">Tu periodo podría llegar pronto</string>
+
+    <string name="supply_tampon">Tampón</string>
+    <string name="supply_pad">Toallita</string>
+    <string name="supply_cup">Copa menstrual</string>
+    <string name="supply_underwear">Ropa interior absorbente</string>
+    <string name="supply_other">Otro</string>
+
+    <!-- Mensajes del chat para "llevar mi método" — uno por tipo de suministro -->
+    <string name="reminder_supply_pick_label">¿Qué método usas habitualmente?</string>
+    <string name="chat_supply_tampon">No olvides llevar tampones, tu periodo puede llegar pronto 🎒</string>
+    <string name="chat_supply_pad">No olvides llevar toallitas, tu periodo puede llegar pronto 🎒</string>
+    <string name="chat_supply_cup">No olvides tu copa menstrual, tu periodo puede llegar pronto 🎒</string>
+    <string name="chat_supply_underwear">Ten lista tu ropa interior absorbente, tu periodo puede llegar pronto 🎒</string>
+    <string name="chat_supply_other">No olvides llevar tu método de protección, tu periodo puede llegar pronto 🎒</string>
+
+
+    <string-array name="cramp_hit_phrases">
+        <item>¡Fuera!</item>
+        <item>¡Toma!</item>
+        <item>¡Eso!</item>
+        <item>¡Ahí va!</item>
+        <item>¡Sin piedad!</item>
+        <item>¡Dale!</item>
+        <item>¡Rompe todo!</item>
+        <item>¡BOOM!</item>
+    </string-array>
+
+    <!-- Recordatorios -->
+    <string name="reminder_daily_pill">Pastilla diaria</string>
+    <string name="reminder_long_term">Métodos de larga duración</string>
+    <string name="reminder_ring_remove">Quitar anillo (en 3 semanas)</string>
+    <string name="reminder_injection_monthly">Inyección mensual</string>
+    <string name="reminder_injection_quarterly">Inyección trimestral</string>
+    <string name="reminder_set">Activar</string>
+    <string name="reminder_scheduled">Recordatorio programado correctamente</string>
+
+    <!-- Notificaciones -->
+    <string name="notif_ring_title">Hora de quitar el anillo</string>
+    <string name="notif_ring_desc">Recuerda retirar tu anillo anticonceptivo hoy.</string>
+    <string name="notif_injection_title">Recordatorio de inyección</string>
+    <string name="notif_injection_desc">Toca para revisar tu próxima dosis anticonceptiva.</string>
+
+    <string name="desc_menstrual">Poca energía, cambios de ánimo. Es normal sentir síntomas físicos.</string>
+    <string name="desc_follicular">Energía elevada y mayor felicidad. Los síntomas físicos disminuyen.</string>
+    <string name="desc_ovulation">Energía y confianza elevadas. Pico hormonal máximo.</string>
+    <string name="desc_luteal">Las hormonas bajan. Posibles cambios de ánimo, antojos y síntomas físicos.</string>
+    <string name="desc_unknown">Registra tu próximo periodo para sincronizar tu ciclo.</string>
+
+    <string name="day_of_cycle">Día del ciclo</string>
+    <string name="inactive_cycle">Ciclo inactivo</string>
+    <string name="register_period_btn">Registrar inicio de periodo</string>
+    <string name="log_subtitle_hint">Cuéntame cómo fue tu día</string>
+
+    <string name="nav_home">Inicio</string>
+    <string name="nav_calendar">Calendario</string>
+    <string name="nav_forum">Comunidad</string>
+    <string name="forum_report_title">Reportar publicación</string>
+    <string name="forum_report_desc">¿Estás segura de que quieres reportar esta publicación por contenido inapropiado o falta de respeto?</string>
+    <string name="btn_confirm">Sí, reportar</string>
+    <string name="btn_cancel">Cancelar</string>
+    <string name="nav_settings">Ajustes</string>
+    <string name="fab_cramps">¿Cólicos? Pincha aquí</string>
+    <string name="balloon_game_title">Libera la tensión</string>
+    <string name="balloon_instruction">Toca la burbuja hasta que reviente</string>
+    <string name="balloon_popped">¡Pop!</string>
+    <string name="btn_close">Cerrar</string>
+    <!-- Calendario -->
+    <string name="cal_mon">L</string>
+    <string name="cal_tue">M</string>
+    <string name="cal_wed">X</string>
+    <string name="cal_thu">J</string>
+    <string name="cal_fri">V</string>
+    <string name="cal_sat">S</string>
+    <string name="cal_sun">D</string>
+
+    <string name="notif_channel_name">Recordatorios de Salud</string>
+    <string name="notif_channel_desc">Notificaciones para pastillas, inyecciones y registros.</string>
+    <string name="notif_pill_title">Hora de tu pastilla 💊</string>
+    <string name="notif_pill_desc">No olvides tomar tu anticonceptivo para mantenerte protegida.</string>
+
+    <!-- Registro Diario (Síntomas) -->
+    <string name="onboarding_next">Siguiente</string>
+    <string name="onboarding_back">Atrás</string>
+    <string name="onboarding_finish">Comenzar</string>
+    <string name="onboarding_name_hint">Tu nombre o apodo</string>
+
+    <string name="confirm_period_title">¿Registrar inicio de ciclo?</string>
+    <string name="confirm_period_desc">¿Estás segura de que quieres registrar el inicio de tu ciclo menstrual hoy? Esto cerrará tu ciclo actual y reiniciará tus estadísticas.</string>
+    <string name="confirm_period_yes">Sí, registrar</string>
+    <string name="confirm_period_cancel">Cancelar</string>
+
+    <string name="log_title">Registro diario</string>
+    <string name="log_flow">Flujo</string>
+    <string name="log_pain">Nivel de dolor</string>
+    <string name="log_mood">Estado de ánimo</string>
+    <string name="log_symptoms">Síntomas</string>
+    <string name="log_notes">Notas privadas</string>
+    <string name="btn_save_log">Guardar registro</string>
+    <string name="btn_update_log">Actualizar registro</string>
+    <string name="home_upcoming_phases">Próximas fases</string>
+
+    <!-- Relaciones sexuales -->
+    <string name="cal_legend_intercourse">Relación sexual</string>
+    <string name="log_intercourse">¿Tuvo intimidad?</string>
+    <string name="log_protection">¿Se usó protección?</string>
+    <string name="log_method">Método anticonceptivo</string>
+    <string name="log_intercourse_notes">Notas adicionales (opcional)</string>
+    <string name="log_show_on_calendar">Mostrar en el calendario</string>
+    <string name="protection_yes">Sí</string>
+    <string name="protection_no">No</string>
+    <string name="method_condom">Condón</string>
+    <string name="method_pill">Píldora</string>
+    <string name="method_iud">DIU</string>
+    <string name="method_patch">Parche</string>
+    <string name="method_ring">Anillo</string>
+    <string name="method_none">Ninguno</string>
+
+    <string name="reminder_mode_suggested">Sugerido</string>
+    <string name="reminder_mode_custom">Personalizado</string>
+    <string name="reminder_custom_date_desc">Elige exactamente cuándo quieres que te avisemos</string>
+    <string name="reminder_custom_pick_date">Elegir fecha</string>
+    <string name="reminder_custom_repeat">Repetir este recordatorio</string>
+    <string name="reminder_custom_repeat_days_label">Repetir cada</string>
+    <string name="reminder_days_suffix">días</string>
+    <string name="reminder_custom">Recordatorio personalizado</string>
+    <string name="reminder_custom_desc">Tú eliges el texto y la fecha</string>
+
+    <string name="notif_custom_title">Recordatorio</string>
+    <string name="notif_custom_desc">Tienes un recordatorio personalizado</string>
+
+    <string name="notif_channel_gentle_name">Avisos de ciclo</string>
+    <string name="notif_channel_gentle_desc">Recordatorios suaves sobre tu ciclo y registro diario</string>
+    <string name="notif_channel_urgent_name">Recordatorios de método</string>
+    <string name="notif_channel_urgent_desc">Avisos importantes de anticonceptivos — no ignorar</string>
+
+    <string name="reminder_group_freeform">Recordatorio libre</string>
+    <string name="reminder_custom_text_label">¿Qué quieres recordar?</string>
+    <string name="reminder_custom_text_hint">Ej: cambiar el parche</string>
+
+    <!-- Banner de retraso -->
+    <string name="period_arrived_btn">Mi periodo llegó hoy</string>
+
+    <!-- Reminders — tipos automáticos -->
+    <string name="reminder_period_soon">Aviso de periodo próximo.</string>
+    <string name="reminder_period_soon_desc">2 días antes de la fecha prevista</string>
+    <string name="reminder_ovulation_soon">Aviso de ovulación</string>
+    <string name="reminder_ovulation_soon_desc">1 día antes de tu ventana fértil</string>
+    <string name="reminder_log_daily">Registro diario</string>
+    <string name="reminder_log_daily_desc">Recordatorio para anotar síntomas y ánimo</string>
+
+    <!-- Reminders — descripciones de métodos (las labels ya existían) -->
+    <string name="reminder_daily_pill_desc">Cada 24 horas, hora exacta</string>
+    <string name="reminder_patch_desc">Cada 7 días desde que te lo colocaste</string>
+    <string name="reminder_ring_desc">Retiro a las 3 semanas de colocación</string>
+    <string name="reminder_injection_monthly_desc">Cada 30 días desde la última dosis</string>
+    <string name="reminder_injection_quarterly_desc">Cada 90 días desde la última dosis</string>
+
+    <!-- UI general de la sección -->
+    <string name="reminder_empty_hint">Aún no tienes recordatorios activos</string>
+    <string name="reminder_automatic_hint">Se programa automáticamente</string>
+    <string name="reminder_add_title">Nuevo recordatorio</string>
+    <string name="reminder_group_cycle">Sobre tu ciclo</string>
+    <string name="reminder_group_contraception">Métodos anticonceptivos</string>
+    <string name="reminder_pick_time">Hora del aviso</string>
+    <string name="reminder_start_date_hint">¿Cuándo te lo colocaste?</string>
+    <string name="reminder_start_date_desc">Así calculamos el próximo cambio desde la fecha real, no desde hoy</string>
+    <string name="reminder_start_date_pick">Elegir fecha</string>
+    <string name="reminder_start_date_set">Fecha seleccionada ✓</string>
+    <string name="reminder_label_hint">Etiqueta opcional (ej. \"Pastilla rosa\")</string>
+
+    <!-- Notificaciones — parche con su propio texto (antes usaba el de pastilla) -->
+    <string name="notif_patch_title">Hora de cambiar el parche</string>
+    <string name="notif_patch_desc">Tu parche anticonceptivo necesita renovarse hoy</string>
+
+    <!-- Notificaciones — tipos nuevos -->
+    <string name="notif_period_soon_title">Tu regla está cerca</string>
+    <string name="notif_period_soon_desc">Según tu ciclo, debería llegar en los próximos días</string>
+    <string name="notif_ovulation_title">Ventana fértil próxima</string>
+    <string name="notif_ovulation_desc">Estás entrando en tu fase de ovulación</string>
+    <string name="notif_log_title">¿Cómo te sientes hoy?</string>
+    <string name="notif_log_desc">Toca para registrar tus síntomas y ánimo</string>
+
+    <!-- Historial de registros -->
+    <string name="history_title">Historial de registros</string>
+    <string name="history_most_recent">Más reciente</string>
+    <string name="history_oldest">Más antiguo</string>
+    <string name="history_empty">Todavía no tienes registros guardados.</string>
+
+    <!-- Recordatorios adicionales -->
+    <string name="reminder_patch_weekly">Parche semanal</string>
+
+    <!-- Calendario: explicación de la leyenda -->
+    <string name="cal_legend_explanation">La ovulación se calcula como 14 días antes del fin estimado de tu ciclo.</string>
+
+    <!-- Opciones de Flujo -->
+    <string name="flow_light">Ligero</string>
+    <string name="flow_medium">Medio</string>
+    <string name="flow_heavy">Abundante</string>
+
+    <!-- Opciones de Ánimo -->
+    <string name="mood_happy">Feliz</string>
+    <string name="mood_sensitive">Sensible</string>
+    <string name="mood_sad">Triste</string>
+    <string name="mood_irritated">Irritable</string>
+
+    <!-- Opciones de Síntomas Comunes -->
+    <string name="symp_cramps">Cólicos</string>
+    <string name="symp_headache">Dolor de cabeza</string>
+    <string name="symp_acne">Acné</string>
+    <string name="symp_bloating">Hinchazón</string>
+    <string name="symp_fatigue">Fatiga</string>
+
+    <string name="cal_current_phase">Fase actual</string>
+    <string name="phase_menstrual">Menstrual</string>
+    <string name="phase_follicular">Folicular</string>
+    <string name="phase_ovulation">Ovulación</string>
+    <string name="phase_luteal">Lútea</string>
+    <string name="phase_unknown">Sin datos</string>
+    <string name="phase_pregnancy">Embarazo</string>
+    <string name="desc_pregnancy">Gestación</string>
+    <string name="pain_mild">Leve</string>
+    <string name="pain_moderate">Moderado</string>
+    <string name="pain_intense">Intenso</string>
+    <string name="pain_none">Sin dolor</string>
+
+    <string name="forum_title">Comunidad Segura</string>
+    <string name="forum_subtitle">Haz tus preguntas de forma 100% anónima. Sé amable.</string>
+    <string name="fab_ask">Preguntar</string>
+    <string name="ask_sheet_title">Nueva pregunta anónima</string>
+    <string name="ask_hint">Ej: ¿Es normal sentir mucha fatiga el día antes del periodo?</string>
+    <string name="btn_publish">Publicar anónimamente</string>
+    <string name="replies_count">%1$d respuestas</string>
+
+    <string name="cramp_buster_title">Destroza el cólico</string>
+    <string name="cramp_buster_subtitle">¡Dale duro hasta eliminarlo!</string>
+    <string name="cramp_buster_won">¡Cólico eliminado!</string>
+    <string name="cramp_buster_subtitle_won">Lo lograste. Ahora un consejito…</string>
+    <string name="cramp_buster_hp">Vida del cólico: %1$d / %2$d</string>
+    <string name="cramp_buster_tap_hint">Toca el monstruo para atacarlo</string>
+
+    <string-array name="cramp_tips">
+        <item>Tómate un té de manzanilla o canela bien calentito.</item>
+        <item>Ponte una compresa caliente en la zona del vientre.</item>
+        <item>Haz la postura del niño (yoga) para relajar la espalda baja.</item>
+        <item>Es el momento perfecto para un trocito de chocolate oscuro.</item>
+        <item>Tómate un descanso de 15 minutos, tu cuerpo está trabajando duro.</item>
+    </string-array>
+
+    <string name="settings_personalization">Personalización visual</string>
+    <string name="settings_partner">Sincronización con pareja</string>
+    <string name="settings_partner_desc">Genera un código para que tu pareja pueda ver tu fase actual, de forma segura y anónima.</string>
+    <string name="btn_generate_code">Generar código (Próximamente)</string>
+    <string name="settings_privacy">Privacidad garantizada</string>
+    <string name="settings_privacy_desc">Tus datos menstruales se guardan exclusivamente en la memoria interna de tu teléfono. Lumi no recopila, lee ni vende tu información.</string>
+
+    <!-- Insights / Estadísticas -->
+    <string name="nav_insights">Estadísticas</string>
+    <string name="insights_title">Mis estadísticas</string>
+    <string name="insights_subtitle">Patrones de tu ciclo en los últimos meses</string>
+    <string name="insights_btn_home">Ver mis estadísticas</string>
+    <string name="insights_no_data">Aún no hay suficientes datos. Registra tus ciclos y síntomas para ver patrones.</string>
+    <string name="insights_section_cycle">Historial de ciclos</string>
+    <string name="insights_section_symptoms">Síntomas por fase</string>
+    <string name="insights_section_mood">Estado de ánimo</string>
+    <string name="insights_avg_cycle">Duración media</string>
+    <string name="insights_avg_period">Días de regla</string>
+    <string name="insights_shortest">Ciclo más corto</string>
+    <string name="insights_longest">Ciclo más largo</string>
+    <string name="insights_days_suffix">días</string>
+    <!-- Insights Diarios (Lumi Chat) -->
+    <string-array name="insight_late">
+        <item>He notado que tu ciclo se está retrasando un poco. Trata de no estresarte, los retrasos de unos pocos días son muy comunes por cambios de rutina, estrés o sueño. ¡Estoy aquí para llevar el control!</item>
+        <item>Parece que tu periodo se hace esperar. Recuerda que variaciones de hasta 7 días entran en lo normal. Respira hondo y dale tiempo a tu cuerpo. 🤍</item>
+        <item>Aún no tenemos señales de tu periodo. El estrés es el principal causante de estos retrasos. ¡Relájate, aquí sigo monitorizando todo por ti!</item>
+    </string-array>
+    <string-array name="insight_late_goal_pregnancy">
+        <item>Tienes un retraso en tu ciclo. Dado que estás buscando un embarazo, ¡este podría ser un buen momento para hacerte una prueba de embarazo! 🤞</item>
+        <item>Tu periodo no ha llegado a tiempo. Si has tenido relaciones en tus días fértiles, podrías considerar realizarte un test de embarazo. ¡Mucha suerte!</item>
+        <item>El retraso continúa. Escucha a tu cuerpo, si sientes síntomas inusuales y buscas embarazo, una prueba en casa te sacará de dudas. 🤍</item>
+    </string-array>
+    
+    <string-array name="insight_mens_day1">
+        <item>¡Hola! He registrado el inicio de tu ciclo. Hoy es normal sentir cólicos o fatiga porque tus hormonas están en su nivel más bajo. Descansa todo lo que puedas. 💜</item>
+        <item>¡Comienza un nuevo ciclo! Tu útero está trabajando duro hoy, así que es completamente válido si solo quieres estar en la cama con una manta térmica. Cuídate mucho.</item>
+        <item>Día 1 oficial. Tus niveles de estrógeno y progesterona han caído, lo que explica si te sientes con la energía baja. ¡Permítete descansar!</item>
+    </string-array>
+    
+    <string-array name="insight_mens_day2">
+        <item>Segundo día. Suele ser el de mayor flujo. Recuerda mantenerte súper hidratada, el agua ayuda muchísimo con la hinchazón.</item>
+        <item>Día 2. Es normal sentir un poco de pesadez o cólicos hoy. Escucha a tu cuerpo y no te exijas demasiado, el descanso es clave.</item>
+        <item>Estamos en el segundo día. Una infusión caliente y ropa cómoda serán tus mejores aliados hoy. ¡Paciencia, pronto pasará!</item>
+    </string-array>
+
+    <string-array name="insight_mens_day3">
+        <item>Deberías empezar a sentir que la energía vuelve poco a poco. Si tienes antojos dulces, un poco de chocolate negro es ideal por el magnesio.</item>
+        <item>A partir de hoy los síntomas físicos más fuertes suelen ir desapareciendo. ¡Ojalá te estés sintiendo un poco más ligera!</item>
+        <item>Día 3 en marcha. Tu cuerpo ya pasó la fase más pesada del sangrado. Intenta hacer estiramientos suaves si te sientes con ganas.</item>
+    </string-array>
+
+    <string-array name="insight_mens_end">
+        <item>Tu periodo ya casi termina. ¡Espero que te estés sintiendo mucho mejor!</item>
+        <item>Casi despedimos al periodo por este mes. Tus estrógenos están preparándose para volver a subir lentamente.</item>
+        <item>¡Últimos días de sangrado! Notarás cómo tu energía, tanto mental como física, empieza a reiniciarse.</item>
+    </string-array>
+    
+    <string-array name="insight_foli_start">
+        <item>¡Fase folicular! Tus estrógenos están empezando a subir. Es el mejor momento del mes para empezar proyectos nuevos o hacer ejercicio más intenso. ¡Aprovecha esa energía!</item>
+        <item>Entramos en la fase folicular. Tu cerebro está más agudo y tu cuerpo más fuerte. ¡Es la fase ideal para socializar y organizar tu semana!</item>
+        <item>La primavera de tu ciclo ha llegado 🌱. Con los estrógenos subiendo, te sentirás más optimista y resistente al cansancio.</item>
+    </string-array>
+
+    <string-array name="insight_foli_mid">
+        <item>Tus niveles de energía deberían estar por las nubes. La subida de estrógenos también suele hacer que la piel se vea más brillante.</item>
+        <item>Estamos en medio de tu fase folicular. ¿Sientes ese impulso creativo? Es tu biología dándote un empujón. ¡Sácale provecho!</item>
+        <item>Los estrógenos siguen subiendo y con ellos tu confianza. Si tienes una tarea difícil o una reunión importante, ¡este es el momento perfecto!</item>
+    </string-array>
+
+    <string-array name="insight_foli_end">
+        <item>Estás en los últimos días de tu fase folicular. Tu cuerpo se está preparando para la ovulación. Es un buen momento para comer alimentos ricos en antioxidantes.</item>
+        <item>Casi llegamos a la ovulación. Notarás que tu flujo cervical empieza a cambiar volviéndose más claro y elástico.</item>
+        <item>Finalizando la fase folicular. El estrógeno está a punto de llegar a su pico máximo. ¡Disfruta de este boost de energía natural!</item>
+    </string-array>
+    
+    <string-array name="insight_ovu_day1">
+        <item>¡Se abre tu ventana fértil! Es posible que notes cambios en tu temperatura o flujo. También es normal sentirte más sociable y comunicativa gracias al pico de estrógenos.</item>
+        <item>La ovulación se acerca. En estos días tu cuerpo está biológicamente diseñado para ser magnético y comunicativo. ¡Aprovéchalo!</item>
+        <item>Inicia tu ventana fértil. Tu testosterona también tiene un pequeño pico, lo que puede aumentar tu deseo y seguridad en ti misma.</item>
+    </string-array>
+
+    <string-array name="insight_ovu_day2">
+        <item>Estás en pleno pico ovulatorio. Algunas mujeres sienten un ligero pinchazo en un lado del abdomen bajo, es totalmente normal.</item>
+        <item>El día central de la ovulación. Tu nivel de energía está en su cúspide, pero también es normal sentirse un poco hiperactiva. ¡Canaliza esa fuerza!</item>
+        <item>Pico de estrógenos en su máximo esplendor. Tu metabolismo basal también acelera ligeramente. ¡Escucha a tu cuerpo si te pide más energía!</item>
+    </string-array>
+
+    <string-array name="insight_ovu_end">
+        <item>Tu ventana fértil está por cerrarse. Tras la ovulación, la progesterona tomará el control y podrías sentir que necesitas bajar un poco el ritmo.</item>
+        <item>Despidiéndonos de la ovulación. Empieza la transición hacia una fase más tranquila y de introspección por la llegada de la progesterona.</item>
+        <item>La ovulación ha concluido. Si empiezas a sentir un ligero bajón de energía comparado con ayer, no te preocupes, es un cambio hormonal natural.</item>
+    </string-array>
+    
+    <string-array name="insight_luteal_start">
+        <item>¡Bienvenida a la fase lútea! La progesterona empieza a subir. Actúa como un sedante natural, así que si te sientes un poco más calmada o soñolienta, es tu cuerpo haciendo su trabajo.</item>
+        <item>Empieza la fase lútea, el "otoño" de tu ciclo. Es el momento perfecto para enfocarte en tareas solitarias y evitar el sobreesfuerzo físico.</item>
+        <item>La progesterona es ahora la hormona dominante. Es súper normal si te sientes con ganas de quedarte en casa y tener un día más relajado.</item>
+    </string-array>
+
+    <string-array name="insight_luteal_mid">
+        <item>Estamos a mitad de tu fase lútea. Si notas digestiones más pesadas, es porque la progesterona relaja los músculos lisos, incluyendo los del estómago. Come ligero.</item>
+        <item>Mitad de fase lútea. Tu temperatura basal es un poco más alta. Asegúrate de descansar bien por las noches, tu cuerpo necesita esa recuperación.</item>
+        <item>La progesterona sigue alta. Si sientes algún antojo inusual, trata de darle a tu cuerpo opciones nutritivas, ¡pero sin ser demasiado dura contigo misma!</item>
+    </string-array>
+
+    <string-array name="insight_luteal_pre">
+        <item>Nos acercamos al final del ciclo. Es súper común retener líquidos o sentir cambios de humor. Sé amable contigo misma estos días y descansa.</item>
+        <item>Los días previos al periodo. Puede aparecer el Síndrome Premenstrual (SPM). Evita la cafeína y el exceso de sal si te sientes hinchada o ansiosa.</item>
+        <item>Tus niveles de estrógeno y progesterona están empezando a caer drásticamente, lo que puede causar irritabilidad. ¡Prioriza tu salud mental hoy!</item>
+    </string-array>
+
+    <string-array name="insight_luteal_end">
+        <item>Tus hormonas están preparándose para reiniciar el ciclo. El autocuidado es tu prioridad número uno hoy. ☕</item>
+        <item>A un paso de empezar de nuevo. Tu cuerpo está trabajando en el proceso de descamación del endometrio. ¡Un baño caliente y ropa cómoda te sentarán genial!</item>
+        <item>Último día de la fase lútea. Escúchate, permítete sentir cualquier emoción sin juzgarte, y prepárate para recibir el nuevo ciclo con calma.</item>
+    </string-array>
+    
+    <string-array name="insight_unknown">
+        <item>Sigue registrando tus días para que pueda aprender más de tu ciclo y darte información súper precisa. ¡Juntas vamos armando tu historial!</item>
+        <item>Todavía estoy aprendiendo los ritmos de tu cuerpo. No olvides registrar cuando inicie tu próximo periodo. ✨</item>
+        <item>Aún no tengo datos suficientes para darte una predicción hormonal exacta hoy. ¡Registra tus síntomas y periodos para que pueda sincronizarme contigo!</item>
+    </string-array>
+    
+    <string-array name="insight_pregnancy">
+        <item>¡Felicidades! Durante el embarazo, asegúrate de descansar y mantenerte hidratada.</item>
+        <item>Tu cuerpo está haciendo un trabajo increíble. Escucha sus señales y tómate tu tiempo.</item>
+        <item>Recuerda tomar tus vitaminas prenatales y acudir a tus citas médicas regularmente.</item>
+    </string-array>
+    
+    <string-array name="insight_ovu_goal_pregnancy">
+        <item>¡Estás en tus días más fértiles! Es el momento ideal si buscas un embarazo.</item>
+        <item>Tus probabilidades de concebir son más altas hoy y mañana. ¡Aprovecha estos días!</item>
+        <item>El moco cervical tipo clara de huevo es una excelente señal de fertilidad. ¡Es el mejor momento!</item>
+    </string-array>
+    
+    <string name="chat_empty_welcome">¡Hola! Estoy lista para acompañarte. Registra tu primer ciclo para empezar a ver tus resúmenes diarios aquí.</string>
+
+    <string name="chat_status_online">En línea</string>
+    <string name="chat_status_history">Historial</string>
+    <string name="chat_messages_title">Mensajes</string>
+    <string name="chat_title_lumi">Lumi</string>
+    <!-- Flujo Cervical -->
+    <string name="log_cervical_mucus">Flujo Cervical</string>
+    <string name="mucus_dry">Seco</string>
+    <string name="mucus_sticky">Pegajoso</string>
+    <string name="mucus_creamy">Cremoso</string>
+    <string name="mucus_egg_white">Clara de huevo</string>
+
+    <!-- Nuevos Síntomas -->
+    <string name="symp_diarrhea">Prob. Digestivos</string>
+    <string name="symp_pelvic_pain">Dolor Pélvico</string>
+    <string name="symp_breast_tenderness">Sensibilidad Senos</string>
+    <string name="symp_fever">Fiebre</string>
+
+    <!-- Personalización de Registro -->
+    <string name="log_customize">Personalizar Registro</string>
+    <string name="log_cat_physical">Síntomas Físicos</string>
+    <string name="log_cat_digestive">Síntomas Digestivos</string>
+    <string name="log_cat_mucus">Flujo Cervical</string>
+    <string name="log_cat_intercourse">Relaciones Sexuales</string>
+
+    <!-- Modo Discreto -->
+    <string name="discreet_mode_on">Modo Discreto Activado</string>
+    <string name="discreet_mode_off">Modo Discreto Desactivado</string>
+    <string name="discreet_day_n">Día %1$d</string>
+    <string name="discreet_observing">Fase de observación</string>
+    <string name="discreet_waiting">Esperando…</string>
+    <!-- Etiquetas únicas para modo discreto (leyenda) -->
+    <string name="discreet_phase_1">Fase A</string>
+    <string name="discreet_phase_2">Fase B</string>
+    <string name="discreet_phase_3">Fase C</string>
+    <string name="discreet_phase_4">Fase D</string>
+
+    <!-- Ajustes de Salud y Objetivos -->
+    <string name="settings_health_goals">Mi Salud y Objetivos</string>
+    <string name="settings_user_goal">Objetivo Actual</string>
+    <string name="settings_goal_track">Control de ciclo</string>
+    <string name="settings_goal_avoid">Evitar embarazo</string>
+    <string name="settings_goal_seek">Buscar embarazo</string>
+    <string name="settings_goal_health">Salud general</string>
+    
+    <string name="settings_general_theme">Tema General</string>
+    <string name="settings_cycle_colors">Colores de Ciclo</string>
+    <string name="settings_customize_phase">Personalizar Fase por Fase</string>
+    <string name="settings_brightness">Brillo</string>
+    
+    <string name="settings_pregnant">Estoy Embarazada</string>
+    <string name="settings_pregnant_desc">Pausa las predicciones regulares del ciclo.</string>
+    <string name="dialog_pregnancy_end_title">Restablecer Ciclo</string>
+    <string name="dialog_pregnancy_end_desc">Para iniciar un nuevo ciclo, cuéntanos qué sucedió (tus datos siguen siendo 100% privados).</string>
+    <string name="dialog_pregnancy_birth">Nacimiento</string>
+    <string name="dialog_pregnancy_loss">Pérdida</string>
+
+    <string name="mucus_watery">Acuoso</string>
+    <string name="btn_customize_log">Personalizar Registro</string>
+    <string name="symp_nausea">Náuseas</string>
+    <string name="symp_constipation">Estreñimiento</string>
+    <string name="category_physical">Síntomas Físicos</string>
+    <string name="category_digestive">Síntomas Digestivos</string>
+    <string name="category_mucus">Moco Cervical / Flujo Vaginal</string>
+    <string name="category_intercourse">Actividad Sexual</string>
+
+    <!-- Reset de datos -->
+    <string name="settings_reset">Borrar todos los datos</string>
+    <string name="settings_reset_desc">Elimina ciclos, registros y configuración. Irreversible.</string>
+    <string name="dialog_reset_title">¿Borrar todo?</string>
+    <string name="dialog_reset_desc">Perderás todos tus ciclos, registros de síntomas y configuración. Esta acción es permanente e irreversible.</string>
+    <string name="dialog_reset_confirm">Sí, borrar todo</string>
+    <string name="dialog_reset_cancel">Cancelar</string>
+    <string name="reset_success">Datos eliminados correctamente</string>
+
+    <!-- Aviso de día futuro en calendario -->
+    <string name="log_future_day_title">Fecha futura</string>
+    <string name="log_future_day_desc">Estás añadiendo un registro para un día que aún no ha ocurrido. Los datos registrados para días futuros son estimaciones, no registros reales.</string>
+    <string name="log_future_day_continue">Continuar de todas formas</string>
+
+    <!-- Disclaimer médico -->
+    <string name="chat_disclaimer">⚕️ Lumi no es un dispositivo médico y no reemplaza el consejo de tu ginecóloga. Las predicciones son estimaciones basadas en tus datos.</string>
+
+    <!-- Snackbar de confirmación de guardado -->
+    <string name="log_saved_confirmation">✓ Registro guardado</string>
+
+    <!-- Daily Log — strings adicionales -->
+    <string name="log_notes_hint">Escribe algo sobre tu día…</string>
+
+    <!-- Notificaciones discretas (pantalla bloqueada) -->
+    <string name="notif_private_title">Lumi 🌸</string>
+    <string name="notif_private_body">Tienes un recordatorio</string>
+
+</resources>

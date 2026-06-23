@@ -1,0 +1,684 @@
+package com.jeremy.lumi.ui.screens.insights
+
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Analytics
+import androidx.compose.material.icons.rounded.AutoGraph
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.WaterDrop
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.jeremy.lumi.R
+import com.jeremy.lumi.domain.model.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  INSIGHTS SCREEN
+// ─────────────────────────────────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun InsightsScreen(
+    onNavigateBack: () -> Unit,
+    viewModel: InsightsViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    var screenReady by remember { mutableStateOf(false) }
+    LaunchedEffect(uiState.isLoading) {
+        if (!uiState.isLoading) { delay(60); screenReady = true }
+    }
+
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            Icons.Rounded.ArrowBack, 
+                            contentDescription = "Atrás", 
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                },
+                title = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text       = stringResource(R.string.insights_title),
+                            fontWeight = FontWeight.Bold,
+                            fontSize   = 17.sp,
+                            color      = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                            text     = stringResource(R.string.insights_subtitle),
+                            fontSize = 11.sp,
+                            color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    ) { paddingValues ->
+        if (uiState.isLoading) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
+        } else if (uiState.insights == null) {
+            // Estado vacío — todavía no hay ciclos suficientes
+            InsightsEmptyState(Modifier.padding(paddingValues))
+        } else {
+            val insights = uiState.insights!!
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                Spacer(Modifier.height(4.dp))
+
+                // ── Resumen de ciclos ────────────────────────────────────────
+                insights.historicalStats?.let { stats ->
+                    InsightsFadeIn(screenReady, 0) {
+                        CycleStatsCard(stats)
+                    }
+                }
+
+                // ── Gráfico de barras: últimos ciclos ────────────────────────
+                if (insights.recentCycleStats.isNotEmpty()) {
+                    InsightsFadeIn(screenReady, 80) {
+                        RecentCyclesBarChart(insights.recentCycleStats)
+                    }
+                }
+
+                // ── Donut Chart: Distribución de Fases (Canvas) ──────────────
+                insights.historicalStats?.let { stats ->
+                    InsightsFadeIn(screenReady, 120) {
+                        PhaseDistributionDonutCard(stats)
+                    }
+                }
+
+                // ── Síntomas × Fase ──────────────────────────────────────────
+                if (insights.symptomCorrelations.isNotEmpty()) {
+                    InsightsFadeIn(screenReady, 160) {
+                        SymptomCorrelationCard(insights.symptomCorrelations.take(5))
+                    }
+                }
+
+                // ── Distribución de humor ────────────────────────────────────
+                insights.moodDistribution?.let { mood ->
+                    if (mood.totalDays > 0) {
+                        InsightsFadeIn(screenReady, 240) {
+                            MoodDistributionCard(mood)
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(32.dp))
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  TARJETA 1 — Estadísticas históricas de ciclos
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun CycleStatsCard(stats: HistoricalCycleStats) {
+    val primary = MaterialTheme.colorScheme.primary
+
+    Card(
+        modifier  = Modifier.fillMaxWidth(),
+        shape     = RoundedCornerShape(24.dp),
+        colors    = CardDefaults.cardColors(MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            SectionHeader(
+                icon  = Icons.Rounded.AutoGraph,
+                title = stringResource(R.string.insights_section_cycle)
+            )
+
+            // Grid 2×2 de métricas
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                MetricChip(
+                    label = stringResource(R.string.insights_avg_cycle),
+                    value = "${stats.avgCycleLength.toInt()}",
+                    unit  = stringResource(R.string.insights_days_suffix),
+                    color = primary,
+                    modifier = Modifier.weight(1f)
+                )
+                MetricChip(
+                    label = stringResource(R.string.insights_avg_period),
+                    value = "${stats.avgPeriodLength.toInt()}",
+                    unit  = stringResource(R.string.insights_days_suffix),
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                MetricChip(
+                    label = stringResource(R.string.insights_shortest),
+                    value = "${stats.shortestCycle}",
+                    unit  = stringResource(R.string.insights_days_suffix),
+                    color = primary.copy(alpha = 0.75f),
+                    modifier = Modifier.weight(1f)
+                )
+                MetricChip(
+                    label = stringResource(R.string.insights_longest),
+                    value = "${stats.longestCycle}",
+                    unit  = stringResource(R.string.insights_days_suffix),
+                    color = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // Fase lútea personal
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(primary.copy(alpha = 0.07f))
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment     = Alignment.CenterVertically
+            ) {
+                Text(
+                    text      = "Fase lútea personal",
+                    fontSize  = 13.sp,
+                    color     = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                )
+                Text(
+                    text       = "${stats.personalLutealLength} días",
+                    fontWeight = FontWeight.Bold,
+                    fontSize   = 14.sp,
+                    color      = primary
+                )
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  TARJETA 2 — Gráfico de barras de ciclos recientes (Canvas propio)
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun RecentCyclesBarChart(cycles: List<CycleStats>) {
+    val primary   = MaterialTheme.colorScheme.primary
+    val secondary = MaterialTheme.colorScheme.secondary
+    val maxDur    = cycles.maxOf { it.durationDays }.toFloat().coerceAtLeast(1f)
+
+    // Animación de entrada de barras
+    val barProgress = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        barProgress.animateTo(1f, tween(900, easing = FastOutSlowInEasing))
+    }
+
+    Card(
+        modifier  = Modifier.fillMaxWidth(),
+        shape     = RoundedCornerShape(24.dp),
+        colors    = CardDefaults.cardColors(MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            SectionHeader(
+                icon  = Icons.Rounded.Analytics,
+                title = "Últimos ${cycles.size} ciclos"
+            )
+
+            Row(
+                modifier              = Modifier.fillMaxWidth().height(120.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment     = Alignment.Bottom
+            ) {
+                cycles.forEachIndexed { index, cycle ->
+                    val heightFraction = (cycle.durationDays / maxDur) * barProgress.value
+                    val barColor = when (cycle.cycleType) {
+                        CycleType.SHORT  -> secondary
+                        CycleType.NORMAL -> primary
+                        CycleType.LONG   -> MaterialTheme.colorScheme.tertiary
+                    }
+                    Column(
+                        modifier            = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Bottom
+                    ) {
+                        Text(
+                            text     = "${cycle.durationDays}",
+                            fontSize = 10.sp,
+                            color    = barColor,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight(heightFraction)
+                                .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(barColor, barColor.copy(alpha = 0.5f))
+                                    )
+                                )
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text     = "C${index + 1}",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+            }
+
+            // Leyenda
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                LegendDot(primary,   "Normal")
+                LegendDot(secondary, "Corto")
+                LegendDot(MaterialTheme.colorScheme.tertiary, "Largo")
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  TARJETA 3 — Heatmap de Correlaciones síntoma × fase
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun SymptomCorrelationCard(correlations: List<SymptomCorrelation>) {
+    Card(
+        modifier  = Modifier.fillMaxWidth(),
+        shape     = RoundedCornerShape(24.dp),
+        colors    = CardDefaults.cardColors(MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SectionHeader(
+                icon  = Icons.Rounded.WaterDrop,
+                title = "Heatmap de Síntomas"
+            )
+
+            // Leyenda de columnas para el heatmap
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("M", fontSize = 10.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.5f), modifier = Modifier.width(24.dp), textAlign = TextAlign.Center)
+                    Text("F", fontSize = 10.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.5f), modifier = Modifier.width(24.dp), textAlign = TextAlign.Center)
+                    Text("O", fontSize = 10.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.5f), modifier = Modifier.width(24.dp), textAlign = TextAlign.Center)
+                    Text("L", fontSize = 10.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.5f), modifier = Modifier.width(24.dp), textAlign = TextAlign.Center)
+                }
+            }
+
+            correlations.forEach { corr ->
+                SymptomCorrelationRow(corr)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SymptomCorrelationRow(corr: SymptomCorrelation) {
+    val phaseColors = com.jeremy.lumi.ui.theme.LocalPhaseColors.current
+
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(corr.symptomName, fontSize = 13.sp, fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
+            
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            val phases = listOf(
+                CyclePhase.MENSTRUAL to phaseColors.menstrual,
+                CyclePhase.FOLLICULAR to phaseColors.follicular,
+                CyclePhase.OVULATION to phaseColors.ovulation,
+                CyclePhase.LUTEAL to phaseColors.luteal
+            )
+            
+            phases.forEach { (phase, baseColor) ->
+                val ratio = if (corr.totalOccurrences == 0) 0f else (corr.occurrenceByPhase[phase] ?: 0) / corr.totalOccurrences.toFloat()
+                
+                // Animación de opacidad para el Heatmap
+                val alphaAnim = remember { Animatable(0.02f) }
+                LaunchedEffect(corr.symptomName) {
+                    alphaAnim.animateTo(ratio.coerceAtLeast(0.05f), tween(800, easing = FastOutSlowInEasing))
+                }
+                
+                // La fase dominante se determina buscando el máximo (no comparando floats con ==)
+                val dominantPhase = corr.occurrenceByPhase.maxByOrNull { it.value }?.key
+                val isDominant = dominantPhase == phase && ratio > 0f
+                
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(baseColor.copy(alpha = alphaAnim.value))
+                ) {
+                    if (isDominant) {
+                        Box(
+                            Modifier
+                                .align(Alignment.Center)
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  TARJETA 4 — Distribución de humor
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun MoodDistributionCard(mood: MoodDistribution) {
+    val primary = MaterialTheme.colorScheme.primary
+
+    Card(
+        modifier  = Modifier.fillMaxWidth(),
+        shape     = RoundedCornerShape(24.dp),
+        colors    = CardDefaults.cardColors(MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SectionHeader(
+                icon  = Icons.Rounded.Favorite,
+                title = stringResource(R.string.insights_section_mood)
+            )
+
+            mood.distribution.entries
+                .sortedByDescending { it.value }
+                .forEach { (moodLabel, count) ->
+                    val ratio   = mood.ratioOf(moodLabel)
+                    val barAnim = remember(moodLabel) { Animatable(0f) }
+                    LaunchedEffect(moodLabel) {
+                        barAnim.animateTo(ratio, tween(700, easing = FastOutSlowInEasing))
+                    }
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment     = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Text(
+                            text     = moodLabel,
+                            fontSize = 13.sp,
+                            color    = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.width(80.dp)
+                        )
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(50.dp))
+                                .background(primary.copy(alpha = 0.12f))
+                        ) {
+                            Box(
+                                Modifier
+                                    .fillMaxWidth(barAnim.value)
+                                    .fillMaxHeight()
+                                    .clip(RoundedCornerShape(50.dp))
+                                    .background(primary)
+                            )
+                        }
+                        Text(
+                            text     = "${(ratio * 100).toInt()}%",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color    = primary,
+                            modifier = Modifier.width(32.dp)
+                        )
+                    }
+                }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  EMPTY STATE
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun InsightsEmptyState(modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                Modifier.size(72.dp).clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Rounded.Analytics, null,
+                    Modifier.size(36.dp), MaterialTheme.colorScheme.primary)
+            }
+            Text(
+                text       = stringResource(R.string.insights_no_data),
+                fontSize   = 14.sp,
+                textAlign  = TextAlign.Center,
+                lineHeight = 22.sp,
+                color      = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                modifier   = Modifier.padding(horizontal = 16.dp)
+            )
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  HELPERS VISUALES
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun InsightsFadeIn(visible: Boolean, delayMs: Int, content: @Composable () -> Unit) {
+    val alpha  = remember { Animatable(0f) }
+    val offset = remember { Animatable(14f) }
+    LaunchedEffect(visible) {
+        if (visible) {
+            delay(delayMs.toLong())
+            val j1 = launch { alpha.animateTo(1f, tween(420, easing = FastOutSlowInEasing)) }
+            val j2 = launch { offset.animateTo(0f,
+                spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow)) }
+            j1.join(); j2.join()
+        }
+    }
+    Box(Modifier.alpha(alpha.value).graphicsLayer { translationY = offset.value.dp.toPx() }) {
+        content()
+    }
+}
+
+@Composable
+private fun SectionHeader(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, Modifier.size(18.dp), MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.width(8.dp))
+        Text(title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onBackground)
+    }
+}
+
+@Composable
+private fun MetricChip(
+    label    : String,
+    value    : String,
+    unit     : String,
+    color    : androidx.compose.ui.graphics.Color,
+    modifier : Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(color.copy(alpha = 0.08f))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f))
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(value, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = color)
+            Spacer(Modifier.width(3.dp))
+            Text(unit, fontSize = 12.sp, color = color.copy(alpha = 0.7f),
+                modifier = Modifier.padding(bottom = 4.dp))
+        }
+    }
+}
+
+@Composable
+private fun LegendDot(color: androidx.compose.ui.graphics.Color, label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(8.dp).clip(CircleShape).background(color))
+        Spacer(Modifier.width(4.dp))
+        Text(label, fontSize = 10.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
+    }
+}
+
+@Composable
+private fun phaseColor(phase: com.jeremy.lumi.domain.model.CyclePhase): androidx.compose.ui.graphics.Color {
+    val phaseColors = com.jeremy.lumi.ui.theme.LocalPhaseColors.current
+    return when (phase) {
+        com.jeremy.lumi.domain.model.CyclePhase.MENSTRUAL  -> phaseColors.menstrual
+        com.jeremy.lumi.domain.model.CyclePhase.FOLLICULAR -> phaseColors.follicular
+        com.jeremy.lumi.domain.model.CyclePhase.OVULATION  -> phaseColors.ovulation
+        com.jeremy.lumi.domain.model.CyclePhase.LUTEAL     -> phaseColors.luteal
+        else -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f)
+    }
+}
+
+private fun phaseName(phase: com.jeremy.lumi.domain.model.CyclePhase): String = when (phase) {
+    com.jeremy.lumi.domain.model.CyclePhase.MENSTRUAL  -> "Menstrual"
+    com.jeremy.lumi.domain.model.CyclePhase.FOLLICULAR -> "Folicular"
+    com.jeremy.lumi.domain.model.CyclePhase.OVULATION  -> "Ovulación"
+    com.jeremy.lumi.domain.model.CyclePhase.LUTEAL     -> "Lútea"
+    else -> ""
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  TARJETA 5 — Donut Chart: Distribución Promedio de Fases (Canvas)
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun PhaseDistributionDonutCard(stats: HistoricalCycleStats) {
+    val phaseColors = com.jeremy.lumi.ui.theme.LocalPhaseColors.current
+    
+    // Cálculo de duraciones promedio
+    val total = stats.avgCycleLength.coerceAtLeast(15f)
+    val menstrual = stats.avgPeriodLength
+    val luteal = stats.personalLutealLength.toFloat()
+    val ovulation = 3f // Consistente con los 3 días de la ventana fértil en Home
+    val follicular = (total - menstrual - luteal - ovulation).coerceAtLeast(1f)
+    
+    // Animación de llenado del donut
+    val sweepAnim = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        sweepAnim.animateTo(360f, tween(1200, easing = FastOutSlowInEasing))
+    }
+
+    Card(
+        modifier  = Modifier.fillMaxWidth(),
+        shape     = RoundedCornerShape(24.dp),
+        colors    = CardDefaults.cardColors(MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
+            SectionHeader(
+                icon  = Icons.Rounded.Analytics, 
+                title = "Distribución Promedio"
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // ── Donut en Canvas ──
+                Box(contentAlignment = Alignment.Center) {
+                    androidx.compose.foundation.Canvas(modifier = Modifier.size(160.dp)) {
+                        val strokeWidth = 24.dp.toPx()
+                        
+                        var currentStartAngle = -90f // Empezamos en las 12 en punto
+                        
+                        // Lista de segmentos ordenados lógicamente
+                        val segments = listOf(
+                            Pair(menstrual, phaseColors.menstrual),
+                            Pair(follicular, phaseColors.follicular),
+                            Pair(ovulation, phaseColors.ovulation),
+                            Pair(luteal, phaseColors.luteal)
+                        )
+                        
+                        segments.forEach { (days, color) ->
+                            val sweepAngle = (days / total) * sweepAnim.value
+                            drawArc(
+                                color = color,
+                                startAngle = currentStartAngle,
+                                sweepAngle = sweepAngle,
+                                useCenter = false,
+                                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                                    width = strokeWidth,
+                                    cap = androidx.compose.ui.graphics.StrokeCap.Butt
+                                )
+                            )
+                            currentStartAngle += sweepAngle
+                        }
+                    }
+                    
+                    // Texto en el centro
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "${total.toInt()}",
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                            text = "días",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                        )
+                    }
+                }
+            }
+            
+            // Leyenda de 4 columnas
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                LegendDot(phaseColors.menstrual, "Mens.")
+                LegendDot(phaseColors.follicular, "Folíc.")
+                LegendDot(phaseColors.ovulation, "Ovul.")
+                LegendDot(phaseColors.luteal, "Lútea")
+            }
+        }
+    }
+}
