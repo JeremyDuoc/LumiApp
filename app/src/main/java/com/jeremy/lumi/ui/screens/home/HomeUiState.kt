@@ -20,7 +20,8 @@ data class HomeUiState(
     // ── Preferencias ──────────────────────────────────────────────────────
     val isDiscreetMode       : Boolean          = false,
     val isPregnant           : Boolean          = false,
-    val userGoal             : String           = "health"
+    val userGoal             : String           = "health",
+    val logStreakDays        : Int              = 0
 )
 
 data class CycleDayUi(

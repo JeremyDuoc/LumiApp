@@ -6,6 +6,7 @@ plugins {
     // --- PLUGINS APLICADOS PARA LUMI ---
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -85,4 +86,11 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     // 6. La wea del calendario
     implementation("androidx.compose.material:material-icons-extended")
+
+    // 7. Firebase (Modo Pareja & Sync)
+    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-messaging-ktx")
+    implementation("com.google.firebase:firebase-analytics-ktx")
 }

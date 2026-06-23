@@ -63,10 +63,10 @@ fun OnboardingScreen(
         Column(Modifier.fillMaxSize()) {
 
             // ── Indicador de progreso (oculto en página de celebración) ────────────────
-            if (uiState.currentPage < 5) {
+            if (uiState.currentPage < 6) {
                 Spacer(Modifier.height(52.dp))
                 PageIndicator(
-                    totalPages   = 5,
+                    totalPages   = 6,
                     currentPage  = uiState.currentPage,
                     modifier     = Modifier.align(Alignment.CenterHorizontally)
                 )
@@ -92,21 +92,29 @@ fun OnboardingScreen(
                         name     = uiState.data.userName ?: "",
                         onChange = { viewModel.setUserName(it) }
                     )
-                    2 -> PageLastPeriod(
-                        selectedDate = uiState.data.lastPeriodDate,
-                        onDatePicked = { viewModel.setLastPeriodDate(it) }
+                    2 -> PageRegularity(
+                        isRegular = uiState.data.isRegular,
+                        onChange  = { viewModel.setRegularity(it) }
                     )
                     3 -> PageCycleLength(
                         days     = uiState.data.cycleLength,
                         onChange = { viewModel.setCycleLength(it) }
                     )
-                    4 -> PagePeriodAndGoal(
+                    4 -> PageLastPeriod(
+                        selectedDate    = uiState.data.lastPeriodDate,
+                        lastPeriodKnown = uiState.data.lastPeriodKnown,
+                        onDatePicked    = { known, date -> 
+                            viewModel.setLastPeriodKnown(known)
+                            if (known && date != null) viewModel.setLastPeriodDate(date)
+                        }
+                    )
+                    5 -> PagePeriodAndGoal(
                         periodLength = uiState.data.periodLength,
                         selectedGoal = uiState.data.userGoal,
                         onPeriodChange = { viewModel.setPeriodLength(it) },
                         onGoalChange   = { viewModel.setUserGoal(it) }
                     )
-                    5 -> PageCelebration(
+                    6 -> PageCelebration(
                         userName   = uiState.data.userName,
                         onComplete = { viewModel.completeOnboarding(onComplete) }
                     )
@@ -114,14 +122,15 @@ fun OnboardingScreen(
             }
 
             // ── Botonera inferior (oculta en página de celebración) ────────────
-            if (uiState.currentPage < 5) {
+            if (uiState.currentPage < 6) {
                 BottomNavButtons(
                     currentPage  = uiState.currentPage,
                     isCompleting = uiState.isCompleting,
+                    isNextEnabled = if (uiState.currentPage == 2 && uiState.data.isRegular == null) false else true,
                     onBack       = { viewModel.prevPage() },
                     onNext       = {
-                        if (uiState.currentPage < 4) viewModel.nextPage()
-                        else viewModel.nextPage() // 4 → 5 (celebración)
+                        if (uiState.currentPage < 5) viewModel.nextPage()
+                        else viewModel.nextPage() // 5 → 6 (celebración)
                     },
                     onSkip       = { viewModel.nextPage() }
                 )
@@ -171,6 +180,7 @@ private fun PageIndicator(totalPages: Int, currentPage: Int, modifier: Modifier 
 private fun BottomNavButtons(
     currentPage  : Int,
     isCompleting : Boolean,
+    isNextEnabled: Boolean = true,
     onBack       : () -> Unit,
     onNext       : () -> Unit,
     onSkip       : () -> Unit
@@ -184,7 +194,7 @@ private fun BottomNavButtons(
         // Botón principal
         Button(
             onClick  = onNext,
-            enabled  = !isCompleting,
+            enabled  = !isCompleting && isNextEnabled,
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape    = RoundedCornerShape(18.dp),
             colors   = ButtonDefaults.buttonColors(containerColor = primary)
@@ -197,7 +207,7 @@ private fun BottomNavButtons(
                 )
             } else {
                 Text(
-                    text       = if (currentPage < 4) "Continuar" else "Comenzar mi ciclo ✨",
+                    text       = if (currentPage < 5) "Continuar" else "Comenzar mi ciclo ✨",
                     fontWeight = FontWeight.SemiBold,
                     fontSize   = 16.sp
                 )
@@ -384,11 +394,41 @@ private fun PageName(name: String, onChange: (String) -> Unit) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  PÁGINA 2 — FECHA DE ÚLTIMA REGLA (Wheel picker)
+//  PÁGINA 2 — REGULARIDAD
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun PageLastPeriod(selectedDate: Long, onDatePicked: (Long) -> Unit) {
+private fun PageRegularity(isRegular: Boolean?, onChange: (Boolean?) -> Unit) {
+    PageShell(
+        icon     = Icons.Rounded.Sync,
+        title    = "¿Tus periodos son regulares?",
+        subtitle = "Esto nos ayuda a saber cómo hacer tus predicciones."
+    ) {
+        val options = listOf(
+            Pair(true, "Sí, son regulares"),
+            Pair(false, "No, son irregulares"),
+            Pair(null, "No estoy segura")
+        )
+
+        options.forEach { (value, label) ->
+            GoalChip(
+                icon     = if (value == true) Icons.Rounded.CheckCircle else if (value == false) Icons.Rounded.Timeline else Icons.Rounded.QuestionMark,
+                label    = label,
+                selected = isRegular == value && (isRegular != null || value == null && isRegular == null),
+                onClick  = { onChange(value) },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(12.dp))
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PÁGINA 4 — FECHA DE ÚLTIMA REGLA (Wheel picker)
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun PageLastPeriod(selectedDate: Long, lastPeriodKnown: Boolean, onDatePicked: (Boolean, Long?) -> Unit) {
     // Rango: últimos 90 días hasta hoy
     val today  = LocalDate.now()
     val dates  = remember { (0..89).map { today.minusDays(it.toLong()) } }
@@ -403,40 +443,58 @@ private fun PageLastPeriod(selectedDate: Long, onDatePicked: (Long) -> Unit) {
         }
     }
 
-    // Cuando el wheel picker hace su primer scroll a la posición inicial,
-    // emite la fecha automáticamente via onDateSelected en DateWheelPicker.
-    // Solo necesitamos pre-seleccionar "hoy" si el usuario llega sin fecha guardada.
-    // El LaunchedEffect anterior sobreescribía silenciosamente sin confirmación del usuario —
-    // ahora dejamos que el wheel emita la fecha al posicionarse (ver DateWheelPicker.LaunchedEffect).
-
     PageShell(
         icon     = Icons.Rounded.CalendarToday,
-        title    = "¿Cuándo fue tu última regla?",
-        subtitle = "Una fecha aproximada está bien. Podrás editarla después desde el calendario."
+        title    = "¿Cuándo empezó tu último periodo?",
+        subtitle = "Una fecha aproximada está bien."
     ) {
-        DateWheelPicker(
-            dates        = dates,
-            initialIndex = initialIndex,
-            onDateSelected = { date ->
-                val millis = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                onDatePicked(millis)
+        if (!lastPeriodKnown) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                    .padding(20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "No te preocupes. Lumi esperará a que registres tu próximo periodo para comenzar las predicciones.",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center
+                )
             }
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        TextButton(
-            onClick = {
-                val todayMillis = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                onDatePicked(todayMillis)
-            },
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        ) {
-            Text(
-                text     = "No lo recuerdo — usar hoy",
-                fontSize = 13.sp,
-                color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+            Spacer(Modifier.height(24.dp))
+            TextButton(
+                onClick = { onDatePicked(true, today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()) },
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                Text("Ingresar una fecha")
+            }
+        } else {
+            DateWheelPicker(
+                dates        = dates,
+                initialIndex = initialIndex,
+                onDateSelected = { date ->
+                    val millis = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    onDatePicked(true, millis)
+                }
             )
+
+            Spacer(Modifier.height(12.dp))
+
+            TextButton(
+                onClick = {
+                    onDatePicked(false, null)
+                },
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                Text(
+                    text     = "No lo recuerdo",
+                    fontSize = 13.sp,
+                    color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                )
+            }
         }
     }
 }

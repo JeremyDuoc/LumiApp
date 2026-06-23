@@ -29,6 +29,7 @@ class OnboardingPreferenceManager @Inject constructor(
     companion object {
         private val ONBOARDING_DONE_KEY = booleanPreferencesKey("onboarding_completed")
         private val USER_NAME_KEY       = stringPreferencesKey("user_name")
+        private val IS_REGULAR_KEY      = booleanPreferencesKey("is_regular")
         private val USER_GOAL_KEY       = stringPreferencesKey("user_goal")
         private val CYCLE_LENGTH_KEY    = intPreferencesKey("default_cycle_length")
         private val PERIOD_LENGTH_KEY   = intPreferencesKey("default_period_length")
@@ -56,6 +57,10 @@ class OnboardingPreferenceManager @Inject constructor(
     /** Nombre de la usuaria. Null si lo saltó. */
     val userNameFlow: Flow<String?> = dataStore.data
         .map { prefs -> prefs[USER_NAME_KEY]?.takeIf { it.isNotBlank() } }
+
+    /** Si el ciclo es regular. Null si no lo sabe. */
+    val isRegularFlow: Flow<Boolean?> = dataStore.data
+        .map { prefs -> prefs[IS_REGULAR_KEY] }
 
     /** Objetivo de uso de la app. Por defecto TRACK_CYCLE. */
     val userGoalFlow: Flow<UserGoal> = dataStore.data
@@ -122,12 +127,14 @@ class OnboardingPreferenceManager @Inject constructor(
      */
     suspend fun saveOnboardingProfile(
         userName     : String?,
+        isRegular    : Boolean?,
         cycleLength  : Int,
         periodLength : Int,
         goal         : UserGoal
     ) {
         dataStore.edit { prefs ->
             if (!userName.isNullOrBlank()) prefs[USER_NAME_KEY] = userName.trim()
+            if (isRegular != null) prefs[IS_REGULAR_KEY] = isRegular
             prefs[USER_GOAL_KEY]      = goal.name
             prefs[CYCLE_LENGTH_KEY]   = cycleLength
             prefs[PERIOD_LENGTH_KEY]  = periodLength

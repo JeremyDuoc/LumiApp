@@ -44,6 +44,7 @@ fun InsightsScreen(
     viewModel: InsightsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showSosSheet by remember { mutableStateOf(false) }
 
     var screenReady by remember { mutableStateOf(false) }
     LaunchedEffect(uiState.isLoading) {
@@ -140,7 +141,30 @@ fun InsightsScreen(
                     }
                 }
 
+                // ── Botón Modo SOS (Resumen Médico) ──────────────────────────
+                InsightsFadeIn(screenReady, 300) {
+                    Button(
+                        onClick = { showSosSheet = true },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    ) {
+                        Icon(androidx.compose.material.icons.Icons.Rounded.MedicalServices, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Preparar visita médica", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+
                 Spacer(Modifier.height(32.dp))
+            }
+            
+            if (showSosSheet) {
+                SosModeSheet(insights = insights) {
+                    showSosSheet = false
+                }
             }
         }
     }

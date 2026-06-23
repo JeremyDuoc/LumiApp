@@ -17,7 +17,7 @@ import java.time.ZoneId
 import javax.inject.Inject
 
 data class OnboardingUiState(
-    val currentPage  : Int           = 0,    // 0-5 (5 = pantalla de celebración)
+    val currentPage  : Int           = 0,    // 0-6 (6 = pantalla de celebración)
     val data         : OnboardingData = OnboardingData(),
     val isCompleting : Boolean        = false // true mientras se guardan los datos
 )
@@ -34,11 +34,23 @@ class OnboardingViewModel @Inject constructor(
     // ── Navegación entre páginas ──────────────────────────────────────────────
 
     fun nextPage() {
-        _uiState.update { it.copy(currentPage = (it.currentPage + 1).coerceAtMost(5)) }
+        _uiState.update {
+            var next = it.currentPage + 1
+            if (it.currentPage == 2 && it.data.isRegular != true) {
+                next = 4
+            }
+            it.copy(currentPage = next.coerceAtMost(6))
+        }
     }
 
     fun prevPage() {
-        _uiState.update { it.copy(currentPage = (it.currentPage - 1).coerceAtLeast(0)) }
+        _uiState.update {
+            var prev = it.currentPage - 1
+            if (it.currentPage == 4 && it.data.isRegular != true) {
+                prev = 2
+            }
+            it.copy(currentPage = prev.coerceAtLeast(0))
+        }
     }
 
     // ── Actualización de campos ───────────────────────────────────────────────
@@ -49,6 +61,17 @@ class OnboardingViewModel @Inject constructor(
 
     fun setLastPeriodDate(epochMillis: Long) {
         _uiState.update { it.copy(data = it.data.copy(lastPeriodDate = epochMillis)) }
+    }
+
+    fun setRegularity(isRegular: Boolean?) {
+        _uiState.update { it.copy(data = it.data.copy(isRegular = isRegular)) }
+    }
+
+    fun setLastPeriodKnown(isKnown: Boolean) {
+        _uiState.update { it.copy(data = it.data.copy(lastPeriodKnown = isKnown)) }
+        if (!isKnown) {
+            _uiState.update { it.copy(data = it.data.copy(lastPeriodDate = 0L)) }
+        }
     }
 
     fun setCycleLength(days: Int) {
@@ -78,24 +101,20 @@ class OnboardingViewModel @Inject constructor(
             // 1. Guardar perfil en DataStore
             prefs.saveOnboardingProfile(
                 userName     = data.userName,
+                isRegular    = data.isRegular,
                 cycleLength  = data.cycleLength,
                 periodLength = data.periodLength,
                 goal         = data.userGoal
             )
 
-            // 2. Crear el primer ciclo en Room
-            // Usamos la fecha de última regla como startDate.
-            // Si la usuaria dijo "no recuerdo" (0L), usamos hoy.
-            val startMillis = if (data.lastPeriodDate > 0L) data.lastPeriodDate
-            else LocalDate.now()
-                .atStartOfDay(ZoneId.systemDefault())
-                .toInstant().toEpochMilli()
-
-            repository.startNewCycle(
-                startDate    = startMillis,
-                cycleLength  = data.cycleLength,
-                periodLength = data.periodLength
-            )
+            // 2. Crear el primer ciclo en Room, SÓLO si sabemos cuándo empezó
+            if (data.lastPeriodKnown && data.lastPeriodDate > 0L) {
+                repository.startNewCycle(
+                    startDate    = data.lastPeriodDate,
+                    cycleLength  = data.cycleLength,
+                    periodLength = data.periodLength
+                )
+            }
 
             _uiState.update { it.copy(isCompleting = false) }
             onDone()

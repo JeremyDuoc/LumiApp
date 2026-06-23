@@ -172,7 +172,13 @@ fun HomeScreen(
                 }
 
                 FadeSlideIn(screenReady, STAGGER_MS * 3) {
-                    CycleRingCard(uiState.currentDayOfCycle, uiState.currentPhase, uiState.prediction, uiState.isDiscreetMode)
+                    CycleRingCard(
+                        currentDay = uiState.currentDayOfCycle,
+                        phase = uiState.currentPhase,
+                        prediction = uiState.prediction,
+                        isDiscreetMode = uiState.isDiscreetMode,
+                        streakDays = uiState.logStreakDays
+                    )
                 }
 
                 // Botón principal: texto cambia si hay retraso
@@ -509,7 +515,7 @@ private fun LegendItem(color: Color, label: String) {
 }
 
 @Composable
-fun CycleRingCard(currentDay: Int, phase: CyclePhase, prediction: CyclePrediction?, isDiscreetMode: Boolean) {
+fun CycleRingCard(currentDay: Int, phase: CyclePhase, prediction: CyclePrediction?, isDiscreetMode: Boolean, streakDays: Int = 0) {
     val phaseColors        = LocalPhaseColors.current
     val actualPhaseColor   = homePhaseColor(phase)
     val phaseColor         = if (isDiscreetMode) Color.Gray.copy(alpha = 0.6f) else actualPhaseColor
@@ -543,9 +549,18 @@ fun CycleRingCard(currentDay: Int, phase: CyclePhase, prediction: CyclePredictio
         dayScale.animateTo(1f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium))
     }
     val breathing   = rememberInfiniteTransition(label = "breath")
-    val breathScale by breathing.animateFloat(0.990f, 1.010f,
+    
+    // Si hay una racha de >= 3 días, la animación de respiración es un poco más pronunciada (crece más)
+    val baseScale = if (streakDays >= 3) 1.05f else 1.0f
+    
+    val breathScale by breathing.animateFloat(0.990f * baseScale, 1.010f * baseScale,
         infiniteRepeatable(tween(BREATH_MS, easing = FastOutSlowInEasing), RepeatMode.Reverse), "bs")
-    val haloAlpha   by breathing.animateFloat(0.04f, 0.12f,
+        
+    // Si hay racha de >= 3 días, el halo base es más intenso
+    val baseHalo = if (streakDays >= 3) 0.15f else 0.04f
+    val maxHalo = if (streakDays >= 3) 0.3f else 0.12f
+    
+    val haloAlpha   by breathing.animateFloat(baseHalo, maxHalo,
         infiniteRepeatable(tween(BREATH_MS + 200, easing = LinearEasing), RepeatMode.Reverse), "ha")
 
     // ── Fondo tintado según la fase actual (muy sutil) ──────────────────────

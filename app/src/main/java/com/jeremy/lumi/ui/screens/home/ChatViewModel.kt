@@ -12,6 +12,7 @@ import com.jeremy.lumi.data.preferences.OnboardingPreferenceManager
 import com.jeremy.lumi.domain.repository.LumiRepository
 import com.jeremy.lumi.domain.usecase.CyclePredictor
 import com.jeremy.lumi.domain.usecase.DailyInsightGenerator
+import com.jeremy.lumi.domain.usecase.SymptomCorrelationEngine
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
@@ -28,6 +29,7 @@ class ChatViewModel @Inject constructor(
     private val repository: LumiRepository,
     private val chatPrefs: ChatPreferenceManager,
     private val onboardingPrefs: OnboardingPreferenceManager,
+    private val correlationEngine: SymptomCorrelationEngine,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -96,6 +98,25 @@ class ChatViewModel @Inject constructor(
                             timestamp = System.currentTimeMillis()
                         )
                     )
+
+                    // ── Motor de Correlación de Síntomas ──
+                    val daysUntilPeriod = cycleLen - prediction.currentDayOfCycle + 1
+                    if (daysUntilPeriod > 0) {
+                        val patterns = correlationEngine.findPatterns()
+                        // Avisar un día ANTES de que ocurra el síntoma
+                        val relevantPattern = patterns.firstOrNull { it.daysBeforePeriod == daysUntilPeriod - 1 }
+                        
+                        if (relevantPattern != null) {
+                            val patternMsg = "He notado un patrón: los últimos meses reportaste '${relevantPattern.symptomName.lowercase()}' justo ${relevantPattern.daysBeforePeriod} días antes de tu periodo. ¿Quieres que te lo recuerde en tu próximo ciclo para que estés preparada?"
+                            chatDao.insertMessage(
+                                ChatMessageEntity(
+                                    text = patternMsg,
+                                    messageType = ChatMessageType.SYSTEM,
+                                    timestamp = System.currentTimeMillis() + 1000 // 1 segundo después
+                                )
+                            )
+                        }
+                    }
                     
                     chatPrefs.setLastInsightDate(todayStr)
                 }

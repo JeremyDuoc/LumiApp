@@ -17,9 +17,11 @@ enum class UserGoal {
  * Se usa como contenedor temporal en el ViewModel antes de persistirlos.
  */
 data class OnboardingData(
-    val userName      : String?   = null,       // Opcional — null si lo saltó
-    val lastPeriodDate: Long      = 0L,          // Epoch millis del inicio del último ciclo
-    val cycleLength   : Int       = 28,
-    val periodLength  : Int       = 5,
-    val userGoal      : UserGoal  = UserGoal.TRACK_CYCLE
+    val userName        : String?   = null,       // Opcional — null si lo saltó
+    val isRegular       : Boolean?  = null,       // true: regular, false: irregular, null: no sabe
+    val cycleLength     : Int       = 28,         // Usado como promedio si es irregular/no sabe
+    val lastPeriodKnown : Boolean   = true,       // false si seleccionó "No lo recuerdo"
+    val lastPeriodDate  : Long      = 0L,         // Epoch millis, 0L si lastPeriodKnown es false
+    val periodLength    : Int       = 5,
+    val userGoal        : UserGoal  = UserGoal.TRACK_CYCLE
 )

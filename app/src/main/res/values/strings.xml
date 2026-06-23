@@ -78,7 +78,7 @@
     <string name="desc_unknown">Registra tu próximo periodo para sincronizar tu ciclo.</string>
 
     <string name="day_of_cycle">Día del ciclo</string>
-    <string name="inactive_cycle">Ciclo inactivo</string>
+    <string name="inactive_cycle">Esperando registro</string>
     <string name="register_period_btn">Registrar inicio de periodo</string>
     <string name="log_subtitle_hint">Cuéntame cómo fue tu día</string>
 

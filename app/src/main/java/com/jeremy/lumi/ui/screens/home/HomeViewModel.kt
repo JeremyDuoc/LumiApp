@@ -61,6 +61,31 @@ class HomeViewModel @Inject constructor(
                 }
             }
         }
+        
+        // Calcular racha de registros
+        viewModelScope.launch {
+            repository.getAllLogs(descending = true).collect { logs ->
+                var streak = 0
+                val today = java.time.LocalDate.now()
+                var currentCheckDate = today
+                
+                for (log in logs) {
+                    val logDate = java.time.Instant.ofEpochMilli(log.log.date).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+                    if (logDate == currentCheckDate) {
+                        streak++
+                        currentCheckDate = currentCheckDate.minusDays(1)
+                    } else if (logDate == today.minusDays(1) && streak == 0) {
+                        // Racha empieza ayer (hoy aún no ha registrado)
+                        streak++
+                        currentCheckDate = today.minusDays(2)
+                    } else if (logDate.isBefore(currentCheckDate)) {
+                        // Hueco encontrado, fin de racha
+                        break
+                    }
+                }
+                _uiState.update { it.copy(logStreakDays = streak) }
+            }
+        }
     }
 
     fun toggleDiscreetMode() {
