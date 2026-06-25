@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jeremy.lumi.R
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import java.util.Locale
 
@@ -80,15 +81,8 @@ fun ReminderDateTimeSection(
     var showDatePickerForCustom by remember { mutableStateOf(false) }
     var showTimePicker          by remember { mutableStateOf(false) }
 
-    // Estados de Picker de M3
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-    )
-    val timePickerState = rememberTimePickerState(
-        initialHour = hour,
-        initialMinute = minute,
-        is24Hour = true
-    )
+    // Estados de Picker de M3 eliminados a favor de WheelPicker
+
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
 
@@ -215,67 +209,46 @@ fun ReminderDateTimeSection(
             }
         }
     }
-    // ── DIÁLOGOS DE MATERIAL 3 ───────────────────────────────────────────────
+    // ── DIÁLOGOS CON WHEEL PICKER (ESTILO IOS) ───────────────────────────────
 
     if (showDatePickerForMethod || showDatePickerForCustom) {
-        DatePickerDialog(
+        LumiWheelDatePickerDialog(
+            initialDate = if (showDatePickerForMethod && methodStartDate != null) 
+                java.time.Instant.ofEpochMilli(methodStartDate!!).atZone(ZoneId.systemDefault()).toLocalDate()
+            else if (showDatePickerForCustom && customDate != null) 
+                customDate!!
+            else 
+                LocalDate.now(),
             onDismissRequest = {
                 showDatePickerForMethod = false
                 showDatePickerForCustom = false
             },
-            confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { millis ->
-                        if (showDatePickerForMethod) {
-                            methodStartDate = millis
-                            onMethodStartDateChange(millis)
-                        } else {
-                            val date = java.time.Instant.ofEpochMilli(millis)
-                                .atZone(ZoneId.systemDefault()).toLocalDate()
-                            customDate = date
-                            onCustomDateChange(date)
-                        }
-                    }
-                    showDatePickerForMethod = false
-                    showDatePickerForCustom = false
-                }) {
-                    Text(stringResource(android.R.string.ok))
+            onConfirm = { selectedDate ->
+                if (showDatePickerForMethod) {
+                    val millis = selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    methodStartDate = millis
+                    onMethodStartDateChange(millis)
+                } else {
+                    customDate = selectedDate
+                    onCustomDateChange(selectedDate)
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    showDatePickerForMethod = false
-                    showDatePickerForCustom = false
-                }) {
-                    Text(stringResource(android.R.string.cancel))
-                }
+                showDatePickerForMethod = false
+                showDatePickerForCustom = false
             }
-        ) {
-            DatePicker(state = datePickerState)
-        }
+        )
     }
 
     if (showTimePicker) {
-        LumiTimePickerDialog(
+        LumiWheelTimePickerDialog(
+            initialTime = LocalTime.of(hour, minute),
             onDismissRequest = { showTimePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    hour = timePickerState.hour
-                    minute = timePickerState.minute
-                    onHourMinuteChange(hour, minute)
-                    showTimePicker = false
-                }) {
-                    Text(stringResource(android.R.string.ok))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) {
-                    Text(stringResource(android.R.string.cancel))
-                }
+            onConfirm = { selectedTime ->
+                hour = selectedTime.hour
+                minute = selectedTime.minute
+                onHourMinuteChange(hour, minute)
+                showTimePicker = false
             }
-        ) {
-            TimePicker(state = timePickerState)
-        }
+        )
     }
 }
 
@@ -307,55 +280,106 @@ private fun ToggleChip(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  BEAUTIFUL MATERIAL 3 TIME PICKER DIALOG WRAPPER
+//  WHEEL PICKER DIALOGS (Glassmorphism & Premium UI)
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-fun LumiTimePickerDialog(
-    title: String = "Seleccionar hora",
+fun LumiWheelDatePickerDialog(
+    initialDate: LocalDate = LocalDate.now(),
     onDismissRequest: () -> Unit,
-    confirmButton: @Composable () -> Unit,
-    dismissButton: @Composable (() -> Unit)? = null,
-    content: @Composable () -> Unit,
+    onConfirm: (LocalDate) -> Unit
 ) {
-    androidx.compose.ui.window.Dialog(
-        onDismissRequest = onDismissRequest,
-        properties = androidx.compose.ui.window.DialogProperties(
-            usePlatformDefaultWidth = false
-        ),
-    ) {
+    var snappedDate by remember { mutableStateOf(initialDate) }
+
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismissRequest) {
         Surface(
-            shape = MaterialTheme.shapes.extraLarge,
-            tonalElevation = 6.dp,
-            modifier = Modifier
-                .width(IntrinsicSize.Min)
-                .height(IntrinsicSize.Min)
-                .background(
-                    shape = MaterialTheme.shapes.extraLarge,
-                    color = MaterialTheme.colorScheme.surface
-                ),
-            color = MaterialTheme.colorScheme.surface
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 20.dp),
-                    text = title,
-                    style = MaterialTheme.typography.labelMedium
+                    "Seleccionar Fecha",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(bottom = 24.dp)
                 )
-                content()
-                Row(
-                    modifier = Modifier
-                        .height(40.dp)
-                        .fillMaxWidth()
-                ) {
-                    Spacer(modifier = Modifier.weight(1f))
-                    dismissButton?.invoke()
-                    confirmButton()
+                
+                com.commandiron.wheel_picker_compose.WheelDatePicker(
+                    startDate = initialDate,
+                    textStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    textColor = MaterialTheme.colorScheme.onSurface,
+                    selectorProperties = com.commandiron.wheel_picker_compose.core.WheelPickerDefaults.selectorProperties(
+                        enabled = true,
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                    )
+                ) { snapped ->
+                    snappedDate = snapped
+                }
+                
+                Spacer(Modifier.height(28.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismissRequest) { Text("Cancelar") }
+                    Spacer(Modifier.width(8.dp))
+                    Button(onClick = { onConfirm(snappedDate) }) { Text("Aceptar") }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun LumiWheelTimePickerDialog(
+    initialTime: LocalTime = LocalTime.now(),
+    onDismissRequest: () -> Unit,
+    onConfirm: (LocalTime) -> Unit
+) {
+    var snappedTime by remember { mutableStateOf(initialTime) }
+
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismissRequest) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "Seleccionar Hora",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+                
+                com.commandiron.wheel_picker_compose.WheelTimePicker(
+                    startTime = initialTime,
+                    timeFormat = com.commandiron.wheel_picker_compose.core.TimeFormat.AM_PM,
+                    textStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    textColor = MaterialTheme.colorScheme.onSurface,
+                    selectorProperties = com.commandiron.wheel_picker_compose.core.WheelPickerDefaults.selectorProperties(
+                        enabled = true,
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                    )
+                ) { snapped ->
+                    snappedTime = snapped
+                }
+                
+                Spacer(Modifier.height(28.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismissRequest) { Text("Cancelar") }
+                    Spacer(Modifier.width(8.dp))
+                    Button(onClick = { onConfirm(snappedTime) }) { Text("Aceptar") }
                 }
             }
         }

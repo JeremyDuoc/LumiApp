@@ -32,9 +32,9 @@ class SymptomCorrelationEngine @Inject constructor(
         if (closedCycles.size < minOccurrences) return emptyList()
 
         // Tomar solo los ciclos de los últimos N meses
-        val cutoffDate = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().minusMonths(monthsToAnalyze.toLong())
+        val cutoffDate = Instant.now().atZone(ZoneId.of("UTC")).toLocalDate().minusMonths(monthsToAnalyze.toLong())
         val recentCycles = closedCycles.filter {
-            Instant.ofEpochMilli(it.endDate ?: it.startDate).atZone(ZoneId.systemDefault()).toLocalDate().isAfter(cutoffDate)
+            Instant.ofEpochMilli(it.endDate ?: it.startDate).atZone(ZoneId.of("UTC")).toLocalDate().isAfter(cutoffDate)
         }
 
         if (recentCycles.isEmpty()) return emptyList()
@@ -47,13 +47,13 @@ class SymptomCorrelationEngine @Inject constructor(
 
         recentCycles.forEach { cycle ->
             if (cycle.endDate != null) {
-                val cycleEndLocal = Instant.ofEpochMilli(cycle.endDate).atZone(ZoneId.systemDefault()).toLocalDate()
+                val cycleEndLocal = Instant.ofEpochMilli(cycle.endDate).atZone(ZoneId.of("UTC")).toLocalDate()
 
                 // Filtrar los logs que pertenecen a este ciclo
-                val cycleLogs = logsList.filter { it.log.cycleId == cycle.id }
+                val cycleLogs = logsList.filter { it.dailyLog.cycleId == cycle.id }
 
                 cycleLogs.forEach { logWithSymptoms ->
-                    val logDateLocal = Instant.ofEpochMilli(logWithSymptoms.log.date).atZone(ZoneId.systemDefault()).toLocalDate()
+                    val logDateLocal = Instant.ofEpochMilli(logWithSymptoms.dailyLog.date).atZone(ZoneId.of("UTC")).toLocalDate()
                     val daysBefore = ChronoUnit.DAYS.between(logDateLocal, cycleEndLocal).toInt()
 
                     logWithSymptoms.symptoms.forEach { symptom ->

@@ -25,6 +25,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.jeremy.lumi.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,7 +38,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jeremy.lumi.ui.theme.LumiTheme
 import kotlinx.coroutines.delay
-
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.runtime.getValue
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 // ─────────────────────────────────────────────
 //  Duración y comportamiento de la animación
 // ─────────────────────────────────────────────
@@ -55,7 +74,10 @@ private const val POST_ANIMATION_DELAY_MS = 300L
  *                         animación. Úsalo para navegar a la pantalla principal.
  */
 @Composable
-fun SplashScreen(onSplashFinished: () -> Unit) {
+fun SplashScreen(
+    onboardingState: Boolean?,
+    onSplashFinished: (Boolean) -> Unit
+) {
 
     // ── Animatables ─────────────────────────────────────────────────────────
     val alpha = remember { Animatable(initialValue = 0f) }
@@ -63,9 +85,10 @@ fun SplashScreen(onSplashFinished: () -> Unit) {
 
     // ── Lanzador de animación ────────────────────────────────────────────────
     LaunchedEffect(Unit) {
-        val animationSpec = tween<Float>(
-            durationMillis = ANIMATION_DURATION_MS,
-            easing = FastOutSlowInEasing
+        // Reemplaza el animationSpec en SplashScreen
+        val animationSpec = spring<Float>(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
         )
 
         // Fade-In y Scale-In en paralelo dentro de un scope explícito
@@ -78,8 +101,14 @@ fun SplashScreen(onSplashFinished: () -> Unit) {
 
         // Pequeña pausa para que el ojo "asiente" la imagen antes de navegar
         delay(POST_ANIMATION_DELAY_MS)
+    }
 
-        onSplashFinished()
+    // Usamos otro LaunchedEffect para esperar al onboardingState
+    LaunchedEffect(onboardingState, alpha.value) {
+        // Solo continuamos si la animación de entrada terminó (alpha == 1f) y el estado ya cargó
+        if (alpha.value == 1f && onboardingState != null) {
+            onSplashFinished(onboardingState)
+        }
     }
 
     // ── Contenido visual ────────────────────────────────────────────────────
@@ -115,36 +144,104 @@ fun SplashContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // ── Logo / ícono principal ───────────────────────────────────────
-            Icon(
-                imageVector = Icons.Rounded.AutoAwesome,
-                contentDescription = "Lumi logo",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(96.dp)
-            )
+            val infiniteTransition = rememberInfiniteTransition(label = "logo")
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // ── Nombre de la app ─────────────────────────────────────────────
-            Text(
-                text = "Lumi",
-                style = MaterialTheme.typography.displayMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 4.sp
+            // Float suave vertical — sin scale agresivo
+            val floatY by infiniteTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = -6f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(2800, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse
                 ),
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center
+                label = "floatY"
             )
+
+            // Opacidad del glow — arranca solo cuando alpha ya llegó a 1f
+            val glowAlpha by infiniteTransition.animateFloat(
+                initialValue = 0.5f,
+                targetValue = 0.9f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(2800, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "glowAlpha"
+            )
+
+            // Solo animar glow después del fade-in
+            val showGlow = alpha >= 0.99f
+
+            Box(contentAlignment = Alignment.Center) {
+                // Glow: radial gradient sin blur — evita artefactos de rendering
+                if (showGlow) {
+                    Box(
+                        modifier = Modifier
+                            .size(130.dp)
+                            .alpha(glowAlpha)
+                            .background(
+                                brush = Brush.radialGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
+                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f),
+                                        Color.Transparent
+                                    )
+                                ),
+                                shape = CircleShape
+                            )
+                    )
+                }
+
+                Image(
+                    painter = painterResource(id = R.drawable.lumi_logo),
+                    contentDescription = "Lumi logo",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .size(100.dp)
+                        .offset(y = if (showGlow) floatY.dp else 0.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            // Nombre con delay escalonado
+            AnimatedVisibility(
+                visible = alpha > 0.5f,
+                enter = fadeIn(tween(600)) + slideInVertically(
+                    tween(600),
+                    initialOffsetY = { it / 4 }
+                )
+            ) {
+                val brush = Brush.linearGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.secondary
+                    )
+                )
+                Text(
+                    text = "Lumi",
+                    style = MaterialTheme.typography.displayMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 6.sp,
+                        brush = brush
+                    ),
+                    textAlign = TextAlign.Center
+                )
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // ── Tagline ──────────────────────────────────────────────────────
-            Text(
-                text = "Tu ciclo, tu bienestar",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                textAlign = TextAlign.Center
-            )
+            // Tagline con delay mayor
+            AnimatedVisibility(
+                visible = alpha > 0.75f,
+                enter = fadeIn(tween(500, delayMillis = 150))
+            ) {
+                Text(
+                    text = "Tu ciclo, tu bienestar",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f),
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }

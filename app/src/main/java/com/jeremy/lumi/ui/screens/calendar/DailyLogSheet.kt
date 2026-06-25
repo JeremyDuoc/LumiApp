@@ -903,7 +903,7 @@ private fun IntercourseCard(
                     color      = MaterialTheme.colorScheme.onBackground
                 )
             }
-            Switch(
+            com.popovanton0.heartswitch.HeartSwitch(
                 checked         = hadIntercourse,
                 onCheckedChange = { checked ->
                     onHadIntercourseChange(checked)
@@ -912,11 +912,7 @@ private fun IntercourseCard(
                         onMethodSelect(null)
                         onIntercourseNotesChange("")
                     }
-                },
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor  = MaterialTheme.colorScheme.onPrimary,
-                    checkedTrackColor  = MaterialTheme.colorScheme.primary
-                )
+                }
             )
         }
 

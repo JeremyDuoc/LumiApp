@@ -1,4 +1,6 @@
-package com.jeremy.lumi.ui.screens.forum
+﻿package com.jeremy.lumi.ui.screens.forum
+
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,16 +23,25 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.jeremy.lumi.R
 import com.jeremy.lumi.domain.model.ForumPost
+import com.valentinilk.shimmer.shimmer
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ForumScreen(
     viewModel: ForumViewModel = hiltViewModel()
 ) {
-    val posts by viewModel.posts.collectAsState()
+    val posts by viewModel.posts.collectAsStateWithLifecycle()
 
     // Estado para mostrar el modal de "Nueva Pregunta"
     var showAskSheet by remember { mutableStateOf(false) }
+
+    // Simulador de carga inicial para demostrar el efecto Shimmer
+    var isLoading by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        delay(1500) // Simular 1.5s de carga de red
+        isLoading = false
+    }
 
     Scaffold(
         topBar = {
@@ -75,11 +86,25 @@ fun ForumScreen(
                 contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(posts) { post ->
-                    ForumPostCard(
-                        post = post,
-                        onUpvoteClick = { viewModel.toggleUpvote(post.id) }
-                    )
+                if (isLoading) {
+                    items(4) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp)
+                                .shimmer(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                            elevation = CardDefaults.cardElevation(0.dp)
+                        ) {}
+                    }
+                } else {
+                    items(posts) { post ->
+                        ForumPostCard(
+                            post = post,
+                            onUpvoteClick = { viewModel.toggleUpvote(post.id) }
+                        )
+                    }
                 }
             }
         }

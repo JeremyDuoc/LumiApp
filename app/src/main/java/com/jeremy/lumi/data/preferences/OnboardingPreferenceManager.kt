@@ -28,6 +28,7 @@ class OnboardingPreferenceManager @Inject constructor(
 
     companion object {
         private val ONBOARDING_DONE_KEY = booleanPreferencesKey("onboarding_completed")
+        private val IS_OBSERVER_ONLY_KEY= booleanPreferencesKey("is_observer_only")
         private val USER_NAME_KEY       = stringPreferencesKey("user_name")
         private val IS_REGULAR_KEY      = booleanPreferencesKey("is_regular")
         private val USER_GOAL_KEY       = stringPreferencesKey("user_goal")
@@ -40,6 +41,15 @@ class OnboardingPreferenceManager @Inject constructor(
         // Clave para persistir que la usuaria ya cerró el banner de retraso manualmente.
         // Se guarda el día del ciclo en que se cerró; si el día cambia, vuelve a mostrarse.
         private val DELAY_BANNER_DISMISSED_DAY_KEY = androidx.datastore.preferences.core.intPreferencesKey("delay_banner_dismissed_day")
+        
+        // Cooldown de abrazos virtuales
+        private val HUG_COOLDOWN_UNTIL_KEY = androidx.datastore.preferences.core.longPreferencesKey("hug_cooldown_until")
+        
+        // --- Partner Sharing Privacy ---
+        private val SHARE_PHASE_KEY = booleanPreferencesKey("share_phase")
+        private val SHARE_PREDICTIONS_KEY = booleanPreferencesKey("share_predictions")
+        private val SHARE_MOOD_KEY = booleanPreferencesKey("share_mood")
+        private val SHARE_SYMPTOMS_KEY = booleanPreferencesKey("share_symptoms")
     }
 
     // ── Onboarding completado ─────────────────────────────────────────────────
@@ -48,8 +58,15 @@ class OnboardingPreferenceManager @Inject constructor(
     val isOnboardingCompleted: Flow<Boolean> = dataStore.data
         .map { prefs -> prefs[ONBOARDING_DONE_KEY] ?: false }
 
-    suspend fun markOnboardingCompleted() {
-        dataStore.edit { prefs -> prefs[ONBOARDING_DONE_KEY] = true }
+    /** true si la app se instaló solo para observar a alguien más */
+    val isObserverOnly: Flow<Boolean> = dataStore.data
+        .map { prefs -> prefs[IS_OBSERVER_ONLY_KEY] ?: false }
+
+    suspend fun markOnboardingCompleted(isObserver: Boolean = false) {
+        dataStore.edit { prefs -> 
+            prefs[ONBOARDING_DONE_KEY] = true 
+            prefs[IS_OBSERVER_ONLY_KEY] = isObserver
+        }
     }
 
     // ── Datos de perfil ───────────────────────────────────────────────────────
@@ -105,7 +122,18 @@ class OnboardingPreferenceManager @Inject constructor(
         dataStore.edit { prefs -> prefs[LOG_CATEGORIES_KEY] = categories }
     }
 
-    // ── Banner de retraso ───────────────────────────────────────────────────
+    // --- Partner Privacy Flows & Setters ---
+    val sharePhaseFlow: Flow<Boolean> = dataStore.data.map { it[SHARE_PHASE_KEY] ?: true }
+    val sharePredictionsFlow: Flow<Boolean> = dataStore.data.map { it[SHARE_PREDICTIONS_KEY] ?: true }
+    val shareMoodFlow: Flow<Boolean> = dataStore.data.map { it[SHARE_MOOD_KEY] ?: true }
+    val shareSymptomsFlow: Flow<Boolean> = dataStore.data.map { it[SHARE_SYMPTOMS_KEY] ?: true }
+
+    suspend fun setSharePhase(share: Boolean) = dataStore.edit { it[SHARE_PHASE_KEY] = share }
+    suspend fun setSharePredictions(share: Boolean) = dataStore.edit { it[SHARE_PREDICTIONS_KEY] = share }
+    suspend fun setShareMood(share: Boolean) = dataStore.edit { it[SHARE_MOOD_KEY] = share }
+    suspend fun setShareSymptoms(share: Boolean) = dataStore.edit { it[SHARE_SYMPTOMS_KEY] = share }
+
+    // ── Recordatorio persistido de Banner de retraso ───────────────────────────────────────────────────
 
     /** El día del ciclo en que se cerró el banner. -1 = nunca cerrado. */
     val delayBannerDismissedDayFlow: kotlinx.coroutines.flow.Flow<Int> = dataStore.data
@@ -121,6 +149,15 @@ class OnboardingPreferenceManager @Inject constructor(
         dataStore.edit { prefs -> prefs.remove(DELAY_BANNER_DISMISSED_DAY_KEY) }
     }
 
+    // ── Persistencia del cooldown de abrazos ──────────────────────────────────
+    
+    val hugCooldownUntilFlow: Flow<Long> = dataStore.data
+        .map { prefs -> prefs[HUG_COOLDOWN_UNTIL_KEY] ?: 0L }
+
+    suspend fun setHugCooldownUntil(timestamp: Long) {
+        dataStore.edit { prefs -> prefs[HUG_COOLDOWN_UNTIL_KEY] = timestamp }
+    }
+
     /**
      * Guarda todos los datos del onboarding en una sola transacción atómica.
      * Llamar una vez al finalizar el último paso del onboarding.
@@ -130,7 +167,8 @@ class OnboardingPreferenceManager @Inject constructor(
         isRegular    : Boolean?,
         cycleLength  : Int,
         periodLength : Int,
-        goal         : UserGoal
+        goal         : UserGoal,
+        isObserver   : Boolean = false
     ) {
         dataStore.edit { prefs ->
             if (!userName.isNullOrBlank()) prefs[USER_NAME_KEY] = userName.trim()
@@ -139,6 +177,7 @@ class OnboardingPreferenceManager @Inject constructor(
             prefs[CYCLE_LENGTH_KEY]   = cycleLength
             prefs[PERIOD_LENGTH_KEY]  = periodLength
             prefs[ONBOARDING_DONE_KEY] = true
+            prefs[IS_OBSERVER_ONLY_KEY] = isObserver
         }
     }
 

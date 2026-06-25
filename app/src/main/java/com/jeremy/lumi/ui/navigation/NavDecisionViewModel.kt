@@ -12,16 +12,19 @@ import javax.inject.Inject
 /**
  * ViewModel mínimo que expone el estado del onboarding al composable de Splash.
  * Necesario porque el composable no puede leer DataStore directamente.
+ *
+ * Todos los usuarios (incluidos los observadores) van a MAIN.
+ * La lógica de qué muestra el Home según el rol es responsabilidad de HomeViewModel.
  */
 @HiltViewModel
 class NavDecisionViewModel @Inject constructor(
     prefs: OnboardingPreferenceManager
 ) : ViewModel() {
 
-    val onboardingDone: StateFlow<Boolean> = prefs.isOnboardingCompleted
+    val onboardingDone: StateFlow<Boolean?> = prefs.isOnboardingCompleted
         .stateIn(
-            scope            = viewModelScope,
-            started          = SharingStarted.Eagerly,   // leer inmediatamente
-            initialValue     = false                      // seguro: si no hay dato = mostrar onboarding
+            scope        = viewModelScope,
+            started      = SharingStarted.Eagerly,
+            initialValue = null
         )
 }

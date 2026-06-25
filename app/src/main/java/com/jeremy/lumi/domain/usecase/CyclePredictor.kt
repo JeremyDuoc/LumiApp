@@ -123,26 +123,15 @@ object CyclePredictor {
     /**
      * Estima la fase lútea personal a partir del historial.
      *
-     * Lógica: la fase lútea = cycleLength - (día de ovulación registrado o estimado).
-     * Sin datos de ovulación registrados, usa 14 días (valor estándar).
-     * Requiere al menos [MIN_CYCLES_FOR_HISTORY] ciclos para activarse.
-     *
-     * @param closedCycles Ciclos cerrados, más reciente primero.
-     * @return Longitud estimada de la fase lútea personal (entre 10 y 17 días).
+     * Lógica Corregida: Sin datos biológicos reales de ovulación (tests LH o temperatura basal),
+     * usar la diferencia entre `endDate` y `predictedOvulationDate` crea un bucle de retroalimentación
+     * donde la app "aprende" de sus propios errores de predicción. Clínicamente, la fase lútea es
+     * constante (14 días promedio) y lo que varía en un retraso es la fase folicular.
+     * Hasta que se implemente el registro de tests de ovulación, se debe devolver el valor clínico estándar.
      */
     fun personalLutealLength(closedCycles: List<CycleEntity>): Int {
-        if (closedCycles.size < MIN_CYCLES_FOR_HISTORY) return LUTEAL_LENGTH_DEFAULT
-
-        val lutealLengths = closedCycles.mapNotNull { cycle ->
-            if (cycle.endDate == null || cycle.predictedOvulationDate == null) return@mapNotNull null
-            val ovulationLocal = cycle.predictedOvulationDate.toLocalDate()
-            val endLocal       = cycle.endDate.toLocalDate()
-            val luteal = ChronoUnit.DAYS.between(ovulationLocal, endLocal).toInt()
-            if (luteal in 10..17) luteal else null   // descartar valores fisiológicamente imposibles
-        }
-
-        if (lutealLengths.isEmpty()) return LUTEAL_LENGTH_DEFAULT
-        return lutealLengths.average().roundToInt().coerceIn(10, 17)
+        // Fallback a valor clínico estándar para evitar corromper las predicciones con falsos positivos matemáticos.
+        return LUTEAL_LENGTH_DEFAULT
     }
 
     /**
@@ -188,6 +177,23 @@ object CyclePredictor {
         isPregnant   : Boolean         = false
     ): CyclePrediction {
 
+        if (isPregnant) {
+            return CyclePrediction(
+                currentDayOfCycle   = dayInCycle(startDate, cycleLength.coerceAtLeast(15), today),
+                currentPhase        = CyclePhase.PREGNANCY,
+                nextPeriodDate      = LocalDate.MAX, 
+                daysUntilNextPeriod = -1,
+                nextOvulationDate   = LocalDate.MAX,
+                daysUntilOvulation  = -1,
+                cycleLength         = cycleLength,
+                periodLength        = periodLength,
+                delayState          = DelayState.ON_TIME,
+                delayDays           = 0,
+                isLate              = false,
+                dayOfPhase          = ChronoUnit.DAYS.between(startDate, today).toInt() + 1
+            )
+        }
+
         // ── Elegir la mejor estimación de cycleLength ────────────────────────
         val effectiveCycleLen = if (closedCycles.size >= MIN_CYCLES_FOR_HISTORY) {
             weightedAverageCycleLength(closedCycles).roundToInt().coerceAtLeast(15)
@@ -210,7 +216,7 @@ object CyclePredictor {
         val rawDelay       = (realDay - c).coerceAtLeast(0)
         val delayDays      = rawDelay
 
-        val delayState = if (isPregnant) DelayState.ON_TIME else when {
+        val delayState = when {
             delayDays == 0                                          -> DelayState.ON_TIME
             // Para usuarias sin historial, el umbral mínimo es 7 días.
             // Con historial, se adapta al máximo retraso personal + 2 días de margen.
@@ -220,13 +226,11 @@ object CyclePredictor {
         }
 
         // ── Fase actual ──────────────────────────────────────────────────────
-        val currentPhase = if (isPregnant) CyclePhase.PREGNANCY else if (delayDays > 0) CyclePhase.LUTEAL
-        else phaseForDay(realDay, c, periodLength, lutealLen)
+        val currentPhase = if (delayDays > 0) CyclePhase.LUTEAL else phaseForDay(realDay, c, periodLength, lutealLen)
 
         // ── Día de la fase ───────────────────────────────────────────────────
         val ovulationDay = c - lutealLen
         val dayOfPhase = when (currentPhase) {
-            CyclePhase.PREGNANCY -> realDay
             CyclePhase.MENSTRUAL -> realDay
             CyclePhase.FOLLICULAR -> realDay - periodLength
             CyclePhase.OVULATION -> realDay - (ovulationDay - 2) // Ventana: ovDay-1, ovDay, ovDay+1 -> 1, 2, 3
@@ -245,14 +249,14 @@ object CyclePredictor {
             currentDayOfCycle   = realDay,
             currentPhase        = currentPhase,
             nextPeriodDate      = nextPeriod,
-            daysUntilNextPeriod = if (isPregnant) -1 else ChronoUnit.DAYS.between(today, nextPeriod).toInt(),
+            daysUntilNextPeriod = ChronoUnit.DAYS.between(today, nextPeriod).toInt(),
             nextOvulationDate   = nextOvulation,
-            daysUntilOvulation  = if (isPregnant) -1 else ChronoUnit.DAYS.between(today, nextOvulation).toInt(),
+            daysUntilOvulation  = ChronoUnit.DAYS.between(today, nextOvulation).toInt(),
             cycleLength         = c,
             periodLength        = periodLength,
             delayState          = delayState,
-            delayDays           = if (isPregnant) 0 else delayDays,
-            isLate              = if (isPregnant) false else delayDays > 0,
+            delayDays           = delayDays,
+            isLate              = delayDays > 0,
             dayOfPhase          = dayOfPhase
         )
     }

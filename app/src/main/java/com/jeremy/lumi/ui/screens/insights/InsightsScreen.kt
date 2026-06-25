@@ -13,8 +13,10 @@ import androidx.compose.material.icons.rounded.AutoGraph
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.WaterDrop
 import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.MonitorHeart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -33,9 +35,9 @@ import com.jeremy.lumi.domain.model.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  INSIGHTS SCREEN
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,7 +45,7 @@ fun InsightsScreen(
     onNavigateBack: () -> Unit,
     viewModel: InsightsViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showSosSheet by remember { mutableStateOf(false) }
 
     var screenReady by remember { mutableStateOf(false) }
@@ -90,7 +92,7 @@ fun InsightsScreen(
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else if (uiState.insights == null) {
-            // Estado vacío — todavía no hay ciclos suficientes
+            // Estado vacío â€” todavía no hay ciclos suficientes
             InsightsEmptyState(Modifier.padding(paddingValues))
         } else {
             val insights = uiState.insights!!
@@ -104,35 +106,35 @@ fun InsightsScreen(
             ) {
                 Spacer(Modifier.height(4.dp))
 
-                // ── Resumen de ciclos ────────────────────────────────────────
+                // â”€â”€ Resumen de ciclos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 insights.historicalStats?.let { stats ->
                     InsightsFadeIn(screenReady, 0) {
                         CycleStatsCard(stats)
                     }
                 }
 
-                // ── Gráfico de barras: últimos ciclos ────────────────────────
+                // â”€â”€ Gráfico de barras: últimos ciclos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 if (insights.recentCycleStats.isNotEmpty()) {
                     InsightsFadeIn(screenReady, 80) {
                         RecentCyclesBarChart(insights.recentCycleStats)
                     }
                 }
 
-                // ── Donut Chart: Distribución de Fases (Canvas) ──────────────
+                // â”€â”€ Donut Chart: Distribución de Fases (Canvas) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 insights.historicalStats?.let { stats ->
                     InsightsFadeIn(screenReady, 120) {
                         PhaseDistributionDonutCard(stats)
                     }
                 }
 
-                // ── Síntomas × Fase ──────────────────────────────────────────
+                // ── Síntomas × Fase ──────────────────────────────────────
                 if (insights.symptomCorrelations.isNotEmpty()) {
                     InsightsFadeIn(screenReady, 160) {
                         SymptomCorrelationCard(insights.symptomCorrelations.take(5))
                     }
                 }
 
-                // ── Distribución de humor ────────────────────────────────────
+                // â”€â”€ Distribución de humor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 insights.moodDistribution?.let { mood ->
                     if (mood.totalDays > 0) {
                         InsightsFadeIn(screenReady, 240) {
@@ -141,7 +143,7 @@ fun InsightsScreen(
                     }
                 }
 
-                // ── Botón Modo SOS (Resumen Médico) ──────────────────────────
+                // â”€â”€ Botón Modo SOS (Resumen Médico) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 InsightsFadeIn(screenReady, 300) {
                     Button(
                         onClick = { showSosSheet = true },
@@ -152,7 +154,7 @@ fun InsightsScreen(
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     ) {
-                        Icon(androidx.compose.material.icons.Icons.Rounded.MedicalServices, contentDescription = null)
+                        Icon(androidx.compose.material.icons.Icons.Rounded.MonitorHeart, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text("Preparar visita médica", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                     }
@@ -170,9 +172,9 @@ fun InsightsScreen(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  TARJETA 1 — Estadísticas históricas de ciclos
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  TARJETA 1 â€” Estadísticas históricas de ciclos
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun CycleStatsCard(stats: HistoricalCycleStats) {
@@ -250,9 +252,9 @@ private fun CycleStatsCard(stats: HistoricalCycleStats) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  TARJETA 2 — Gráfico de barras de ciclos recientes (Canvas propio)
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  TARJETA 2 â€” Gráfico de barras de ciclos recientes (Canvas propio)
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun RecentCyclesBarChart(cycles: List<CycleStats>) {
@@ -334,9 +336,9 @@ private fun RecentCyclesBarChart(cycles: List<CycleStats>) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  TARJETA 3 — Heatmap de Correlaciones síntoma × fase
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun SymptomCorrelationCard(correlations: List<SymptomCorrelation>) {
@@ -423,9 +425,9 @@ private fun SymptomCorrelationRow(corr: SymptomCorrelation) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  TARJETA 4 — Distribución de humor
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  TARJETA 4 â€” Distribución de humor
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun MoodDistributionCard(mood: MoodDistribution) {
@@ -490,9 +492,9 @@ private fun MoodDistributionCard(mood: MoodDistribution) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  EMPTY STATE
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun InsightsEmptyState(modifier: Modifier = Modifier) {
@@ -521,9 +523,9 @@ private fun InsightsEmptyState(modifier: Modifier = Modifier) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  HELPERS VISUALES
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun InsightsFadeIn(visible: Boolean, delayMs: Int, content: @Composable () -> Unit) {
@@ -607,9 +609,9 @@ private fun phaseName(phase: com.jeremy.lumi.domain.model.CyclePhase): String = 
     else -> ""
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  TARJETA 5 — Donut Chart: Distribución Promedio de Fases (Canvas)
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  TARJETA 5 â€” Donut Chart: Distribución Promedio de Fases (Canvas)
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun PhaseDistributionDonutCard(stats: HistoricalCycleStats) {
@@ -645,7 +647,7 @@ private fun PhaseDistributionDonutCard(stats: HistoricalCycleStats) {
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // ── Donut en Canvas ──
+                // â”€â”€ Donut en Canvas â”€â”€
                 Box(contentAlignment = Alignment.Center) {
                     androidx.compose.foundation.Canvas(modifier = Modifier.size(160.dp)) {
                         val strokeWidth = 24.dp.toPx()
@@ -659,9 +661,10 @@ private fun PhaseDistributionDonutCard(stats: HistoricalCycleStats) {
                             Pair(ovulation, phaseColors.ovulation),
                             Pair(luteal, phaseColors.luteal)
                         )
+                        val actualTotal = menstrual + follicular + ovulation + luteal
                         
                         segments.forEach { (days, color) ->
-                            val sweepAngle = (days / total) * sweepAnim.value
+                            val sweepAngle = (days / actualTotal) * sweepAnim.value
                             drawArc(
                                 color = color,
                                 startAngle = currentStartAngle,
@@ -706,3 +709,4 @@ private fun PhaseDistributionDonutCard(stats: HistoricalCycleStats) {
         }
     }
 }
+

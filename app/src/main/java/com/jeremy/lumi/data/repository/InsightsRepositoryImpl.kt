@@ -236,5 +236,5 @@ class InsightsRepositoryImpl @Inject constructor(
 
     // ── Extension helpers ────────────────────────────────────────────────────
     private fun Long.toLocalDate(): LocalDate =
-        Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDate()
+        Instant.ofEpochMilli(this).atZone(ZoneId.of("UTC")).toLocalDate()
 }

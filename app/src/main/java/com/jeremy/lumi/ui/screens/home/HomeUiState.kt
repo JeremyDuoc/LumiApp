@@ -2,6 +2,7 @@ package com.jeremy.lumi.ui.screens.home
 
 import com.jeremy.lumi.data.local.entity.CycleEntity
 import com.jeremy.lumi.domain.model.CyclePhase
+import com.jeremy.lumi.domain.model.PartnerLink
 import com.jeremy.lumi.domain.usecase.CyclePrediction
 import com.jeremy.lumi.domain.usecase.DelayState
 
@@ -16,12 +17,23 @@ data class HomeUiState(
     val delayState           : DelayState       = DelayState.ON_TIME,
     val delayDays            : Int              = 0,
     val isLate               : Boolean          = false,
-    
+
     // ── Preferencias ──────────────────────────────────────────────────────
     val isDiscreetMode       : Boolean          = false,
     val isPregnant           : Boolean          = false,
     val userGoal             : String           = "health",
-    val logStreakDays        : Int              = 0
+    val logStreakDays        : Int              = 0,
+
+    // ── Animaciones In-App ────────────────────────────────────────────────
+    val showHugAnimation     : Boolean          = false,
+
+    // ── Modo Vínculo ──────────────────────────────────────────────────────
+    val isObserverOnly       : Boolean          = false,
+    val homeMode             : HomeMode         = HomeMode.NORMAL,
+    val linkedCycles         : List<PartnerLink> = emptyList(),
+    
+    // ── Errores ───────────────────────────────────────────────────────────
+    val syncError            : Boolean          = false
 )
 
 data class CycleDayUi(

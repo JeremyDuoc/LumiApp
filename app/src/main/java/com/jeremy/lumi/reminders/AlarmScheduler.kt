@@ -70,11 +70,23 @@ object AlarmScheduler {
 
         if (reminder.nextTriggerAt <= System.currentTimeMillis()) return
 
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            reminder.nextTriggerAt,
-            pendingIntent
-        )
+        try {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                reminder.nextTriggerAt,
+                pendingIntent
+            )
+        } catch (e: SecurityException) {
+            // Log error or fallback to non-exact alarm.
+            // On Android 14+, the OS can aggressively revoke exact alarm permissions.
+            try {
+                alarmManager.set(
+                    AlarmManager.RTC_WAKEUP,
+                    reminder.nextTriggerAt,
+                    pendingIntent
+                )
+            } catch (ignored: Exception) {}
+        }
     }
 
     fun cancel(context: Context, reminderId: Int) {

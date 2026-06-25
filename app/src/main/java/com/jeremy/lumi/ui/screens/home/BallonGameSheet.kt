@@ -555,7 +555,7 @@ private fun DrawScope.drawMonster(
     drawContext.canvas.drawPath(
         Path().apply {
             moveTo(cx - mouthW, mouthY)
-            quadraticBezierTo(cx, mouthY + mouthCurve, cx + mouthW, mouthY)
+            quadraticTo(cx, mouthY + mouthCurve, cx + mouthW, mouthY)
         },
         mouthPaint
     )

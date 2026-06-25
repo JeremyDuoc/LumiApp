@@ -255,7 +255,7 @@
     <string name="pain_none">Sin dolor</string>
 
     <string name="forum_title">Comunidad Segura</string>
-    <string name="forum_subtitle">Haz tus preguntas de forma 100% anónima. Sé amable.</string>
+    <string name="forum_subtitle" formatted="false">Haz tus preguntas de forma 100% anónima. Sé amable.</string>
     <string name="fab_ask">Preguntar</string>
     <string name="ask_sheet_title">Nueva pregunta anónima</string>
     <string name="ask_hint">Ej: ¿Es normal sentir mucha fatiga el día antes del periodo?</string>
@@ -505,5 +505,63 @@
     <!-- Notificaciones discretas (pantalla bloqueada) -->
     <string name="notif_private_title">Lumi 🌸</string>
     <string name="notif_private_body">Tienes un recordatorio</string>
+
+    <!-- Partner Mode -->
+    <string name="partner_pairing_title">Modo Pareja</string>
+    <string name="partner_linking">Vinculando con tu pareja...</string>
+    <string name="partner_link_success">¡Vinculación Exitosa!</string>
+    <string name="partner_loading_data">Cargando datos del ciclo...</string>
+    <string name="partner_sync_title">Sincroniza con tu pareja</string>
+    <string name="partner_sync_desc">Genera un código para compartir tu ciclo de forma privada, o ingresa el código que te compartieron.</string>
+    <string name="partner_share_title">Compartir mi ciclo</string>
+    <string name="partner_share_code_desc">Comparte este código con tu pareja.</string>
+    <string name="partner_generate_code">Generar código de vinculación</string>
+    <string name="partner_or">O</string>
+    <string name="partner_join_title">Vincularme a un ciclo</string>
+    <string name="partner_join_hint">Ej. 123456</string>
+    <string name="partner_btn_link">Vincular</string>
+    <string name="partner_active_title">¡Modo Pareja Activo!</string>
+    <string name="partner_active_desc">Tu ciclo ahora está sincronizado de manera segura y privada. Tu pareja recibirá actualizaciones clave para apoyarte.</string>
+    <string name="partner_btn_unlink">Desvincular Pareja</string>
+    <string name="partner_btn_unlink_observer">Desvincularme</string>
+    <string name="partner_sending_hug">Enviando abrazo...</string>
+    <string name="partner_hug_sent">Abrazo enviado</string>
+    <!-- Observer Screen -->
+    <string name="observer_title">Ciclo de tu pareja</string>
+    <string name="observer_send_hug">Enviar Abrazo Virtual</string>
+    <string name="observer_days_left">Faltan %1$d días</string>
+    <string name="observer_until_next">para el próximo cambio</string>
+    
+    <string name="phase_name_menstrual">Fase Menstrual</string>
+    <string name="phase_name_follicular">Fase Folicular</string>
+    <string name="phase_name_ovulation">Ovulación</string>
+    <string name="phase_name_luteal">Fase Lútea</string>
+    <string name="phase_name_pregnancy">Embarazo</string>
+    <string name="phase_name_unknown">Esperando datos...</string>
+    
+    <string name="phase_advice_menstrual">Suele necesitar más descanso y apoyo. Prepárale algo calentito o vean una peli.</string>
+    <string name="phase_advice_follicular">Su energía y creatividad están subiendo. ¡Excelente momento para aventuras juntos!</string>
+    <string name="phase_advice_ovulation">Días de máxima energía, carisma y confianza. Disfruten mucho esta etapa.</string>
+    <string name="phase_advice_luteal">Puede sentirse un poco cansada o sensible (SPM). Sé muy paciente, comprensivo y dale mimos.</string>
+    <string name="phase_advice_pregnancy">Un momento mágico. Asegúrate de acompañarla, cuidarla mucho y ayudar en todo.</string>
+    <string name="phase_advice_unknown">Aún no tenemos datos suficientes del ciclo.</string>
+    <string name="observer_mood_today">Ánimo hoy: %1$s</string>
+    <string name="observer_symptoms">Síntomas: %1$s</string>
+    
+    <string name="partner_privacy_title">Privacidad de Sincronización</string>
+    <string name="partner_privacy_phase">Fase del ciclo</string>
+    <string name="partner_privacy_predictions">Días restantes (Predicciones)</string>
+    <string name="partner_privacy_mood">Ánimo diario</string>
+    <string name="partner_privacy_symptoms">Síntomas registrados</string>
+    
+    <string name="home_hug_received_title">¡Abrazo virtual recibido!</string>
+    <string name="home_hug_received_desc">Tu pareja está pensando en ti 💕</string>
+    <string name="home_observer_gate_title">Vincúlate para comenzar</string>
+    <string name="home_observer_gate_desc">Pide a alguien que comparta su ciclo contigo mediante un código de vínculo. Verás su ciclo aquí en tiempo real.</string>
+    <string name="home_observer_gate_btn">Crear un vínculo</string>
+    <string name="home_observer_gate_footer">Puedes seguir usando el calendario y el chat mientras esperas.</string>
+    <string name="home_link_chip">Vincular</string>
+    <string name="home_links_pill">Vínculos</string>
+    <string name="home_stories_title">Tus vínculos</string>
 
 </resources>

@@ -15,10 +15,10 @@ data class PhaseColors(
 
 // Fallback usado por LocalPhaseColors antes de que se resuelva la preferencia real
 val PhaseColorsDefaultLight = PhaseColors(
-    menstrual  = Color(0xFFE0566B),
-    follicular = Color(0xFFE0A33C),
-    ovulation  = Color(0xFF3D9E72),
-    luteal     = Color(0xFF6E63C4)
+    menstrual  = Color(0xFFF9A8D4), // Peach/Rosa suave
+    follicular = Color(0xFFE4E0ED), // Lavanda muy suave (Baja fertilidad)
+    ovulation  = Color(0xFFB48ED8), // Morado brillante (Alta fertilidad)
+    luteal     = Color(0xFFE4E0ED)  // Lavanda muy suave (Baja fertilidad)
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -35,6 +35,10 @@ enum class PhaseColorPalette {
     TIERRA,         // Cálido, terroso, ligado a la paleta Tierra/Lienzo de temas
     OCEANO,         // Fríos, azulados — alternativa a los cálidos por defecto
     MONOCROMO,      // Un solo hue (violeta) en 4 intensidades — máxima calma visual
+    OCEANO_GRADIENT,
+    BOSQUE_GRADIENT,
+    OCASO_GRADIENT,
+    DUNA_GRADIENT,
     CUSTOM;         // La usuaria definió los 4 colores manualmente
 
     val labelEs: String
@@ -46,6 +50,10 @@ enum class PhaseColorPalette {
             TIERRA      -> "Tierra"
             OCEANO      -> "Océano"
             MONOCROMO   -> "Monocromo"
+            OCEANO_GRADIENT -> "Lumi Océano"
+            BOSQUE_GRADIENT -> "Lumi Bosque"
+            OCASO_GRADIENT  -> "Lumi Ocaso"
+            DUNA_GRADIENT   -> "Lumi Duna"
             CUSTOM      -> "Personalizado"
         }
 
@@ -57,6 +65,10 @@ enum class PhaseColorPalette {
         TIERRA      -> if (isDark) PhaseTierraDark      else PhaseTierraLight
         OCEANO      -> if (isDark) PhaseOceanoDark      else PhaseOceanoLight
         MONOCROMO   -> if (isDark) PhaseMonocromoDark   else PhaseMonocromoLight
+        OCEANO_GRADIENT -> if (isDark) PhaseOceanoGradientDark else PhaseOceanoGradientLight
+        BOSQUE_GRADIENT -> if (isDark) PhaseBosqueGradientDark else PhaseBosqueGradientLight
+        OCASO_GRADIENT  -> if (isDark) PhaseOcasoGradientDark else PhaseOcasoGradientLight
+        DUNA_GRADIENT   -> if (isDark) PhaseDunaGradientDark else PhaseDunaGradientLight
         // CUSTOM nunca debería resolverse aquí — LumiTheme intercepta antes y usa
         // los colores guardados individualmente. Este caso es solo un fallback seguro.
         CUSTOM      -> if (isDark) PhaseDefaultDark     else PhaseDefaultLight
@@ -65,16 +77,16 @@ enum class PhaseColorPalette {
 
 // ── DEFAULT · la paleta original de Lumi ──────────────────────────────────────
 val PhaseDefaultLight = PhaseColors(
-    menstrual  = Color(0xFFE0566B),
-    follicular = Color(0xFFE0A33C),
-    ovulation  = Color(0xFF3D9E72),
-    luteal     = Color(0xFF6E63C4)
+    menstrual  = Color(0xFFF9A8D4), // Peach/Rosa suave
+    follicular = Color(0xFFE4E0ED), // Lavanda translúcido neutro
+    ovulation  = Color(0xFFB48ED8), // Morado (Brand Primary)
+    luteal     = Color(0xFFE4E0ED)  // Lavanda translúcido neutro
 )
 val PhaseDefaultDark = PhaseColors(
-    menstrual  = Color(0xFFF07E8F),
-    follicular = Color(0xFFF0BD6A),
-    ovulation  = Color(0xFF5FC796),
-    luteal     = Color(0xFF9C92E0)
+    menstrual  = Color(0xFFF2B8D8), // Peach/Rosa oscuro
+    follicular = Color(0xFF3C354A), // Lavanda profundo oscuro
+    ovulation  = Color(0xFFB48ED8), // Morado brillante
+    luteal     = Color(0xFF3C354A)  // Lavanda profundo oscuro
 )
 
 // ── PASTEL · dulce, bajo contraste, ideal para quien quiere algo suave ────────
@@ -159,6 +171,62 @@ val PhaseMonocromoDark = PhaseColors(
     follicular = Color(0xFFA888CC),
     ovulation  = Color(0xFF8C68B0),
     luteal     = Color(0xFFE0CCF0)
+)
+
+// ── LUMI OCEANO GRADIENT ─────────────────────────────────────────────────────
+val PhaseOceanoGradientLight = PhaseColors(
+    menstrual  = Color(0xFF1565C0), // Azul índigo
+    follicular = Color(0xFFE4E0ED),
+    ovulation  = Color(0xFF00D2FF), // Celeste brillante
+    luteal     = Color(0xFFE4E0ED)
+)
+val PhaseOceanoGradientDark = PhaseColors(
+    menstrual  = Color(0xFF6BA2EC), 
+    follicular = Color(0xFF3C354A),
+    ovulation  = Color(0xFF4DD8FF), 
+    luteal     = Color(0xFF3C354A)
+)
+
+// ── LUMI BOSQUE GRADIENT ─────────────────────────────────────────────────────
+val PhaseBosqueGradientLight = PhaseColors(
+    menstrual  = Color(0xFF0B6623), // Verde pino oscuro
+    follicular = Color(0xFFE4E0ED),
+    ovulation  = Color(0xFF2EFEA5), // Menta vibrante
+    luteal     = Color(0xFFE4E0ED)
+)
+val PhaseBosqueGradientDark = PhaseColors(
+    menstrual  = Color(0xFF3DB78A),
+    follicular = Color(0xFF3C354A),
+    ovulation  = Color(0xFF8AF3B5),
+    luteal     = Color(0xFF3C354A)
+)
+
+// ── LUMI OCASO GRADIENT ──────────────────────────────────────────────────────
+val PhaseOcasoGradientLight = PhaseColors(
+    menstrual  = Color(0xFFD84315), // Terracota / Naranja intenso
+    follicular = Color(0xFFE4E0ED),
+    ovulation  = Color(0xFFFFB300), // Amarillo cálido / Dorado
+    luteal     = Color(0xFFE4E0ED)
+)
+val PhaseOcasoGradientDark = PhaseColors(
+    menstrual  = Color(0xFFFA6A5A),
+    follicular = Color(0xFF3C354A),
+    ovulation  = Color(0xFFF7C34D),
+    luteal     = Color(0xFF3C354A)
+)
+
+// ── LUMI DUNA GRADIENT ───────────────────────────────────────────────────────
+val PhaseDunaGradientLight = PhaseColors(
+    menstrual  = Color(0xFF5D4037), // Marrón chocolate
+    follicular = Color(0xFFE4E0ED),
+    ovulation  = Color(0xFFD4AF37), // Dorado suave
+    luteal     = Color(0xFFE4E0ED)
+)
+val PhaseDunaGradientDark = PhaseColors(
+    menstrual  = Color(0xFFA1887F),
+    follicular = Color(0xFF3C354A),
+    ovulation  = Color(0xFFFFE082),
+    luteal     = Color(0xFF3C354A)
 )
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,8 +34,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.jeremy.lumi.R
 import com.jeremy.lumi.data.preferences.PhaseSlot
 import com.jeremy.lumi.ui.theme.*
+import com.jeremy.lumi.ui.components.CupertinoSwitch
+import com.jeremy.lumi.ui.components.CupertinoActionSheet
+import com.jeremy.lumi.ui.components.CupertinoActionSheetButton
+import com.jeremy.lumi.ui.components.CupertinoActionSheetCancelButton
 
-// ── Modelo de dato para cada opción de tema ──────────────────────────────────
+// â”€â”€ Modelo de dato para cada opción de tema â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 private data class ThemeOption(
     val palette : AppThemePalette,
@@ -44,9 +49,14 @@ private data class ThemeOption(
     val darkBg  : Color   = Color(0xFF1A1A2E)
 )
 
-// ── Listas por grupo ──────────────────────────────────────────────────────────
+// â”€â”€ Listas por grupo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 private val clarasOptions = listOf(
+    ThemeOption(AppThemePalette.LUMI_SPARK, "Lumi Spark", LumiSparkPrimary),
+    ThemeOption(AppThemePalette.LUMI_OCEAN, "Lumi Océano", LumiOceanPrimary),
+    ThemeOption(AppThemePalette.LUMI_FOREST, "Lumi Bosque", LumiForestPrimary),
+    ThemeOption(AppThemePalette.LUMI_SUNSET, "Lumi Ocaso", LumiSunsetPrimary),
+    ThemeOption(AppThemePalette.LUMI_DUNE, "Lumi Duna", LumiDunePrimary),
     ThemeOption(AppThemePalette.LAVANDA,   "Lavanda",   LavandaPrimary),
     ThemeOption(AppThemePalette.CACTUS,    "Cactus",    CactusPrimary),
     ThemeOption(AppThemePalette.HORTENSIA, "Hortensia", HortensiaPrimary),
@@ -57,6 +67,11 @@ private val clarasOptions = listOf(
 )
 
 private val oscurasOptions = listOf(
+    ThemeOption(AppThemePalette.LUMI_SPARK_DARK, "Lumi Spark Oscuro", LumiSparkDarkPrimary, isDark = true, darkBg = Color(0xFF1A161C)),
+    ThemeOption(AppThemePalette.LUMI_OCEAN_DARK, "Lumi Océano Oscuro", LumiOceanDarkPrimary, isDark = true, darkBg = Color(0xFF070F1A)),
+    ThemeOption(AppThemePalette.LUMI_FOREST_DARK, "Lumi Bosque Oscuro", LumiForestDarkPrimary, isDark = true, darkBg = Color(0xFF08120D)),
+    ThemeOption(AppThemePalette.LUMI_SUNSET_DARK, "Lumi Ocaso Oscuro", LumiSunsetDarkPrimary, isDark = true, darkBg = Color(0xFF140805)),
+    ThemeOption(AppThemePalette.LUMI_DUNE_DARK, "Lumi Duna Oscura", LumiDuneDarkPrimary, isDark = true, darkBg = Color(0xFF120E08)),
     ThemeOption(AppThemePalette.MEDIANOCHE, "Medianoche", MedianochePrimary, isDark = true, darkBg = Color(0xFF13101F)),
     ThemeOption(AppThemePalette.COSMOS,     "Cosmos",     CosmosPrimary,     isDark = true, darkBg = Color(0xFF080E1C)),
     ThemeOption(AppThemePalette.CARBONO,    "Carbono",    CarbonoPrimary,    isDark = true, darkBg = Color(0xFF111111)),
@@ -80,7 +95,7 @@ private val minimalistasOptions = listOf(
     ThemeOption(AppThemePalette.CENIZA,  "Ceniza",  CenizaPrimary),
 )
 
-// ── Modelo de dato para cada preset de colores de fase ────────────────────────
+// â”€â”€ Modelo de dato para cada preset de colores de fase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 private data class PhasePaletteOption(
     val palette: PhaseColorPalette,
@@ -89,31 +104,36 @@ private data class PhasePaletteOption(
 
 private val phasePaletteOptions = listOf(
     PhasePaletteOption(PhaseColorPalette.DEFAULT,     "Original"),
+    PhasePaletteOption(PhaseColorPalette.OCEANO_GRADIENT, "Lumi Océano"),
+    PhasePaletteOption(PhaseColorPalette.BOSQUE_GRADIENT, "Lumi Bosque"),
+    PhasePaletteOption(PhaseColorPalette.OCASO_GRADIENT,  "Lumi Ocaso"),
+    PhasePaletteOption(PhaseColorPalette.DUNA_GRADIENT,   "Lumi Duna"),
     PhasePaletteOption(PhaseColorPalette.PASTEL,      "Pastel"),
     PhasePaletteOption(PhaseColorPalette.MINIMALISTA, "Minimalista"),
     PhasePaletteOption(PhaseColorPalette.VIVID,       "Vívido"),
     PhasePaletteOption(PhaseColorPalette.TIERRA,      "Tierra"),
-    PhasePaletteOption(PhaseColorPalette.OCEANO,      "Océano"),
+    PhasePaletteOption(PhaseColorPalette.OCEANO,      "Océano Frío"),
     PhasePaletteOption(PhaseColorPalette.MONOCROMO,   "Monocromo"),
 )
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  SETTINGS SCREEN
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
-    val currentTheme        by viewModel.currentTheme.collectAsState()
-    val currentPhasePalette by viewModel.currentPhasePalette.collectAsState()
-    val customPhaseColors   by viewModel.customPhaseColors.collectAsState()
+    val currentTheme        by viewModel.currentTheme.collectAsStateWithLifecycle()
+    val currentPhasePalette by viewModel.currentPhasePalette.collectAsStateWithLifecycle()
+    val customPhaseColors   by viewModel.customPhaseColors.collectAsStateWithLifecycle()
     val isDark = currentTheme.isDark()
-    val saveReminders by viewModel.saveRemindersInChat.collectAsState()
-    val userGoal by viewModel.userGoal.collectAsState()
-    val isPregnant by viewModel.isPregnant.collectAsState()
+    val saveReminders by viewModel.saveRemindersInChat.collectAsStateWithLifecycle()
+    val userGoal by viewModel.userGoal.collectAsStateWithLifecycle()
+    val isPregnant by viewModel.isPregnant.collectAsStateWithLifecycle()
 
-    val activePhaseColors = if (currentPhasePalette == PhaseColorPalette.CUSTOM && customPhaseColors != null) {
-        customPhaseColors!!
+    val customPhaseColorsVal = customPhaseColors
+    val activePhaseColors = if (currentPhasePalette == PhaseColorPalette.CUSTOM && customPhaseColorsVal != null) {
+        customPhaseColorsVal
     } else {
         currentPhasePalette.toPhaseColors(isDark)
     }
@@ -178,7 +198,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
         ) {
             Spacer(Modifier.height(8.dp))
 
-            // ── SALUD Y OBJETIVOS ───────────────────────────────────────────
+            // â”€â”€ SALUD Y OBJETIVOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             SettingsSectionTitle(stringResource(R.string.settings_health_goals))
             SettingsCard {
                 SettingsItem(
@@ -189,6 +209,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                         com.jeremy.lumi.domain.model.UserGoal.AVOID_PREGNANCY -> stringResource(R.string.settings_goal_avoid)
                         com.jeremy.lumi.domain.model.UserGoal.SEEK_PREGNANCY -> stringResource(R.string.settings_goal_seek)
                         com.jeremy.lumi.domain.model.UserGoal.HEALTH_MONITORING -> stringResource(R.string.settings_goal_health)
+                        else -> ""
                     },
                     onClick = { showGoalSheet = true }
                 )
@@ -208,7 +229,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                 )
             }
 
-            // ── APARIENCIA Y TEMA ───────────────────────────────────────────
+            // â”€â”€ APARIENCIA Y TEMA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             SettingsSectionTitle("Apariencia")
             SettingsCard {
                 SettingsItem(
@@ -226,7 +247,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                 )
             }
 
-            // ── CHAT Y RECORDATORIOS ────────────────────────────────────────
+            // â”€â”€ CHAT Y RECORDATORIOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             SettingsSectionTitle("Chat y Recordatorios")
             SettingsCard {
                 SettingsSwitchItem(
@@ -238,7 +259,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                 )
             }
 
-            // ── RESPALDO DE DATOS ───────────────────────────────────────────
+            // â”€â”€ RESPALDO DE DATOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             SettingsSectionTitle("Datos y Respaldo")
             SettingsCard {
                 SettingsItem(
@@ -256,7 +277,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                 )
             }
 
-            // ── PRIVACIDAD & PAREJA ──────────────────────────────────────────
+            // â”€â”€ PRIVACIDAD & PAREJA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             SettingsSectionTitle("Avanzado")
             SettingsCard {
                 SettingsItem(
@@ -274,8 +295,8 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                 )
             }
 
-            // ── ZONA DE PELIGRO ─────────────────────────────────────
-            SettingsSectionTitle("☠️ Zona de peligro")
+            // ——— ZONA DE PELIGRO ——————————————————————————————————————————————
+            SettingsSectionTitle("☠️ Zona de peligro")
             // Botón de borrar datos — sin envolver en SettingsCard para mayor énfasis visual
             OutlinedButton(
                 onClick  = { showResetDialog = true },
@@ -490,9 +511,9 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  Helpers UI
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun SettingsSectionTitle(title: String) {
@@ -544,13 +565,17 @@ private fun SettingsSwitchItem(icon: androidx.compose.ui.graphics.vector.ImageVe
             Text(title, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
             Text(subtitle, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.7f), maxLines = 1)
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange, colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary))
+        CupertinoSwitch(
+            checked = checked, 
+            onCheckedChange = onCheckedChange,
+            checkedTrackColor = MaterialTheme.colorScheme.primary
+        )
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  THEME CAROUSEL — etiqueta + LazyRow deslizable
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  THEME CAROUSEL â€” etiqueta + LazyRow deslizable
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun ThemeCarousel(
@@ -583,9 +608,9 @@ private fun ThemeCarousel(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  THEME SELECTOR — círculo + nombre
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  THEME SELECTOR â€” círculo + nombre
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun ThemeSelector(
@@ -634,9 +659,9 @@ private fun ThemeSelector(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  PHASE PALETTE CAROUSEL — cada opción es un mini-anillo de 4 cuartos de color
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  PHASE PALETTE CAROUSEL â€” cada opción es un mini-anillo de 4 cuartos de color
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun PhasePaletteCarousel(

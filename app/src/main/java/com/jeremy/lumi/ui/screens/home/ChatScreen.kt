@@ -1,6 +1,9 @@
 package com.jeremy.lumi.ui.screens.chat
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,10 +24,15 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,6 +42,8 @@ import com.jeremy.lumi.data.local.entity.ChatMessageEntity
 import com.jeremy.lumi.data.local.entity.ChatMessageType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.jeremy.lumi.ui.theme.LocalBrandGradient
+import com.jeremy.lumi.ui.theme.LocalBrandBackgroundGradient
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
@@ -41,9 +51,9 @@ import java.time.ZoneId
 import java.util.Date
 import java.util.Locale
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  CHAT SCREEN
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +62,7 @@ fun ChatScreen(
     onBack: (() -> Unit)? = null,
     viewModel: ChatViewModel = hiltViewModel()
 ) {
-    val allMessages by viewModel.messages.collectAsState()
+    val allMessages by viewModel.messages.collectAsStateWithLifecycle()
     
     var searchQuery by remember { mutableStateOf("") }
 
@@ -72,11 +82,20 @@ fun ChatScreen(
     
     LaunchedEffect(Unit) { viewModel.markAllAsRead() }
 
+
+
+    val brandBgGradient = LocalBrandBackgroundGradient.current
+    val containerModifier = if (brandBgGradient != null) {
+        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).background(brandBgGradient)
+    } else {
+        Modifier.fillMaxSize()
+    }
+
     Scaffold(
         topBar  = { LumiChatTopBar(thread = thread, onBack = onBack) },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = if (brandBgGradient != null) Color.Transparent else MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+        Column(modifier = containerModifier.padding(paddingValues)) {
             // Buscador
             OutlinedTextField(
                 value = searchQuery,
@@ -126,9 +145,9 @@ fun ChatScreen(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  TOP BAR — Avatar circular de Lumi con flor de loto o icono de campana
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  TOP BAR â€” Avatar circular de Lumi con flor de loto o icono de campana
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -155,6 +174,8 @@ private fun LumiChatTopBar(thread: String, onBack: (() -> Unit)?) {
         label         = "glow_alpha"
     )
 
+
+
     CenterAlignedTopAppBar(
         navigationIcon = {
             if (onBack != null) {
@@ -166,44 +187,61 @@ private fun LumiChatTopBar(thread: String, onBack: (() -> Unit)?) {
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
 
-                // ── Avatar con halo ──────────────────────────────────────────
-                Box(contentAlignment = Alignment.Center) {
-                    // Halo exterior
+                if (thread == "lumi") {
+                    // â”€â”€ Avatar con logo real de Lumi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                    Image(
+                        painter = painterResource(id = R.drawable.lumi_logo),
+                        contentDescription = "Avatar de Lumi",
+                        contentScale = ContentScale.Crop, // Esto lo corta en círculo puro
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .border(1.dp, Color(0xFFD8B4E2).copy(alpha = 0.5f), CircleShape) // Borde suave
+                    )
+                } else {
+                    // Avatar para Recordatorios
                     Box(
                         Modifier
-                            .size(44.dp)
-                            .scale(avatarScale)
+                            .size(38.dp)
                             .clip(CircleShape)
-                            .background(primary.copy(alpha = glowAlpha))
-                    )
-                    // Círculo principal con gradiente
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(
-                                Brush.radialGradient(listOf(primary, primary.copy(alpha = 0.7f)))
-                            ),
+                            .background(primary.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        // Ícono flor de loto provisional (AutoAwesome como proxy estético)
-                        Icon(
-                            imageVector  = iconVector,
-                            contentDescription = "Avatar",
-                            tint         = onPrimary,
-                            modifier     = Modifier.size(18.dp)
-                        )
+                        Icon(iconVector, contentDescription = null, tint = primary, modifier = Modifier.size(20.dp))
                     }
                 }
 
                 Spacer(Modifier.width(10.dp))
                 Column {
-                    Text(
-                        text       = titleText,
-                        fontWeight = FontWeight.Bold,
-                        fontSize   = 16.sp,
-                        color      = MaterialTheme.colorScheme.onBackground
-                    )
+                    if (thread == "lumi") {
+                        val brandGradient = LocalBrandGradient.current
+                        if (brandGradient != null) {
+                            Text(
+                                text       = titleText,
+                                fontWeight = FontWeight.Bold,
+                                fontSize   = 16.sp,
+                                style      = TextStyle(
+                                    brush = brandGradient,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize   = 16.sp
+                                )
+                            )
+                        } else {
+                            Text(
+                                text       = titleText,
+                                fontWeight = FontWeight.Bold,
+                                fontSize   = 16.sp,
+                                color      = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    } else {
+                        Text(
+                            text       = titleText,
+                            fontWeight = FontWeight.Bold,
+                            fontSize   = 16.sp,
+                            color      = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
                     Text(
                         text     = subtitleText,
                         fontSize = 11.sp,
@@ -213,14 +251,14 @@ private fun LumiChatTopBar(thread: String, onBack: (() -> Unit)?) {
             }
         },
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background
+            containerColor = Color.Transparent
         )
     )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  DAY LABEL — Óvalo animado con slide-up + fade-in
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun AnimatedDayLabel(label: String) {
@@ -274,9 +312,9 @@ private fun AnimatedDayLabel(label: String) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  CHAT BUBBLE ANIMADA — slide-up + fade-in por mensaje
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  CHAT BUBBLE ANIMADA â€” slide-up + fade-in por mensaje
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun AnimatedChatBubble(message: ChatMessageEntity) {
@@ -297,9 +335,9 @@ private fun AnimatedChatBubble(message: ChatMessageEntity) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  PREMIUM CHAT BUBBLE — tarjeta elevada con gradiente + ícono + seen glow
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  PREMIUM CHAT BUBBLE â€” tarjeta elevada con gradiente + ícono + seen glow
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun PremiumChatBubble(message: ChatMessageEntity) {
@@ -311,7 +349,7 @@ private fun PremiumChatBubble(message: ChatMessageEntity) {
         ChatMessageType.CUSTOM
     )
 
-    // ── Pulso del indicador "visto" ──────────────────────────────────────────
+    // â”€â”€ Pulso del indicador "visto" â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     val infiniteAnim  = rememberInfiniteTransition(label = "seen_pulse")
     val seenGlowAlpha by infiniteAnim.animateFloat(
         initialValue  = 0.25f,
@@ -330,7 +368,7 @@ private fun PremiumChatBubble(message: ChatMessageEntity) {
         modifier              = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Start
     ) {
-        // ── Burbuja estilo iOS: fondo sólido, esquinas muy redondeadas ───────
+        // â”€â”€ Burbuja estilo iOS: fondo sólido, esquinas muy redondeadas â”€â”€â”€â”€â”€â”€â”€
         Surface(
             modifier  = Modifier.widthIn(max = 300.dp),
             shape     = RoundedCornerShape(
@@ -345,7 +383,7 @@ private fun PremiumChatBubble(message: ChatMessageEntity) {
         ) {
             Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
 
-                // ── Etiqueta de tipo resaltado ────────────────────────────────
+                // â”€â”€ Etiqueta de tipo resaltado â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 if (isHighlighted) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -368,7 +406,7 @@ private fun PremiumChatBubble(message: ChatMessageEntity) {
                     }
                 }
 
-                // ── Ícono de Lumi + texto del mensaje ────────────────────────
+                // â”€â”€ Ícono de Lumi + texto del mensaje â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Row(verticalAlignment = Alignment.Top) {
                     Box(
                         modifier = Modifier
@@ -396,7 +434,7 @@ private fun PremiumChatBubble(message: ChatMessageEntity) {
 
                 Spacer(Modifier.height(6.dp))
 
-                // ── Timestamp + punto "visto" ────────────────────────────────
+                // â”€â”€ Timestamp + punto "visto" â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Row(
                     modifier              = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
@@ -421,9 +459,9 @@ private fun PremiumChatBubble(message: ChatMessageEntity) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  EMPTY STATE
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun EmptyChatState(modifier: Modifier = Modifier) {
@@ -450,9 +488,9 @@ private fun EmptyChatState(modifier: Modifier = Modifier) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  HELPERS
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 private fun chatTypeIcon(type: ChatMessageType): ImageVector = when (type) {
     ChatMessageType.PERIOD_SOON     -> Icons.Rounded.WaterDrop
@@ -462,7 +500,8 @@ private fun chatTypeIcon(type: ChatMessageType): ImageVector = when (type) {
     ChatMessageType.LOG_DAILY       -> Icons.Rounded.EditNote
     ChatMessageType.CUSTOM          -> Icons.Rounded.NotificationsActive
     ChatMessageType.GREETING,
-    ChatMessageType.EDUCATIONAL     -> Icons.Rounded.AutoAwesome
+    ChatMessageType.EDUCATIONAL,
+    ChatMessageType.INSIGHT         -> Icons.Rounded.AutoAwesome
 }
 
 private fun chatTypeLabelRes(type: ChatMessageType): Int? = when (type) {

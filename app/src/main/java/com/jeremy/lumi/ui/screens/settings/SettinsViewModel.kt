@@ -62,7 +62,7 @@ class SettingsViewModel @Inject constructor(
         .stateIn(
             scope        = viewModelScope,
             started      = SharingStarted.WhileSubscribed(5000),
-            initialValue = AppThemePalette.CACTUS
+            initialValue = AppThemePalette.LUMI_SPARK_DARK
         )
 
     fun changeTheme(newTheme: AppThemePalette) {

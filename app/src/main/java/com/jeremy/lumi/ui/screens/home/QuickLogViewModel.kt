@@ -14,6 +14,8 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import javax.inject.Inject
 
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import com.jeremy.lumi.data.preferences.OnboardingPreferenceManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -29,12 +31,10 @@ class QuickLogViewModel @Inject constructor(
     private val prefsManager: OnboardingPreferenceManager
 ) : ViewModel() {
 
-    private val todayMidnightMillis: Long = Calendar.getInstance().apply {
-        set(Calendar.HOUR_OF_DAY, 0)
-        set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0)
-        set(Calendar.MILLISECOND, 0)
-    }.timeInMillis
+    private val todayMidnightMillis: Long = java.time.LocalDate.now()
+        .atStartOfDay(java.time.ZoneId.of("UTC"))
+        .toInstant()
+        .toEpochMilli()
 
     val todayDayOfMonth: Int = Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
     /** Month value 1–12 (Calendar.MONTH es 0-based, lo corregimos aquí). */
@@ -43,6 +43,14 @@ class QuickLogViewModel @Inject constructor(
 
     private val _todayLog = MutableStateFlow<DailyLogWithSymptoms?>(null)
     val todayLog: StateFlow<DailyLogWithSymptoms?> = _todayLog.asStateFlow()
+
+    sealed class UiEvent {
+        object LogSaved : UiEvent()
+        data class ShowSnackbar(val message: String) : UiEvent()
+    }
+
+    private val _uiEvent = MutableSharedFlow<UiEvent>()
+    val uiEvent = _uiEvent.asSharedFlow()
 
     val activeCategories: StateFlow<Set<String>> = prefsManager.activeLogCategoriesFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), setOf("physical", "digestive", "mucus", "intercourse"))
@@ -71,32 +79,37 @@ class QuickLogViewModel @Inject constructor(
         showIntercourseOnCalendar: Boolean
     ) {
         viewModelScope.launch {
-            val activeCycle = repository.getCurrentActiveCycle()
-            val cycleId = activeCycle?.id ?: 0
-            val existingId = _todayLog.value?.dailyLog?.id ?: 0
+            try {
+                val activeCycle = repository.getCurrentActiveCycle()
+                val cycleId = activeCycle?.id ?: 0
+                val existingId = _todayLog.value?.dailyLog?.id ?: 0
 
-            val dailyLog = DailyLogEntity(
-                id = existingId,
-                cycleId = cycleId,
-                date = todayMidnightMillis,
-                flowIntensity = flow,
-                painLevel = painLevel,
-                mood = mood,
-                cervicalMucus = cervicalMucus,
-                notes = notes.takeIf { it.isNotBlank() },
-                hadIntercourse = hadIntercourse,
-                protectionUsed = if (hadIntercourse) protectionUsed else null,
-                contraceptionMethod = if (hadIntercourse) contraceptionMethod else null,
-                intercourseNotes = if (hadIntercourse) intercourseNotes else null,
-                showIntercourseOnCalendar = showIntercourseOnCalendar
-            )
+                val dailyLog = DailyLogEntity(
+                    id = existingId,
+                    cycleId = cycleId,
+                    date = todayMidnightMillis,
+                    flowIntensity = flow,
+                    painLevel = painLevel,
+                    mood = mood,
+                    cervicalMucus = cervicalMucus,
+                    notes = notes.takeIf { it.isNotBlank() },
+                    hadIntercourse = hadIntercourse,
+                    protectionUsed = if (hadIntercourse) protectionUsed else null,
+                    contraceptionMethod = if (hadIntercourse) contraceptionMethod else null,
+                    intercourseNotes = if (hadIntercourse) intercourseNotes else null,
+                    showIntercourseOnCalendar = showIntercourseOnCalendar
+                )
 
-            val symptoms = selectedSymptoms.map { symptomName ->
-                SymptomEntity(dailyLogId = 0, name = symptomName, intensity = painLevel)
+                val symptoms = selectedSymptoms.map { symptomName ->
+                    SymptomEntity(dailyLogId = 0, name = symptomName, intensity = painLevel)
+                }
+
+                repository.saveDailyLogWithSymptoms(dailyLog, symptoms)
+                _todayLog.value = repository.getDailyLog(todayMidnightMillis)
+                _uiEvent.emit(UiEvent.LogSaved)
+            } catch (e: Exception) {
+                _uiEvent.emit(UiEvent.ShowSnackbar("Error al guardar: ${e.message}"))
             }
-
-            repository.saveDailyLogWithSymptoms(dailyLog, symptoms)
-            _todayLog.value = repository.getDailyLog(todayMidnightMillis)
         }
     }
 }

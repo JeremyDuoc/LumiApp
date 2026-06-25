@@ -44,5 +44,6 @@ enum class ChatMessageType {
     METHOD_REMINDER,   // pastilla/parche/anillo/inyección
     LOG_DAILY,         // recordatorio de registro diario
     CUSTOM,            // recordatorio personalizado de la usuaria
-    EDUCATIONAL        // dato/tip educativo (futuro — no se construye aún)
+    EDUCATIONAL,       // dato/tip educativo
+    INSIGHT            // patrón detectado por el motor de correlación
 }

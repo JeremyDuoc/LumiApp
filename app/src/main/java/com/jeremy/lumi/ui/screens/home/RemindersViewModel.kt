@@ -40,8 +40,25 @@ class RemindersViewModel @Inject constructor(
                 val baseDate = java.time.Instant.ofEpochMilli(methodStartDate)
                     .atZone(java.time.ZoneId.systemDefault())
                     .toLocalDate()
-                val targetDate = baseDate.plusDays(type.defaultRepeatIntervalDays() ?: 0L)
-                AlarmScheduler.computeNextTrigger(type, hourOfDay, minute, targetDate)
+                val intervalDays = type.defaultRepeatIntervalDays() ?: 0L
+                val today = java.time.LocalDate.now()
+                val targetDate = if (intervalDays > 0) {
+                    val daysPassed = java.time.temporal.ChronoUnit.DAYS.between(baseDate, today)
+                    if (daysPassed > 0) {
+                        val cyclesPassed = daysPassed / intervalDays
+                        baseDate.plusDays((cyclesPassed + 1) * intervalDays)
+                    } else {
+                        baseDate.plusDays(intervalDays)
+                    }
+                } else {
+                    baseDate
+                }
+                var trigger = AlarmScheduler.computeNextTrigger(type, hourOfDay, minute, targetDate)
+                if (trigger <= System.currentTimeMillis() && intervalDays > 0) {
+                    val nextTarget = targetDate.plusDays(intervalDays)
+                    trigger = AlarmScheduler.computeNextTrigger(type, hourOfDay, minute, nextTarget)
+                }
+                trigger
             } else if (type.isAutomatic() && type != ReminderType.LOG_DAILY) {
                 // PERIOD_SOON, OVULATION_SOON y SUPPLY_REMINDER dependen del ciclo.
                 // Los mandamos al "futuro lejano" al crearse. En cuanto el ciclo

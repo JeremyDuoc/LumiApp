@@ -18,12 +18,15 @@ class LumiRepositoryImpl(
     }
 
     override suspend fun startNewCycle(startDate: Long, cycleLength: Int, periodLength: Int) {
-        val dayMs = 86_400_000L
+        // FIX: Reemplazar suma fija de ms (falla en Daylight Saving Time) por java.time
+        val zone = java.time.ZoneId.systemDefault()
+        val startLocalDate = java.time.Instant.ofEpochMilli(startDate).atZone(zone).toLocalDate()
 
         // La ovulación se predice como: fin_esperado - fase_lútea_estándar (14 días)
-        // El predictor histórico refinará esto cuando tenga ≥3 ciclos cerrados.
-        val expectedEnd   = startDate + (cycleLength * dayMs)
-        val ovulationDate = expectedEnd - (14 * dayMs)
+        val expectedEnd = startLocalDate.plusDays(cycleLength.toLong())
+        val ovulationLocalDate = expectedEnd.minusDays(14)
+        
+        val ovulationDate = ovulationLocalDate.atStartOfDay(zone).toInstant().toEpochMilli()
 
         dao.insertCycle(
             CycleEntity(

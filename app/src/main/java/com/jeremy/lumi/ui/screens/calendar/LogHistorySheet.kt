@@ -1,4 +1,6 @@
-package com.jeremy.lumi.ui.screens.calendar
+﻿package com.jeremy.lumi.ui.screens.calendar
+
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -31,8 +33,8 @@ fun LogHistorySheet(
     viewModel: LogHistoryViewModel = hiltViewModel()
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val logs by viewModel.logs.collectAsState()
-    val descending by viewModel.descending.collectAsState()
+    val logs by viewModel.logs.collectAsStateWithLifecycle()
+    val descending by viewModel.descending.collectAsStateWithLifecycle()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,

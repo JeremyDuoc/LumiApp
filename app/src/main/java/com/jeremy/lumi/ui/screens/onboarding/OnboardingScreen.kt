@@ -1,7 +1,10 @@
 package com.jeremy.lumi.ui.screens.onboarding
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,6 +25,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -43,16 +49,16 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.abs
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  ONBOARDING SCREEN
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 fun OnboardingScreen(
     viewModel  : OnboardingViewModel = hiltViewModel(),
     onComplete : () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scope   = rememberCoroutineScope()
 
     Box(
@@ -62,7 +68,7 @@ fun OnboardingScreen(
     ) {
         Column(Modifier.fillMaxSize()) {
 
-            // ── Indicador de progreso (oculto en página de celebración) ────────────────
+            // â”€â”€ Indicador de progreso (oculto en página de celebración) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             if (uiState.currentPage < 6) {
                 Spacer(Modifier.height(52.dp))
                 PageIndicator(
@@ -75,7 +81,7 @@ fun OnboardingScreen(
                 Spacer(Modifier.height(52.dp))
             }
 
-            // ── Contenido de la página activa ────────────────────────────────
+            // â”€â”€ Contenido de la página activa â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             AnimatedContent(
                 targetState  = uiState.currentPage,
                 transitionSpec = {
@@ -87,7 +93,10 @@ fun OnboardingScreen(
                 label        = "onboarding_page"
             ) { page ->
                 when (page) {
-                    0 -> PageWelcome()
+                    0 -> PageWelcome(
+                        onTrackCycleClick = { viewModel.nextPage() },
+                        onObserverClick   = { viewModel.completeObserverOnboarding(onComplete) }
+                    )
                     1 -> PageName(
                         name     = uiState.data.userName ?: "",
                         onChange = { viewModel.setUserName(it) }
@@ -97,8 +106,9 @@ fun OnboardingScreen(
                         onChange  = { viewModel.setRegularity(it) }
                     )
                     3 -> PageCycleLength(
-                        days     = uiState.data.cycleLength,
-                        onChange = { viewModel.setCycleLength(it) }
+                        days      = uiState.data.cycleLength,
+                        isRegular = uiState.data.isRegular,
+                        onChange  = { viewModel.setCycleLength(it) }
                     )
                     4 -> PageLastPeriod(
                         selectedDate    = uiState.data.lastPeriodDate,
@@ -121,16 +131,15 @@ fun OnboardingScreen(
                 }
             }
 
-            // ── Botonera inferior (oculta en página de celebración) ────────────
-            if (uiState.currentPage < 6) {
+            if (uiState.currentPage in 1..5) {
                 BottomNavButtons(
                     currentPage  = uiState.currentPage,
                     isCompleting = uiState.isCompleting,
-                    isNextEnabled = if (uiState.currentPage == 2 && uiState.data.isRegular == null) false else true,
+                    isNextEnabled = uiState.isNextEnabled,
                     onBack       = { viewModel.prevPage() },
                     onNext       = {
                         if (uiState.currentPage < 5) viewModel.nextPage()
-                        else viewModel.nextPage() // 5 → 6 (celebración)
+                        else viewModel.nextPage() // 5 â†’ 6 (celebración)
                     },
                     onSkip       = { viewModel.nextPage() }
                 )
@@ -140,9 +149,9 @@ fun OnboardingScreen(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  INDICADOR DE PÁGINAS — dots animados estilo iOS
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  INDICADOR DE PÁGINAS â€” dots animados estilo iOS
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun PageIndicator(totalPages: Int, currentPage: Int, modifier: Modifier = Modifier) {
@@ -172,9 +181,9 @@ private fun PageIndicator(totalPages: Int, currentPage: Int, modifier: Modifier 
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  BOTONERA INFERIOR
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun BottomNavButtons(
@@ -244,12 +253,15 @@ private fun BottomNavButtons(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  PÁGINA 0 — BIENVENIDA
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  PÁGINA 0 â€” BIENVENIDA
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
-private fun PageWelcome() {
+private fun PageWelcome(
+    onTrackCycleClick: () -> Unit,
+    onObserverClick: () -> Unit
+) {
     val primary   = MaterialTheme.colorScheme.primary
     val secondary = MaterialTheme.colorScheme.secondary
 
@@ -285,32 +297,21 @@ private fun PageWelcome() {
         verticalArrangement = Arrangement.Center
     ) {
         // Logo animado
-        Box(
-            Modifier
+        Image(
+            painter = painterResource(id = R.drawable.lumi_logo),
+            contentDescription = "Lumi logo",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
                 .size(120.dp)
                 .scale(scale1.value)
                 .alpha(alpha1.value)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        listOf(primary, secondary.copy(alpha = 0.7f))
-                    )
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector        = Icons.Rounded.AutoAwesome,
-                contentDescription = "Lumi logo",
-                tint               = Color.White,
-                modifier           = Modifier.size(56.dp)
-            )
-        }
+        )
 
         Spacer(Modifier.height(36.dp))
 
         // Título
         Text(
-            text       = "Bienvenida a Lumi",
+            text       = "¿Qué te trae a Lumi?",
             fontSize   = 28.sp,
             fontWeight = FontWeight.Bold,
             textAlign  = TextAlign.Center,
@@ -324,7 +325,7 @@ private fun PageWelcome() {
 
         // Tagline
         Text(
-            text      = "Tu ciclo, tu privacidad, tu control.",
+            text      = "Elige cómo quieres empezar tu experiencia.",
             fontSize  = 16.sp,
             textAlign = TextAlign.Center,
             color     = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
@@ -334,34 +335,95 @@ private fun PageWelcome() {
                 .graphicsLayer { translationY = offset3.value.dp.toPx() }
         )
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(48.dp))
 
-        // Nota de privacidad
-        Box(
-            Modifier
+        // Botones de selección
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
                 .alpha(alpha3.value)
-                .graphicsLayer { translationY = offset3.value.dp.toPx() }
-                .clip(RoundedCornerShape(14.dp))
-                .background(primary.copy(alpha = 0.08f))
-                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .graphicsLayer { translationY = offset3.value.dp.toPx() },
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Security, null, Modifier.size(15.dp), primary)
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text      = "Todo guardado en tu teléfono. Nunca en la nube.",
-                    fontSize  = 12.sp,
-                    color     = primary,
-                    lineHeight = 18.sp
-                )
+            // Opción 1: Track Cycle
+            Surface(
+                onClick = onTrackCycleClick,
+                shape = RoundedCornerShape(20.dp),
+                color = primary,
+                modifier = Modifier.fillMaxWidth().height(80.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Rounded.CalendarMonth, contentDescription = null, tint = Color.White)
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = "Seguimiento de mi ciclo",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
+                            color = Color.White
+                        )
+                        Text(
+                            text = "Aprende más sobre tu cuerpo.",
+                            fontSize = 13.sp,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                    }
+                }
+            }
+
+            // Opción 2: Observer
+            Surface(
+                onClick = onObserverClick,
+                shape = RoundedCornerShape(20.dp),
+                color = primary.copy(alpha = 0.08f),
+                border = BorderStroke(1.dp, primary.copy(alpha = 0.15f)),
+                modifier = Modifier.fillMaxWidth().height(80.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(primary.copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Rounded.People, contentDescription = null, tint = primary)
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = "Acompañar a alguien",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                            text = "Ingresar código de vínculo.",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                        )
+                    }
+                }
             }
         }
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  PÁGINA 1 — NOMBRE
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  PÁGINA 1 â€” NOMBRE
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun PageName(name: String, onChange: (String) -> Unit) {
@@ -393,9 +455,9 @@ private fun PageName(name: String, onChange: (String) -> Unit) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  PÁGINA 2 — REGULARIDAD
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  PÁGINA 2 â€” REGULARIDAD
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun PageRegularity(isRegular: Boolean?, onChange: (Boolean?) -> Unit) {
@@ -423,9 +485,9 @@ private fun PageRegularity(isRegular: Boolean?, onChange: (Boolean?) -> Unit) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  PÁGINA 4 — FECHA DE ÚLTIMA REGLA (Wheel picker)
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun PageLastPeriod(selectedDate: Long, lastPeriodKnown: Boolean, onDatePicked: (Boolean, Long?) -> Unit) {
@@ -438,7 +500,7 @@ private fun PageLastPeriod(selectedDate: Long, lastPeriodKnown: Boolean, onDateP
         if (selectedDate == 0L) 0
         else {
             val selected = Instant.ofEpochMilli(selectedDate)
-                .atZone(ZoneId.systemDefault()).toLocalDate()
+                .atZone(ZoneId.of("UTC")).toLocalDate()
             dates.indexOfFirst { it == selected }.coerceAtLeast(0)
         }
     }
@@ -466,7 +528,7 @@ private fun PageLastPeriod(selectedDate: Long, lastPeriodKnown: Boolean, onDateP
             }
             Spacer(Modifier.height(24.dp))
             TextButton(
-                onClick = { onDatePicked(true, today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()) },
+                onClick = { onDatePicked(true, today.atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()) },
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 Text("Ingresar una fecha")
@@ -476,7 +538,7 @@ private fun PageLastPeriod(selectedDate: Long, lastPeriodKnown: Boolean, onDateP
                 dates        = dates,
                 initialIndex = initialIndex,
                 onDateSelected = { date ->
-                    val millis = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    val millis = date.atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
                     onDatePicked(true, millis)
                 }
             )
@@ -499,9 +561,9 @@ private fun PageLastPeriod(selectedDate: Long, lastPeriodKnown: Boolean, onDateP
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  WHEEL DATE PICKER — LazyColumn con snap y efecto de escala central
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  WHEEL DATE PICKER â€” LazyColumn con snap y efecto de escala central
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun DateWheelPicker(
@@ -588,16 +650,17 @@ private fun DateWheelPicker(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  PÁGINA 3 — DURACIÓN DEL CICLO
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
-private fun PageCycleLength(days: Int, onChange: (Int) -> Unit) {
+private fun PageCycleLength(days: Int, isRegular: Boolean?, onChange: (Int) -> Unit) {
     PageShell(
         icon     = Icons.Rounded.Loop,
         title    = "¿Cuánto dura tu ciclo?",
-        subtitle = "Desde el primer día de tu regla hasta el día antes de la siguiente."
+        subtitle = if (isRegular == false) "Ya que eres irregular, usaremos un promedio inicial para aprender."
+                   else "Desde el primer día de tu regla hasta el día antes de la siguiente."
     ) {
         // Valor grande central
         Text(
@@ -614,7 +677,7 @@ private fun PageCycleLength(days: Int, onChange: (Int) -> Unit) {
         val label = when {
             days < 24 -> "Ciclo corto"
             days > 35 -> "Ciclo largo"
-            else      -> "Ciclo típico ✓"
+            else      -> "Ciclo típico âœ“"
         }
         Text(
             text     = label,
@@ -649,7 +712,7 @@ private fun PageCycleLength(days: Int, onChange: (Int) -> Unit) {
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             Text(
-                "No lo sé — usar 28 días",
+                "No lo sé â€” usar 28 días",
                 fontSize = 13.sp,
                 color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
             )
@@ -657,9 +720,9 @@ private fun PageCycleLength(days: Int, onChange: (Int) -> Unit) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  PÁGINA 4 — DURACIÓN DEL PERIODO + OBJETIVO
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun PagePeriodAndGoal(
@@ -673,7 +736,7 @@ private fun PagePeriodAndGoal(
         title    = "Últimos detalles",
         subtitle = "Casi lista. Solo dos cosas más."
     ) {
-        // ── Duración del periodo ─────────────────────────────────────────────
+        // â”€â”€ Duración del periodo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         Text(
             "Duración de tu regla",
             fontSize   = 14.sp,
@@ -706,7 +769,7 @@ private fun PagePeriodAndGoal(
         HorizontalDivider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f))
         Spacer(Modifier.height(20.dp))
 
-        // ── Objetivo ─────────────────────────────────────────────────────────
+        // â”€â”€ Objetivo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         Text(
             "¿Para qué usarás Lumi?",
             fontSize   = 14.sp,
@@ -795,9 +858,9 @@ private fun GoalChip(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  PAGE SHELL — estructura común a las páginas 1-4
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  PAGE SHELL â€” estructura común a las páginas 1-4
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun PageShell(
@@ -857,9 +920,9 @@ private fun PageShell(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  PÁGINA 5 — CELEBRACIÓN "¡Todo listo!"
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun PageCelebration(
@@ -914,19 +977,15 @@ private fun PageCelebration(
         verticalArrangement = Arrangement.Center
     ) {
         // Icono animado con pulso
-        Box(
-            Modifier
+        Image(
+            painter = painterResource(id = R.drawable.lumi_logo),
+            contentDescription = "Lumi logo",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
                 .size(120.dp)
                 .scale(scaleLogo.value * pulse.value)
                 .alpha(alphaLogo.value)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(listOf(primary, secondary.copy(alpha = 0.6f)))
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("✨", fontSize = 52.sp)
-        }
+        )
 
         Spacer(Modifier.height(36.dp))
 
@@ -992,3 +1051,4 @@ private fun PageCelebration(
         }
     }
 }
+

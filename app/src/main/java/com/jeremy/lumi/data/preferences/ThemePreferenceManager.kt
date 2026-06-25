@@ -27,7 +27,8 @@ class ThemePreferenceManager @Inject constructor(
     companion object {
         private val THEME_KEY = stringPreferencesKey("selected_theme")
         // Paleta por defecto si nunca se ha guardado nada
-        private val DEFAULT_THEME = AppThemePalette.CACTUS
+        private val DEFAULT_THEME = AppThemePalette.LUMI_SPARK_DARK
+
 
         // ── Colores de fase ────────────────────────────────────────────────
         private val PHASE_PALETTE_KEY = stringPreferencesKey("phase_color_palette")

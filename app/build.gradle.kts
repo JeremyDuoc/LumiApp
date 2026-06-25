@@ -35,6 +35,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -47,6 +48,7 @@ android {
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
@@ -93,4 +95,23 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-messaging-ktx")
     implementation("com.google.firebase:firebase-analytics-ktx")
+
+    // 8. ZXing (Códigos QR)
+    implementation("com.google.zxing:core:3.5.3")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+
+    // 9. WheelPicker (Estilo iOS para fechas/horas)
+    implementation("com.github.commandiron:WheelPickerCompose:1.1.11")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+
+    // 10. MotionLayout y ConstraintLayout para Compose
+    implementation("androidx.constraintlayout:constraintlayout-compose:1.1.0")
+
+    // 11. Heart Switch (Modo Pareja/Intimidad)
+    implementation("com.github.popovanton0:heart-switch:1.6.0")
+
+    // 12. UI Premium (Lottie, Coil, Shimmer)
+    implementation("com.airbnb.android:lottie-compose:6.4.0")
+    implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("com.valentinilk.shimmer:compose-shimmer:1.3.0")
 }

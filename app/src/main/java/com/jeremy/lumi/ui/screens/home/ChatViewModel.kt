@@ -61,7 +61,7 @@ class ChatViewModel @Inject constructor(
 
                 if (activeCycle != null) {
                     val startDate = Instant.ofEpochMilli(activeCycle.startDate)
-                        .atZone(ZoneId.systemDefault()).toLocalDate()
+                        .atZone(ZoneId.of("UTC")).toLocalDate()
 
                     val cycleLen = if (closedCycles.size >= 3) {
                         CyclePredictor.weightedAverageCycleLength(closedCycles).toInt().coerceIn(15, 60)
@@ -111,7 +111,7 @@ class ChatViewModel @Inject constructor(
                             chatDao.insertMessage(
                                 ChatMessageEntity(
                                     text = patternMsg,
-                                    messageType = ChatMessageType.SYSTEM,
+                                    messageType = ChatMessageType.INSIGHT,
                                     timestamp = System.currentTimeMillis() + 1000 // 1 segundo después
                                 )
                             )

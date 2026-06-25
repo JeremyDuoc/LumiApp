@@ -20,7 +20,13 @@ data class OnboardingUiState(
     val currentPage  : Int           = 0,    // 0-6 (6 = pantalla de celebración)
     val data         : OnboardingData = OnboardingData(),
     val isCompleting : Boolean        = false // true mientras se guardan los datos
-)
+) {
+    val isNextEnabled: Boolean
+        get() = when (currentPage) {
+            2 -> data.isRegular != null
+            else -> true
+        }
+}
 
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
@@ -35,20 +41,14 @@ class OnboardingViewModel @Inject constructor(
 
     fun nextPage() {
         _uiState.update {
-            var next = it.currentPage + 1
-            if (it.currentPage == 2 && it.data.isRegular != true) {
-                next = 4
-            }
+            val next = it.currentPage + 1
             it.copy(currentPage = next.coerceAtMost(6))
         }
     }
 
     fun prevPage() {
         _uiState.update {
-            var prev = it.currentPage - 1
-            if (it.currentPage == 4 && it.data.isRegular != true) {
-                prev = 2
-            }
+            val prev = it.currentPage - 1
             it.copy(currentPage = prev.coerceAtLeast(0))
         }
     }
@@ -116,6 +116,22 @@ class OnboardingViewModel @Inject constructor(
                 )
             }
 
+            _uiState.update { it.copy(isCompleting = false) }
+            onDone()
+        }
+    }
+
+    fun completeObserverOnboarding(onDone: () -> Unit) {
+        _uiState.update { it.copy(isCompleting = true) }
+        viewModelScope.launch {
+            prefs.saveOnboardingProfile(
+                userName = _uiState.value.data.userName,
+                isRegular = null,
+                cycleLength = 28,
+                periodLength = 5,
+                goal = UserGoal.TRACK_CYCLE,
+                isObserver = true
+            )
             _uiState.update { it.copy(isCompleting = false) }
             onDone()
         }

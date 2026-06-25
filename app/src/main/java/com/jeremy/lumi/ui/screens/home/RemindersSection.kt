@@ -12,6 +12,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import java.time.LocalTime
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,7 +46,7 @@ import java.util.Locale
 
 @Composable
 fun RemindersSection(viewModel: RemindersViewModel = hiltViewModel()) {
-    val reminders    by viewModel.activeReminders.collectAsState()
+    val reminders    by viewModel.activeReminders.collectAsStateWithLifecycle()
     var showAddSheet by remember { mutableStateOf(false) }
     val context      = LocalContext.current
 
@@ -56,7 +58,7 @@ fun RemindersSection(viewModel: RemindersViewModel = hiltViewModel()) {
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
 
-            // ── Cabecera ──────────────────────────────────────────────────────
+            // â”€â”€ Cabecera â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Row(
                 modifier              = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -71,7 +73,7 @@ fun RemindersSection(viewModel: RemindersViewModel = hiltViewModel()) {
                 }
             }
 
-            // ── Lista de recordatorios activos ────────────────────────────────
+            // â”€â”€ Lista de recordatorios activos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             if (reminders.isEmpty()) {
                 Spacer(Modifier.height(8.dp))
                 Text(stringResource(R.string.reminder_empty_hint),
@@ -90,7 +92,7 @@ fun RemindersSection(viewModel: RemindersViewModel = hiltViewModel()) {
         }
     }
 
-    // ── Sheet para añadir recordatorios (Multi-select) ───────────────────────
+    // â”€â”€ Sheet para añadir recordatorios (Multi-select) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (showAddSheet) {
         AddReminderSheet(
             onDismiss = { showAddSheet = false },
@@ -123,9 +125,9 @@ fun RemindersSection(viewModel: RemindersViewModel = hiltViewModel()) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  REMINDER ROW
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun ReminderRow(reminder: ReminderEntity, onCancel: () -> Unit) {
@@ -168,7 +170,7 @@ private fun ReminderRow(reminder: ReminderEntity, onCancel: () -> Unit) {
                 
                 val supplyText = reminder.supplyType?.let { stringResource(supplyTypeLabelRes(it)) }
                 val timeWithDate = if (dateLabel != null) "$dateLabel, $timeLabel" else timeLabel
-                val subText = if (supplyText != null) "$timeWithDate • $supplyText" else timeWithDate
+                val subText = if (supplyText != null) "$timeWithDate â€¢ $supplyText" else timeWithDate
                 
                 Text(subText, fontSize = 12.sp, fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.primary)
@@ -190,9 +192,9 @@ private fun supplyTypeLabelRes(type: SupplyType): Int = when (type) {
     SupplyType.OTHER -> R.string.supply_other
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  STATE CLASS FOR MULTI-SELECT
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class ReminderDraftState(val type: ReminderType) {
     var enabled by mutableStateOf(false)
@@ -206,9 +208,9 @@ class ReminderDraftState(val type: ReminderType) {
     var useCustomDate by mutableStateOf(type == ReminderType.CUSTOM)
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  ADD REMINDER SHEET
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -260,7 +262,7 @@ private fun AddReminderSheet(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // ── Sección: recordatorios de ciclo ──────────────────────────
+                // â”€â”€ Sección: recordatorios de ciclo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 SectionGroupLabel(stringResource(R.string.reminder_group_cycle))
                 automaticTypes.forEach { type ->
                     ReminderTypeSwitchRow(drafts[type]!!, simpleTimeTypes, context)
@@ -268,7 +270,7 @@ private fun AddReminderSheet(
 
                 Spacer(Modifier.height(8.dp))
 
-                // ── Sección: métodos anticonceptivos ─────────────────────────
+                // â”€â”€ Sección: métodos anticonceptivos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 SectionGroupLabel(stringResource(R.string.reminder_group_contraception))
                 (simpleTimeTypes + methodTypes).forEach { type ->
                     ReminderTypeSwitchRow(drafts[type]!!, simpleTimeTypes, context)
@@ -276,7 +278,7 @@ private fun AddReminderSheet(
 
                 Spacer(Modifier.height(8.dp))
 
-                // ── Sección: recordatorio libre ──────────────────────────────
+                // â”€â”€ Sección: recordatorio libre â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 SectionGroupLabel(stringResource(R.string.reminder_group_freeform))
                 freeformTypes.forEach { type ->
                     ReminderTypeSwitchRow(drafts[type]!!, simpleTimeTypes, context)
@@ -312,9 +314,9 @@ private fun AddReminderSheet(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  INDIVIDUAL SWITCH ROW AND CONFIGURATION
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun ReminderTypeSwitchRow(
@@ -439,15 +441,9 @@ private fun ReminderTypeSwitchRow(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TimePickerButton(hour: Int, minute: Int, onTimeChange: (Int, Int) -> Unit) {
     var showTimePicker by remember { mutableStateOf(false) }
-    val timePickerState = rememberTimePickerState(
-        initialHour = hour,
-        initialMinute = minute,
-        is24Hour = true
-    )
 
     Text(stringResource(R.string.reminder_pick_time),
         fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
@@ -464,30 +460,20 @@ private fun TimePickerButton(hour: Int, minute: Int, onTimeChange: (Int, Int) ->
     }
 
     if (showTimePicker) {
-        LumiTimePickerDialog(
+        LumiWheelTimePickerDialog(
+            initialTime = LocalTime.of(hour, minute),
             onDismissRequest = { showTimePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    onTimeChange(timePickerState.hour, timePickerState.minute)
-                    showTimePicker = false
-                }) {
-                    Text(stringResource(android.R.string.ok))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) {
-                    Text(stringResource(android.R.string.cancel))
-                }
+            onConfirm = { selectedTime ->
+                onTimeChange(selectedTime.hour, selectedTime.minute)
+                showTimePicker = false
             }
-        ) {
-            TimePicker(state = timePickerState)
-        }
+        )
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  SUPPLY SELECTOR — elegir qué método usa habitualmente (tampón/copa/etc.)
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  SUPPLY SELECTOR â€” elegir qué método usa habitualmente (tampón/copa/etc.)
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun SupplySelector(
@@ -542,9 +528,9 @@ private fun SupplyChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  COMPONENTES AUXILIARES
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun SectionGroupLabel(text: String) {
@@ -553,9 +539,9 @@ private fun SectionGroupLabel(text: String) {
         modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  MAPEOS DE RECURSOS POR TIPO
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 private fun reminderTypeLabelRes(type: ReminderType): Int = when (type) {
     ReminderType.PERIOD_SOON          -> R.string.reminder_period_soon
@@ -596,9 +582,9 @@ private fun reminderTypeIcon(type: ReminderType): ImageVector = when (type) {
     ReminderType.CUSTOM               -> Icons.Rounded.EditCalendar
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  PERMISO ALARMA EXACTA (Android 12+)
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 private fun ensureExactAlarmPermission(context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
