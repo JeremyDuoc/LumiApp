@@ -42,7 +42,7 @@
         <!-- Servicio de Firebase Cloud Messaging -->
         <service
             android:name=".notification.FcmService"
-            android:exported="true">
+            android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
@@ -76,6 +76,17 @@
                 <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
             </intent-filter>
         </activity>
+
+        <receiver
+            android:name="com.jeremy.lumi.ui.widget.LumiWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/lumi_widget_info" />
+        </receiver>
     </application>
 
 </manifest>

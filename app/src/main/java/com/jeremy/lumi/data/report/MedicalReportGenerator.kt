@@ -136,7 +136,7 @@ class MedicalReportGenerator @Inject constructor() {
         data.userHeightCm?.let { h ->
             data.userWeightKg?.let { w ->
                 val bmi = w / ((h / 100) * (h / 100))
-                items += "Talla / Peso" to "${h.toInt()} cm · ${w.toInt()} kg · IMC ${String.format("%.1f", bmi)}"
+                items += "Talla / Peso" to "${h.toInt()} cm · ${w.toInt()} kg · IMC ${String.format(Locale.US, "%.1f", bmi)}"
             } ?: run { items += "Talla" to "${h.toInt()} cm" }
         }
         items += "Anticonceptivos hormonales" to if (data.isOnContraceptive) "Sí" else "No"
@@ -156,8 +156,8 @@ class MedicalReportGenerator @Inject constructor() {
         val items = mutableListOf<Pair<String, String>>()
         if (stats != null) {
             items += "Ciclos analizados"    to "${stats.cycleCount}"
-            items += "Duración promedio"    to "${String.format("%.1f", stats.avgCycleLength)} días"
-            items += "Período promedio"     to "${String.format("%.1f", stats.avgPeriodLength)} días"
+            items += "Duración promedio"    to "${String.format(Locale.US, "%.1f", stats.avgCycleLength)} días"
+            items += "Período promedio"     to "${String.format(Locale.US, "%.1f", stats.avgPeriodLength)} días"
             items += "Ciclo más corto"      to "${stats.shortestCycle} días"
             items += "Ciclo más largo"      to "${stats.longestCycle} días"
             items += "Variabilidad"         to "${stats.longestCycle - stats.shortestCycle} días"
@@ -220,7 +220,7 @@ class MedicalReportGenerator @Inject constructor() {
                 startDate?.format(fmt) ?: "—",
                 "${cycle.durationDays} días",
                 "${cycle.bleedingDays} días",
-                if (cycle.avgPainLevel > 0) "${String.format("%.1f", cycle.avgPainLevel)}/10" else "—"
+                if (cycle.avgPainLevel > 0) "${String.format(Locale.US, "%.1f", cycle.avgPainLevel)}/10" else "—"
             )
 
             x = MARGIN + 4f
@@ -285,7 +285,7 @@ class MedicalReportGenerator @Inject constructor() {
             val y = startY + (graphH * i / 4f)
             c.drawLine(MARGIN, y, MARGIN + CONTENT_W, y, gridPaint)
             val temp = maxTemp - ((maxTemp - minTemp) * i / 4f)
-            c.drawText(String.format("%.1f°", temp), MARGIN - 22f, y + 3f, gridTextPaint)
+            c.drawText(String.format(Locale.US, "%.1f°", temp), MARGIN - 22f, y + 3f, gridTextPaint)
         }
 
         // Eje X (Días)

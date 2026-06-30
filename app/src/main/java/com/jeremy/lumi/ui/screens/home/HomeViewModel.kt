@@ -45,7 +45,8 @@ class HomeViewModel @Inject constructor(
     private val partnerRepository: com.jeremy.lumi.data.remote.PartnerRepository,
     private val aiPredictor      : LumiAIPredictor,
     private val rulesEngine      : LumiRulesEngine,
-    private val healthConnectManager: com.jeremy.lumi.data.health.HealthConnectManager
+    private val healthConnectManager: com.jeremy.lumi.data.health.HealthConnectManager,
+    private val widgetUpdater    : com.jeremy.lumi.ui.widget.WidgetUpdater
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -366,7 +367,19 @@ class HomeViewModel @Inject constructor(
                     todayBbt           = todayLog?.dailyLog?.basalBodyTemp
                 )
                 rulesEngine.updateContext(cycleContext)
-
+                
+                // Actualizar Widget
+                val phaseName = when (prediction.currentPhase) {
+                    CyclePhase.MENSTRUAL -> "Menstruación"
+                    CyclePhase.FOLLICULAR -> "Fase Folicular"
+                    CyclePhase.OVULATION -> "Ovulación"
+                    CyclePhase.LUTEAL -> "Fase Lútea"
+                    CyclePhase.PREGNANCY -> "Embarazo"
+                    CyclePhase.UNKNOWN -> "Desconocido"
+                }
+                val msg = if (prediction.isLate) "Retraso de ${prediction.delayDays} días" 
+                          else "Próximo en ${prediction.daysUntilNextPeriod} días"
+                widgetUpdater.updateWidget(prediction.currentDayOfCycle, phaseName, msg, "#9B72C0")
                 // FIX P2-3: Re-sincronizar Health Connect en cada carga del ciclo
                 // para mantener los datos de sueño/BBT actualizados durante la sesión.
                 val hcEnabled = prefsManager.isHealthConnectEnabledFlow.first()

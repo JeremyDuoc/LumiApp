@@ -703,4 +703,21 @@
         <item>Tus días más estresantes están robando un %1$d%% de tu vitalidad. Recuerda priorizar tu bienestar mental antes que nada. Respira profundo, tú puedes con esto. 💜</item>
     </string-array>
 
+    <string name="home_link_partner">Vincular a tu pareja</string>
+    <string name="home_link_desc">Comparte tu ciclo de forma segura y en tiempo real.</string>
+    <string name="home_your_links">Tus vínculos</string>
+    <string name="home_create_link">Crear un vínculo</string>
+    <string name="home_link_to_start">Vincúlate para comenzar</string>
+    <string name="home_link_to_start_desc">Pide a alguien que comparta su ciclo contigo mediante un código de vínculo. Verás su ciclo aquí en tiempo real.</string>
+    <string name="home_wait_message">Puedes seguir usando el calendario y el chat mientras esperas.</string>
+    <string name="home_linked_cycle">Ciclo Vinculado</string>
+    <string name="home_linked_cycle_of">Ciclo de %1$s</string>
+    <string name="onboarding_goal_title">¿Qué te trae a Lumi?</string>
+    <string name="onboarding_goal_subtitle">Elige cómo quieres empezar tu experiencia.</string>
+    <string name="onboarding_name_title">¿Cómo te llamas?</string>
+    <string name="onboarding_name_subtitle">Lo usaremos solo para saludarte. Puedes saltarte este paso si prefieres.</string>
+    <string name="onboarding_regular_title">¿Tus periodos son regulares?</string>
+    <string name="onboarding_regular_subtitle">Esto nos ayuda a saber cómo hacer tus predicciones.</string>
+    <string name="onboarding_last_period_title">¿Cuándo empezó tu último periodo?</string>
+    <string name="onboarding_last_period_subtitle">Una fecha aproximada está bien.</string>
 </resources>

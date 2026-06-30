@@ -123,4 +123,8 @@ dependencies {
     // con la configuración actual (compileSdk=35). Se mantiene alpha07 que compila
     // limpiamente. Actualizar cuando el proyecto migre a compileSdk 36.
     implementation("androidx.health.connect:connect-client:1.1.0-alpha07")
+    
+    // 15. Jetpack Glance (Widgets)
+    implementation("androidx.glance:glance-appwidget:1.1.0")
+    implementation("androidx.glance:glance-material3:1.1.0")
 }

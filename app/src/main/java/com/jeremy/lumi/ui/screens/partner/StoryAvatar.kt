@@ -60,7 +60,7 @@ fun StoryAvatar(
             label = "ring_alpha"
         )
     } else {
-        remember { mutableStateOf(if (isPending) 0.3f else 0.6f) }
+        remember { androidx.compose.runtime.mutableFloatStateOf(if (isPending) 0.3f else 0.6f) }
     }
 
     Box(

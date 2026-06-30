@@ -40,7 +40,7 @@ import kotlinx.coroutines.delay
 
 class CareReactionState {
     var pendingAction by mutableStateOf<CareAction?>(null)
-    var trigger       by mutableStateOf(0)    // se incrementa para re-disparar
+    var trigger       by androidx.compose.runtime.mutableIntStateOf(0)    // se incrementa para re-disparar
 
     fun fire(action: CareAction) {
         pendingAction = action

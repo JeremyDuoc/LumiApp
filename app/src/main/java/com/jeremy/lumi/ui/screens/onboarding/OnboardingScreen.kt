@@ -331,7 +331,7 @@ private fun PageWelcome(
 
         // Título
         Text(
-            text       = "¿Qué te trae a Lumi?",
+            text       = stringResource(R.string.onboarding_goal_title),
             fontSize   = 28.sp,
             fontWeight = FontWeight.Bold,
             textAlign  = TextAlign.Center,
@@ -345,7 +345,7 @@ private fun PageWelcome(
 
         // Tagline
         Text(
-            text      = "Elige cómo quieres empezar tu experiencia.",
+            text      = stringResource(R.string.onboarding_goal_subtitle),
             fontSize  = 16.sp,
             textAlign = TextAlign.Center,
             color     = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
@@ -475,8 +475,8 @@ private fun PageWelcome(
 private fun PageName(name: String, onChange: (String) -> Unit) {
     PageShell(
         icon      = Icons.Rounded.Person,
-        title     = "¿Cómo te llamas?",
-        subtitle  = "Lo usaremos solo para saludarte. Puedes saltarte este paso si prefieres."
+        title     = stringResource(R.string.onboarding_name_title),
+        subtitle  = stringResource(R.string.onboarding_name_subtitle)
     ) {
         OutlinedTextField(
             value         = name,
@@ -509,8 +509,8 @@ private fun PageName(name: String, onChange: (String) -> Unit) {
 private fun PageRegularity(isRegular: Boolean?, onChange: (Boolean?) -> Unit) {
     PageShell(
         icon     = Icons.Rounded.Sync,
-        title    = "¿Tus periodos son regulares?",
-        subtitle = "Esto nos ayuda a saber cómo hacer tus predicciones."
+        title    = stringResource(R.string.onboarding_regular_title),
+        subtitle = stringResource(R.string.onboarding_regular_subtitle)
     ) {
         val options = listOf(
             Pair(true, "Sí, son regulares"),
@@ -522,7 +522,7 @@ private fun PageRegularity(isRegular: Boolean?, onChange: (Boolean?) -> Unit) {
             GoalChip(
                 icon     = if (value == true) Icons.Rounded.CheckCircle else if (value == false) Icons.Rounded.Timeline else Icons.Rounded.QuestionMark,
                 label    = label,
-                selected = isRegular == value && (isRegular != null || value == null && isRegular == null),
+                selected = isRegular == value,
                 onClick  = { onChange(value) },
                 modifier = Modifier.fillMaxWidth()
             )
@@ -553,8 +553,8 @@ private fun PageLastPeriod(selectedDate: Long, lastPeriodKnown: Boolean, onDateP
 
     PageShell(
         icon     = Icons.Rounded.CalendarToday,
-        title    = "¿Cuándo empezó tu último periodo?",
-        subtitle = "Una fecha aproximada está bien."
+        title    = stringResource(R.string.onboarding_last_period_title),
+        subtitle = stringResource(R.string.onboarding_last_period_subtitle)
     ) {
         if (!lastPeriodKnown) {
             Box(

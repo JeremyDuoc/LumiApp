@@ -97,7 +97,7 @@ fun HomeScreen(
     val quickLogViewModel: QuickLogViewModel = hiltViewModel()
 
     var lastSyncedPrediction by remember { mutableStateOf<CyclePrediction?>(null) }
-    var lastSyncedRemindersHash by remember { mutableStateOf(0) }
+    var lastSyncedRemindersHash by remember { androidx.compose.runtime.mutableIntStateOf(0) }
 
     LaunchedEffect(uiState.prediction, activeReminders) {
         val currentRemindersHash = activeReminders.hashCode()
@@ -580,7 +580,7 @@ fun CycleStoriesRow(links: List<PartnerLink>, onLinkClick: (PartnerLink) -> Unit
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            "Tus vínculos",
+            text = stringResource(R.string.home_your_links),
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
@@ -756,7 +756,7 @@ private fun ObserverGateScreen(onNavigateToPartner: () -> Unit) {
                 Spacer(Modifier.height(40.dp))
 
                 Text(
-                    "Vincúlate para comenzar",
+                    stringResource(R.string.home_link_to_start),
                     fontSize = 26.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
@@ -764,7 +764,7 @@ private fun ObserverGateScreen(onNavigateToPartner: () -> Unit) {
                 )
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "Pide a alguien que comparta su ciclo contigo mediante un código de vínculo. Verás su ciclo aquí en tiempo real.",
+                    stringResource(R.string.home_link_to_start_desc),
                     fontSize = 15.sp,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                     textAlign = TextAlign.Center,
@@ -786,13 +786,13 @@ private fun ObserverGateScreen(onNavigateToPartner: () -> Unit) {
                 ) {
                     Icon(Icons.Rounded.PeopleAlt, null, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(10.dp))
-                    Text("Crear un vínculo", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.home_create_link), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
 
                 Spacer(Modifier.height(16.dp))
 
                 Text(
-                    "Puedes seguir usando el calendario y el chat mientras esperas.",
+                    stringResource(R.string.home_wait_message),
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
                     textAlign = TextAlign.Center
@@ -843,7 +843,7 @@ fun LinkedCycleBottomSheet(
                 ) {
                     Text(storyPhaseEmoji(currentPhase), fontSize = 20.sp)
                     Text(
-                        text = if (ownerName != null) "Ciclo de $ownerName" else "Ciclo Vinculado",
+                        text = if (ownerName != null) stringResource(R.string.home_linked_cycle_of, ownerName) else stringResource(R.string.home_linked_cycle),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
@@ -1457,13 +1457,13 @@ fun EmptyLinksCard(onClick: () -> Unit) {
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Vincular a tu pareja",
+                    text = stringResource(R.string.home_link_partner),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Text(
-                    text = "Comparte tu ciclo de forma segura y en tiempo real.",
+                    text = stringResource(R.string.home_link_desc),
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
                     lineHeight = 18.sp
