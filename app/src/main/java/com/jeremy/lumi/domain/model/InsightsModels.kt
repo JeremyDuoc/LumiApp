@@ -87,6 +87,12 @@ data class HistoricalCycleStats(
     val maxHistoricalDelay   : Int
 )
 
+data class BivariableInsight(
+    val title: String,
+    val message: String,
+    val importance: Float // Useful for sorting. E.g. highest percentage difference
+)
+
 /**
  * Contenedor raíz que agrega todos los insights producidos por [InsightsRepository].
  * El ViewModel lo expone como un único StateFlow y la UI lo desestructura por sección.
@@ -94,6 +100,7 @@ data class HistoricalCycleStats(
 data class CycleInsights(
     val historicalStats      : HistoricalCycleStats?,
     val symptomCorrelations  : List<SymptomCorrelation>,
+    val bivariableInsights   : List<BivariableInsight> = emptyList(),
     val moodDistribution     : MoodDistribution?,
     val recentCycleStats     : List<CycleStats>         // últimos N ciclos para el gráfico de barras
 )

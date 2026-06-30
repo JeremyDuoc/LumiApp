@@ -1,4 +1,4 @@
-﻿package com.jeremy.lumi.ui.screens.home
+package com.jeremy.lumi.ui.screens.home
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -94,10 +94,33 @@ fun HomeScreen(
     }
 
     val activeReminders by remindersViewModel.activeReminders.collectAsStateWithLifecycle()
+    val quickLogViewModel: QuickLogViewModel = hiltViewModel()
+
+    var lastSyncedPrediction by remember { mutableStateOf<CyclePrediction?>(null) }
+    var lastSyncedRemindersHash by remember { mutableStateOf(0) }
 
     LaunchedEffect(uiState.prediction, activeReminders) {
-        uiState.prediction?.let {
-            remindersViewModel.syncCycleReminders(it)
+        val currentRemindersHash = activeReminders.hashCode()
+        if (uiState.prediction != null && 
+            (uiState.prediction != lastSyncedPrediction || currentRemindersHash != lastSyncedRemindersHash)) {
+            
+            remindersViewModel.syncCycleReminders(uiState.prediction!!)
+            lastSyncedPrediction = uiState.prediction
+            lastSyncedRemindersHash = currentRemindersHash
+        }
+    }
+
+    LaunchedEffect(quickLogViewModel) {
+        quickLogViewModel.uiEvent.collect { event ->
+            when (event) {
+                is QuickLogViewModel.UiEvent.LogSaved -> {
+                    showQuickLogSheet = false
+                    snackbarHostState.showSnackbar("✓ Registro guardado")
+                }
+                is QuickLogViewModel.UiEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+            }
         }
     }
 
@@ -382,23 +405,8 @@ fun HomeScreen(
 
         if (showBalloonGame) BalloonGameSheet { showBalloonGame = false }
         if (showQuickLogSheet) {
-            val quickLogViewModel: QuickLogViewModel = hiltViewModel()
             val todayLog by quickLogViewModel.todayLog.collectAsStateWithLifecycle()
             val activeCategories by quickLogViewModel.activeCategories.collectAsStateWithLifecycle()
-
-            LaunchedEffect(quickLogViewModel) {
-                quickLogViewModel.uiEvent.collect { event ->
-                    when (event) {
-                        is QuickLogViewModel.UiEvent.LogSaved -> {
-                            showQuickLogSheet = false
-                            snackbarHostState.showSnackbar("✓ Registro guardado")
-                        }
-                        is QuickLogViewModel.UiEvent.ShowSnackbar -> {
-                            snackbarHostState.showSnackbar(event.message)
-                        }
-                    }
-                }
-            }
 
             DailyLogSheet(
                 day      = quickLogViewModel.todayDayOfMonth,
@@ -409,9 +417,11 @@ fun HomeScreen(
                 onActiveCategoriesChange = { quickLogViewModel.setActiveCategories(it) },
                 onDismiss = { showQuickLogSheet = false },
                 onSave    = { flow, pain, mood, symptoms, mucus, notes, hadIntercourse,
-                              protectionUsed, method, intercourseNotes, showOnCalendar ->
+                              protectionUsed, method, intercourseNotes, showOnCalendar,
+                              sleepHours, energyLevel, stressLevel, bbt, spotting ->
                     quickLogViewModel.saveToday(flow, pain, mood, symptoms, mucus, notes,
-                        hadIntercourse, protectionUsed, method, intercourseNotes, showOnCalendar)
+                        hadIntercourse, protectionUsed, method, intercourseNotes, showOnCalendar,
+                        sleepHours, energyLevel, stressLevel, bbt, spotting)
                 }
             )
         }
@@ -1346,9 +1356,9 @@ fun PhaseTimelineCard(currentPhase: CyclePhase, p: CyclePrediction, isDiscreetMo
     }
 
     data class PhaseEvent(val phase: CyclePhase, val daysUntil: Int)
-    val events = listOf(
+    val events = listOfNotNull(
         PhaseEvent(CyclePhase.MENSTRUAL,  daysUntilStart(1)),
-        PhaseEvent(CyclePhase.OVULATION,  daysUntilStart(ovulationDay - 1))
+        if (p.daysUntilOvulation != -1) PhaseEvent(CyclePhase.OVULATION, daysUntilStart(ovulationDay - 1)) else null
     ).filter { it.phase != currentPhase }.sortedBy { it.daysUntil }
 
     Card(Modifier.fillMaxWidth(), RoundedCornerShape(28.dp),

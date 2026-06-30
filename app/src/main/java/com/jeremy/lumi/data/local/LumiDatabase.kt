@@ -22,7 +22,7 @@ import com.jeremy.lumi.data.local.entity.SymptomEntity
         ReminderEntity::class,
         ChatMessageEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class LumiDatabase : RoomDatabase() {

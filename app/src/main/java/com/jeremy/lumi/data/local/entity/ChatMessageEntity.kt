@@ -45,5 +45,6 @@ enum class ChatMessageType {
     LOG_DAILY,         // recordatorio de registro diario
     CUSTOM,            // recordatorio personalizado de la usuaria
     EDUCATIONAL,       // dato/tip educativo
-    INSIGHT            // patrón detectado por el motor de correlación
+    INSIGHT,           // patrón detectado por el motor de correlación
+    USER               // Pregunta hecha por la usuaria
 }

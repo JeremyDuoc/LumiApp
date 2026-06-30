@@ -21,4 +21,7 @@ object AppRoutes {
 
     /** Pantalla de vinculación con deep link. */
     const val PARTNER = "partner?code={code}"
+
+    /** Hub central de conexiones (Modo Pareja rediseñado). */
+    const val PARTNER_HUB = "partner_hub"
 }

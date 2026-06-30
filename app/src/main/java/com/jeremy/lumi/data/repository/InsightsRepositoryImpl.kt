@@ -26,7 +26,8 @@ import kotlin.math.roundToInt
  * los resultados limpios que esta clase produce.
  */
 class InsightsRepositoryImpl @Inject constructor(
-    private val dao: LumiDao
+    private val dao: LumiDao,
+    private val bivariableEngine: com.jeremy.lumi.domain.usecase.BivariableCorrelationEngine
 ) : InsightsRepository {
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -40,6 +41,7 @@ class InsightsRepositoryImpl @Inject constructor(
         return CycleInsights(
             historicalStats     = computeHistoricalStats(closedCycles, allLogs),
             symptomCorrelations = computeSymptomCorrelations(allLogs, closedCycles, minOccurrences = 2),
+            bivariableInsights  = bivariableEngine.computeInsights(allLogs),
             moodDistribution    = computeMoodDistribution(allLogs),
             recentCycleStats    = computeRecentCycleStats(closedCycles.take(6), allLogs)
         )

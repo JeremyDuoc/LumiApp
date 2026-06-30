@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Reglas para la colección partner_links
+    match /partner_links/{linkId} {
+      
+      // Permitir lectura si:
+      // 1. Eres el dueño (ownerUid)
+      // 2. Eres la pareja vinculada (partnerUid)
+      // 3. El link está PENDING (para poder buscarlo con el código y unirse)
+      allow read: if request.auth != null && (
+        resource.data.ownerUid == request.auth.uid ||
+        resource.data.partnerUid == request.auth.uid ||
+        resource.data.status == 'PENDING'
+      );
+      
+      // Permitir creación si:
+      // 1. Estás autenticado
+      // 2. Te pones a ti mismo como owner
+      allow create: if request.auth != null && 
+        request.resource.data.ownerUid == request.auth.uid;
+      
+      // Permitir actualización si:
+      // 1. Eres el dueño o la pareja y mantienes esa posición
+      // 2. O eres un usuario nuevo uniéndote a un link PENDING (tu UID se vuelve partnerUid)
+      allow update: if request.auth != null && (
+        // Caso A: Ya eras parte del link
+        (resource.data.ownerUid == request.auth.uid || resource.data.partnerUid == request.auth.uid) ||
+        // Caso B: Te estás uniendo a un link PENDING
+        (resource.data.status == 'PENDING' && 
+         request.resource.data.partnerUid == request.auth.uid && 
+         request.resource.data.status == 'ACTIVE')
+      );
+      
+      // Permitir borrado si:
+      // 1. Eres el dueño o la pareja
+      allow delete: if request.auth != null && (
+        resource.data.ownerUid == request.auth.uid || 
+        resource.data.partnerUid == request.auth.uid
+      );
+    }
+    
+    // Si tienes una colección "users" (opcional, asegúrala también)
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /diaries/{linkId}/entries/{entryId} {
+      // Solo los dos participantes del vínculo pueden leer
+      allow read: if request.auth != null
+        && exists(/databases/$(database)/documents/partner_links/$(linkId))
+        && (
+          get(/databases/$(database)/documents/partner_links/$(linkId)).data.ownerUid
+            == request.auth.uid
+          ||
+          get(/databases/$(database)/documents/partner_links/$(linkId)).data.partnerUid
+            == request.auth.uid
+        );
+
+      // Solo pueden escribir si son participantes Y el authorUid coincide con quien escribe
+      allow create: if request.auth != null
+        && request.resource.data.authorUid == request.auth.uid
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 500
+        && exists(/databases/$(database)/documents/partner_links/$(linkId))
+        && (
+          get(/databases/$(database)/documents/partner_links/$(linkId)).data.ownerUid
+            == request.auth.uid
+          ||
+          get(/databases/$(database)/documents/partner_links/$(linkId)).data.partnerUid
+            == request.auth.uid
+        );
+
+      // Nadie puede editar ni borrar — el diario es inmutable
+      allow update, delete: if false;
+    }
+  }
+}

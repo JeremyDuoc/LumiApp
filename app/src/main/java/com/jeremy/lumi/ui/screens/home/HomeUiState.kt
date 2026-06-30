@@ -21,6 +21,7 @@ data class HomeUiState(
     // ── Preferencias ──────────────────────────────────────────────────────
     val isDiscreetMode       : Boolean          = false,
     val isPregnant           : Boolean          = false,
+    val isOnContraceptive    : Boolean          = false,
     val userGoal             : String           = "health",
     val logStreakDays        : Int              = 0,
 

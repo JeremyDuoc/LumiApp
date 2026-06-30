@@ -1,0 +1,449 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Welcome Messages -->
+    <string-array name="chat_welcome_base">
+        <item>¡Te doy la bienvenida a Lumi! ✨ </item>
+        <item>¡Hola! Qué gusto verte en Lumi. ✨ </item>
+        <item>¡Hola! Aquí estoy para ayudarte. ✨ </item>
+        <item>¡Bienvenida de nuevo a Lumi! ✨ </item>
+        <item>¡Hola! Lista para acompañarte hoy en Lumi. ✨ </item>
+    </string-array>
+    
+    <string-array name="chat_welcome_pms">
+        <item>Estás en tu ventana premenstrual. Es completamente normal que %1$s debido a la caída natural de la progesterona y los estrógenos. Recuerda ser compasiva contigo misma estos días. ¿En qué te puedo apoyar hoy?</item>
+        <item>Noté que estás en tu fase premenstrual. Sentir que %1$s es súper común por el cambio de hormonas. Tómate las cosas con calma. ¿Qué te gustaría saber hoy?</item>
+        <item>Veo que estás cerca de tu periodo. Es biológicamente normal que %1$s ahora mismo. Date permiso de descansar. ¿En qué te ayudo?</item>
+        <item>Estás en los días previos a tu menstruación. Es comprensible que %1$s por el descenso de estrógenos. Estoy aquí para ti. ¿Qué vemos hoy?</item>
+        <item>La ventana premenstrual puede ser difícil. Es esperable que %1$s. Recuerda mimarte un poco hoy. ¿De qué quieres hablar?</item>
+    </string-array>
+
+    <string-array name="chat_welcome_pain">
+        <item>Noté que hoy tienes un nivel de dolor de %1$d/10. Recuerda aplicar calor local o considerar un analgésico si es muy intenso. 🌸\n\n</item>
+        <item>He visto que registraste un dolor de %1$d/10. Por favor, descansa y usa calor local si lo necesitas. 🌸\n\n</item>
+        <item>Tu registro marca un dolor de %1$d/10 hoy. Cuídate mucho y no dudes en tomar un analgésico si el dolor no cede. 🌸\n\n</item>
+        <item>Vi que tu dolor está en %1$d/10. Tu bienestar es prioridad, así que aplica calor y descansa lo posible. 🌸\n\n</item>
+        <item>Registraste un dolor de %1$d/10. Espero que te sientas mejor pronto; recuerda que el calor local ayuda mucho. 🌸\n\n</item>
+    </string-array>
+
+    <string-array name="chat_welcome_phase_menstrual">
+        <item>He notado que estás en tu fase Menstrual. Recuerda ser amable con tu cuerpo estos días, descansar lo necesario y mantenerte hidratada. Si tienes cólicos, el calor local puede ayudar. ¿En qué te puedo apoyar hoy?</item>
+        <item>Estás transitando tu fase Menstrual. Es un momento ideal para bajar el ritmo y escuchar a tu cuerpo. ¿Qué te gustaría explorar hoy?</item>
+        <item>Veo que te encuentras en tu fase Menstrual. Dale prioridad a tu descanso e hidratación. ¿Tienes alguna pregunta para mí hoy?</item>
+        <item>Atraviesas tu fase Menstrual. Recuerda no exigirte de más y cuidarte mucho. ¿En qué puedo orientarte ahora?</item>
+        <item>Estás en plena fase Menstrual. Si necesitas bajar la intensidad de tus actividades, está perfecto. ¿Sobre qué quieres que hablemos?</item>
+    </string-array>
+
+    <string-array name="chat_welcome_phase_follicular">
+        <item>Veo que estás en tu fase Folicular. Es un excelente momento para aprovechar el aumento natural de energía y planificar nuevas metas. ¿Hay algo sobre tu ciclo que te gustaría explorar hoy?</item>
+        <item>Estás en tu fase Folicular, ¡el estrógeno va subiendo! Es una etapa genial para nuevos proyectos. ¿De qué te gustaría hablar?</item>
+        <item>Te encuentras en la fase Folicular. Seguramente tu energía empiece a repuntar. ¿En qué puedo ayudarte hoy?</item>
+        <item>¡Fase Folicular en marcha! Aprovecha este impulso natural de energía. ¿Tienes alguna duda hoy?</item>
+        <item>Atraviesas la fase Folicular, un buen momento para enfocarte y crear. ¿Qué información buscas hoy?</item>
+    </string-array>
+
+    <string-array name="chat_welcome_phase_ovulation">
+        <item>He notado que estás cerca o en tu fase de Ovulación. Tus niveles de energía y ánimo suelen estar en su punto más alto ahora. ¡Aprovecha este momento! ¿Tienes alguna pregunta sobre tu bienestar actual?</item>
+        <item>¡Estás en plena fase de Ovulación! Las hormonas están a tope, dándote energía extra. ¿Qué te gustaría saber hoy?</item>
+        <item>Te encuentras en tu etapa de Ovulación. Es tu pico biológico de vitalidad. ¿En qué te puedo apoyar?</item>
+        <item>Veo que atraviesas tu fase Ovulatoria. ¡Disfruta del subidón de energía! ¿Tienes dudas sobre algo?</item>
+        <item>Estás en los días de Ovulación. Tu cuerpo está trabajando intensamente. ¿Qué quieres explorar hoy?</item>
+    </string-array>
+
+    <string-array name="chat_welcome_phase_luteal">
+        <item>Veo que estás en tu fase Lútea. Si sientes menos energía o cambios de humor, recuerda que es completamente normal por la progesterona. El autocuidado es clave estos días. ¿En qué puedo orientarte?</item>
+        <item>Estás en tu fase Lútea. La progesterona puede hacerte sentir más lenta, así que tómalo con calma. ¿De qué hablamos hoy?</item>
+        <item>Te encuentras en la fase Lútea, preparando el cuerpo para el fin del ciclo. Prioriza tu paz mental. ¿En qué te ayudo?</item>
+        <item>Atraviesas tu fase Lútea. Es el momento perfecto para actividades suaves y descanso. ¿Qué quieres saber hoy?</item>
+        <item>Fase Lútea en curso. Si notas bajones de energía, es pura biología. ¿Tienes alguna pregunta?</item>
+    </string-array>
+
+    <string-array name="chat_welcome_phase_unknown">
+        <item>Estoy aquí para ayudarte a comprender mejor tu ciclo y tu cuerpo. Puedes preguntarme sobre tus fases, predicciones o cualquier síntoma. ¿Qué te gustaría saber hoy?</item>
+        <item>Lumi está lista para ti. Exploremos juntas tu ciclo y cómo te sientes hoy. ¿Qué pregunta tienes?</item>
+        <item>Bienvenida. Si tienes dudas sobre tus síntomas o predicciones, dímelo. ¿En qué te apoyo?</item>
+        <item>Siempre es buen momento para aprender de tu cuerpo. ¿De qué quieres que hablemos hoy?</item>
+        <item>¡Aquí estoy! Lista para analizar tu bienestar y tus registros. ¿Qué información necesitas?</item>
+    </string-array>
+
+    <!-- Tiredness -->
+    <string-array name="chat_tired_menstrual">
+        <item>Durante la menstruación, la pérdida de sangre puede bajar tus niveles de hierro y causar fatiga. Es completamente normal.%1$s 💙</item>
+        <item>Es muy común sentirte agotada ahora. Tu cuerpo está trabajando duro para renovar el endometrio.%1$s ✨</item>
+        <item>El cansancio menstrual es una respuesta natural del cuerpo. Escucha tu necesidad de descanso y no te exijas de más.%1$s 🌱</item>
+        <item>Tu energía está baja porque los niveles hormonales caen durante tu regla. Intenta comer algo rico en hierro.%1$s 🌙</item>
+        <item>Sentirte sin energía en estos días es la forma que tiene tu cuerpo de pedirte una pausa.%1$s 💜</item>
+    </string-array>
+    <string-array name="chat_tired_follicular">
+        <item>En la fase folicular el estrógeno sube y suele dar más energía. Si te sientes cansada, revisa tu descanso e hidratación.%1$s 🌱</item>
+        <item>Normalmente, tu energía debería empezar a subir ahora. Si no es así, tómalo con calma un día más.%1$s ✨</item>
+        <item>Aunque esta fase es de recarga energética, a veces el estrés o el sueño pueden jugar en contra.%1$s 💙</item>
+        <item>Tu estrógeno está aumentando. Si el cansancio persiste, quizás necesites un descanso activo o mejorar tu sueño.%1$s 🌙</item>
+        <item>Es un buen momento para recuperar vitalidad, pero no te presiones si hoy necesitas ir más lento.%1$s 💜</item>
+    </string-array>
+    <string-array name="chat_tired_ovulation">
+        <item>Cerca de la ovulación tus hormonas están al máximo. Este pico puede hacer que tu cuerpo pida un respiro rápido.%1$s ✨</item>
+        <item>Estás en un punto alto de actividad hormonal. Un pequeño descanso de 20 minutos te vendrá genial.%1$s 🌱</item>
+        <item>La ovulación exige mucha energía a tu cuerpo. Si te sientes fatigada, es una señal para tomar una siesta breve.%1$s 💙</item>
+        <item>Aunque la ovulación suele dar energía, a veces el cambio brusco de hormonas produce el efecto contrario temporalmente.%1$s 🌙</item>
+        <item>Tus niveles hormonales están trabajando a tope ahora mismo. Descansa un rato si el cuerpo te lo pide.%1$s 💜</item>
+    </string-array>
+    <string-array name="chat_tired_luteal">
+        <item>En la fase lútea, la progesterona sube y actúa como un sedante natural. ¡Es súper común sentirse así!%1$s 🌙</item>
+        <item>La fatiga premenstrual es real y tiene nombre: progesterona. No te sientas culpable por necesitar descansar más.%1$s 💙</item>
+        <item>Tu cuerpo se está preparando para el siguiente ciclo. Esa bajada de energía es totalmente normal.%1$s ✨</item>
+        <item>Sentirte pesada o cansada es típico de la fase lútea. Prioriza el autocuidado estos días.%1$s 🌱</item>
+        <item>El cansancio que sientes es la respuesta natural de tu cuerpo al cambio hormonal de estos días.%1$s 💜</item>
+    </string-array>
+    <string-array name="chat_tired_unknown">
+        <item>La fatiga puede deberse a muchos factores. Asegúrate de descansar y beber mucha agua.%1$s 💙</item>
+        <item>Si te sientes muy cansada, intenta revisar tus horas de sueño o nivel de estrés de esta semana.%1$s ✨</item>
+        <item>El cansancio puede ser una señal para bajar el ritmo. Escucha a tu cuerpo.%1$s 🌱</item>
+        <item>Descansar lo suficiente es clave. Si esta fatiga persiste por varios días, coméntalo con tu médica.%1$s 🌙</item>
+        <item>A veces solo necesitamos una pausa. Tómate el día con la mayor calma posible.%1$s 💜</item>
+    </string-array>
+
+    <!-- Next Period -->
+    <string-array name="chat_next_period_late">
+        <item>Tu periodo lleva %1$d día(s) de retraso respecto a tus ciclos normales. El estrés o cambios hormonales pueden ser la causa. 💜</item>
+        <item>Noté un retraso de %1$d día(s). Recuerda que las fluctuaciones hormonales o el estrés pueden afectar las fechas. 🌸</item>
+        <item>Actualmente llevas %1$d día(s) de retraso. Si pasa de las dos semanas, te sugeriría hablar con tu ginecóloga. 💙</item>
+        <item>He registrado un retraso de %1$d día(s). Trata de relajarte, ya que el estrés puede prolongar el retraso. ✨</item>
+        <item>Tienes un retraso de %1$d día(s) sobre tu promedio de %2$d días. Mantente atenta y registra cualquier síntoma. 🌱</item>
+    </string-array>
+    <string-array name="chat_next_period_on_time">
+        <item>Basándome en tu historial, tu próximo periodo %1$s. Recuerda que la biología no es un reloj exacto. 📅</item>
+        <item>Tu regla %1$s. Ten en cuenta que esto es solo una estimación. 🌸</item>
+        <item>Según mis cálculos, tu periodo %1$s. ¡Te avisaré si noto cambios! 💙</item>
+        <item>Espero tu menstruación para %1$s. Mantén tus registros al día para mayor precisión. ✨</item>
+        <item>Tu periodo %1$s. No olvides que pequeños adelantos o retrasos son comunes. 🌱</item>
+    </string-array>
+    
+    <!-- Next Period Bases -->
+    <string-array name="chat_next_period_base_0">
+        <item>podría llegar hoy</item>
+        <item>lo esperamos para hoy</item>
+        <item>según mis cálculos, debería bajar hoy</item>
+        <item>hoy es el día previsto</item>
+        <item>está programado para hoy</item>
+    </string-array>
+    <string-array name="chat_next_period_base_1">
+        <item>se espera mañana</item>
+        <item>llegará mañana si todo sigue su curso</item>
+        <item>debería bajar mañana</item>
+        <item>mañana es la fecha estimada</item>
+        <item>lo esperamos para mañana</item>
+    </string-array>
+    <string-array name="chat_next_period_base_n">
+        <item>se espera en %1$d días</item>
+        <item>faltan %1$d días aprox.</item>
+        <item>llegará en unos %1$d días</item>
+        <item>estimo que faltan %1$d días</item>
+        <item>lo esperamos en %1$d días</item>
+    </string-array>
+
+    <!-- Fertile Window -->
+    <string-array name="chat_fertile_contraceptive">
+        <item>Con anticonceptivos hormonales, la ovulación está suprimida, por lo que el concepto de ventana fértil no aplica igual. Si tienes dudas, consúltalo con tu ginecóloga. 💜</item>
+        <item>Dado que tomas anticonceptivos, tu cuerpo no ovula normalmente, así que no hay una ventana fértil tradicional. Habla con tu médica si quieres más detalles. 🌸</item>
+        <item>El uso de anticonceptivos suprime la ovulación, por ende, no calculo tu ventana fértil. Cualquier inquietud, no dudes en preguntarle a tu doctora. 💙</item>
+        <item>Al estar bajo método anticonceptivo hormonal, tu ventana fértil no está activa como en un ciclo natural. Es mejor que lo hables con un profesional si quieres cambiar de método. ✨</item>
+        <item>La píldora anticonceptiva evita la ovulación. Por eso, no hay días fértiles que calcular ahora mismo. Siempre es bueno tener a tu ginecóloga al tanto. 🌱</item>
+    </string-array>
+    <string-array name="chat_fertile_now">
+        <item>¡Estás en tu ventana fértil ahora mismo! Los días alrededor de la ovulación son los de mayor probabilidad de concepción. 🌸</item>
+        <item>Te encuentras en tus días fértiles. Ahora mismo es el momento de mayor probabilidad de embarazo del ciclo. 💙</item>
+        <item>¡Es tu ventana fértil! Estos días son clave si buscas un embarazo. ✨</item>
+        <item>Actualmente atraviesas tus días más fértiles. Recuerda que la ovulación es la fase pico para concebir. 🌱</item>
+        <item>Estás justo en la ventana de fertilidad de este ciclo. Toma las precauciones necesarias según tus objetivos. 💜</item>
+    </string-array>
+    <string-array name="chat_fertile_past">
+        <item>Tu ventana fértil ya pasó este ciclo. La próxima será aprox. a los %1$d días de tu siguiente periodo. 🌸</item>
+        <item>Ya dejaste atrás tus días fértiles por ahora. Esperamos la próxima ventana en tu siguiente ciclo. 💙</item>
+        <item>La ventana fértil de este ciclo ya cerró. Mantente atenta a mis predicciones para el mes que viene. ✨</item>
+        <item>Tus días más fértiles ya han pasado. Si buscas concebir, el próximo ciclo será tu nueva oportunidad. 🌱</item>
+        <item>La ovulación de este ciclo quedó atrás. A prepararse para la próxima en un par de semanas. 💜</item>
+    </string-array>
+    <string-array name="chat_fertile_future">
+        <item>Tu próxima ventana fértil se estima en aproximadamente %1$d días. Los 5 días antes y el día de la ovulación son los más fértiles. 🌸</item>
+        <item>Calculo que faltan unos %1$d días para tu ventana fértil. ✨</item>
+        <item>Espera tu ventana fértil en aprox. %1$d días. ¡Te avisaré cuando estés más cerca! 💙</item>
+        <item>Tus días fértiles llegarán en %1$d días según mis registros. 🌱</item>
+        <item>Faltan cerca de %1$d días para tus días de mayor fertilidad. Mantén tus registros al día. 💜</item>
+    </string-array>
+
+    <!-- Mood -->
+    <string-array name="chat_mood_menstrual">
+        <item>Durante la menstruación, los estrógenos caen y es normal sentirte más sensible o triste. Es pura biología, no te castigues por ello. 💜</item>
+        <item>El bajón de hormonas durante el sangrado a menudo trae consigo sensibilidad emocional. Tómate las cosas con calma. 🌸</item>
+        <item>La menstruación hace que estrógeno y progesterona toquen fondo, afectando tu humor directamente. Es un buen momento para mimarte. 💙</item>
+        <item>Sentir cambios de humor ahora es súper normal; tus hormonas están en su punto más bajo. Descansa y escúchate. ✨</item>
+        <item>Tu cuerpo está pasando por una bajada hormonal fuerte, lo cual explica por qué te sientes tan susceptible hoy. 🌱</item>
+    </string-array>
+    <string-array name="chat_mood_follicular">
+        <item>En esta fase el estrógeno va subiendo, lo que generalmente mejora el estado de ánimo. Si aún te sientes irritable, puede influir el sueño o el estrés. 🌱</item>
+        <item>Normalmente el humor es más estable ahora. Si sientes cambios bruscos, revisemos cómo estás durmiendo o tus niveles de estrés. 💙</item>
+        <item>Tus hormonas están subiendo y deberías sentirte mejor. Si no es así, trata de relajarte un poco más. ✨</item>
+        <item>El estrógeno está de tu lado en esta fase. Cualquier cambio de humor podría deberse a factores externos, como el cansancio. 🌸</item>
+        <item>Estás en una fase de recuperación emocional biológica. Date tiempo si el estrés te está jugando una mala pasada. 💜</item>
+    </string-array>
+    <string-array name="chat_mood_ovulation">
+        <item>Alrededor de la ovulación, el pico de estrógeno suele dar alegría y sociabilidad. Si estás muy cambiante, ¡tus hormonas están a toda marcha! ✨</item>
+        <item>El cóctel hormonal de la ovulación a veces genera pequeños picos emocionales, aunque suele ser más energía positiva. 🌸</item>
+        <item>Estás en plena montaña rusa hormonal ovulatoria. Tus emociones pueden sentirse más intensas de normal. 💙</item>
+        <item>Con el estrógeno y la LH en su máximo, tu humor puede estar muy receptivo. Disfruta esta energía. 🌱</item>
+        <item>La ovulación trae consigo una oleada hormonal que puede hacerte sentir eufórica o sensible a ratos. 💜</item>
+    </string-array>
+    <string-array name="chat_mood_luteal">
+        <item>En la fase lútea la progesterona domina y puede causar el famoso SPM: irritabilidad o tristeza. Es normal y pasará. 🌙</item>
+        <item>Tus cambios de humor son producto de la progesterona que prepara tu cuerpo. No te preocupes, se nivelará con tu regla. 💙</item>
+        <item>El Síndrome Premenstrual a menudo se manifiesta con sensibilidad emocional por la caída de estrógenos. Sé amable contigo. ✨</item>
+        <item>Sentirte así en esta fase es el clásico SPM. Dale a tu cuerpo el autocuidado que te está pidiendo. 🌱</item>
+        <item>Es totalmente comprensible que tu humor fluctúe ahora. La progesterona tiene ese efecto en nuestro estado de ánimo. 💜</item>
+    </string-array>
+    <string-array name="chat_mood_unknown">
+        <item>Los cambios de humor a lo largo del ciclo son normales y tienen base hormonal. Registrar cómo te sientes me ayuda a entender mejor tus patrones. 💙</item>
+        <item>Nuestras emociones bailan al ritmo de las hormonas todo el mes. Sigue registrando para que encontremos tu patrón personal. ✨</item>
+        <item>No te preocupes, las fluctuaciones emocionales son parte natural del ciclo. Trata de anotar tus estados de ánimo a diario. 🌱</item>
+        <item>El ciclo menstrual afecta directamente nuestros neurotransmisores. Si esto te afecta mucho, cuéntaselo a tu médica. 🌸</item>
+        <item>Tener altibajos emocionales es muy común. Mantén el registro para conocerte cada vez mejor. 💜</item>
+    </string-array>
+
+    <!-- Cramps -->
+    <string-array name="chat_cramps_menstrual">
+        <item>Los cólicos durante la menstruación son causados por las prostaglandinas, que hacen que el útero se contraiga para expulsar el revestimiento. %1$s 💙</item>
+        <item>Es normal sentir cólicos ahora; el útero se está contrayendo para liberar el endometrio. %1$s 🌸</item>
+        <item>Las prostaglandinas están trabajando en tu útero, lo que genera estos dolores menstruales. %1$s ✨</item>
+        <item>Los calambres son la forma en que tu cuerpo limpia el revestimiento uterino. %1$s 🌱</item>
+        <item>Es esperable tener dolor pélvico durante el sangrado debido a la actividad uterina. %1$s 💜</item>
+    </string-array>
+    <string-array name="chat_cramps_ovulation">
+        <item>El dolor que sientes puede ser la mittelschmerz — el dolor de ovulación. Es normal y suele durar pocas horas. %1$s ✨</item>
+        <item>Algunas mujeres sienten un pinchazo cuando el folículo libera el óvulo, es completamente normal. %1$s 💙</item>
+        <item>Este tipo de cólico a mitad de ciclo suele ser el dolor ovulatorio. %1$s 🌱</item>
+        <item>Sentir dolor pélvico ahora podría ser tu cuerpo avisando que estás ovulando. %1$s 🌸</item>
+        <item>El dolor de ovulación es leve y temporal, causado por la liberación del óvulo. %1$s 💜</item>
+    </string-array>
+    <string-array name="chat_cramps_unknown">
+        <item>El dolor abdominal fuera del periodo puede tener varias causas. Si es recurrente y fuerte, te recomiendo mencionárselo a tu ginecóloga. %1$s</item>
+        <item>Tener cólicos sin regla a veces ocurre por la digestión, ovulación temprana o quistes. Si duele mucho, consúltalo. %1$s</item>
+        <item>El dolor pélvico en esta fase no es lo más común. Vigílalo y habla con tu doctora si no se va. %1$s</item>
+        <item>Si el dolor es constante y no estás en tus días, es mejor que lo evalúe un profesional médico. %1$s</item>
+        <item>Registraremos este dolor. Si persiste por varios días fuera de la menstruación, busca asesoría médica. %1$s</item>
+    </string-array>
+    
+    <string-array name="chat_cramps_advice_high">
+        <item>Para dolor muy intenso, aplica calor local (bolsa de agua caliente), descansa y si el dolor no cede con analgésicos, consulta a tu ginecóloga.</item>
+        <item>Al ser un dolor fuerte, te sugiero aplicar calor y descansar. Si un analgésico no ayuda, por favor consulta a tu médica.</item>
+        <item>El dolor es elevado; una manta eléctrica y relajación son clave. Si no hay mejora, contacta a tu doctora.</item>
+        <item>Para aliviar este nivel de dolor, el calor en la zona pélvica y el descanso son fundamentales. Ve al médico si persiste.</item>
+        <item>Tu dolor es intenso hoy. Intenta aplicar calor y descansar; si sigue así de fuerte, es mejor que consultes a un especialista.</item>
+    </string-array>
+    <string-array name="chat_cramps_advice_med">
+        <item>Para cólicos moderados, el calor local y el movimiento suave (como caminar o yoga) pueden ayudar mucho.</item>
+        <item>Con este dolor moderado, un tecito caliente y unos estiramientos suaves suelen ser un gran alivio.</item>
+        <item>Prueba aplicar calor en la zona y moverte un poco si te sientes con ánimos; eso suele reducir la molestia moderada.</item>
+        <item>Para cólicos de nivel medio, el yoga suave o simplemente recostarte con una almohadilla térmica te sentará bien.</item>
+        <item>Un nivel de dolor moderado suele responder bien al calor local y a mantenerte abrigada.</item>
+    </string-array>
+    <string-array name="chat_cramps_advice_low">
+        <item>Para cólicos leves, el calor y el descanso suelen ser suficientes.</item>
+        <item>Al ser leves, quizás solo necesites relajarte un rato o dar un paseo corto para que se pasen.</item>
+        <item>El dolor es leve, así que algo de calor y mantener la calma te ayudarán a pasarlo mejor.</item>
+        <item>Con molestias leves, continuar con tu rutina de forma pausada y usar calor local suele bastar.</item>
+        <item>Para estos cólicos suaves, basta con no exigirte demasiado hoy y descansar si lo crees necesario.</item>
+    </string-array>
+
+    <!-- Phase Info -->
+    <string-array name="chat_phase_info">
+        <item>Estás en el día %1$d de tu ciclo (día %2$d de la fase %3$s). %4$s %5$s 📅</item>
+        <item>Llevas %1$d días de ciclo, y estás en el día %2$d de tu fase %3$s. %4$s %5$s 🌸</item>
+        <item>Te encuentras en tu día %1$d del ciclo, fase %3$s (día %2$d). %4$s %5$s 💙</item>
+        <item>Ciclo actual: día %1$d. Fase: %3$s (día %2$d). %4$s %5$s ✨</item>
+        <item>Hoy es tu día %1$d del ciclo y estás cursando la fase %3$s. %4$s %5$s 🌱</item>
+    </string-array>
+
+    <string-array name="chat_phase_desc_menstrual">
+        <item>Tu cuerpo está renovando el revestimiento uterino.</item>
+        <item>Es la etapa donde liberas el endometrio de tu útero.</item>
+        <item>El revestimiento de tu útero se está descamando naturalmente.</item>
+        <item>Tu sistema reproductivo se está reiniciando durante estos días.</item>
+        <item>Es tu etapa de sangrado, tu cuerpo limpia el útero.</item>
+    </string-array>
+    <string-array name="chat_phase_desc_follicular">
+        <item>Los folículos ováricos maduran y el estrógeno sube.</item>
+        <item>Tu estrógeno está aumentando mientras los folículos crecen.</item>
+        <item>Los ovarios se preparan para liberar un óvulo pronto.</item>
+        <item>Tu cuerpo está cultivando nuevos folículos para la ovulación.</item>
+        <item>La producción de estrógenos se acelera en estos momentos.</item>
+    </string-array>
+    <string-array name="chat_phase_desc_ovulation">
+        <item>Un óvulo está siendo liberado — ventana fértil activa.</item>
+        <item>Es el momento en que liberas un óvulo, es decir, máxima fertilidad.</item>
+        <item>El óvulo viaja hacia el útero, tu fertilidad está en su pico.</item>
+        <item>El ovario libera un óvulo listo para ser fecundado.</item>
+        <item>Tu cuerpo está en pleno proceso ovulatorio.</item>
+    </string-array>
+    <string-array name="chat_phase_desc_luteal">
+        <item>La progesterona domina. Prepárate para el próximo ciclo.</item>
+        <item>Tu cuerpo produce progesterona para preparar el útero.</item>
+        <item>Es la fase de preparación; la progesterona está en su nivel más alto.</item>
+        <item>El endometrio se engrosa gracias a la progesterona.</item>
+        <item>El ciclo se acerca a su fin, regulado por la progesterona.</item>
+    </string-array>
+
+    <!-- Energy -->
+    <string-array name="chat_energy_menstrual">
+        <item>%1$s En la menstruación, prioriza el descanso sobre el ejercicio intenso. Caminatas suaves, hidratación y alimentos ricos en hierro son tus aliados. 💙</item>
+        <item>%1$s Tu cuerpo pide pausa durante el sangrado. No te sientas mal por descansar más y comer nutritivo. 🌸</item>
+        <item>%1$s Baja el ritmo estos días. Mímate con comida saludable, calor local y actividades muy relajadas. ✨</item>
+        <item>%1$s La regla gasta mucha energía. Reemplázala descansando bien y evitando esfuerzos extremos. 🌱</item>
+        <item>%1$s Escucha a tu cuerpo: si hoy pide sofá y películas, dale sofá. El descanso es productivo en esta fase. 💜</item>
+    </string-array>
+    <string-array name="chat_energy_follicular">
+        <item>%1$s En la fase folicular tienes más energía disponible. Es buen momento para entrenamientos más intensos y actividades sociales. 🌱</item>
+        <item>%1$s ¡Estás recargando baterías! El estrógeno te da un extra de vitalidad. Aprovéchalo para tus pendientes. 💙</item>
+        <item>%1$s Esta fase es excelente para empezar cosas nuevas. Tienes el impulso hormonal a tu favor. ✨</item>
+        <item>%1$s Tu energía física y mental está en ascenso. Es la semana ideal para ponerte en marcha. 🌸</item>
+        <item>%1$s Con el estrógeno subiendo, deberías sentirte más ágil. Aprovecha para hacer ejercicio o tareas complejas. 💜</item>
+    </string-array>
+    <string-array name="chat_energy_ovulation">
+        <item>Estás en tu pico de energía del ciclo.%1$s Aprovecha para actividades exigentes — tu cuerpo está en su mejor momento. ✨</item>
+        <item>¡Vitalidad al máximo!%1$s La ovulación es el momento perfecto para desafiarte física y mentalmente. 💙</item>
+        <item>Tu cuerpo está lleno de energía ahora.%1$s Si puedes, canalízala en ejercicio o proyectos importantes. 🌱</item>
+        <item>Tienes el cóctel hormonal perfecto para sentirte imparable hoy.%1$s Disfruta tu energía. 🌸</item>
+        <item>La ovulación te da un gran empuje energético.%1$s Es el pico biológico de tu ciclo. 💜</item>
+    </string-array>
+    <string-array name="chat_energy_luteal">
+        <item>%1$s En la fase lútea la energía naturalmente baja. Prefiere yoga, pilates o caminatas. Reduce el azúcar para minimizar los bajones. 🌙</item>
+        <item>%1$s La progesterona ralentiza las cosas. Es normal querer estar más tranquila y en casa. 💙</item>
+        <item>%1$s Tu cuerpo entra en modo nido. Conserva tu energía y no te sobrecargues de tareas. ✨</item>
+        <item>%1$s Es momento de ir bajando revoluciones. El descanso y las actividades suaves son ideales ahora. 🌱</item>
+        <item>%1$s Si te sientes más pesada o lenta, es por la fase Lútea. Cuídate y descansa lo necesario. 💜</item>
+    </string-array>
+    <string-array name="chat_energy_unknown">
+        <item>%1$s Mantén horarios de sueño regulares, hidrátate bien y muévete aunque sea 20 minutos al día. 💙</item>
+        <item>%1$s A veces un buen vaso de agua, una siesta corta o caminar al aire libre pueden revitalizarte. ✨</item>
+        <item>%1$s Descansar y comer bien es la mejor base para cualquier falta de energía. 🌱</item>
+        <item>%1$s Escucha a tu cuerpo y no lo fuerces si te pide una pausa hoy. 🌸</item>
+        <item>%1$s Revisa tus hábitos de sueño y alimentación, suelen ser la clave para mejorar la energía diaria. 💜</item>
+    </string-array>
+
+    <string-array name="chat_energy_sleep_tip">
+        <item> Primero, intenta descansar: dormiste solo %1$sh y el cuerpo necesita 7-9h.</item>
+        <item> Note que tu sueño fue de %1$sh; tratar de dormir mejor te ayudará enormemente.</item>
+        <item> Con %1$sh de sueño es normal sentir fatiga. Prioriza tu descanso hoy.</item>
+        <item> Has dormido solo %1$sh, así que la falta de sueño es parte del problema.</item>
+        <item> Intenta recuperar horas de sueño (solo dormiste %1$sh); será tu mejor medicina.</item>
+    </string-array>
+
+    <!-- Sleep and Cycle -->
+    <string-array name="chat_sleep_cycle">
+        <item>El sueño y el ciclo menstrual están profundamente conectados.%1$s La falta de sueño eleva el cortisol (hormona del estrés), que puede retrasar o irregularizar la ovulación. Dormir 7-9 horas mejora la regularidad del ciclo y reduce la intensidad de los síntomas del SPM. 🌙</item>
+        <item>Dormir bien es fundamental para tus hormonas.%1$s Si no descansas, el estrés altera tu ovulación y empeora los cólicos. Intenta dormir entre 7 y 9 horas. 💙</item>
+        <item>Tus hormonas necesitan que duermas para regularse.%1$s El poco sueño sube el cortisol y desordena tu ciclo. Prioriza un buen descanso. ✨</item>
+        <item>La calidad de tu sueño impacta directo en tu regla.%1$s Menos sueño significa más estrés y ciclo irregular. Un buen descanso previene síntomas fuertes de SPM. 🌱</item>
+        <item>Descansar 7-9 horas ayuda a que tus hormonas funcionen en armonía.%1$s El insomnio, en cambio, altera tus fechas y empeora el humor. 💜</item>
+    </string-array>
+
+    <string-array name="chat_sleep_note_low">
+        <item> Hoy dormiste %1$sh — con menos de 6h, el cuerpo puede retrasar la ovulación.</item>
+        <item> Veo que descansaste %1$sh; esa privación de sueño afecta mucho tus hormonas.</item>
+        <item> Con tus %1$sh de sueño hoy, tu cuerpo no ha tenido tiempo de recuperarse bien.</item>
+        <item> Dormir %1$sh es muy poco y el estrés fisiológico se acumula.</item>
+        <item> El registro marca %1$sh de descanso; es crucial intentar subir ese número.</item>
+    </string-array>
+
+    <!-- Stress and Cycle -->
+    <string-array name="chat_stress_cycle">
+        <item>Sí, el estrés puede retrasar tu regla.%1$s El cortisol (hormona del estrés) inhibe la producción de GnRH, la hormona que desencadena la ovulación. Sin ovulación, el ciclo se extiende. Técnicas como la respiración profunda, el ejercicio moderado y el sueño regular son las más efectivas para reducir este efecto. 💆</item>
+        <item>Totalmente, el estrés retrasa el periodo.%1$s Tu cuerpo en "modo alerta" pausa la ovulación para protegerte. Relajarte es clave para que tu ciclo vuelva a la normalidad. 💙</item>
+        <item>El cortisol elevado por estrés bloquea las hormonas reproductivas.%1$s Si estás muy estresada, tu regla tardará más. Intenta hacer algo que te relaje hoy. ✨</item>
+        <item>El estrés y el ciclo son grandes enemigos.%1$s El estrés crónico frena la ovulación. El yoga, meditar o caminar pueden ayudarte a restablecer el balance. 🌱</item>
+        <item>Cuando te estresas mucho, tu cuerpo pospone la ovulación, alargando tu ciclo.%1$s Encontrar formas de bajar el estrés es la mejor medicina. 💜</item>
+    </string-array>
+
+    <string-array name="chat_stress_note_high">
+        <item> Registré que hoy tu estrés está en %1$d/10 — eso es alto.</item>
+        <item> Tu estrés hoy llegó a %1$d/10, un nivel bastante elevado.</item>
+        <item> Veo un nivel de estrés de %1$d/10 en tus registros, y eso influye mucho.</item>
+        <item> Con tu estrés en %1$d/10, el impacto hormonal es directo.</item>
+        <item> Hoy reportaste un estrés de %1$d/10; tenlo en cuenta si tu periodo se retrasa.</item>
+    </string-array>
+
+    <!-- Exercise -->
+    <string-array name="chat_exercise_menstrual">
+        <item>Hoy te recomiendo movimiento suave: yoga restaurativo, pilates o una caminata tranquila. Evita el entrenamiento de alta intensidad si tienes cólicos. El movimiento suave reduce las prostaglandinas y alivia el dolor. 💙</item>
+        <item>Es un día para actividades de baja intensidad. Estiramientos o yoga suave te ayudarán con los cólicos sin agotar tu energía. 🌸</item>
+        <item>Camina un poco o haz pilates suave. Durante el sangrado, forzarte demasiado puede ser contraproducente. ✨</item>
+        <item>Escucha a tu cuerpo: ejercicios de respiración o movilidad articular son suficientes si te sientes con molestias. 🌱</item>
+        <item>El movimiento ligero es ideal hoy. Te ayudará a oxigenar la sangre y reducir la inflamación sin cansarte en exceso. 💜</item>
+    </string-array>
+    <string-array name="chat_exercise_follicular">
+        <item>¡Excelente fase para entrenar con intensidad! El estrógeno potencia la fuerza y la resistencia. Cardio, pesas o HIIT son ideales estos días. 🌱</item>
+        <item>Tus músculos se recuperan más rápido ahora. Es el momento perfecto para cargar más peso o correr más rápido. 💙</item>
+        <item>Aprovecha el subidón de estrógeno para entrenamientos exigentes o probar un nuevo deporte. ✨</item>
+        <item>Tu cuerpo está preparado para el impacto y la resistencia. ¡Dale duro a tus rutinas favoritas! 🌸</item>
+        <item>La fase Folicular te da energía extra. El entrenamiento de fuerza y alta intensidad son muy recomendables hoy. 💜</item>
+    </string-array>
+    <string-array name="chat_exercise_ovulation">
+        <item>Estás en tu pico atlético. Entrena fuerte — tu cuerpo puede rendir al máximo. Cardio intenso, clases grupales o ejercicios de fuerza son perfectos hoy. ✨</item>
+        <item>¡Es tu momento de mayor fuerza! Bate tus propios récords y aprovecha tu resistencia biológica. 💙</item>
+        <item>Tus hormonas apoyan el máximo esfuerzo físico ahora. Disfruta de una sesión de entrenamiento bien intensa. 🌱</item>
+        <item>Saca tu lado más deportista. La ovulación te da ese empujón extra para cualquier actividad física dura. 🌸</item>
+        <item>Estás en la cima de tu rendimiento físico mensual. Cualquier deporte de alta intensidad te sentará genial. 💜</item>
+    </string-array>
+    <string-array name="chat_exercise_luteal">
+        <item>En la fase lútea la energía baja. Opta por yoga, pilates, natación o caminatas. Escucha a tu cuerpo — si un día no tienes ganas, está bien hacer menos. 🌙</item>
+        <item>Tu cuerpo prefiere rutinas más moderadas ahora. Caminar o nadar son excelentes opciones. 💙</item>
+        <item>Es buen momento para bajar el ritmo. El cardio suave y mantener la movilidad es suficiente. ✨</item>
+        <item>La progesterona te relaja, así que los ejercicios sin mucho impacto o de flexibilidad son los ideales. 🌱</item>
+        <item>No te exijas de más. Actividades de intensidad media o baja son la mejor manera de cuidar tu cuerpo en la fase Lútea. 💜</item>
+    </string-array>
+    <string-array name="chat_exercise_unknown">
+        <item>El ejercicio regular (150 min/semana de actividad moderada) mejora la regularidad del ciclo y reduce síntomas del SPM. 💙</item>
+        <item>Moverte un poco cada día es genial para tus hormonas. Encuentra una actividad que disfrutes. ✨</item>
+        <item>Cualquier ejercicio que te guste hacer es bueno. Ayuda a liberar endorfinas y regular tu ciclo. 🌱</item>
+        <item>La clave está en la consistencia. Intenta mezclar cardio con estiramientos durante la semana. 🌸</item>
+        <item>El deporte moderado es el mejor aliado de un ciclo menstrual sano. ¡Anímate a moverte hoy! 💜</item>
+    </string-array>
+
+    <!-- Late Period Normal -->
+    <string-array name="chat_late_normal">
+        <item>Tu ciclo está dentro del rango esperado. Si sientes que algo está diferente, registra tus síntomas para que pueda ayudarte mejor. 📅</item>
+        <item>Por ahora, no veo retrasos. Todo va según tu calendario habitual. 💙</item>
+        <item>Tus fechas están en orden. Sigue registrando tu día a día para que mis predicciones mejoren. ✨</item>
+        <item>¡Todo luce puntual en tu ciclo! No hay nada de qué preocuparse por ahora. 🌱</item>
+        <item>Tu periodo no parece estar retrasado. Mantengamos el registro al día. 🌸</item>
+    </string-array>
+    <!-- Late Delayed -->
+    <string-array name="chat_late_delayed">
+        <item>Tu periodo lleva %1$d día(s) de retraso. Las causas más comunes son: estrés elevado, cambios de rutina, pérdida o aumento de peso brusco, o variaciones hormonales. %2$s</item>
+        <item>Hay un retraso de %1$d día(s). El estrés, los viajes o un pico de actividad física pueden afectar tu fecha. %2$s</item>
+        <item>Cuento %1$d día(s) de retraso. A veces nuestro cuerpo pausa la ovulación por estrés y el ciclo se alarga. %2$s</item>
+        <item>Llevas %1$d día(s) de retraso. Las fluctuaciones hormonales normales pueden causar estos pequeños desajustes. %2$s</item>
+        <item>He notado %1$d día(s) de retraso. Trata de mantener la calma, ya que el estrés adicional puede alargarlo aún más. %2$s</item>
+    </string-array>
+    <string-array name="chat_late_delayed_advice_long">
+        <item>Con %1$d días de retraso, te recomiendo hacerte una prueba de embarazo y/o consultar con tu ginecóloga para descartar otras causas. 💜</item>
+        <item>Ya son %1$d días de retraso, así que es un buen momento para una visita al médico o una prueba si aplica. 🌸</item>
+        <item>Al tener un retraso tan prolongado (%1$d días), lo mejor es buscar opinión profesional. 💙</item>
+        <item>Es un retraso considerable de %1$d días. Consulta a tu doctora para ver qué está pasando. ✨</item>
+        <item>Te sugiero fuertemente visitar a tu ginecóloga debido a que el retraso ya es de %1$d días. 🌱</item>
+    </string-array>
+    <string-array name="chat_late_delayed_advice_short">
+        <item>Si el retraso supera 2 semanas o es recurrente, considera consultar a tu ginecóloga. 💜</item>
+        <item>Si este retraso se extiende por más días, sería bueno que hables con tu médica. 🌸</item>
+        <item>Mantenlo en observación; si pasan un par de semanas, visita a tu doctora. 💙</item>
+        <item>A veces los retrasos cortos son normales. Consúltalo si pasa de las dos semanas. ✨</item>
+        <item>Dale unos días más a tu cuerpo, pero si no llega en dos semanas, busca asesoría médica. 🌱</item>
+    </string-array>
+
+    <!-- Spotting -->
+    <string-array name="chat_spotting">
+        <item>El manchado entre periodos (spotting) puede ser normal en algunos momentos del ciclo, especialmente alrededor de la ovulación (día %1$d aprox.). También puede ocurrir por cambios hormonales, inicio de anticonceptivos o estrés. Si el spotting es frecuente, abundante o va acompañado de dolor, te recomiendo mencionárselo a tu ginecóloga. 💜</item>
+        <item>A veces el cuerpo produce manchado por fluctuaciones hormonales ovulatorias (cerca del día %1$d). Si te preocupa, duele o es muy seguido, acude a tu médica. 🌸</item>
+        <item>El spotting es común al usar anticonceptivos nuevos o por estrés. Si ocurre muy seguido o con dolores raros, por favor consulta a tu ginecóloga. 💙</item>
+        <item>Pequeños manchados a mitad de ciclo suelen ser inofensivos. Sin embargo, si manchas mucho o hay dolor severo, repórtalo a tu doctora. ✨</item>
+        <item>El manchado puede ser señal de que tu cuerpo está ajustando hormonas. Mientras sea leve y esporádico no suele ser grave, pero ante la duda, ve a tu médica. 🌱</item>
+    </string-array>
+</resources>

@@ -1,19 +1,27 @@
-﻿package com.jeremy.lumi.ui.screens.home
+package com.jeremy.lumi.ui.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jeremy.lumi.ai.LumiAIPredictor
 import com.jeremy.lumi.domain.model.CyclePhase
 import com.jeremy.lumi.domain.model.PartnerLink
 import com.jeremy.lumi.domain.repository.LumiRepository
+import com.jeremy.lumi.domain.usecase.CycleContext
 import com.jeremy.lumi.domain.usecase.CyclePredictor
 import com.jeremy.lumi.domain.usecase.DelayState
+import com.jeremy.lumi.domain.usecase.LumiRulesEngine
 import com.jeremy.lumi.data.preferences.OnboardingPreferenceManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
 import java.time.Instant
@@ -32,22 +40,24 @@ enum class HomeMode {
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val repository: LumiRepository,
-    private val prefsManager: OnboardingPreferenceManager,
-    private val partnerRepository: com.jeremy.lumi.data.remote.PartnerRepository
+    private val repository       : LumiRepository,
+    private val prefsManager     : OnboardingPreferenceManager,
+    private val partnerRepository: com.jeremy.lumi.data.remote.PartnerRepository,
+    private val aiPredictor      : LumiAIPredictor,
+    private val rulesEngine      : LumiRulesEngine,
+    private val healthConnectManager: com.jeremy.lumi.data.health.HealthConnectManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
-        loadCurrentCycle()
         observePreferences()
         observeHugs()
         observeLinkedCycles()
     }
 
-    private var lastSeenHugTimestamps = mutableMapOf<String, Long>()
+    private var lastSeenHugTimestamps = java.util.concurrent.ConcurrentHashMap<String, Long>()
     private var hugAnimationJob: Job? = null
 
     /** Observa los vínculos activos del usuario y actualiza homeMode */
@@ -129,12 +139,27 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             prefsManager.isPregnantFlow.collect { pregnant ->
                 _uiState.update { it.copy(isPregnant = pregnant) }
+                loadCurrentCycle(isPregnant = pregnant)
+            }
+        }
+        // FIX P1-3: Observar cambios de modo pastilla reactivamente,
+        // igual que isPregnantFlow, para que el Home se recargue al instante.
+        viewModelScope.launch {
+            prefsManager.isOnContraceptiveFlow.collect { isOnContraceptive ->
+                _uiState.update { it.copy(isOnContraceptive = isOnContraceptive) }
                 loadCurrentCycle()
             }
         }
         viewModelScope.launch {
             prefsManager.userGoalFlow.collect { goal ->
                 _uiState.update { it.copy(userGoal = goal.name) }
+            }
+        }
+        viewModelScope.launch {
+            prefsManager.isHealthConnectEnabledFlow.collect { enabled ->
+                if (enabled) {
+                    syncHealthConnectData()
+                }
             }
         }
         viewModelScope.launch {
@@ -147,9 +172,12 @@ class HomeViewModel @Inject constructor(
             }
         }
 
+        val logsFlow = repository.getAllLogs(descending = true)
+            .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), replay = 1)
+
         // Calcular racha de registros
         viewModelScope.launch {
-            repository.getAllLogs(descending = true).collect { logs ->
+            logsFlow.collect { logs ->
                 var streak = 0
                 val today = java.time.LocalDate.now()
                 var currentCheckDate = today
@@ -167,8 +195,16 @@ class HomeViewModel @Inject constructor(
                     }
                 }
                 _uiState.update { it.copy(logStreakDays = streak) }
-                syncToPartner()
             }
+        }
+
+        @OptIn(kotlinx.coroutines.FlowPreview::class)
+        viewModelScope.launch {
+            logsFlow
+                .debounce(500)
+                .collect {
+                    syncToPartner()
+                }
         }
     }
 
@@ -213,7 +249,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun loadCurrentCycle() {
+    private fun loadCurrentCycle(isPregnant: Boolean = _uiState.value.isPregnant) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
@@ -224,7 +260,8 @@ class HomeViewModel @Inject constructor(
                 val startDate = Instant.ofEpochMilli(cycle.startDate)
                     .atZone(ZoneId.of("UTC")).toLocalDate()
 
-                val cycleLen = if (closedCycles.size >= 3) {
+                // ── Predictor matemático (base) ────────────────────────────
+                val mathCycleLen = if (closedCycles.size >= 3) {
                     CyclePredictor.weightedAverageCycleLength(closedCycles).toInt()
                         .coerceIn(15, 60)
                 } else {
@@ -232,16 +269,42 @@ class HomeViewModel @Inject constructor(
                 }
                 val periodLen = cycle.periodLength.coerceAtLeast(1)
 
+                // ── Capa de IA (TFLite) — corre en hilo de cómputo ───────────
+                val aiResult = if (closedCycles.size >= 3) {
+                    withContext(Dispatchers.Default) {
+                        val age    = prefsManager.ageFlow.first()?.toFloat()
+                        val height = prefsManager.heightFlow.first()
+                        val weight = prefsManager.weightFlow.first()
+                        aiPredictor.predict(
+                            closedCycles    = closedCycles,
+                            currentCycleLen = mathCycleLen.toFloat(),
+                            periodLength    = periodLen.toFloat(),
+                            age             = age,
+                            height          = height,
+                            weight          = weight
+                        )
+                    }
+                } else null
+
+                // Ciclo final: usa el resultado blended si el modelo está listo
+                val cycleLen = aiResult?.predictedCycleLength?.toInt()?.coerceIn(15, 60)
+                    ?: mathCycleLen
+
+                val isOnContraceptive = prefsManager.isOnContraceptiveFlow.first()
+
                 val prediction = CyclePredictor.predict(
                     startDate = startDate,
                     cycleLength = cycleLen,
                     periodLength = periodLen,
                     closedCycles = closedCycles,
-                    isPregnant = _uiState.value.isPregnant
+                    isPregnant = isPregnant,
+                    isOnContraceptive = isOnContraceptive
                 )
 
                 val today = LocalDate.now()
 
+                // FIX P1-2: Pasar isOnContraceptive a phaseForDay para que la tira
+                // semanal no muestre OVULACIÓN a usuarias con pastilla anticonceptiva.
                 val weekDays = (-7..14).map { offset ->
                     val date = today.plusDays(offset.toLong())
                     val dayWrapped = CyclePredictor.dayInCycleWrapped(startDate, cycleLen, date)
@@ -251,7 +314,11 @@ class HomeViewModel @Inject constructor(
                         weekdayLabel = date.dayOfWeek
                             .getDisplayName(TextStyle.SHORT, Locale("es"))
                             .replaceFirstChar { it.uppercase() },
-                        phase = CyclePredictor.phaseForDay(dayWrapped, cycleLen, periodLen, isPregnant = _uiState.value.isPregnant),
+                        phase = CyclePredictor.phaseForDay(
+                            dayWrapped, cycleLen, periodLen,
+                            isPregnant = _uiState.value.isPregnant,
+                            isOnContraceptive = isOnContraceptive  // FIX P1-2
+                        ),
                         isToday = offset == 0
                     )
                 }
@@ -269,6 +336,44 @@ class HomeViewModel @Inject constructor(
                         isLate = prediction.isLate
                     )
                 }
+                // ── Propagar contexto al motor de chat ───────────────────────
+                val todayMillis = LocalDate.now()
+                    .atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
+                val todayLog = repository.getDailyLog(todayMillis)
+
+                val cycleContext = CycleContext(
+                    phase              = prediction.currentPhase,
+                    dayOfCycle         = prediction.currentDayOfCycle,
+                    dayOfPhase         = prediction.dayOfPhase,
+                    daysUntilPeriod    = prediction.daysUntilNextPeriod,
+                    daysUntilOvulation = prediction.daysUntilOvulation,
+                    cycleLength        = cycleLen,
+                    isLate             = prediction.isLate,
+                    delayDays          = prediction.delayDays,
+                    // FIX P1-4: Leer el nivel de dolor real del log diario en lugar
+                    // del valor hardcodeado (5). Esto permite al motor de chat
+                    // detectar dolor alto (>= 7) y dar respuestas apropiadas.
+                    todayPainLevel     = todayLog?.dailyLog?.painLevel ?: 0,
+                    todayEnergyLevel   = todayLog?.dailyLog?.energyLevel,
+                    todaySleepHours    = todayLog?.dailyLog?.sleepHours,
+                    todayStressLevel   = todayLog?.dailyLog?.stressLevel,
+                    todayMood          = todayLog?.dailyLog?.mood,
+                    userGoal           = _uiState.value.userGoal ?: "TRACK_CYCLE",
+                    // FIX P2-1: Pasar el modo pastilla al motor de reglas para que
+                    // filtre preguntas de ventana fértil y dé respuestas apropiadas.
+                    isOnContraceptive  = isOnContraceptive,
+                    // FIX P2-4: Temperatura basal sincronizada desde Health Connect.
+                    todayBbt           = todayLog?.dailyLog?.basalBodyTemp
+                )
+                rulesEngine.updateContext(cycleContext)
+
+                // FIX P2-3: Re-sincronizar Health Connect en cada carga del ciclo
+                // para mantener los datos de sueño/BBT actualizados durante la sesión.
+                val hcEnabled = prefsManager.isHealthConnectEnabledFlow.first()
+                if (hcEnabled) {
+                    syncHealthConnectData()
+                }
+
             } else {
                 _uiState.update {
                     it.copy(
@@ -293,7 +398,6 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val todayDate = LocalDate.now()
             val todayMillis = todayDate.atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
-            val closedCycles = repository.getClosedCycles()
 
             val currentCycle = repository.getCurrentActiveCycle()
             if (currentCycle != null) {
@@ -313,6 +417,8 @@ class HomeViewModel @Inject constructor(
 
                 repository.endCurrentCycle(endOfLast, realLength)
             }
+
+            val closedCycles = repository.getClosedCycles()
 
             val newCycleLen = if (closedCycles.size >= 3) {
                 CyclePredictor.weightedAverageCycleLength(closedCycles).toInt().coerceIn(15, 60)
@@ -337,5 +443,45 @@ class HomeViewModel @Inject constructor(
             prefsManager.dismissDelayBannerForDay(dayOfCycle)
         }
         _uiState.update { it.copy(isLate = false) }
+    }
+
+    private fun syncHealthConnectData() {
+        viewModelScope.launch {
+            if (!healthConnectManager.isAvailable() || !healthConnectManager.hasAllPermissions()) return@launch
+            
+            val today = java.time.LocalDate.now()
+            val startOfDay = today.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant()
+            val endOfDay = today.plusDays(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant()
+            
+            val bbt = healthConnectManager.readBasalTemperature(startOfDay, endOfDay)
+            val sleep = healthConnectManager.readSleepHours(startOfDay, endOfDay)
+            
+            if (bbt != null || sleep != null) {
+                // Usar UTC para la clave de fecha del log (consistente con el resto de la app)
+                val epochMs = today.atStartOfDay(java.time.ZoneId.of("UTC")).toInstant().toEpochMilli()
+                val existingLog = repository.getDailyLog(epochMs)
+                
+                if (existingLog == null) {
+                    val activeCycle = repository.getCurrentActiveCycle()
+                    if (activeCycle != null) {
+                        repository.saveDailyLogWithSymptoms(
+                            com.jeremy.lumi.data.local.entity.DailyLogEntity(
+                                cycleId = activeCycle.id,
+                                date = epochMs,
+                                basalBodyTemp = bbt,
+                                sleepHours = sleep
+                            ),
+                            emptyList()
+                        )
+                    }
+                } else {
+                    val updatedLog = existingLog.dailyLog.copy(
+                        basalBodyTemp = bbt ?: existingLog.dailyLog.basalBodyTemp,
+                        sleepHours = sleep ?: existingLog.dailyLog.sleepHours
+                    )
+                    repository.saveDailyLogWithSymptoms(updatedLog, existingLog.symptoms)
+                }
+            }
+        }
     }
 }

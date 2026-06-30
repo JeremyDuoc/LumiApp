@@ -58,6 +58,10 @@ class LumiRepositoryImpl(
         return dao.getClosedCycles()
     }
 
+    override suspend fun getCycleForDate(dateMs: Long): CycleEntity? {
+        return dao.getCycleForDate(dateMs)
+    }
+
     override suspend fun saveDailyLogWithSymptoms(dailyLog: DailyLogEntity, symptoms: List<SymptomEntity>) {
         // Guardamos el día primero para obtener su ID autogenerado (o actualizar si ya existía)
         val dailyLogId = dao.insertDailyLog(dailyLog)

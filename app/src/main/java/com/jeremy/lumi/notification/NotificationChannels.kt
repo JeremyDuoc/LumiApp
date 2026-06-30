@@ -65,8 +65,10 @@ enum class LumiNotificationChannel(
             ReminderType.PERIOD_SOON,
             ReminderType.OVULATION_SOON      -> GENTLE
 
-            ReminderType.CUSTOM              -> GENTLE
-            ReminderType.SUPPLY_REMINDER -> TODO()
+            ReminderType.CUSTOM,
+            // FIX P0-1: SUPPLY_REMINDER usa canal GENTLE como valor por defecto.
+            // El TODO() original causaba un crash (NotImplementedError) en runtime.
+            ReminderType.SUPPLY_REMINDER     -> GENTLE
         }
     }
 }
@@ -78,7 +80,7 @@ object NotificationChannels {
      * (ej. en Application.onCreate()) — es idempotente, no falla si ya existen.
      */
     fun ensureAllChannelsExist(context: Context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         LumiNotificationChannel.entries.forEach { def ->

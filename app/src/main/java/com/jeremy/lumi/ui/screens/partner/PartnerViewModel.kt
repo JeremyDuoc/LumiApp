@@ -29,7 +29,11 @@ data class PartnerUiState(
     val shareSymptoms: Boolean = true,
 
     // Cooldown para acciones de cuidado (compartido para todas las acciones)
-    val careActionCooldownUntil: Long = 0L
+    val careActionCooldownUntil: Long = 0L,
+
+    // Shared Diary
+    val diaryEntries: List<DiaryEntry> = emptyList(),
+    val isDiarySending: Boolean = false
 )
 
 /** Returns true if a care action should be disabled */
@@ -50,48 +54,44 @@ class PartnerViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            repository.signInAnonymouslyIfNeeded()
-            val uid = repository.getCurrentUid()
-            _uiState.update { it.copy(currentUid = uid) }
-
+            try {
+                repository.signInAnonymouslyIfNeeded()
+                val uid = repository.getCurrentUid()
+                _uiState.update { it.copy(currentUid = uid) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = "Login error: ${e.message}") }
+            }
+        }
+        viewModelScope.launch {
             repository.observeMyLinks().collect { links ->
                 _uiState.update { it.copy(isLoading = false, activeLinks = links) }
             }
         }
+
         viewModelScope.launch {
-            prefsManager.isObserverOnly.collect { v ->
-                _uiState.update { it.copy(isObserverOnly = v) }
-            }
+            kotlinx.coroutines.flow.combine(
+                prefsManager.isObserverOnly,
+                prefsManager.userNameFlow,
+                prefsManager.sharePhaseFlow,
+                prefsManager.sharePredictionsFlow
+            ) { obs, name, phase, pred ->
+                _uiState.update { it.copy(
+                    isObserverOnly = obs, currentUserName = name,
+                    sharePhase = phase, sharePredictions = pred
+                ) }
+            }.collect { }
         }
+
         viewModelScope.launch {
-            prefsManager.userNameFlow.collect { name ->
-                _uiState.update { it.copy(currentUserName = name) }
-            }
-        }
-        viewModelScope.launch {
-            prefsManager.sharePhaseFlow.collect { v ->
-                _uiState.update { it.copy(sharePhase = v) }
-            }
-        }
-        viewModelScope.launch {
-            prefsManager.sharePredictionsFlow.collect { v ->
-                _uiState.update { it.copy(sharePredictions = v) }
-            }
-        }
-        viewModelScope.launch {
-            prefsManager.shareMoodFlow.collect { v ->
-                _uiState.update { it.copy(shareMood = v) }
-            }
-        }
-        viewModelScope.launch {
-            prefsManager.shareSymptomsFlow.collect { v ->
-                _uiState.update { it.copy(shareSymptoms = v) }
-            }
-        }
-        viewModelScope.launch {
-            prefsManager.hugCooldownUntilFlow.collect { v ->
-                _uiState.update { it.copy(careActionCooldownUntil = v) }
-            }
+            kotlinx.coroutines.flow.combine(
+                prefsManager.shareMoodFlow,
+                prefsManager.shareSymptomsFlow,
+                prefsManager.hugCooldownUntilFlow
+            ) { mood, symp, cooldown ->
+                _uiState.update { it.copy(
+                    shareMood = mood, shareSymptoms = symp, careActionCooldownUntil = cooldown
+                ) }
+            }.collect { }
         }
     }
 
@@ -147,10 +147,14 @@ class PartnerViewModel @Inject constructor(
         if (state.isCareActionOnCooldown()) return // Silently ignore if on cooldown
 
         viewModelScope.launch {
-            repository.sendCareAction(linkId, action)
-            // 5 minutos de cooldown
-            val cooldownUntil = System.currentTimeMillis() + (5 * 60 * 1000L)
-            prefsManager.setHugCooldownUntil(cooldownUntil) // Se reusa el mismo preference
+            try {
+                repository.sendCareAction(linkId, action)
+                // 5 minutos de cooldown
+                val cooldownUntil = System.currentTimeMillis() + (5 * 60 * 1000L)
+                prefsManager.setHugCooldownUntil(cooldownUntil) // Se reusa el mismo preference
+            } catch (e: Exception) {
+                // Ignore error
+            }
         }
     }
 
@@ -163,4 +167,29 @@ class PartnerViewModel @Inject constructor(
      * BUG FIX: Evita mostrar código viejo si el usuario reabre el Wizard.
      */
     fun clearWizardState() = _uiState.update { it.copy(pendingCode = null, error = null) }
+
+    private var diaryJob: kotlinx.coroutines.Job? = null
+
+    fun observeDiary(linkId: String) {
+        diaryJob?.cancel()
+        diaryJob = viewModelScope.launch {
+            repository.observeDiaryEntries(linkId).collect { entries ->
+                _uiState.update { it.copy(diaryEntries = entries) }
+            }
+        }
+    }
+
+    fun sendDiaryEntry(linkId: String, text: String, myPhase: com.jeremy.lumi.domain.model.CyclePhase) {
+        val state = _uiState.value
+        viewModelScope.launch {
+            _uiState.update { it.copy(isDiarySending = true) }
+            repository.sendDiaryEntry(
+                linkId = linkId,
+                text = text,
+                phase = myPhase,
+                authorName = state.currentUserName ?: "Yo"
+            )
+            _uiState.update { it.copy(isDiarySending = false) }
+        }
+    }
 }

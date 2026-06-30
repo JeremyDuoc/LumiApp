@@ -76,15 +76,16 @@ object CyclePredictor {
         cycleLength: Int,
         periodLength: Int,
         lutealLength: Int = LUTEAL_LENGTH_DEFAULT,
-        isPregnant: Boolean = false
+        isPregnant: Boolean = false,
+        isOnContraceptive: Boolean = false
     ): CyclePhase {
         if (isPregnant) return CyclePhase.PREGNANCY
         val c = cycleLength.coerceAtLeast(15)
         val ovulationDay = c - lutealLength
         return when {
             dayInCycle <= periodLength                            -> CyclePhase.MENSTRUAL
-            dayInCycle in (ovulationDay - 1)..(ovulationDay + 1) -> CyclePhase.OVULATION
-            dayInCycle < ovulationDay                            -> CyclePhase.FOLLICULAR
+            !isOnContraceptive && dayInCycle in (ovulationDay - 1)..(ovulationDay + 1) -> CyclePhase.OVULATION
+            dayInCycle <= ovulationDay                            -> CyclePhase.FOLLICULAR
             else                                                 -> CyclePhase.LUTEAL
         }
     }
@@ -94,30 +95,76 @@ object CyclePredictor {
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Calcula el promedio ponderado exponencial de duración de ciclos.
+     * Calcula el promedio ponderado exponencial de duración de ciclos con detección de outliers.
      *
-     * Los ciclos más recientes tienen más peso. Con λ = 0.1386, el ciclo
-     * más reciente pesa ~2× más que el de hace 5 ciclos.
+     * Utiliza la Mediana y la Desviación Media Absoluta (MAD) para identificar
+     * ciclos anómalos. Si un ciclo es un outlier, su peso se reduce drásticamente.
+     * Los ciclos normales reciben más peso si son recientes (decaimiento exponencial).
      *
      * @param closedCycles Lista de ciclos cerrados, ordenados más reciente primero.
      */
     fun weightedAverageCycleLength(closedCycles: List<CycleEntity>): Float {
         if (closedCycles.isEmpty()) return 28f
+        
+        // 1. Extraer duraciones válidas
+        val durations = closedCycles.mapNotNull { cycle ->
+            if (cycle.endDate != null) {
+                val startLocal = cycle.startDate.toLocalDate()
+                val endLocal   = cycle.endDate.toLocalDate()
+                val duration   = ChronoUnit.DAYS.between(startLocal, endLocal).toInt()
+                if (duration in 15..60) duration else null
+            } else null
+        }
+        
+        if (durations.isEmpty()) return 28f
+        if (durations.size < 3) {
+            // Sin historial suficiente, un promedio simple es lo más seguro
+            return durations.average().toFloat()
+        }
+
+        // 2. Calcular Mediana
+        val sorted = durations.sorted()
+        val median = if (sorted.size % 2 == 0) {
+            (sorted[sorted.size / 2 - 1] + sorted[sorted.size / 2]) / 2.0
+        } else {
+            sorted[sorted.size / 2].toDouble()
+        }
+
+        // 3. Calcular MAD (Median Absolute Deviation)
+        val absoluteDeviations = durations.map { kotlin.math.abs(it - median) }.sorted()
+        val mad = if (absoluteDeviations.size % 2 == 0) {
+            (absoluteDeviations[absoluteDeviations.size / 2 - 1] + absoluteDeviations[absoluteDeviations.size / 2]) / 2.0
+        } else {
+            absoluteDeviations[absoluteDeviations.size / 2]
+        }
+        
+        // Evitar MAD = 0 si todos los ciclos son idénticos o casi idénticos
+        val effectiveMad = if (mad == 0.0) 1.5 else mad
+        
+        // 4. Calcular promedio ponderado con penalización de outliers
         var weightedSum = 0.0
         var totalWeight = 0.0
+        
         closedCycles.forEachIndexed { index, cycle ->
             if (cycle.endDate != null) {
                 val startLocal = cycle.startDate.toLocalDate()
                 val endLocal   = cycle.endDate.toLocalDate()
                 val duration   = ChronoUnit.DAYS.between(startLocal, endLocal).toInt()
-                if (duration in 15..60) {               // filtrar outliers absurdos
-                    val weight = Math.exp(-DECAY_LAMBDA * index)
-                    weightedSum += duration * weight
-                    totalWeight += weight
+                
+                if (duration in 15..60) {
+                    val baseWeight = Math.exp(-DECAY_LAMBDA * index)
+                    
+                    // Si se desvía más de 2.5 * MAD, es un outlier (peso reducido al 5%)
+                    val isOutlier = kotlin.math.abs(duration - median) > (2.5 * effectiveMad)
+                    val finalWeight = if (isOutlier) baseWeight * 0.05 else baseWeight
+                    
+                    weightedSum += duration * finalWeight
+                    totalWeight += finalWeight
                 }
             }
         }
-        return if (totalWeight == 0.0) 28f else (weightedSum / totalWeight).toFloat()
+        
+        return if (totalWeight == 0.0) median.toFloat() else (weightedSum / totalWeight).toFloat()
     }
 
     /**
@@ -174,7 +221,8 @@ object CyclePredictor {
         periodLength : Int             = 5,
         today        : LocalDate       = LocalDate.now(),
         closedCycles : List<CycleEntity> = emptyList(),
-        isPregnant   : Boolean         = false
+        isPregnant   : Boolean         = false,
+        isOnContraceptive: Boolean     = false
     ): CyclePrediction {
 
         if (isPregnant) {
@@ -195,7 +243,9 @@ object CyclePredictor {
         }
 
         // ── Elegir la mejor estimación de cycleLength ────────────────────────
-        val effectiveCycleLen = if (closedCycles.size >= MIN_CYCLES_FOR_HISTORY) {
+        val effectiveCycleLen = if (isOnContraceptive) {
+            28 // El ciclo de la píldora suele ser de 28 días
+        } else if (closedCycles.size >= MIN_CYCLES_FOR_HISTORY) {
             weightedAverageCycleLength(closedCycles).roundToInt().coerceAtLeast(15)
         } else {
             cycleLength.coerceAtLeast(15)
@@ -214,19 +264,23 @@ object CyclePredictor {
         // ── Retraso real ─────────────────────────────────────────────────────
         val maxDelay       = maxHistoricalDelay(closedCycles)
         val rawDelay       = (realDay - c).coerceAtLeast(0)
-        val delayDays      = rawDelay
+        // FIX P3-4: Con anticonceptivos hormonales la hemorragia por privación
+        // ocurre de forma regulada y no aplica el concepto de "retraso".
+        // Forzar siempre ON_TIME para evitar el banner de "período tardío" incorrecto.
+        val delayDays      = if (isOnContraceptive) 0 else rawDelay
 
         val delayState = when {
-            delayDays == 0                                          -> DelayState.ON_TIME
+            isOnContraceptive                                          -> DelayState.ON_TIME
+            delayDays == 0                                            -> DelayState.ON_TIME
             // Para usuarias sin historial, el umbral mínimo es 7 días.
             // Con historial, se adapta al máximo retraso personal + 2 días de margen.
-            delayDays <= (maxDelay + 2).coerceAtLeast(7)           -> DelayState.LATE
-            delayDays < EXTREME_THRESHOLD                          -> DelayState.VERY_LATE
-            else                                                   -> DelayState.EXTREMELY_LATE
+            delayDays <= (maxDelay + 2).coerceAtLeast(7)             -> DelayState.LATE
+            delayDays < EXTREME_THRESHOLD                            -> DelayState.VERY_LATE
+            else                                                     -> DelayState.EXTREMELY_LATE
         }
 
         // ── Fase actual ──────────────────────────────────────────────────────
-        val currentPhase = if (delayDays > 0) CyclePhase.LUTEAL else phaseForDay(realDay, c, periodLength, lutealLen)
+        val currentPhase = if (delayDays > 0) CyclePhase.LUTEAL else phaseForDay(realDay, c, periodLength, lutealLen, false, isOnContraceptive)
 
         // ── Día de la fase ───────────────────────────────────────────────────
         val ovulationDay = c - lutealLen
@@ -234,7 +288,7 @@ object CyclePredictor {
             CyclePhase.MENSTRUAL -> realDay
             CyclePhase.FOLLICULAR -> realDay - periodLength
             CyclePhase.OVULATION -> realDay - (ovulationDay - 2) // Ventana: ovDay-1, ovDay, ovDay+1 -> 1, 2, 3
-            CyclePhase.LUTEAL -> realDay - (ovulationDay + 1)
+            CyclePhase.LUTEAL -> realDay - (if (isOnContraceptive) ovulationDay else (ovulationDay + 1))
             else -> 1
         }.coerceAtLeast(1)
 
@@ -243,7 +297,7 @@ object CyclePredictor {
         val nextPeriod = startDate.plusDays(c.toLong())
 
         // ── Próxima ovulación (usa lutealLen personal) ───────────────────────
-        val nextOvulation = nextPeriod.minusDays(lutealLen.toLong())
+        val nextOvulation = if (isOnContraceptive) LocalDate.MAX else nextPeriod.minusDays(lutealLen.toLong())
 
         return CyclePrediction(
             currentDayOfCycle   = realDay,
@@ -251,7 +305,7 @@ object CyclePredictor {
             nextPeriodDate      = nextPeriod,
             daysUntilNextPeriod = ChronoUnit.DAYS.between(today, nextPeriod).toInt(),
             nextOvulationDate   = nextOvulation,
-            daysUntilOvulation  = ChronoUnit.DAYS.between(today, nextOvulation).toInt(),
+            daysUntilOvulation  = if (isOnContraceptive) -1 else ChronoUnit.DAYS.between(today, nextOvulation).toInt(),
             cycleLength         = c,
             periodLength        = periodLength,
             delayState          = delayState,

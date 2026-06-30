@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ChildCare
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -40,6 +41,7 @@ import com.jeremy.lumi.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.jeremy.lumi.domain.model.SecondaryGoal
 import com.jeremy.lumi.domain.model.UserGoal
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -69,10 +71,10 @@ fun OnboardingScreen(
         Column(Modifier.fillMaxSize()) {
 
             // â”€â”€ Indicador de progreso (oculto en página de celebración) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-            if (uiState.currentPage < 6) {
+            if (uiState.currentPage < 8) {
                 Spacer(Modifier.height(52.dp))
                 PageIndicator(
-                    totalPages   = 6,
+                    totalPages   = 8,
                     currentPage  = uiState.currentPage,
                     modifier     = Modifier.align(Alignment.CenterHorizontally)
                 )
@@ -97,20 +99,24 @@ fun OnboardingScreen(
                         onTrackCycleClick = { viewModel.nextPage() },
                         onObserverClick   = { viewModel.completeObserverOnboarding(onComplete) }
                     )
-                    1 -> PageName(
+                    1 -> PageDisclaimer(
+                        accepted = uiState.data.medicalDisclaimerAccepted,
+                        onAcceptedChange = { accepted -> viewModel.setMedicalDisclaimerAccepted(accepted) }
+                    )
+                    2 -> PageName(
                         name     = uiState.data.userName ?: "",
                         onChange = { viewModel.setUserName(it) }
                     )
-                    2 -> PageRegularity(
+                    3 -> PageRegularity(
                         isRegular = uiState.data.isRegular,
                         onChange  = { viewModel.setRegularity(it) }
                     )
-                    3 -> PageCycleLength(
+                    4 -> PageCycleLength(
                         days      = uiState.data.cycleLength,
                         isRegular = uiState.data.isRegular,
                         onChange  = { viewModel.setCycleLength(it) }
                     )
-                    4 -> PageLastPeriod(
+                    5 -> PageLastPeriod(
                         selectedDate    = uiState.data.lastPeriodDate,
                         lastPeriodKnown = uiState.data.lastPeriodKnown,
                         onDatePicked    = { known, date -> 
@@ -118,30 +124,42 @@ fun OnboardingScreen(
                             if (known && date != null) viewModel.setLastPeriodDate(date)
                         }
                     )
-                    5 -> PagePeriodAndGoal(
-                        periodLength = uiState.data.periodLength,
-                        selectedGoal = uiState.data.userGoal,
-                        onPeriodChange = { viewModel.setPeriodLength(it) },
-                        onGoalChange   = { viewModel.setUserGoal(it) }
+                    6 -> PagePhysicalProfile(
+                        age      = uiState.data.age,
+                        height   = uiState.data.height,
+                        weight   = uiState.data.weight,
+                        onAge    = { viewModel.setAge(it) },
+                        onHeight = { viewModel.setHeight(it) },
+                        onWeight = { viewModel.setWeight(it) }
                     )
-                    6 -> PageCelebration(
+                    7 -> PageSecondaryGoals(
+                        selected = uiState.data.secondaryGoals,
+                        onToggle = { viewModel.toggleSecondaryGoal(it) }
+                    )
+                    8 -> PagePeriodAndGoal(
+                        periodLength        = uiState.data.periodLength,
+                        selectedGoal        = uiState.data.userGoal,
+                        isOnContraceptive   = uiState.data.isOnContraceptive,
+                        onPeriodChange      = { viewModel.setPeriodLength(it) },
+                        onGoalChange        = { viewModel.setUserGoal(it) },
+                        // FIX P3-3: Pasar el setter al composable de la página.
+                        onContraceptiveChange = { viewModel.setIsOnContraceptive(it) }
+                    )
+                    9 -> PageCelebration(
                         userName   = uiState.data.userName,
                         onComplete = { viewModel.completeOnboarding(onComplete) }
                     )
                 }
             }
 
-            if (uiState.currentPage in 1..5) {
+            if (uiState.currentPage in 1..8) {
                 BottomNavButtons(
-                    currentPage  = uiState.currentPage,
-                    isCompleting = uiState.isCompleting,
+                    currentPage   = uiState.currentPage,
+                    isCompleting  = uiState.isCompleting,
                     isNextEnabled = uiState.isNextEnabled,
-                    onBack       = { viewModel.prevPage() },
-                    onNext       = {
-                        if (uiState.currentPage < 5) viewModel.nextPage()
-                        else viewModel.nextPage() // 5 â†’ 6 (celebración)
-                    },
-                    onSkip       = { viewModel.nextPage() }
+                    onBack        = { viewModel.prevPage() },
+                    onNext        = { viewModel.nextPage() },
+                    onSkip        = { viewModel.nextPage() }
                 )
                 Spacer(Modifier.height(32.dp))
             }
@@ -216,14 +234,14 @@ private fun BottomNavButtons(
                 )
             } else {
                 Text(
-                    text       = if (currentPage < 5) "Continuar" else "Comenzar mi ciclo ✨",
+                    text       = if (currentPage < 7) "Continuar" else "Comenzar mi ciclo ✨",
                     fontWeight = FontWeight.SemiBold,
                     fontSize   = 16.sp
                 )
             }
         }
 
-        // Fila secundaria: Atrás (izq) + Saltar nombre (der, solo en página 1)
+        // Fila secundaria: Atrás (izq) + Saltar (der, en páginas opcionales)
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -231,7 +249,7 @@ private fun BottomNavButtons(
         ) {
             if (currentPage > 0) {
                 TextButton(onClick = onBack) {
-                    Icon(Icons.Rounded.ArrowBack, null, Modifier.size(16.dp))
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, null, Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
                     Text("Atrás", fontSize = 14.sp)
                 }
@@ -239,11 +257,11 @@ private fun BottomNavButtons(
                 Spacer(Modifier.width(1.dp))
             }
 
-            // "Saltar" solo en la página del nombre (es el único opcional)
-            if (currentPage == 1) {
+            // Saltar: disponible en páginas opcionales (nombre, perfil físico, objetivos)
+            if (currentPage in listOf(1, 5, 6)) {
                 TextButton(onClick = onSkip) {
                     Text(
-                        "Saltar este paso",
+                        "Saltar",
                         fontSize = 14.sp,
                         color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
                     )
@@ -290,6 +308,8 @@ private fun PageWelcome(
             launch { offset3.animateTo(0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium)) }
         }
     }
+
+    var privacyAccepted by remember { mutableStateOf(false) }
 
     Column(
         modifier            = Modifier.fillMaxSize().padding(horizontal = 32.dp),
@@ -348,8 +368,9 @@ private fun PageWelcome(
             // Opción 1: Track Cycle
             Surface(
                 onClick = onTrackCycleClick,
+                enabled = privacyAccepted,
                 shape = RoundedCornerShape(20.dp),
-                color = primary,
+                color = if (privacyAccepted) primary else primary.copy(alpha = 0.4f),
                 modifier = Modifier.fillMaxWidth().height(80.dp)
             ) {
                 Row(
@@ -362,7 +383,7 @@ private fun PageWelcome(
                             .background(Color.White.copy(alpha = 0.2f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Rounded.CalendarMonth, contentDescription = null, tint = Color.White)
+                        Icon(androidx.compose.material.icons.Icons.Rounded.CalendarMonth, contentDescription = null, tint = Color.White)
                     }
                     Spacer(Modifier.width(16.dp))
                     Column {
@@ -384,9 +405,10 @@ private fun PageWelcome(
             // Opción 2: Observer
             Surface(
                 onClick = onObserverClick,
+                enabled = privacyAccepted,
                 shape = RoundedCornerShape(20.dp),
-                color = primary.copy(alpha = 0.08f),
-                border = BorderStroke(1.dp, primary.copy(alpha = 0.15f)),
+                color = if (privacyAccepted) primary.copy(alpha = 0.08f) else primary.copy(alpha = 0.03f),
+                border = BorderStroke(1.dp, if (privacyAccepted) primary.copy(alpha = 0.15f) else primary.copy(alpha = 0.05f)),
                 modifier = Modifier.fillMaxWidth().height(80.dp)
             ) {
                 Row(
@@ -399,7 +421,7 @@ private fun PageWelcome(
                             .background(primary.copy(alpha = 0.15f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Rounded.People, contentDescription = null, tint = primary)
+                        Icon(androidx.compose.material.icons.Icons.Rounded.People, contentDescription = null, tint = primary)
                     }
                     Spacer(Modifier.width(16.dp))
                     Column {
@@ -417,6 +439,30 @@ private fun PageWelcome(
                     }
                 }
             }
+        }
+        
+        Spacer(Modifier.height(32.dp))
+
+        // Checkbox de Privacidad
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .alpha(alpha3.value)
+                .graphicsLayer { translationY = offset3.value.dp.toPx() },
+            verticalAlignment = Alignment.Top
+        ) {
+            Checkbox(
+                checked = privacyAccepted,
+                onCheckedChange = { privacyAccepted = it },
+                colors = CheckboxDefaults.colors(checkedColor = primary)
+            )
+            Text(
+                text = "He leído y acepto la Política de Privacidad, y consiento de forma explícita y voluntaria que LumiApp procese mis datos sensibles de salud para brindarme el servicio.",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                lineHeight = 16.sp,
+                modifier = Modifier.padding(top = 12.dp)
+            )
         }
     }
 }
@@ -726,10 +772,13 @@ private fun PageCycleLength(days: Int, isRegular: Boolean?, onChange: (Int) -> U
 
 @Composable
 private fun PagePeriodAndGoal(
-    periodLength   : Int,
-    selectedGoal   : UserGoal,
-    onPeriodChange : (Int) -> Unit,
-    onGoalChange   : (UserGoal) -> Unit
+    periodLength          : Int,
+    selectedGoal          : UserGoal,
+    isOnContraceptive     : Boolean,
+    onPeriodChange        : (Int) -> Unit,
+    onGoalChange          : (UserGoal) -> Unit,
+    // FIX P3-3: Nuevo parámetro para el toggle de pastilla anticonceptiva.
+    onContraceptiveChange : (Boolean) -> Unit
 ) {
     PageShell(
         icon     = Icons.Rounded.WaterDrop,
@@ -803,6 +852,65 @@ private fun PagePeriodAndGoal(
                 if (row.size == 1) Spacer(Modifier.weight(1f))
             }
             Spacer(Modifier.height(10.dp))
+        }
+
+        Spacer(Modifier.height(24.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f))
+        Spacer(Modifier.height(20.dp))
+
+        // FIX P3-3: Toggle de modo anticonceptivo hormonal en el onboarding.
+        // Permite a usuarias declarar el uso de pastilla desde el primer arranque.
+        Text(
+            "¿Usas anticonceptivos hormonales?",
+            fontSize   = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color      = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "Pastillas, parche, anillo o inyección de hormonas",
+            fontSize = 12.sp,
+            color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f)
+        )
+        Spacer(Modifier.height(10.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .clickable(
+                    indication        = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                ) { onContraceptiveChange(!isOnContraceptive) }
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Rounded.Shield,
+                    contentDescription = null,
+                    tint   = if (isOnContraceptive) MaterialTheme.colorScheme.primary
+                             else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    text = if (isOnContraceptive) "Sí, uso anticonceptivos" else "No uso anticonceptivos",
+                    fontSize   = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = if (isOnContraceptive) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                )
+            }
+            Switch(
+                checked         = isOnContraceptive,
+                onCheckedChange = onContraceptiveChange,
+                colors          = SwitchDefaults.colors(
+                    checkedThumbColor  = MaterialTheme.colorScheme.onPrimary,
+                    checkedTrackColor  = MaterialTheme.colorScheme.primary
+                )
+            )
         }
     }
 }
@@ -1052,3 +1160,367 @@ private fun PageCelebration(
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  PÁGINA 5 — PERFIL FÍSICO (opcional, para calibrar la IA local)
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun PagePhysicalProfile(
+    age      : Int?,
+    height   : Float?,
+    weight   : Float?,
+    onAge    : (Int?) -> Unit,
+    onHeight : (Float?) -> Unit,
+    onWeight : (Float?) -> Unit
+) {
+    var ageText    by remember { mutableStateOf(age?.toString() ?: "") }
+    var heightText by remember { mutableStateOf(height?.let { "%.0f".format(it) } ?: "") }
+    var weightText by remember { mutableStateOf(weight?.let { "%.1f".format(it) } ?: "") }
+
+    PageShell(
+        icon     = Icons.Rounded.MonitorHeart,
+        title    = "Tu perfil físico",
+        subtitle = "Completamente opcional. Mejora las predicciones de la IA localmente — nunca se comparte."
+    ) {
+        // ── Disclaimer de privacidad ────────────────────────────────────────
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.07f))
+                .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.18f), RoundedCornerShape(14.dp))
+                .padding(14.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Rounded.Lock,
+                    contentDescription = null,
+                    tint     = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text      = "Estos datos nunca salen de tu teléfono. Los usa solo el modelo de IA local para personalizar tus predicciones.",
+                    fontSize  = 12.sp,
+                    color     = MaterialTheme.colorScheme.primary,
+                    lineHeight = 17.sp
+                )
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            ProfileNumberField(
+                label         = "Edad",
+                value         = ageText,
+                unit          = "años",
+                placeholder   = "Ej: 24",
+                onValueChange = { raw ->
+                    ageText = raw.filter { it.isDigit() }.take(3)
+                    onAge(ageText.toIntOrNull()?.takeIf { it in 10..99 })
+                }
+            )
+            ProfileNumberField(
+                label         = "Talla",
+                value         = heightText,
+                unit          = "cm",
+                placeholder   = "Ej: 165",
+                onValueChange = { raw ->
+                    heightText = raw.filter { it.isDigit() }.take(3)
+                    onHeight(heightText.toFloatOrNull()?.takeIf { it in 100f..220f })
+                }
+            )
+            ProfileNumberField(
+                label         = "Peso",
+                value         = weightText,
+                unit          = "kg",
+                placeholder   = "Ej: 58.5",
+                onValueChange = { raw ->
+                    val filtered = raw.filter { it.isDigit() || it == '.' }
+                        .let { s -> if (s.count { it == '.' } > 1) weightText else s }
+                        .take(5)
+                    weightText = filtered
+                    onWeight(filtered.toFloatOrNull()?.takeIf { it in 30f..250f })
+                }
+            )
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        Text(
+            text      = "Puedes completar esto más tarde desde Configuración.",
+            fontSize  = 11.sp,
+            color     = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
+            textAlign = TextAlign.Center,
+            modifier  = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
+private fun ProfileNumberField(
+    label        : String,
+    value        : String,
+    unit         : String,
+    placeholder  : String,
+    onValueChange: (String) -> Unit
+) {
+    val primary = MaterialTheme.colorScheme.primary
+    Column {
+        Text(
+            text       = label,
+            fontSize   = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color      = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
+        )
+        Spacer(Modifier.height(6.dp))
+        OutlinedTextField(
+            value         = value,
+            onValueChange = onValueChange,
+            placeholder   = {
+                Text(placeholder, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.35f))
+            },
+            singleLine    = true,
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+            ),
+            trailingIcon  = {
+                Text(
+                    text     = unit,
+                    fontSize = 13.sp,
+                    color    = primary.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(end = 12.dp)
+                )
+            },
+            shape  = RoundedCornerShape(14.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor   = primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.18f)
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PÁGINA 6 — OBJETIVOS SECUNDARIOS (multi-selección)
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun PageSecondaryGoals(
+    selected : Set<SecondaryGoal>,
+    onToggle : (SecondaryGoal) -> Unit
+) {
+    val goals = listOf(
+        Triple(SecondaryGoal.MANAGE_CRAMPS,   Icons.Rounded.Favorite,           "Manejar mis cólicos"),
+        Triple(SecondaryGoal.IMPROVE_SLEEP,   Icons.Rounded.Bedtime,            "Mejorar mi sueño"),
+        Triple(SecondaryGoal.UNDERSTAND_MOOD, Icons.Rounded.SentimentSatisfied, "Entender mis cambios de humor"),
+        Triple(SecondaryGoal.TRACK_FERTILITY, Icons.Rounded.Spa,                "Seguimiento de fertilidad"),
+        Triple(SecondaryGoal.REDUCE_STRESS,   Icons.Rounded.SelfImprovement,    "Reducir el estrés"),
+        Triple(SecondaryGoal.PARTNER_MODE,    Icons.Rounded.People,             "Modo pareja")
+    )
+
+    PageShell(
+        icon     = Icons.Rounded.Stars,
+        title    = "¿Qué quieres lograr?",
+        subtitle = "Elige todo lo que resuene contigo. Lumi personalizará sus consejos para ti."
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            goals.chunked(2).forEach { row ->
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    row.forEach { (goal, icon, label) ->
+                        SecondaryGoalChip(
+                            icon     = icon,
+                            label    = label,
+                            selected = goal in selected,
+                            onClick  = { onToggle(goal) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    if (row.size == 1) Spacer(Modifier.weight(1f))
+                }
+            }
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        if (selected.isEmpty()) {
+            Text(
+                text      = "Puedes saltarte este paso — no es obligatorio.",
+                fontSize  = 11.sp,
+                color     = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
+                textAlign = TextAlign.Center,
+                modifier  = Modifier.fillMaxWidth()
+            )
+        } else {
+            Row(
+                modifier              = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment     = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Rounded.CheckCircle,
+                    contentDescription = null,
+                    tint     = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text       = "${selected.size} objetivo${if (selected.size > 1) "s" else ""} seleccionado${if (selected.size > 1) "s" else ""}.",
+                    fontSize   = 12.sp,
+                    color      = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SecondaryGoalChip(
+    icon     : ImageVector,
+    label    : String,
+    selected : Boolean,
+    onClick  : () -> Unit,
+    modifier : Modifier = Modifier
+) {
+    val primary = MaterialTheme.colorScheme.primary
+    val bgColor by animateColorAsState(
+        targetValue   = if (selected) primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface,
+        animationSpec = tween(220),
+        label         = "sec_goal_bg"
+    )
+    val borderColor by animateColorAsState(
+        targetValue   = if (selected) primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f),
+        animationSpec = tween(220),
+        label         = "sec_goal_border"
+    )
+    val scale by animateFloatAsState(
+        targetValue   = if (selected) 1.02f else 1f,
+        animationSpec = spring(Spring.DampingRatioMediumBouncy),
+        label         = "sec_goal_scale"
+    )
+
+    Box(
+        modifier = modifier
+            .scale(scale)
+            .clip(RoundedCornerShape(16.dp))
+            .background(bgColor)
+            .border(1.5.dp, borderColor, RoundedCornerShape(16.dp))
+            .clickable(
+                indication        = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick           = onClick
+            )
+            .padding(vertical = 14.dp, horizontal = 8.dp)
+    ) {
+        if (selected) {
+            Icon(
+                Icons.Rounded.Check,
+                contentDescription = null,
+                tint     = primary,
+                modifier = Modifier.size(14.dp).align(Alignment.TopEnd)
+            )
+        }
+        Column(
+            modifier            = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(
+                imageVector        = icon,
+                contentDescription = null,
+                tint     = if (selected) primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                modifier = Modifier.size(22.dp)
+            )
+            Text(
+                text       = label,
+                fontSize   = 11.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                textAlign  = TextAlign.Center,
+                color      = if (selected) primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f),
+                lineHeight = 15.sp
+            )
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PÁGINA 1 — AVISO MÉDICO LEGAL
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+fun PageDisclaimer(
+    accepted: Boolean,
+    onAcceptedChange: (Boolean) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = androidx.compose.material.icons.Icons.Rounded.HealthAndSafety,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(64.dp)
+        )
+        Spacer(Modifier.height(24.dp))
+        Text(
+            text = "Tu salud es lo primero",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(24.dp))
+        
+        Surface(
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+            shape = RoundedCornerShape(16.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(
+                    text = "⚕️ LumiApp NO es un médico",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = "• Las predicciones e insights mostrados en la app son estimaciones estadísticas.\n" +
+                           "• LumiApp NO debe utilizarse como método anticonceptivo.\n" +
+                           "• LumiApp NO diagnostica condiciones médicas como el Síndrome de Ovario Poliquístico (SOP) ni la endometriosis.\n" +
+                           "• Si experimentas dolores extremos, sangrados anormales o cualquier preocupación sobre tu salud, consulta inmediatamente a un profesional médico.",
+                    fontSize = 14.sp,
+                    lineHeight = 22.sp,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+                )
+            }
+        }
+        
+        Spacer(Modifier.height(32.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            androidx.compose.material3.Checkbox(
+                checked = accepted,
+                onCheckedChange = { onAcceptedChange(it) },
+                colors = androidx.compose.material3.CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary)
+            )
+            Text(
+                text = "He leído el aviso médico y entiendo las limitaciones de LumiApp.",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f),
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}

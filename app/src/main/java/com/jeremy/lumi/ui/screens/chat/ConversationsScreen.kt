@@ -1,4 +1,4 @@
-﻿package com.jeremy.lumi.ui.screens.chat
+package com.jeremy.lumi.ui.screens.chat
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -43,9 +43,17 @@ fun ConversationsScreen(
     val messages by viewModel.messages.collectAsStateWithLifecycle()
     val saveReminders by viewModel.saveRemindersInChat.collectAsStateWithLifecycle()
 
-    // Filtrar los mensajes
-    val lumiMessages = messages.filter { it.messageType == ChatMessageType.GREETING }
-    val reminderMessages = messages.filter { it.messageType != ChatMessageType.GREETING }
+    // FIX P2-6: Los mensajes de tipo INSIGHT (patrones), EDUCATIONAL y USER
+    // pertenecen al hilo de Lumi, no al de Recordatorios. Solo los mensajes
+    // de tipo recordatorio (PERIOD_SOON, OVULATION_SOON, etc.) van al segundo hilo.
+    val lumiThreadTypes = setOf(
+        ChatMessageType.GREETING,
+        ChatMessageType.INSIGHT,
+        ChatMessageType.EDUCATIONAL,
+        ChatMessageType.USER
+    )
+    val lumiMessages     = messages.filter { it.messageType in lumiThreadTypes }
+    val reminderMessages = messages.filter { it.messageType !in lumiThreadTypes }
 
     // Obtenemos los últimos mensajes
     val lastLumiMsg = lumiMessages.maxByOrNull { it.timestamp }

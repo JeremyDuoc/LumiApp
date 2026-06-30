@@ -11,8 +11,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.FavoriteBorder
-import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -22,20 +23,15 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.ui.unit.sp
 import com.jeremy.lumi.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.qrcode.QRCodeWriter
-import android.graphics.Bitmap
-import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
@@ -49,12 +45,12 @@ fun PartnerWizardScreen(
     var currentStep by remember { mutableIntStateOf(0) }
     // 0=Ninguno, 1=Compartir mi ciclo, 2=Seguir a alguien
     var selectedMode by remember { mutableIntStateOf(0) }
-    
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var linkCode by remember { mutableStateOf("") }
     var codeInput by remember { mutableStateOf("") }
     var inputError by remember { mutableStateOf<String?>(null) }
-    
+
     val totalSteps = if (selectedMode == 1) 4 else if (selectedMode == 2) 3 else 2
     val primary = MaterialTheme.colorScheme.primary
     val scope = rememberCoroutineScope()
@@ -75,7 +71,7 @@ fun PartnerWizardScreen(
             .background(MaterialTheme.colorScheme.background)
     ) {
         Column(Modifier.fillMaxSize()) {
-            
+
             // â”€â”€ Header (Botón atrás + Puntos) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Row(
                 modifier = Modifier
@@ -87,18 +83,18 @@ fun PartnerWizardScreen(
                     if (currentStep > 0) currentStep-- else onClose()
                 }) {
                     Icon(
-                        Icons.AutoMirrored.Rounded.ArrowBack, 
-                        contentDescription = "Volver", 
+                        Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = "Volver",
                         tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
-                
+
                 Spacer(Modifier.weight(1f))
-                
+
                 if (currentStep < totalSteps - 1) {
                     WizardPageIndicator(totalPages = totalSteps - 1, currentPage = currentStep)
                 }
-                
+
                 Spacer(Modifier.weight(1f))
                 Spacer(Modifier.width(48.dp))
             }
@@ -109,7 +105,7 @@ fun PartnerWizardScreen(
                 transitionSpec = {
                     val forward = targetState > initialState
                     (slideInHorizontally { if (forward) it else -it } + fadeIn(tween(320))) togetherWith
-                    (slideOutHorizontally { if (forward) -it else it } + fadeOut(tween(220)))
+                            (slideOutHorizontally { if (forward) -it else it } + fadeOut(tween(220)))
                 },
                 modifier = Modifier.weight(1f),
                 label = "wizard_step"
@@ -168,7 +164,7 @@ fun PartnerWizardScreen(
             }
         }
     }
-    
+
     // Auto-avance: cuando la pareja se une al código generado (modo OWNER)
     LaunchedEffect(uiState.activeLinks) {
         if (currentStep == 2 && selectedMode == 1 && uiState.pendingCode != null) {
@@ -183,8 +179,9 @@ fun PartnerWizardScreen(
     }
 
     // Auto-avance al unirse con código (modo PARTNER)
-    // BUG FIX: Solo avanza si hay un link NUEVO y ACTIVO en la lista, no solo por isLoading=false
-    val prevLinksCount = remember { mutableIntStateOf(uiState.activeLinks.size) }
+    // BUG FIX: Se inicializa a 0 (no a uiState.activeLinks.size) para evitar que links
+    // ya existentes al abrir el Wizard disparen un auto-avance falso en el primer collect.
+    val prevLinksCount = remember { mutableIntStateOf(0) }
     LaunchedEffect(uiState.activeLinks) {
         val newCount = uiState.activeLinks.size
         if (currentStep == 1 && selectedMode == 2 && newCount > prevLinksCount.intValue) {
@@ -234,7 +231,7 @@ private fun WizardPageIndicator(totalPages: Int, currentPage: Int, modifier: Mod
 @Composable
 private fun WizardModeSelection(onShareClick: () -> Unit, onTrackClick: () -> Unit) {
     val primary = MaterialTheme.colorScheme.primary
-    
+
     Column(
         modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -253,9 +250,9 @@ private fun WizardModeSelection(onShareClick: () -> Unit, onTrackClick: () -> Un
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f),
             textAlign = TextAlign.Center
         )
-        
+
         Spacer(Modifier.height(64.dp))
-        
+
         // Tarjeta Compartir
         Surface(
             onClick = onShareClick,
@@ -281,9 +278,9 @@ private fun WizardModeSelection(onShareClick: () -> Unit, onTrackClick: () -> Un
                 }
             }
         }
-        
+
         Spacer(Modifier.height(24.dp))
-        
+
         // Tarjeta Seguir
         Surface(
             onClick = onTrackClick,
@@ -338,9 +335,9 @@ private fun WizardPrivacyConfig(
             fontSize = 15.sp,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f)
         )
-        
+
         Spacer(Modifier.height(48.dp))
-        
+
         PrivacyToggleRow(
             title = "Fase del ciclo actual",
             subtitle = "Menstrual, folicular, ovulación...",
@@ -361,7 +358,7 @@ private fun WizardPrivacyConfig(
             isChecked = shareSymptoms,
             onCheckedChange = { onToggleSymptoms() }
         )
-        
+
         Spacer(Modifier.weight(1f))
         Button(
             onClick = onNext,
@@ -401,98 +398,141 @@ private fun PrivacyToggleRow(
 
 @Composable
 private fun WizardShowCode(code: String, uiState: PartnerUiState) {
-    val context = LocalContext.current
-    
-    // Generador de QR
-    val qrBitmap = remember(code) {
-        if (code.isNotEmpty()) {
-            try {
-                val size = 512
-                // URL que se comparte
-                val linkUrl = "https://lumi.app/pair/$code"
-                val bitMatrix = QRCodeWriter().encode(linkUrl, BarcodeFormat.QR_CODE, size, size)
-                val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-                // Colores para el QR
-                val black = android.graphics.Color.BLACK
-                val white = android.graphics.Color.TRANSPARENT
-                for (x in 0 until size) {
-                    for (y in 0 until size) {
-                        bitmap.setPixel(x, y, if (bitMatrix[x, y]) black else white)
-                    }
-                }
-                bitmap.asImageBitmap()
-            } catch (e: Exception) {
-                null
-            }
-        } else null
-    }
+    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+    val linkUrl = "https://lumi.app/pair/$code"
+
+    // Formatear código en grupos de 3 para mayor legibilidad: "A3K·9F2"
+    val formattedCode = if (code.length == 6) "${code.take(3)}·${code.takeLast(3)}" else code
+
+    // Estado de feedback al copiar
+    var codeCopied by remember { mutableStateOf(false) }
+    var linkCopied by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(Modifier.height(16.dp))
-        Text("Código de Invitación", fontSize = 28.sp, fontWeight = FontWeight.Bold)
+        Text("Código de invitación", fontSize = 28.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
-        Text("Tu pareja puede escanear este código QR o usar el enlace.", fontSize = 15.sp, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.65f))
-        
+        Text(
+            "Comparte el código o el enlace con quien quieras vincular.",
+            fontSize = 15.sp,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f)
+        )
+
         Spacer(Modifier.height(40.dp))
-        
-        // Contenedor del QR
-        Box(
-            modifier = Modifier
-                .background(Color.White, RoundedCornerShape(24.dp))
-                .border(2.dp, MaterialTheme.colorScheme.primary.copy(alpha=0.2f), RoundedCornerShape(24.dp))
-                .padding(24.dp)
-                .size(200.dp),
-            contentAlignment = Alignment.Center
+
+        // Bloque de código con botón copiar
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            if (qrBitmap != null) {
-                androidx.compose.foundation.Image(
-                    bitmap = qrBitmap,
-                    contentDescription = "Código QR de invitación",
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            Row(
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Código",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        letterSpacing = 0.5.sp
+                    )
+                    Text(
+                        text = formattedCode,
+                        fontSize = 32.sp,
+                        letterSpacing = 6.sp,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                IconButton(
+                    onClick = {
+                        clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(code))
+                        codeCopied = true
+                        scope.launch { delay(2000); codeCopied = false }
+                    }
+                ) {
+                    Icon(
+                        if (codeCopied) Icons.Rounded.Check else Icons.Rounded.ContentCopy,
+                        contentDescription = "Copiar código",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
             }
         }
-        
-        Spacer(Modifier.height(16.dp))
-        
-        // Código en texto
-        Text(
-            text = code, 
-            fontSize = 32.sp, 
-            letterSpacing = 8.sp, 
-            fontWeight = FontWeight.Black,
-            color = MaterialTheme.colorScheme.primary
-        )
-        
-        Spacer(Modifier.weight(1f))
-        
-        // Botón Share
-        Button(
-            onClick = {
-                val sendIntent = Intent().apply {
-                    action = Intent.ACTION_SEND
-                    putExtra(Intent.EXTRA_TEXT, "¡Hola! Sigue mi ciclo en Lumi con este enlace:\n\nhttps://lumi.app/pair/$code")
-                    type = "text/plain"
-                }
-                val shareIntent = Intent.createChooser(sendIntent, "Compartir enlace de Lumi")
-                context.startActivity(shareIntent)
-            },
-            modifier = Modifier.fillMaxWidth().height(56.dp).padding(bottom = 8.dp)
+
+        Spacer(Modifier.height(12.dp))
+
+        // Bloque de enlace con botón copiar
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f)),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.width(10.dp))
-            Text("Enviar Enlace por Mensaje", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Row(
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Enlace",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
+                        letterSpacing = 0.5.sp
+                    )
+                    Text(
+                        text = linkUrl,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                }
+                IconButton(
+                    onClick = {
+                        clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(linkUrl))
+                        linkCopied = true
+                        scope.launch { delay(2000); linkCopied = false }
+                    }
+                ) {
+                    Icon(
+                        if (linkCopied) Icons.Rounded.Check else Icons.Rounded.ContentCopy,
+                        contentDescription = "Copiar enlace",
+                        tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
         }
-        
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 16.dp)) {
-            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.primary)
+
+        Spacer(Modifier.weight(1f))
+
+        // Indicador de espera
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(bottom = 24.dp)
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(16.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.primary
+            )
             Spacer(Modifier.width(10.dp))
-            Text("Esperando que tu pareja se una...", fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.5f))
+            Text(
+                "Esperando a que tu vínculo se una...",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+            )
         }
     }
 }
@@ -515,7 +555,7 @@ private fun WizardEnterCode(
             } else {
                 scannedText
             }.take(6).uppercase()
-            
+
             onCodeChange(extractedCode)
             if (extractedCode.length == 6) {
                 onJoin()
@@ -530,7 +570,7 @@ private fun WizardEnterCode(
         Text("Ingresar Código", fontSize = 28.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         Text("Escanea el QR de la otra persona o pega el código manualmente.", fontSize = 15.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.65f))
-        
+
         Spacer(Modifier.height(40.dp))
 
         // Botón grande para escanear QR
@@ -555,18 +595,18 @@ private fun WizardEnterCode(
                 horizontalArrangement = Arrangement.Center
             ) {
                 Icon(
-                    androidx.compose.ui.res.painterResource(id = android.R.drawable.ic_menu_camera), 
-                    contentDescription = null, 
-                    tint = MaterialTheme.colorScheme.primary, 
+                    androidx.compose.ui.res.painterResource(id = android.R.drawable.ic_menu_camera),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(32.dp)
                 )
                 Spacer(Modifier.width(16.dp))
                 Text("Escanear Código QR", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
             }
         }
-        
+
         Spacer(Modifier.height(32.dp))
-        
+
         Text("O introduce el código manual:", fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(
@@ -584,7 +624,7 @@ private fun WizardEnterCode(
             isError = error != null,
             supportingText = { if (error != null) Text(error) }
         )
-        
+
         Spacer(Modifier.weight(1f))
         Button(
             onClick = onJoin,
@@ -607,12 +647,13 @@ private fun WizardSuccess(onClose: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        val transition = rememberInfiniteTransition()
+        val transition = rememberInfiniteTransition(label = "success_float")
         val floatOffsetY by transition.animateFloat(
             initialValue = -10f, targetValue = 10f,
-            animationSpec = infiniteRepeatable(tween(1000, easing = FastOutSlowInEasing), repeatMode = RepeatMode.Reverse)
+            animationSpec = infiniteRepeatable(tween(1000, easing = FastOutSlowInEasing), repeatMode = RepeatMode.Reverse),
+            label = "success_float_y"
         )
-        
+
         Box(
             modifier = Modifier
                 .offset(y = floatOffsetY.dp)
@@ -622,17 +663,16 @@ private fun WizardSuccess(onClose: () -> Unit) {
         ) {
             Text("✨", fontSize = 48.sp)
         }
-        
+
         Spacer(Modifier.height(32.dp))
         Text("¡Vínculo Creado!", fontSize = 32.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(16.dp))
-        Text("Ahora están conectados. Toda la información seleccionada se sincronizará mágicamente.", 
-             fontSize = 16.sp, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.7f))
-             
+        Text("Ahora están conectados. Toda la información seleccionada se sincronizará mágicamente.",
+            fontSize = 16.sp, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.7f))
+
         Spacer(Modifier.height(64.dp))
         Button(onClick = onClose, modifier = Modifier.fillMaxWidth().height(56.dp)) {
             Text("Ir a Mis Vínculos", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }
-

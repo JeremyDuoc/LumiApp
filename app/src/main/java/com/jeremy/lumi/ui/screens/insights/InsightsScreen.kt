@@ -10,10 +10,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material.icons.rounded.AutoGraph
+import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.WaterDrop
-import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.MonitorHeart
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.foundation.border
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -24,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -47,6 +53,34 @@ fun InsightsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showSosSheet by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // PDF Export: cuando el ViewModel entrega bytes, abrimos el selector de destino
+    val pdfLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/pdf")
+    ) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        val bytes = uiState.pdfBytes ?: return@rememberLauncherForActivityResult
+        runCatching {
+            context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
+        }
+        viewModel.clearPdfBytes()
+    }
+
+    LaunchedEffect(uiState.pdfBytes) {
+        if (uiState.pdfBytes != null) {
+            val today = java.time.LocalDate.now()
+            pdfLauncher.launch("Lumi_Reporte_Medico_$today.pdf")
+        }
+    }
+
+    LaunchedEffect(uiState.pdfError) {
+        uiState.pdfError?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearPdfError()
+        }
+    }
 
     var screenReady by remember { mutableStateOf(false) }
     LaunchedEffect(uiState.isLoading) {
@@ -59,7 +93,7 @@ fun InsightsScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
-                            Icons.Rounded.ArrowBack, 
+                            Icons.AutoMirrored.Rounded.ArrowBack, 
                             contentDescription = "Atrás", 
                             tint = MaterialTheme.colorScheme.onBackground
                         )
@@ -85,7 +119,8 @@ fun InsightsScreen(
                 )
             )
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         if (uiState.isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -106,6 +141,34 @@ fun InsightsScreen(
             ) {
                 Spacer(Modifier.height(4.dp))
 
+                // FIX P2-5: Aviso para usuarias con anticonceptivos hormonales.
+                // Las estadísticas de ovulación y fase lúteal no les aplican.
+                if (uiState.isOnContraceptive) {
+                    androidx.compose.foundation.layout.Box(
+                        modifier = androidx.compose.ui.Modifier
+                            .fillMaxWidth()
+                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
+                            .padding(horizontal = 14.dp, vertical = 10.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Rounded.Analytics,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = androidx.compose.ui.Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.insights_pill_mode_note),
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                }
+
                 // â”€â”€ Resumen de ciclos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 insights.historicalStats?.let { stats ->
                     InsightsFadeIn(screenReady, 0) {
@@ -113,11 +176,11 @@ fun InsightsScreen(
                     }
                 }
 
-                // â”€â”€ Gráfico de barras: últimos ciclos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-                if (insights.recentCycleStats.isNotEmpty()) {
-                    InsightsFadeIn(screenReady, 80) {
-                        RecentCyclesBarChart(insights.recentCycleStats)
-                    }
+                // -- Graficas Avanzadas (Canvas premium) --
+                // Seccion con su propio GraficasViewModel: historial detallado
+                // de ciclos, tendencia de dolor/estres por dia y curva BBT.
+                InsightsFadeIn(screenReady, 100) {
+                    GraficasAvanzadasSection()
                 }
 
                 // â”€â”€ Donut Chart: Distribución de Fases (Canvas) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -143,7 +206,14 @@ fun InsightsScreen(
                     }
                 }
 
-                // â”€â”€ Botón Modo SOS (Resumen Médico) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                // ── Descubrimientos Ocultos (Bivariables) ────────────────────────────────
+                if (insights.bivariableInsights.isNotEmpty()) {
+                    InsightsFadeIn(screenReady, 280) {
+                        BivariableInsightsCard(insights.bivariableInsights)
+                    }
+                }
+
+                // ── Botón Modo SOS (Resumen Médico) ──────────────────────────────────────
                 InsightsFadeIn(screenReady, 300) {
                     Button(
                         onClick = { showSosSheet = true },
@@ -157,6 +227,46 @@ fun InsightsScreen(
                         Icon(androidx.compose.material.icons.Icons.Rounded.MonitorHeart, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text("Preparar visita médica", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // ── Exportar PDF para el médico ──────────────────────────────────────────
+                InsightsFadeIn(screenReady, 360) {
+                    OutlinedButton(
+                        onClick  = { viewModel.generateMedicalReport() },
+                        enabled  = !uiState.isGeneratingPdf,
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape    = RoundedCornerShape(18.dp),
+                        border   = androidx.compose.foundation.BorderStroke(
+                            1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                        )
+                    ) {
+                        if (uiState.isGeneratingPdf) {
+                            CircularProgressIndicator(
+                                modifier  = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color     = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            Text("Generando reporte...", fontSize = 15.sp,
+                                color = MaterialTheme.colorScheme.primary)
+                        } else {
+                            Icon(
+                                androidx.compose.material.icons.Icons.Rounded.Description,
+                                contentDescription = null,
+                                tint   = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                "Exportar para mi Doctor \uD83D\uDCC4",
+                                fontSize   = 15.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color      = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
 
@@ -705,6 +815,114 @@ private fun PhaseDistributionDonutCard(stats: HistoricalCycleStats) {
                 LegendDot(phaseColors.follicular, "Folíc.")
                 LegendDot(phaseColors.ovulation, "Ovul.")
                 LegendDot(phaseColors.luteal, "Lútea")
+            }
+        }
+    }
+}
+
+
+
+// -----------------------------------------------------------------------------
+//  TARJETA: DESCUBRIMIENTOS OCULTOS (Bivariables)
+// -----------------------------------------------------------------------------
+
+@Composable
+fun BivariableInsightsCard(insights: List<com.jeremy.lumi.domain.model.BivariableInsight>) {
+    val primary = MaterialTheme.colorScheme.primary
+    val secondary = MaterialTheme.colorScheme.secondary
+    val tertiary = MaterialTheme.colorScheme.tertiary
+
+    androidx.compose.material3.Card(
+        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = androidx.compose.material3.CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Icono mágico con fondo brillante
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(
+                            androidx.compose.ui.graphics.Brush.linearGradient(
+                                listOf(primary.copy(alpha = 0.2f), secondary.copy(alpha = 0.2f))
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Star, // Changed from AutoAwesome to Star which is definitely in core
+                        contentDescription = null,
+                        tint = primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    text = stringResource(R.string.insights_lumi_discoveries),
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+
+            insights.forEachIndexed { index, insight ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(
+                            androidx.compose.ui.graphics.Brush.linearGradient(
+                                colors = listOf(
+                                    primary.copy(alpha = 0.12f),
+                                    secondary.copy(alpha = 0.04f)
+                                )
+                            )
+                        )
+                        .then(
+                            Modifier.border(
+                                1.dp,
+                                androidx.compose.ui.graphics.Brush.linearGradient(
+                                    listOf(primary.copy(alpha = 0.3f), Color.Transparent)
+                                ),
+                                RoundedCornerShape(16.dp)
+                            )
+                        )
+                        .padding(16.dp)
+                ) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(tertiary)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = insight.title,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            text = insight.message,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f),
+                            lineHeight = 20.sp
+                        )
+                    }
+                }
+                if (index < insights.size - 1) {
+                    Spacer(Modifier.height(12.dp))
+                }
             }
         }
     }

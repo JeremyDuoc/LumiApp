@@ -108,7 +108,7 @@ fun AppNavGraph() {
         composable(route = AppRoutes.MAIN) {
             MainScreen(
                 onNavigateToPartner = {
-                    rootNavController.navigate(AppRoutes.PARTNER.replace("?code={code}", ""))
+                    rootNavController.navigate(AppRoutes.PARTNER_HUB)
                 }
             )
         }
@@ -133,6 +133,84 @@ fun AppNavGraph() {
                 initialCode = initialCode?.takeIf { it.isNotBlank() },
                 onNavigateBack = { rootNavController.popBackStack() }
             )
+        }
+        // ——— Shared Diary ——————————————————————————————————————————————————————
+        composable("shared_diary/{linkId}") { backStack ->
+            val linkId = backStack.arguments?.getString("linkId") ?: return@composable
+            val viewModel: com.jeremy.lumi.ui.screens.partner.PartnerViewModel = hiltViewModel()
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+            LaunchedEffect(linkId) { viewModel.observeDiary(linkId) }
+
+            com.jeremy.lumi.ui.screens.partner.SharedDiaryScreen(
+                currentUid = uiState.currentUid ?: "",
+                myName = uiState.currentUserName ?: "Yo",
+                myPhase = com.jeremy.lumi.domain.model.CyclePhase.UNKNOWN, // Fase actual
+                entries = uiState.diaryEntries,
+                isSending = uiState.isDiarySending,
+                onSend = { text -> viewModel.sendDiaryEntry(linkId, text, com.jeremy.lumi.domain.model.CyclePhase.UNKNOWN) },
+                onBack = { rootNavController.popBackStack() }
+            )
+        }
+
+        // ——— Partner Hub (Nuevo Modo Pareja) ———————————————————————————————————
+        composable(route = AppRoutes.PARTNER_HUB) {
+            val viewModel: com.jeremy.lumi.ui.screens.partner.PartnerViewModel = hiltViewModel()
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+            // Disparador de reacciones
+            val careReactionState = com.jeremy.lumi.ui.screens.partner.rememberCareReactionState()
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                com.jeremy.lumi.ui.screens.partner.PartnerConnectionScreen(
+                    uiState = uiState,
+                    onOpenStory = { link -> rootNavController.navigate("story_detail/${link.linkId}") },
+                    onSendCareAction = { linkId, action -> 
+                        viewModel.sendCareAction(linkId, action)
+                        careReactionState.fire(action)
+                    },
+                    onOpenAddPartner = { rootNavController.navigate(AppRoutes.PARTNER.replace("?code={code}", "")) },
+                    onOpenDiary = { link -> rootNavController.navigate("shared_diary/${link.linkId}") },
+                    onOpenDualCalendar = { link -> rootNavController.navigate("dual_calendar/${link.linkId}") }
+                )
+                
+                // Capa superior para animaciones
+                com.jeremy.lumi.ui.screens.partner.CareReactionOverlay(state = careReactionState)
+            }
+        }
+
+        // ——— Story Detail ——————————————————————————————————————————————————————
+        composable("story_detail/{linkId}") { backStack ->
+            val linkId = backStack.arguments?.getString("linkId") ?: return@composable
+            val viewModel: com.jeremy.lumi.ui.screens.partner.PartnerViewModel = hiltViewModel()
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val link = uiState.activeLinks.find { it.linkId == linkId }
+
+            if (link != null) {
+                com.jeremy.lumi.ui.screens.partner.StoryDetailScreen(
+                    link = link,
+                    currentUid = uiState.currentUid ?: "",
+                    onSendCareAction = { action -> viewModel.sendCareAction(link.linkId, action) },
+                    onClose = { rootNavController.popBackStack() }
+                )
+            }
+        }
+
+        // ——— Dual Calendar —————————————————————————————————————————————————————
+        composable("dual_calendar/{linkId}") { backStack ->
+            val linkId = backStack.arguments?.getString("linkId") ?: return@composable
+            val viewModel: com.jeremy.lumi.ui.screens.partner.PartnerViewModel = hiltViewModel()
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val link = uiState.activeLinks.find { it.linkId == linkId }
+
+            if (link != null) {
+                com.jeremy.lumi.ui.screens.partner.DualCalendarScreen(
+                    myName = uiState.currentUserName ?: "Yo",
+                    partnerName = link.relationLabel.ifBlank { "Pareja" },
+                    days = emptyList(),
+                    onBack = { rootNavController.popBackStack() }
+                )
+            }
         }
     }
 }

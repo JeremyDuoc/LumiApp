@@ -28,8 +28,10 @@ import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.health.connect.client.PermissionController
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.jeremy.lumi.R
 import com.jeremy.lumi.data.preferences.PhaseSlot
@@ -147,6 +149,19 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val backupManager = remember { com.jeremy.lumi.data.backup.BackupManager(context) }
+    
+    val isHealthConnectEnabled by viewModel.isHealthConnectEnabled.collectAsStateWithLifecycle()
+    val healthConnectLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = PermissionController.createRequestPermissionResultContract()
+    ) { granted ->
+        // FIX P3-2: Usar la propiedad expuesta del ViewModel en lugar del manager público.
+        if (granted.containsAll(viewModel.healthConnectPermissions)) {
+            viewModel.setIsHealthConnectEnabled(true)
+        } else {
+            viewModel.setIsHealthConnectEnabled(false)
+            android.widget.Toast.makeText(context, "Permisos denegados", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
 
     val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/zip")
@@ -224,6 +239,36 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                             showPregnancyEndDialog = true
                         } else {
                             viewModel.setIsPregnant(checked)
+                        }
+                    }
+                )
+                
+                val isOnContraceptive by viewModel.isOnContraceptive.collectAsStateWithLifecycle()
+                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
+                SettingsSwitchItem(
+                    icon = Icons.Rounded.Security,
+                    title = stringResource(R.string.settings_contraceptive_title),
+                    subtitle = stringResource(R.string.settings_contraceptive_desc),
+                    checked = isOnContraceptive,
+                    onCheckedChange = { viewModel.setIsOnContraceptive(it) }
+                )
+                
+                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
+                SettingsSwitchItem(
+                    icon = Icons.Rounded.Favorite,
+                    title = "Sincronizar con Health Connect",
+                    subtitle = "Importa temperatura, sueño, pasos y ritmo cardíaco",
+                    checked = isHealthConnectEnabled,
+                    onCheckedChange = { checked -> 
+                        if (checked) {
+                            // FIX P3-2: Usar propiedades del ViewModel en lugar del manager público.
+                            if (viewModel.isHealthConnectAvailable) {
+                                healthConnectLauncher.launch(viewModel.healthConnectPermissions)
+                            } else {
+                                android.widget.Toast.makeText(context, "Health Connect no disponible en este dispositivo", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            viewModel.setIsHealthConnectEnabled(false)
                         }
                     }
                 )
@@ -326,6 +371,43 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             }
             Text(
                 text     = stringResource(R.string.settings_reset_desc),
+                fontSize = 12.sp,
+                color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
+                modifier = Modifier.padding(horizontal = 28.dp)
+            )
+
+            Spacer(Modifier.height(16.dp))
+            
+            // ——— HERRAMIENTAS DE DESARROLLO ———————————————————————————————————
+            SettingsSectionTitle("🛠 Herramientas de Desarrollo")
+            OutlinedButton(
+                onClick  = { viewModel.injectMockData() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(52.dp),
+                shape  = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                ),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Icon(
+                    imageVector        = Icons.Rounded.Tune,
+                    contentDescription = null,
+                    modifier           = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text       = "Generar Datos de Prueba (Dev)",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize   = 15.sp
+                )
+            }
+            Text(
+                text     = "Inyecta 4 meses de historial (ciclos y síntomas) para probar los gráficos y descubrimientos.",
                 fontSize = 12.sp,
                 color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
                 modifier = Modifier.padding(horizontal = 28.dp)

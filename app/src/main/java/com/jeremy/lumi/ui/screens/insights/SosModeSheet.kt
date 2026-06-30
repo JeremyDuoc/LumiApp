@@ -186,7 +186,7 @@ fun SosModeSheet(
                             Text("Sangrado", modifier = Modifier.weight(1f), fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
                             Text("Dolor Prom.", modifier = Modifier.weight(1f), fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
                         }
-                        Divider(color = Color.LightGray, thickness = 0.5.dp)
+                        HorizontalDivider(color = Color.LightGray, thickness = 0.5.dp)
                         insights.recentCycleStats.take(6).forEach { cycle ->
                             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                 Text("${cycle.durationDays} d", modifier = Modifier.weight(1f), fontSize = 14.sp, color = Color.Black)

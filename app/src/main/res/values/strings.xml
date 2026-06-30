@@ -24,6 +24,7 @@
     <string name="chat_label_supply">Recordatorio</string>
     <string name="chat_label_method">Método</string>
     <string name="chat_label_custom">Personalizado</string>
+    <string name="chat_pattern_message">He notado un patrón: los últimos meses reportaste \'%1$s\' justo %2$d días antes de tu periodo. ¿Quieres que te lo recuerde en tu próximo ciclo para que estés preparada?</string>
 
     <string name="reminder_supply">Llevar mi método</string>
     <string name="reminder_supply_desc">Aviso 3 días antes de tu periodo para que lo tengas a mano</string>
@@ -43,6 +44,8 @@
     <string name="chat_supply_cup">No olvides tu copa menstrual, tu periodo puede llegar pronto 🎒</string>
     <string name="chat_supply_underwear">Ten lista tu ropa interior absorbente, tu periodo puede llegar pronto 🎒</string>
     <string name="chat_supply_other">No olvides llevar tu método de protección, tu periodo puede llegar pronto 🎒</string>
+    <string name="chat_proactive_period">Hola, he notado que tu periodo podría llegar en los próximos %1$d días. ¿Has sentido algún cambio de humor o cólicos?</string>
+    <string name="chat_proactive_ovulation">Estás muy cerca de tu ventana fértil y ovulación. Es normal sentir picos de energía o cambios en tu temperatura. ¿Cómo te has sentido hoy?</string>
 
 
     <string-array name="cramp_hit_phrases">
@@ -298,6 +301,19 @@
     <string name="insights_shortest">Ciclo más corto</string>
     <string name="insights_longest">Ciclo más largo</string>
     <string name="insights_days_suffix">días</string>
+
+    <!-- Graficas Avanzadas (Charts Screen) -->
+    <string name="graficas_titulo_seccion">Graficas avanzadas</string>
+    <string name="graficas_subtitulo_seccion">Visualizacion detallada de tu ciclo</string>
+    <string name="graficas_seccion_ciclos">Historial de ciclos (ultimos 6)</string>
+    <string name="graficas_seccion_dolor">Dolor y estres por dia</string>
+    <string name="graficas_seccion_bbt">Temperatura basal corporal</string>
+    <string name="graficas_promedio">Promedio</string>
+    <string name="graficas_dias_ciclo">Dias del ciclo actual</string>
+    <string name="graficas_sin_datos_bbt">Registra tu temperatura diaria para ver la curva de ovulacion</string>
+    <string name="graficas_sin_datos_sintomas">Registra tus sintomas para ver las tendencias de dolor y estres</string>
+    <string name="graficas_ovulacion_detectada">Probable ovulacion</string>
+
     <!-- Insights Diarios (Lumi Chat) -->
     <string-array name="insight_late">
         <item>He notado que tu ciclo se está retrasando un poco. Trata de no estresarte, los retrasos de unos pocos días son muy comunes por cambios de rutina, estrés o sueño. ¡Estoy aquí para llevar el control!</item>
@@ -478,6 +494,8 @@
     <string name="category_digestive">Síntomas Digestivos</string>
     <string name="category_mucus">Moco Cervical / Flujo Vaginal</string>
     <string name="category_intercourse">Actividad Sexual</string>
+    <string name="category_wellbeing">Bienestar (Sueño, Energía, Estrés)</string>
+    <string name="category_vitals">Signos Vitales (Temp, Peso)</string>
 
     <!-- Reset de datos -->
     <string name="settings_reset">Borrar todos los datos</string>
@@ -563,5 +581,126 @@
     <string name="home_link_chip">Vincular</string>
     <string name="home_links_pill">Vínculos</string>
     <string name="home_stories_title">Tus vínculos</string>
+
+    <!-- Partner Pairing Screen -->
+    <string name="partner_links_title">Vínculos</string>
+    <string name="partner_empty_state_title">Tu círculo de cuidado</string>
+    <string name="partner_empty_state_desc">Conecta tu ciclo con alguien especial para acompañarse mutuamente.</string>
+    <string name="partner_empty_state_btn">Agregar vínculo</string>
+    <string name="partner_add_link">Agregar vínculo</string>
+    <string name="partner_loading_links">Cargando vínculos...</string>
+    <string name="partner_intimate_stories">Historias Íntimas</string>
+    <string name="partner_pending_links">Pendientes</string>
+    <string name="partner_default_name">Pareja</string>
+    <string name="partner_default_link_name">Vínculo</string>
+    <string name="partner_code_sent">Código enviado</string>
+    <string name="partner_observing_you">Tu vínculo te observa</string>
+    <string name="partner_cycle_of">Ciclo de %s</string>
+    <string name="partner_shared_cycle">Ciclo Compartido</string>
+    <string name="partner_waiting_join">Esperando a que tu pareja se una...</string>
+    <string name="partner_active_connection">Conexión Activa</string>
+    <string name="partner_invite_code">Código de invitación</string>
+    <string name="partner_copy_code">Copiar código</string>
+    <string name="partner_my_link">Mi Vínculo</string>
+    <string name="partner_active_link">Vínculo Activo</string>
+    <string name="partner_privacy_desc">Configura qué datos puede ver tu acompañante. Puedes cambiar esto en cualquier momento.</string>
+    <string name="partner_privacy_label">Privacidad</string>
+    <string name="partner_unlink">Desvincular</string>
+    <string name="partner_empty_links">Aún no tienes vínculos</string>
+    <string name="partner_empty_links_desc">Toca el botón + para compartir tu ciclo con alguien especial, o para acompañar a quien te importa.</string>
+    <string name="phase_name_active">Activo</string>
+    
+    <!-- Story Detail Screen -->
+    <string name="story_phase_menstrual_tip">Esta semana puede necesitar más descanso.</string>
+    <string name="story_phase_follicular_tip">Momento de energía y nuevos planes juntas.</string>
+    <string name="story_phase_ovulation_tip">Pico de energía — ideal para planes especiales.</string>
+    <string name="story_phase_luteal_tip">Puede preferir calma y momentos íntimos.</string>
+    <string name="story_mood">Ánimo: %s</string>
+    <string name="story_send_care_action">Enviar un detalle...</string>
+    <string name="story_care_action_cooldown">Ya enviaste un detalle reciente</string>
+    <string name="story_action_hug">Abrazo</string>
+    <string name="story_action_tea">Té</string>
+    <string name="story_action_coffee">Café</string>
+    <string name="story_action_choco">Choco</string>
+    <string name="story_action_help">Ayuda</string>
+
+    <!-- CycleSync Screen -->
+    <string name="cycle_sync_title">Ciclos Sincronizados</string>
+    <string name="cycle_sync_hug_received">💌 ¡Recibiste un abrazo!</string>
+    <string name="story_you">Tú</string>
+    <string name="cycle_sync_shared_energy">Energía Compartida</string>
+    <string name="cycle_sync_send_hug_button">Enviar un abrazo 🤗</string>
+    <string name="cycle_sync_hug_sent_button">Ya enviaste un abrazo 💜</string>
+    <string name="cycle_sync_hug_cooldown">Siguiente abrazo en %s</string>
+    <string name="cycle_sync_sync_title">Sincronía con %s</string>
+    
+    <!-- Phase Compatibility -->
+    <string name="compat_synced_title">¡Estáis sincronizadas! ✨</string>
+    <string name="compat_synced_advice">Vuestras energías están perfectamente alineadas. Es el momento ideal para compartir planes y apoyarse mutuamente.</string>
+    <string name="compat_hard_title">Semana de calma y cuidado</string>
+    <string name="compat_hard_advice">Ambas necesitáis descanso ahora. Sed pacientes la una con la otra y priorizad el autocuidado. Un buen momento para actividades tranquilas juntas.</string>
+    <string name="compat_energetic_title">¡Semana de alta energía!</string>
+    <string name="compat_energetic_advice">Las dos estáis en un momento brillante. Perfectas para proyectos, salidas o nuevos planes. ¡Aprovechadlo juntas!</string>
+    <string name="compat_complementary_title">Energías complementarias</string>
+    <string name="compat_complementary_advice">Una de vosotras está en un momento de alta energía. Es una oportunidad para apoyar y ser apoyada con comprensión y cariño.</string>
+    <string name="compat_pending_title">Datos pendientes</string>
+    <string name="compat_pending_advice">Cuando ambas registréis vuestro ciclo, podréis ver vuestra energía compartida aquí.</string>
+    <string name="compat_moving_title">Ciclos en movimiento</string>
+    <string name="compat_moving_advice">Cada ciclo es único. Compartir este camino con alguien especial hace que todo sea más llevadero.</string>
+
+    <!-- Dual Calendar -->
+    <string name="dual_calendar_back">Volver</string>
+    <string name="dual_calendar_title">Calendario compartido</string>
+    <string name="dual_calendar_energy_chip">✨ Energía</string>
+    <string name="dual_calendar_high_energy_banner">✨ Tienen semanas de alta energía compartida este mes — ideal para planes juntas.</string>
+
+    <!-- Shared Diary -->
+    <string name="shared_diary_title">Diario compartido</string>
+    <string name="shared_diary_subtitle">Solo visible entre vosotras</string>
+    <string name="shared_diary_empty_title">Vuestro espacio íntimo</string>
+    <string name="shared_diary_empty_desc">Mensajes privados, contextualizados\npor la fase del ciclo.</string>
+    <string name="shared_diary_input_hint">Escribe algo íntimo...</string>
+    <string name="shared_diary_send">Enviar</string>
+    
+    <string name="error_schedule_alarm">Error al programar alarma: %1$s</string>
+    <string name="partner_mode_title">Modo Pareja</string>
+    <string name="partner_mode_subtitle">Tu constelación de ciclos</string>
+    <string name="cycle_echo_title">Semana de alta energía</string>
+    <string name="cycle_echo_desc">%1$s y %2$s están en fase alta al mismo tiempo</string>
+    <string name="partner_action_diary">Diario</string>
+    <string name="partner_action_calendar">Calendario</string>
+    <string name="partner_empty_title">Tu espacio de conexión</string>
+    <string name="partner_empty_desc">Comparte tu ciclo con alguien de confianza y conéctate en tiempo real.</string>
+    <string name="partner_add_btn">Añadir conexión</string>
+    <!-- FIX P3-5: Strings de ajustes de anticonceptivos (antes hardcodeados) -->
+    <string name="settings_contraceptive_title">Anticonceptivos Hormonales</string>
+    <string name="settings_contraceptive_desc">Pastillas (Ciclo exacto de 28 das)</string>
+
+    <!-- FIX P2-5: Aviso para pantalla de Insights en modo pastilla -->
+    <string name="insights_pill_mode_note">Usas anticonceptivos hormonales. Los datos de ovulacin y fase ltea no aplican a tu ciclo regulado.</string>
+    <!-- FIX P2-2: Textos del banner de prediccin en Calendario -->
+    <string name="calendar_next_period_in">Prxima menstruacin en %d das</string>
+    <string name="calendar_period_today">Tu periodo podra llegar hoy</string>
+    <string name="calendar_period_tomorrow">Tu periodo se espera maana</string>
+    <string name="calendar_period_late">Periodo con %d das de retraso</string>
+
+    <!-- Bivariable Insights (Personalizados y Empáticos) -->
+    <string name="insights_lumi_discoveries">Descubrimientos Lumi</string>
+    <string name="insight_title_sleep_pain">Tu sueño y tus cólicos</string>
+    
+    <string-array name="insight_msg_sleep_pain">
+        <item>He estado analizando tus registros y noté que cuando duermes menos de 6 horas, la intensidad de tus cólicos aumenta un %1$d%%. Tu cuerpo te pide a gritos un buen descanso, ¡intenta ir a la cama un poquito más temprano hoy! 💜</item>
+        <item>Lumi ha detectado un patrón: en los días de poco sueño, tu dolor menstrual sube un %1$d%%. 🌙 Descansar bien es clave para que tus músculos se relajen.</item>
+        <item>¿Sabías que la falta de sueño empeora la inflamación? Tus datos muestran un %1$d%% más de dolor cuando no duermes lo suficiente. ¡Hoy date permiso para dormir más!</item>
+        <item>Tu cuerpo es sabio. Al dormir poco, tus cólicos han sido un %1$d%% más intensos. Te sugiero un baño caliente y a la cama temprano esta noche. ✨</item>
+    </string-array>
+
+    <string name="insight_title_stress_energy">Tu energía y el estrés</string>
+    <string-array name="insight_msg_stress_energy">
+        <item>Me he dado cuenta de que tus niveles de energía bajan un %1$d%% en los días de mayor estrés. Recuerda que no tienes que ser productiva todo el tiempo. Tómate 5 minutitos hoy para respirar o meditar. ✨</item>
+        <item>El estrés parece estar consumiendo tu batería. Tus registros muestran una caída del %1$d%% de energía en días tensos. 🔋 ¿Qué tal si hacemos una pausa y tomas un té caliente?</item>
+        <item>Lumi nota que cuando el estrés sube, tu energía cae un %1$d%%. Es una señal de que necesitas desconectar. No pasa nada si dejas algo para mañana. 🧘‍♀️</item>
+        <item>Tus días más estresantes están robando un %1$d%% de tu vitalidad. Recuerda priorizar tu bienestar mental antes que nada. Respira profundo, tú puedes con esto. 💜</item>
+    </string-array>
 
 </resources>

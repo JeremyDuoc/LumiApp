@@ -43,6 +43,7 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
+import androidx.compose.ui.res.stringResource
 import com.jeremy.lumi.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,13 +73,15 @@ fun PartnerPairingScreen(
     }
 
     if (selectedLink != null) {
+        val link = selectedLink ?: return
         StoryDetailScreen(
-            link = selectedLink!!,
+            link = link,
             currentUid = uiState.currentUid ?: "",
             onClose = { selectedLink = null },
             onSendCareAction = { action ->
-                viewModel.sendCareAction(selectedLink!!.linkId, action)
-            }
+                viewModel.sendCareAction(link.linkId, action)
+            },
+            isOnCooldown = uiState.isCareActionOnCooldown()
         )
     }
 
@@ -86,11 +89,17 @@ fun PartnerPairingScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Text("Mis Vínculos", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    Text(
+                        text = stringResource(id = R.string.partner_links_title),
+                        color = Color.White,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Light,
+                        letterSpacing = 0.5.sp
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null)
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null, tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -106,42 +115,40 @@ fun PartnerPairingScreen(
             ) {
                 FloatingActionButton(
                     onClick = { showWizard = true },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    shape = CircleShape,
+                    containerColor = Color.Transparent,
+                    modifier = Modifier
+                        .background(
+                            brush = Brush.linearGradient(
+                                colors = listOf(Color(0xFF7B2FBE), Color(0xFFE91E8C))
+                            ),
+                            shape = CircleShape
+                        ),
                     elevation = FloatingActionButtonDefaults.elevation(8.dp)
                 ) {
-                    Icon(Icons.Rounded.Add, "Agregar vínculo")
+                    Icon(Icons.Rounded.Add, contentDescription = stringResource(R.string.partner_add_link), tint = Color.White)
                 }
             }
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = Color(0xFF0E0A1A)
     ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
-                            Color.Transparent
-                        )
-                    )
-                )
                 .padding(padding)
         ) {
             if (uiState.isLoading) {
-                CenteredLoadingState(label = "Cargando vínculos...")
+                CenteredLoadingState(label = stringResource(R.string.partner_loading_links))
             } else if (uiState.activeLinks.isEmpty()) {
-                EmptyLinksState()
+                EmptyLinksState(onAddLink = { showWizard = true })
             } else {
                 Column(modifier = Modifier.fillMaxSize()) {
                     val activeLinks = uiState.activeLinks.filter { it.status == LinkStatus.ACTIVE }
                     if (activeLinks.isNotEmpty()) {
                         Text(
-                            text = "Historias Íntimas",
+                            text = stringResource(R.string.partner_intimate_stories),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
+                            color = Color.White,
                             modifier = Modifier.padding(start = 24.dp, top = 16.dp, bottom = 8.dp)
                         )
                         androidx.compose.foundation.lazy.LazyRow(
@@ -154,8 +161,8 @@ fun PartnerPairingScreen(
                                 val snapshot = if (isOwner) link.partnerSnapshot else link.ownerSnapshot
                                 val phase = snapshot?.currentPhase ?: CyclePhase.UNKNOWN
                                 val name = link.relationLabel.takeIf { it.isNotBlank() }
-                                    ?: (if (isOwner) "Pareja" else link.ownerDisplayName ?: "Vínculo")
-                                
+                                    ?: (if (isOwner) stringResource(R.string.partner_default_name) else link.ownerDisplayName ?: stringResource(R.string.partner_default_link_name))
+
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     modifier = Modifier.clickable { selectedLink = link }
@@ -163,13 +170,17 @@ fun PartnerPairingScreen(
                                     StoryAvatar(
                                         displayName = name,
                                         phase = phase,
-                                        size = 72.dp
+                                        size = 64.dp,
+                                        animated = true
                                     )
-                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Spacer(modifier = Modifier.height(6.dp))
                                     Text(
                                         text = name,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontWeight = FontWeight.Medium
+                                        color = Color.White.copy(alpha = 0.75f),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                     )
                                 }
                             }
@@ -180,9 +191,10 @@ fun PartnerPairingScreen(
                     if (pendingLinks.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Pendientes",
+                            text = stringResource(R.string.partner_pending_links),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
+                            color = Color.White,
                             modifier = Modifier.padding(start = 24.dp, bottom = 8.dp)
                         )
                         LazyColumn(
@@ -206,9 +218,11 @@ fun PartnerPairingScreen(
         }
     }
 
+    var initialCodeConsumed by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(initialCode) {
-        if (!initialCode.isNullOrEmpty()) {
+        if (!initialCode.isNullOrEmpty() && !initialCodeConsumed) {
             viewModel.joinLink(initialCode)
+            initialCodeConsumed = true
         }
     }
 
@@ -265,32 +279,29 @@ private fun LinkCard(link: PartnerLink, currentUid: String, onClick: () -> Unit)
 
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isPending)
-                MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
-            else
-                MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isPending) 0.dp else 1.dp),
-        border = if (isPending)
-            androidx.compose.foundation.BorderStroke(
-                1.5.dp,
-                MaterialTheme.colorScheme.primary.copy(alpha = borderAlpha)
-            )
-        else
-            androidx.compose.foundation.BorderStroke(1.dp, phaseColor.copy(alpha = 0.15f))
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(if (isPending) MaterialTheme.colorScheme.surface.copy(alpha = 0.6f) else Color(0xFF1A1025))
+            .border(
+                if (isPending) 1.5.dp else 1.dp,
+                if (isPending) MaterialTheme.colorScheme.primary.copy(alpha = borderAlpha) else phaseColor.copy(alpha = 0.45f),
+                RoundedCornerShape(20.dp)
+            ),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                val name = link.relationLabel.takeIf { it.isNotBlank() } ?: (if (isOwner) "Pareja" else link.ownerDisplayName ?: "Vínculo")
+                val name = link.relationLabel.takeIf { it.isNotBlank() } ?: (if (isOwner) stringResource(R.string.partner_default_name) else link.ownerDisplayName ?: stringResource(R.string.partner_default_link_name))
 
                 StoryAvatar(
                     displayName = name,
                     phase = phase,
                     size = 52.dp,
-                    isPending = isPending
+                    isPending = isPending,
+                    animated = true
                 )
 
                 Spacer(Modifier.width(16.dp))
@@ -298,26 +309,22 @@ private fun LinkCard(link: PartnerLink, currentUid: String, onClick: () -> Unit)
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = when {
-                            isPending && isOwner -> "Código enviado"
-                            isOwner -> "Tu vínculo te observa"
-                            else -> if (link.ownerDisplayName != null) "Ciclo de ${link.ownerDisplayName}" else "Ciclo Compartido"
+                            isPending && isOwner -> stringResource(R.string.partner_code_sent)
+                            isOwner -> stringResource(R.string.partner_observing_you)
+                            else -> if (link.ownerDisplayName != null) stringResource(R.string.partner_cycle_of, link.ownerDisplayName) else stringResource(R.string.partner_shared_cycle)
                         },
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.onBackground
+                        color = Color.White
                     )
                     Text(
                         text = when {
-                            isPending -> "Esperando a que tu pareja se una..."
+                            isPending -> stringResource(R.string.partner_waiting_join)
                             phase != CyclePhase.UNKNOWN -> phaseLabelShort(phase)
-                            else -> "Conexión Activa"
+                            else -> stringResource(R.string.partner_active_connection)
                         },
                         fontSize = 13.sp,
-                        color = when {
-                            isPending -> MaterialTheme.colorScheme.primary
-                            phase != CyclePhase.UNKNOWN -> phaseColor
-                            else -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-                        }
+                        color = Color.White.copy(alpha = 0.6f)
                     )
                 }
 
@@ -341,7 +348,7 @@ private fun LinkCard(link: PartnerLink, currentUid: String, onClick: () -> Unit)
                 ) {
                     Column {
                         Text(
-                            "Código de invitación",
+                            stringResource(R.string.partner_invite_code),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
@@ -362,7 +369,7 @@ private fun LinkCard(link: PartnerLink, currentUid: String, onClick: () -> Unit)
                         }
                     ) {
                         Icon(
-                            Icons.Rounded.ContentCopy, "Copiar código",
+                            Icons.Rounded.ContentCopy, stringResource(R.string.partner_copy_code),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
@@ -384,7 +391,7 @@ internal fun OwnerConnectedScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Mi Vínculo", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.partner_my_link), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null)
@@ -427,9 +434,9 @@ internal fun OwnerConnectedScreen(
                 ) {
                     Icon(Icons.Rounded.Favorite, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))
                 }
-                Text("Vínculo Activo", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.partner_active_link), fontSize = 22.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    "Configura qué datos puede ver tu acompañante. Puedes cambiar esto en cualquier momento.",
+                    stringResource(R.string.partner_privacy_desc),
                     fontSize = 14.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                     textAlign = TextAlign.Center
                 )
@@ -440,17 +447,17 @@ internal fun OwnerConnectedScreen(
                 GlassCard(phaseColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Text(
-                            "Privacidad",
+                            stringResource(R.string.partner_privacy_label),
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                             letterSpacing = 0.5.sp,
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
-                        PrivacyToggleRow(icon = Icons.Rounded.Cyclone, label = "Fase actual del ciclo", checked = uiState.sharePhase, onCheckedChange = { viewModel.setSharePhase(it) })
-                        PrivacyToggleRow(icon = Icons.Rounded.Timeline, label = "Próximas predicciones", checked = uiState.sharePredictions, onCheckedChange = { viewModel.setSharePredictions(it) })
-                        PrivacyToggleRow(icon = Icons.Rounded.Mood, label = "Estado de ánimo", checked = uiState.shareMood, onCheckedChange = { viewModel.setShareMood(it) })
-                        PrivacyToggleRow(icon = Icons.Rounded.HealthAndSafety, label = "Síntomas", checked = uiState.shareSymptoms, onCheckedChange = { viewModel.setShareSymptoms(it) }, isLast = true)
+                        PrivacyToggleRow(icon = Icons.Rounded.Cyclone, label = stringResource(R.string.partner_privacy_phase), checked = uiState.sharePhase, onCheckedChange = { viewModel.setSharePhase(it) })
+                        PrivacyToggleRow(icon = Icons.Rounded.Timeline, label = stringResource(R.string.partner_privacy_predictions), checked = uiState.sharePredictions, onCheckedChange = { viewModel.setSharePredictions(it) })
+                        PrivacyToggleRow(icon = Icons.Rounded.Mood, label = stringResource(R.string.partner_privacy_mood), checked = uiState.shareMood, onCheckedChange = { viewModel.setShareMood(it) })
+                        PrivacyToggleRow(icon = Icons.Rounded.HealthAndSafety, label = stringResource(R.string.partner_privacy_symptoms), checked = uiState.shareSymptoms, onCheckedChange = { viewModel.setShareSymptoms(it) }, isLast = true)
                     }
                 }
 
@@ -464,7 +471,7 @@ internal fun OwnerConnectedScreen(
                 ) {
                     Icon(Icons.Rounded.LinkOff, null)
                     Spacer(Modifier.width(8.dp))
-                    Text("Desvincular", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.partner_unlink), fontWeight = FontWeight.Bold)
                 }
                 Spacer(Modifier.height(24.dp))
             }
@@ -502,48 +509,48 @@ private fun PrivacyToggleRow(
 
 
 @Composable
-private fun EmptyLinksState() {
-    val infiniteTransition = rememberInfiniteTransition(label = "empty_float")
-    val offsetY by infiniteTransition.animateFloat(
-        initialValue = -8f, targetValue = 8f,
-        animationSpec = infiniteRepeatable(tween(2000, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "empty_float"
-    )
-
+private fun EmptyLinksState(onAddLink: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(40.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 32.dp, vertical = 48.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.lottie_empty))
-        if (composition != null) {
-            LottieAnimation(
-                composition = composition,
-                iterations = LottieConstants.IterateForever,
-                modifier = Modifier.size(140.dp).graphicsLayer { translationY = offsetY }
-            )
-        } else {
-            Text(
-                "💫",
-                fontSize = 64.sp,
-                modifier = Modifier.graphicsLayer { translationY = offsetY }
-            )
+        Box(
+            modifier = Modifier
+                .size(96.dp)
+                .clip(CircleShape)
+                .background(Color(0xFF7B2FBE).copy(alpha = 0.15f))
+                .border(1.dp, Color(0xFF7B2FBE).copy(alpha = 0.4f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = "🌸", fontSize = 40.sp)
         }
-        Spacer(Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
         Text(
-            text = "Aún no tienes vínculos",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
+            text = stringResource(R.string.partner_empty_state_title),
+            color = Color.White,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold
         )
-        Spacer(Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Toca el botón + para compartir tu ciclo con alguien especial, o para acompañar a quien te importa.",
+            text = stringResource(R.string.partner_empty_state_desc),
+            color = Color.White.copy(alpha = 0.55f),
             fontSize = 14.sp,
             textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f),
-            lineHeight = 22.sp
+            lineHeight = 20.sp
         )
+        Spacer(modifier = Modifier.height(28.dp))
+        Button(
+            onClick = onAddLink,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF7B2FBE)
+            ),
+            shape = RoundedCornerShape(50)
+        ) {
+            Text(stringResource(R.string.partner_empty_state_btn), color = Color.White, fontWeight = FontWeight.SemiBold)
+        }
     }
 }
 
@@ -605,11 +612,12 @@ internal fun phaseEmoji(phase: CyclePhase): String = when (phase) {
     else                  -> "🌸"
 }
 
+@Composable
 private fun phaseLabelShort(phase: CyclePhase): String = when (phase) {
-    CyclePhase.MENSTRUAL  -> "Fase menstrual"
-    CyclePhase.FOLLICULAR -> "Fase folicular"
-    CyclePhase.OVULATION  -> "Ovulación"
-    CyclePhase.LUTEAL     -> "Fase lútea"
-    CyclePhase.PREGNANCY  -> "Embarazo"
-    else                  -> "Activo"
+    CyclePhase.MENSTRUAL  -> stringResource(R.string.phase_name_menstrual)
+    CyclePhase.FOLLICULAR -> stringResource(R.string.phase_name_follicular)
+    CyclePhase.OVULATION  -> stringResource(R.string.phase_name_ovulation)
+    CyclePhase.LUTEAL     -> stringResource(R.string.phase_name_luteal)
+    CyclePhase.PREGNANCY  -> stringResource(R.string.phase_name_pregnancy)
+    else                  -> stringResource(R.string.phase_name_active)
 }

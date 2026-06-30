@@ -21,6 +21,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -81,7 +83,7 @@ fun RemindersSection(viewModel: RemindersViewModel = hiltViewModel()) {
                     color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f))
             } else {
                 Spacer(Modifier.height(12.dp))
-                reminders.forEach { reminder ->
+                reminders.take(10).forEach { reminder ->
                     ReminderRow(
                         reminder = reminder,
                         onCancel = { viewModel.cancelReminder(reminder) }
@@ -196,6 +198,7 @@ private fun supplyTypeLabelRes(type: SupplyType): Int = when (type) {
 //  STATE CLASS FOR MULTI-SELECT
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+@androidx.compose.runtime.Stable
 class ReminderDraftState(val type: ReminderType) {
     var enabled by mutableStateOf(false)
     var hour by mutableIntStateOf(20)
@@ -366,11 +369,8 @@ private fun ReminderTypeSwitchRow(
             )
         }
 
-        // Todos los recordatorios necesitan al menos elegir la hora
-        val hasConfig = true
-
         AnimatedVisibility(
-            visible = isSelected && hasConfig,
+            visible = isSelected,
             enter = expandVertically(tween(300)),
             exit = shrinkVertically(tween(300))
         ) {
@@ -496,9 +496,8 @@ private fun SupplySelector(
             SupplyType.OTHER            to R.string.supply_other
         )
 
-        androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(options.size) { index ->
-                val (type, labelRes) = options[index]
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(options, key = { it.first.name }) { (type, labelRes) ->
                 SupplyChip(
                     text       = stringResource(labelRes),
                     isSelected = selected == type,

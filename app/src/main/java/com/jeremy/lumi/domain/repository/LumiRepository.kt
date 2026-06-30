@@ -28,6 +28,8 @@ interface LumiRepository {
     /** Ciclos cerrados ordenados del más reciente al más antiguo. */
     suspend fun getClosedCycles(): List<CycleEntity>
 
+    suspend fun getCycleForDate(dateMs: Long): CycleEntity?
+
     // Registros Diarios
     suspend fun saveDailyLogWithSymptoms(dailyLog: DailyLogEntity, symptoms: List<SymptomEntity>)
     suspend fun getDailyLog(date: Long): DailyLogWithSymptoms?

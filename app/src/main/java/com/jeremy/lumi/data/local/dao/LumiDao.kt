@@ -63,12 +63,24 @@ interface LumiDao {
     suspend fun getLogsInRange(from: Long, to: Long): List<DailyLogWithSymptoms>
 
     /**
+     * Todos los registros diarios que pertenecen a un ciclo concreto,
+     * ordenados por fecha ascendente.
+     * Se usa en GraficasViewModel para trazar la curva de temperatura basal
+     * y las tendencias de dolor/estrés a lo largo del ciclo activo.
+     */
+    @Query("SELECT * FROM daily_logs WHERE cycleId = :cicloId ORDER BY date ASC")
+    suspend fun getLogsDelCiclo(cicloId: Int): List<DailyLogEntity>
+
+    /**
      * Todos los ciclos cerrados (endDate != null), ordenados del más reciente
      * al más antiguo. Necesario para el predictor de ciclo mejorado con
      * promedio ponderado y fase lútea personal.
      */
     @Query("SELECT * FROM cycles WHERE endDate IS NOT NULL ORDER BY startDate DESC")
     suspend fun getClosedCycles(): List<CycleEntity>
+
+    @Query("SELECT * FROM cycles WHERE startDate <= :dateMs AND (endDate IS NULL OR endDate >= :dateMs) LIMIT 1")
+    suspend fun getCycleForDate(dateMs: Long): CycleEntity?
 
     // --- RECORDATORIOS ---
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -104,4 +116,16 @@ interface LumiDao {
 
     @Query("DELETE FROM chat_messages")
     suspend fun deleteAllChatMessages()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSymptom(symptom: SymptomEntity)
+
+    @Transaction
+    suspend fun clearAllDataForDev() {
+        deleteAllCycles()
+        deleteAllLogs()
+        deleteAllSymptoms()
+        deleteAllReminders()
+        deleteAllChatMessages()
+    }
 }

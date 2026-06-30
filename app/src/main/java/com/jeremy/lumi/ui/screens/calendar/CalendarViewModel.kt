@@ -10,12 +10,15 @@ import com.jeremy.lumi.domain.model.CyclePhase
 import com.jeremy.lumi.domain.repository.LumiRepository
 import com.jeremy.lumi.domain.usecase.CyclePrediction
 import com.jeremy.lumi.domain.usecase.CyclePredictor
+import com.jeremy.lumi.ai.LumiAIPredictor
+import com.jeremy.lumi.data.local.entity.CycleEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -41,7 +44,8 @@ data class CalendarUiState(
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
     private val repository: LumiRepository,
-    private val prefsManager: OnboardingPreferenceManager
+    private val prefsManager: OnboardingPreferenceManager,
+    private val aiPredictor: LumiAIPredictor
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CalendarUiState())
@@ -55,28 +59,35 @@ class CalendarViewModel @Inject constructor(
 
     private val allLogsMap = MutableStateFlow<Map<Long, DailyLogWithSymptoms>>(emptyMap())
 
-    private val todaySnapshot = Calendar.getInstance()
-    private var displayYear  = todaySnapshot.get(Calendar.YEAR)
-    private var displayMonth = todaySnapshot.get(Calendar.MONTH)
+    private val displayYearMonth = MutableStateFlow(
+        Pair(LocalDate.now().year, LocalDate.now().monthValue - 1)
+    )
 
     private var isPregnant = false
+    private var isOnContraceptive = false
 
     init {
         viewModelScope.launch {
-            repository.getAllLogs(descending = false).collect { logs ->
-                allLogsMap.value = logs.associateBy { it.dailyLog.date }
-                updateGrid()
-            }
-        }
-        viewModelScope.launch {
-            prefsManager.isPregnantFlow.collect { pregnant ->
+            kotlinx.coroutines.flow.combine(
+                repository.getAllLogs(descending = false),
+                prefsManager.isPregnantFlow,
+                prefsManager.isOnContraceptiveFlow,
+                repository.getAllCycles(),
+                displayYearMonth
+            ) { logs, pregnant, contraceptive, cycles, yearMonth ->
                 isPregnant = pregnant
-                updateGrid()
-            }
-        }
-        viewModelScope.launch {
-            repository.getAllCycles().collect {
-                updateGrid()
+                isOnContraceptive = contraceptive
+                val logsMap = logs.associateBy { it.dailyLog.date }
+                allLogsMap.value = logsMap
+                
+                // Identify active cycle
+                val activeCycle = cycles.maxByOrNull { it.startDate }?.takeIf { it.endDate == null }
+                val closedCycles = cycles.filter { it.endDate != null }.sortedByDescending { it.startDate }
+                
+                Triple(yearMonth, activeCycle, Pair(logsMap, closedCycles))
+            }.collect { (yearMonth, activeCycle, maps) ->
+                val (logsMap, closedCycles) = maps
+                updateGridSafely(yearMonth.first, yearMonth.second, activeCycle, closedCycles, logsMap)
             }
         }
     }
@@ -86,34 +97,35 @@ class CalendarViewModel @Inject constructor(
     }
 
     fun navigateToPreviousMonth() {
-        if (displayMonth == 0) { displayMonth = 11; displayYear-- } else displayMonth--
-        updateGrid()
+        displayYearMonth.update { (year, month) ->
+            if (month == 0) Pair(year - 1, 11) else Pair(year, month - 1)
+        }
     }
 
     fun navigateToNextMonth() {
-        if (displayMonth == 11) { displayMonth = 0; displayYear++ } else displayMonth++
-        updateGrid()
+        displayYearMonth.update { (year, month) ->
+            if (month == 11) Pair(year + 1, 0) else Pair(year, month + 1)
+        }
     }
 
     fun navigateToMonth(year: Int, month: Int) {
-        displayYear = year
-        displayMonth = month
-        updateGrid()
+        displayYearMonth.value = Pair(year, month)
     }
 
     fun goToToday() {
         val today = Calendar.getInstance()
-        displayYear = today.get(Calendar.YEAR)
-        displayMonth = today.get(Calendar.MONTH)
-        updateGrid()
+        displayYearMonth.value = Pair(today.get(Calendar.YEAR), today.get(Calendar.MONTH))
     }
 
     fun generateYearGrid(year: Int) {
         viewModelScope.launch {
             val monthsData = mutableListOf<Pair<String, List<CalendarDay>>>()
-            val activeCycle = repository.getCurrentActiveCycle()
+            val cycles = repository.getAllCycles().first()
+            val activeCycle = cycles.maxByOrNull { it.startDate }?.takeIf { it.endDate == null }
+            val closedCycles = cycles.filter { it.endDate != null }.sortedByDescending { it.startDate }
+            val logs = allLogsMap.value
             for (month in 0..11) {
-                val (title, days, _) = generateMonthData(year, month, activeCycle)
+                val (title, days, _) = generateMonthData(year, month, activeCycle, closedCycles, logs)
                 monthsData.add(Pair(title, days))
             }
             _uiState.update { it.copy(yearMonthsData = monthsData) }
@@ -122,18 +134,25 @@ class CalendarViewModel @Inject constructor(
 
     suspend fun getYearData(year: Int): List<Pair<String, List<CalendarDay>>> {
         val monthsData = mutableListOf<Pair<String, List<CalendarDay>>>()
-        val activeCycle = repository.getCurrentActiveCycle()
+        val cycles = repository.getAllCycles().first()
+        val activeCycle = cycles.maxByOrNull { it.startDate }?.takeIf { it.endDate == null }
+        val closedCycles = cycles.filter { it.endDate != null }.sortedByDescending { it.startDate }
+        val logs = allLogsMap.value
         for (month in 0..11) {
-            val (title, days, _) = generateMonthData(year, month, activeCycle)
+            val (title, days, _) = generateMonthData(year, month, activeCycle, closedCycles, logs)
             monthsData.add(Pair(title, days))
         }
         return monthsData
     }
 
-    private fun updateGrid() {
-        viewModelScope.launch {
-            val activeCycle = repository.getCurrentActiveCycle()
-            val (title, days, prediction) = generateMonthData(displayYear, displayMonth, activeCycle)
+    private suspend fun updateGridSafely(
+        displayYear: Int,
+        displayMonth: Int,
+        activeCycle: CycleEntity?,
+        closedCycles: List<CycleEntity>,
+        logsMap: Map<Long, DailyLogWithSymptoms>
+    ) {
+        val (title, days, prediction) = generateMonthData(displayYear, displayMonth, activeCycle, closedCycles, logsMap)
             
             // FASE ACTUAL
             val cycleLength = activeCycle?.cycleLength ?: 28
@@ -152,7 +171,8 @@ class CalendarViewModel @Inject constructor(
                         dayInCycle   = currentDayOfCycle,
                         cycleLength  = cycleLength,
                         periodLength = periodLength,
-                        isPregnant   = isPregnant
+                        isPregnant   = isPregnant,
+                        isOnContraceptive = isOnContraceptive
                     )
                 }.getOrDefault(CyclePhase.UNKNOWN)
             } else CyclePhase.UNKNOWN
@@ -166,16 +186,16 @@ class CalendarViewModel @Inject constructor(
                 currentPhase      = currentPhase,
                 currentDayOfCycle = currentDayOfCycle
             ) }
-
-            // Always pre-generate the current year's grid so it's ready for smooth transitions
-            generateYearGrid(displayYear)
-        }
+            // generateYearGrid(displayYear) is removed from here to avoid excessive calls.
+            // It will be called explicitly when navigating to the year view.
     }
 
     private suspend fun generateMonthData(
         year: Int, 
         month: Int, 
-        activeCycle: com.jeremy.lumi.data.local.entity.CycleEntity?
+        activeCycle: CycleEntity?,
+        closedCycles: List<CycleEntity>,
+        logs: Map<Long, DailyLogWithSymptoms>
     ): Triple<String, List<CalendarDay>, CyclePrediction?> = withContext(Dispatchers.Default) {
         val cal = Calendar.getInstance().apply {
             set(Calendar.YEAR,         year)
@@ -206,8 +226,29 @@ class CalendarViewModel @Inject constructor(
         val cycleStartLocal: LocalDate? = activeCycle?.let {
             LocalDate.ofInstant(java.time.Instant.ofEpochMilli(it.startDate), ZoneId.of("UTC"))
         }
-        val cycleLength = activeCycle?.cycleLength ?: 28
         val periodLength = activeCycle?.periodLength ?: 5
+
+        val mathCycleLen = if (closedCycles.size >= 3) {
+            CyclePredictor.weightedAverageCycleLength(closedCycles).toInt().coerceIn(15, 60)
+        } else {
+            activeCycle?.cycleLength?.coerceAtLeast(15) ?: 28
+        }
+
+        val aiResult = if (closedCycles.size >= 3 && !isOnContraceptive) {
+            val age = prefsManager.ageFlow.first()?.toFloat()
+            val height = prefsManager.heightFlow.first()
+            val weight = prefsManager.weightFlow.first()
+            aiPredictor.predict(
+                closedCycles = closedCycles,
+                currentCycleLen = mathCycleLen.toFloat(),
+                periodLength = periodLength.toFloat(),
+                age = age,
+                height = height,
+                weight = weight
+            )
+        } else null
+
+        val cycleLength = aiResult?.predictedCycleLength?.toInt()?.coerceIn(15, 60) ?: mathCycleLen
 
         val prediction: CyclePrediction? = if (isCurrentMonth) {
             cycleStartLocal?.let { startLocal ->
@@ -216,7 +257,8 @@ class CalendarViewModel @Inject constructor(
                         startDate    = startLocal,
                         cycleLength  = cycleLength,
                         periodLength = periodLength,
-                        isPregnant   = isPregnant
+                        isPregnant   = isPregnant,
+                        isOnContraceptive = isOnContraceptive
                     )
                 }.getOrNull()
             }
@@ -225,55 +267,54 @@ class CalendarViewModel @Inject constructor(
         val daysList = mutableListOf<CalendarDay>()
         repeat(firstDow) { daysList.add(CalendarDay(0, isEmptyOffset = true)) }
 
-        val logs = allLogsMap.value
-
         for (day in 1..maxDays) {
-            val dayMs = LocalDate.of(year, month + 1, day).atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
-            val isToday = isCurrentMonth && day == todayDay
-
             val dayLocal = LocalDate.of(year, month + 1, day)
-
-            val isWithinActiveCycle = cycleStartLocal != null && !dayLocal.isBefore(cycleStartLocal)
+            val dayMs = dayLocal.atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
+            val isToday = isCurrentMonth && day == todayDay
             val isFuture = dayMs > todayStartMs
+
+            // Encontrar a qué ciclo pertenece este día
+            val matchedCycle = closedCycles.find {
+                val cycleEnd = it.endDate ?: Long.MAX_VALUE
+                dayMs in it.startDate..cycleEnd
+            } ?: activeCycle?.takeIf { dayMs >= it.startDate }
 
             val logForDay = logs[dayMs]
 
             val (phase, isPrediction) = when {
-                !isWithinActiveCycle -> Pair(CyclePhase.UNKNOWN, false)
-                isToday -> {
-                    val p = runCatching {
-                        CyclePredictor.phaseForDay(
-                            CyclePredictor.dayInCycle(cycleStartLocal!!, cycleLength, dayLocal),
-                            cycleLength, periodLength, isPregnant = isPregnant
-                        )
-                    }.getOrDefault(CyclePhase.UNKNOWN)
-                    Pair(p, false)
-                }
+                matchedCycle == null -> Pair(CyclePhase.UNKNOWN, false) // No pertenece a ningún ciclo conocido
                 isFuture -> {
+                    // Predicción hacia el futuro (usamos el activeCycle)
                     val monthsIntoFuture = java.time.temporal.ChronoUnit.MONTHS.between(LocalDate.of(todayYear, todayMonth + 1, todayDay), dayLocal)
-                    if (monthsIntoFuture > 6) {
+                    if (monthsIntoFuture > 6 || activeCycle == null) {
                         Pair(CyclePhase.UNKNOWN, false)
                     } else {
+                        val activeCycleStartLocal = LocalDate.ofInstant(java.time.Instant.ofEpochMilli(activeCycle.startDate), ZoneId.of("UTC"))
                         val p = runCatching {
                             CyclePredictor.phaseForDay(
-                                CyclePredictor.dayInCycleWrapped(cycleStartLocal!!, cycleLength, dayLocal),
-                                cycleLength, periodLength, isPregnant = isPregnant
+                                CyclePredictor.dayInCycleWrapped(activeCycleStartLocal, cycleLength, dayLocal),
+                                cycleLength, periodLength,
+                                isPregnant = isPregnant,
+                                isOnContraceptive = isOnContraceptive
                             )
                         }.getOrDefault(CyclePhase.UNKNOWN)
                         Pair(p, true)
                     }
                 }
-                logForDay != null -> {
+                else -> {
+                    // Pertenece a un ciclo histórico o al presente
+                    val matchedStartLocal = LocalDate.ofInstant(java.time.Instant.ofEpochMilli(matchedCycle.startDate), ZoneId.of("UTC"))
+                    val matchedLen = matchedCycle.cycleLength
+                    val matchedPeriodLen = matchedCycle.periodLength
                     val p = runCatching {
                         CyclePredictor.phaseForDay(
-                            CyclePredictor.dayInCycle(cycleStartLocal!!, cycleLength, dayLocal),
-                            cycleLength, periodLength, isPregnant = isPregnant
+                            CyclePredictor.dayInCycle(matchedStartLocal, matchedLen, dayLocal),
+                            matchedLen, matchedPeriodLen,
+                            isPregnant = isPregnant,
+                            isOnContraceptive = isOnContraceptive
                         )
                     }.getOrDefault(CyclePhase.UNKNOWN)
                     Pair(p, false)
-                }
-                else -> {
-                    Pair(CyclePhase.UNKNOWN, false)
                 }
             }
 
@@ -300,26 +341,28 @@ class CalendarViewModel @Inject constructor(
         dayOfMonth: Int, flow: String?, painLevel: Int, mood: String?,
         selectedSymptoms: List<String>, cervicalMucus: String?, notes: String, hadIntercourse: Boolean,
         protectionUsed: Boolean?, contraceptionMethod: String?,
-        intercourseNotes: String?, showOnCalendar: Boolean
+        intercourseNotes: String?, showOnCalendar: Boolean,
+        sleepHours: Float?, energyLevel: Int?, stressLevel: Int?,
+        basalBodyTemp: Float?, spotting: Boolean
     ) {
         viewModelScope.launch {
-            val dateMs       = LocalDate.of(displayYear, displayMonth + 1, dayOfMonth)
-                .atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
-            val existingLog = repository.getDailyLog(dateMs)
+            withContext(Dispatchers.IO) {
+                val year = displayYearMonth.value.first
+                val month = displayYearMonth.value.second
+                val dateMs = LocalDate.of(year, month + 1, dayOfMonth)
+                    .atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
+                val existingLog = repository.getDailyLog(dateMs)
 
-            // FIX: Prevent data corruption. A past log must belong to its historical cycle, not the active one.
-            val correctCycleId = if (existingLog != null && existingLog.dailyLog.cycleId != 0) {
-                existingLog.dailyLog.cycleId
-            } else {
-                val allClosed = repository.getClosedCycles()
-                val active = repository.getCurrentActiveCycle()
-                val allCycles = allClosed + listOfNotNull(active)
-                
-                val matchedCycle = allCycles.find {
-                    dateMs >= it.startDate && (it.endDate == null || dateMs <= it.endDate)
+                val correctCycleId = if (existingLog != null && existingLog.dailyLog.cycleId != 0) {
+                    existingLog.dailyLog.cycleId
+                } else {
+                    val matchedCycle = repository.getCycleForDate(dateMs)
+                    if (matchedCycle != null) {
+                        matchedCycle.id
+                    } else {
+                        repository.getCurrentActiveCycle()?.id ?: 0
+                    }
                 }
-                matchedCycle?.id ?: active?.id ?: 0
-            }
 
             repository.saveDailyLogWithSymptoms(
                 DailyLogEntity(
@@ -335,12 +378,18 @@ class CalendarViewModel @Inject constructor(
                     protectionUsed            = protectionUsed,
                     contraceptionMethod       = contraceptionMethod,
                     intercourseNotes          = intercourseNotes,
-                    showIntercourseOnCalendar = showOnCalendar
+                    showIntercourseOnCalendar = showOnCalendar,
+                    sleepHours                = sleepHours,
+                    energyLevel               = energyLevel,
+                    stressLevel               = stressLevel,
+                    basalBodyTemp             = basalBodyTemp,
+                    spotting                  = spotting
                 ),
                 selectedSymptoms.map {
                     SymptomEntity(dailyLogId = 0, name = it, intensity = painLevel)
                 }
             )
+            }
             _selectedLog.value = null
             // Flow emission will naturally call updateGrid()
         }
@@ -348,9 +397,14 @@ class CalendarViewModel @Inject constructor(
 
     fun fetchLogForDay(dayOfMonth: Int) {
         viewModelScope.launch {
-            val dateMs = LocalDate.of(displayYear, displayMonth + 1, dayOfMonth)
-                .atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
-            _selectedLog.value = repository.getDailyLog(dateMs)
+            withContext(Dispatchers.IO) {
+                val year = displayYearMonth.value.first
+                val month = displayYearMonth.value.second
+                val dateMs = LocalDate.of(year, month + 1, dayOfMonth)
+                    .atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
+                val log = repository.getDailyLog(dateMs)
+                _selectedLog.value = log
+            }
         }
     }
 

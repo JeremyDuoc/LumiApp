@@ -2,18 +2,27 @@ package com.jeremy.lumi.ui.screens.chat
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,6 +49,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.jeremy.lumi.R
 import com.jeremy.lumi.data.local.entity.ChatMessageEntity
 import com.jeremy.lumi.data.local.entity.ChatMessageType
+import com.jeremy.lumi.domain.usecase.ChatQuestion
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.jeremy.lumi.ui.theme.LocalBrandGradient
@@ -63,14 +73,26 @@ fun ChatScreen(
     viewModel: ChatViewModel = hiltViewModel()
 ) {
     val allMessages by viewModel.messages.collectAsStateWithLifecycle()
-    
+    val questions   by viewModel.availableQuestions.collectAsStateWithLifecycle()
+    val isTyping    by viewModel.isTyping.collectAsStateWithLifecycle()
+
     var searchQuery by remember { mutableStateOf("") }
 
     val messages = remember(allMessages, thread, searchQuery) {
         val filteredByThread = if (thread == "lumi") {
-            allMessages.filter { it.messageType == ChatMessageType.GREETING }
+            allMessages.filter { 
+                it.messageType == ChatMessageType.GREETING || 
+                it.messageType == ChatMessageType.USER || 
+                it.messageType == ChatMessageType.EDUCATIONAL || 
+                it.messageType == ChatMessageType.INSIGHT 
+            }
         } else {
-            allMessages.filter { it.messageType != ChatMessageType.GREETING }
+            allMessages.filter { 
+                it.messageType != ChatMessageType.GREETING && 
+                it.messageType != ChatMessageType.USER && 
+                it.messageType != ChatMessageType.EDUCATIONAL && 
+                it.messageType != ChatMessageType.INSIGHT 
+            }
         }
         
         if (searchQuery.isBlank()) {
@@ -95,7 +117,40 @@ fun ChatScreen(
         topBar  = { LumiChatTopBar(thread = thread, onBack = onBack) },
         containerColor = if (brandBgGradient != null) Color.Transparent else MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        Column(modifier = containerModifier.padding(paddingValues)) {
+        Column(modifier = containerModifier
+            .padding(paddingValues)
+            .imePadding() // Manejo del teclado
+        ) {
+
+            // ── Chips de preguntas sugeridas (solo thread Lumi) ──────────────
+            if (thread == "lumi") {
+                AnimatedVisibility(
+                    visible = questions.isNotEmpty(),
+                    enter   = slideInVertically { -it } + fadeIn(tween(300)),
+                    exit    = slideOutVertically { -it } + fadeOut(tween(200))
+                ) {
+                    Column {
+                        LazyRow(
+                            contentPadding         = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                            horizontalArrangement  = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(questions, key = { it.name }) { question ->
+                                QuestionChip(
+                                    text    = question.displayText,
+                                    onClick = {
+                                        viewModel.askQuestion(question)
+                                    }
+                                )
+                            }
+                        }
+                        HorizontalDivider(
+                            color     = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.06f),
+                            thickness = 0.5.dp
+                        )
+                    }
+                }
+            }
+
             // Buscador
             OutlinedTextField(
                 value = searchQuery,
@@ -125,14 +180,35 @@ fun ChatScreen(
                     EmptyChatState(Modifier.weight(1f))
                 }
             } else {
-                val grouped = remember(messages) { groupByDay(messages) }
+                val grouped    = remember(messages) { groupByDay(messages) }
+                val listState  = rememberLazyListState()
+                val scope      = rememberCoroutineScope()
+
+                // Auto-scroll al nuevo mensaje (index 0 porque reverseLayout = true)
+                LaunchedEffect(messages.size) {
+                    if (messages.isNotEmpty()) {
+                        listState.animateScrollToItem(0)
+                    }
+                }
 
                 LazyColumn(
+                    state               = listState,
                     modifier            = Modifier.weight(1f),
                     contentPadding      = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     reverseLayout       = true
                 ) {
+                    // El indicador de escribiendo de Lumi va "hasta arriba" en el código (que es abajo visualmente)
+                    item {
+                        AnimatedVisibility(
+                            visible = isTyping,
+                            enter   = slideInVertically { it / 2 } + fadeIn(),
+                            exit    = fadeOut(tween(150))
+                        ) {
+                            TypingIndicator()
+                        }
+                    }
+
                     grouped.asReversed().forEach { (dayLabel, dayMessages) ->
                         items(dayMessages.asReversed(), key = { it.id }) { msg ->
                             AnimatedChatBubble(msg)
@@ -180,7 +256,7 @@ private fun LumiChatTopBar(thread: String, onBack: (() -> Unit)?) {
         navigationIcon = {
             if (onBack != null) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.Rounded.ArrowBack, contentDescription = "Atrás", tint = MaterialTheme.colorScheme.onBackground)
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Atrás", tint = MaterialTheme.colorScheme.onBackground)
                 }
             }
         },
@@ -312,9 +388,9 @@ private fun AnimatedDayLabel(label: String) {
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  CHAT BUBBLE ANIMADA â€” slide-up + fade-in por mensaje
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
+//  CHAT BUBBLE ANIMADA — slide-up + fade-in por mensaje
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun AnimatedChatBubble(message: ChatMessageEntity) {
@@ -335,13 +411,14 @@ private fun AnimatedChatBubble(message: ChatMessageEntity) {
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  PREMIUM CHAT BUBBLE â€” tarjeta elevada con gradiente + ícono + seen glow
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
+//  PREMIUM CHAT BUBBLE — tarjeta elevada con gradiente + ícono + seen glow
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun PremiumChatBubble(message: ChatMessageEntity) {
     val primary = MaterialTheme.colorScheme.primary
+    val isUser = message.messageType == ChatMessageType.USER
 
     val isHighlighted = message.messageType in setOf(
         ChatMessageType.SUPPLY_REMINDER,
@@ -349,7 +426,7 @@ private fun PremiumChatBubble(message: ChatMessageEntity) {
         ChatMessageType.CUSTOM
     )
 
-    // â”€â”€ Pulso del indicador "visto" â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Pulso del indicador "visto" ──────────────────────────────────────
     val infiniteAnim  = rememberInfiniteTransition(label = "seen_pulse")
     val seenGlowAlpha by infiniteAnim.animateFloat(
         initialValue  = 0.25f,
@@ -366,18 +443,18 @@ private fun PremiumChatBubble(message: ChatMessageEntity) {
 
     Row(
         modifier              = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Start
+        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
     ) {
-        // â”€â”€ Burbuja estilo iOS: fondo sólido, esquinas muy redondeadas â”€â”€â”€â”€â”€â”€â”€
+        // ── Burbuja estilo iOS: fondo sólido, esquinas muy redondeadas ───────
         Surface(
             modifier  = Modifier.widthIn(max = 300.dp),
             shape     = RoundedCornerShape(
-                topStart     = 4.dp,   // "cola" sutil en la esquina del emisor
-                topEnd       = 20.dp,
+                topStart     = if (isUser) 20.dp else 4.dp,
+                topEnd       = if (isUser) 4.dp else 20.dp,
                 bottomStart  = 20.dp,
                 bottomEnd    = 20.dp
             ),
-            color     = MaterialTheme.colorScheme.surfaceVariant,
+            color     = if (isUser) primary else MaterialTheme.colorScheme.surfaceVariant,
             tonalElevation = 1.dp,
             shadowElevation = 2.dp
         ) {
@@ -408,33 +485,35 @@ private fun PremiumChatBubble(message: ChatMessageEntity) {
 
                 // â”€â”€ Ícono de Lumi + texto del mensaje â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Row(verticalAlignment = Alignment.Top) {
-                    Box(
-                        modifier = Modifier
-                            .size(26.dp)
-                            .clip(CircleShape)
-                            .background(primary.copy(alpha = 0.10f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector        = Icons.Rounded.AutoAwesome,
-                            contentDescription = null,
-                            tint               = primary,
-                            modifier           = Modifier.size(14.dp)
-                        )
+                    if (!isUser) {
+                        Box(
+                            modifier = Modifier
+                                .size(26.dp)
+                                .clip(CircleShape)
+                                .background(primary.copy(alpha = 0.10f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector        = Icons.Rounded.AutoAwesome,
+                                contentDescription = null,
+                                tint               = primary,
+                                modifier           = Modifier.size(14.dp)
+                            )
+                        }
+                        Spacer(Modifier.width(10.dp))
                     }
-                    Spacer(Modifier.width(10.dp))
                     Text(
                         text       = message.text,
                         fontSize   = 15.sp,
                         lineHeight = 21.sp,
-                        color      = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color      = if (isUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier   = Modifier.weight(1f, fill = false)
                     )
                 }
 
                 Spacer(Modifier.height(6.dp))
 
-                // â”€â”€ Timestamp + punto "visto" â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                // ──────────────── Timestamp + punto "visto" ────────────────
                 Row(
                     modifier              = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
@@ -443,16 +522,19 @@ private fun PremiumChatBubble(message: ChatMessageEntity) {
                     Text(
                         text     = formatTime(message.timestamp),
                         fontSize = 10.sp,
-                        color    = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
+                        color    = if (isUser) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f) 
+                                   else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
                     )
-                    Spacer(Modifier.width(5.dp))
-                    Box(
-                        Modifier
-                            .size(6.dp)
-                            .scale(seenScale)
-                            .clip(CircleShape)
-                            .background(primary.copy(alpha = seenGlowAlpha))
-                    )
+                    if (!isUser) {
+                        Spacer(Modifier.width(5.dp))
+                        Box(
+                            Modifier
+                                .size(6.dp)
+                                .scale(seenScale)
+                                .clip(CircleShape)
+                                .background(primary.copy(alpha = seenGlowAlpha))
+                        )
+                    }
                 }
             }
         }
@@ -499,6 +581,7 @@ private fun chatTypeIcon(type: ChatMessageType): ImageVector = when (type) {
     ChatMessageType.METHOD_REMINDER -> Icons.Rounded.Medication
     ChatMessageType.LOG_DAILY       -> Icons.Rounded.EditNote
     ChatMessageType.CUSTOM          -> Icons.Rounded.NotificationsActive
+    ChatMessageType.USER            -> Icons.Rounded.Person
     ChatMessageType.GREETING,
     ChatMessageType.EDUCATIONAL,
     ChatMessageType.INSIGHT         -> Icons.Rounded.AutoAwesome
@@ -511,8 +594,10 @@ private fun chatTypeLabelRes(type: ChatMessageType): Int? = when (type) {
     else                            -> null
 }
 
+private val timeFormatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
+
 private fun formatTime(timestamp: Long): String =
-    SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(timestamp))
+    Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).format(timeFormatter)
 
 private fun groupByDay(
     messages: List<ChatMessageEntity>
@@ -530,4 +615,92 @@ private fun groupByDay(
             }
             label to msgs.sortedBy { it.timestamp }
         }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  QUESTION CHIP
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun QuestionChip(text: String, onClick: () -> Unit) {
+    val primary   = MaterialTheme.colorScheme.primary
+    val secondary = MaterialTheme.colorScheme.secondary
+    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue   = if (isPressed) 0.95f else 1f,
+        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessHigh),
+        label         = "chip_scale"
+    )
+    Box(
+        modifier = Modifier
+            .scale(scale)
+            .clip(RoundedCornerShape(50.dp))
+            .background(Brush.horizontalGradient(listOf(primary.copy(alpha = 0.08f), secondary.copy(alpha = 0.06f))))
+            .border(1.dp, Brush.horizontalGradient(listOf(primary.copy(alpha = 0.30f), secondary.copy(alpha = 0.20f))), RoundedCornerShape(50.dp))
+            .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(Icons.Rounded.AutoAwesome, null, Modifier.size(13.dp), primary)
+            Text(text, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f))
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  TYPING INDICATOR
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun TypingIndicator() {
+    val primary = MaterialTheme.colorScheme.primary
+    val infiniteTransition = rememberInfiniteTransition(label = "typing")
+    
+    val offsets = List(3) { index ->
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = -6f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(400, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+                initialStartOffset = StartOffset(index * 150)
+            ),
+            label = "typing_dot_$index"
+        )
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Start
+    ) {
+        Surface(
+            modifier = Modifier.widthIn(max = 100.dp),
+            shape = RoundedCornerShape(
+                topStart = 4.dp,
+                topEnd = 20.dp,
+                bottomStart = 20.dp,
+                bottomEnd = 20.dp
+            ),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            tonalElevation = 1.dp,
+            shadowElevation = 2.dp
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                offsets.forEach { offset ->
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .graphicsLayer { translationY = offset.value.dp.toPx() }
+                            .clip(CircleShape)
+                            .background(primary.copy(alpha = 0.6f))
+                    )
+                }
+            }
+        }
+    }
 }

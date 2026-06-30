@@ -9,10 +9,12 @@ import com.jeremy.lumi.domain.model.PartnerLink
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.channels.awaitClose
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.AggregateSource
 
 @Singleton
 class PartnerRepository @Inject constructor() {
@@ -235,6 +237,80 @@ class PartnerRepository @Inject constructor() {
             if (link.ownerUid == uid || link.partnerUid == uid) {
                 docRef.update("status", LinkStatus.REVOKED.name).await()
             }
+        } catch (e: Exception) {
+            // Ignore offline network exceptions
+        }
+    }
+
+    /**
+     * Escucha en tiempo real las entradas del diario de un vínculo.
+     * Ordenadas por timestamp ascendente para que el chat fluya de arriba a abajo.
+     */
+    fun observeDiaryEntries(linkId: String): Flow<List<com.jeremy.lumi.ui.screens.partner.DiaryEntry>> = callbackFlow {
+        val ref = firestore.collection("diaries")
+            .document(linkId)
+            .collection("entries")
+            .orderBy("timestampMs", Query.Direction.ASCENDING)
+
+        val listener = ref.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                // No cerramos el flow — Firestore reintenta la conexión solo
+                return@addSnapshotListener
+            }
+            val entries = snapshot?.documents
+                ?.mapNotNull { it.toDiaryEntry() }
+                ?: emptyList()
+            trySend(entries)
+        }
+
+        awaitClose { listener.remove() }
+    }
+
+    // Mantener máximo 200 entradas por vínculo — borra las más antiguas si se supera
+    private suspend fun pruneIfNeeded(linkId: String) {
+        val col = firestore.collection("diaries").document(linkId).collection("entries")
+        val count = col.count().get(AggregateSource.SERVER).await().count
+        if (count >= 200) {
+            // Borra las 20 más antiguas en batch
+            val oldest = col
+                .orderBy("timestampMs", Query.Direction.ASCENDING)
+                .limit(20)
+                .get()
+                .await()
+            firestore.runBatch { batch ->
+                oldest.documents.forEach { batch.delete(it.reference) }
+            }.await()
+        }
+    }
+
+    /**
+     * Escribe una entrada nueva. Usa serverTimestamp como fallback
+     * pero también guarda el millis local para ordenación offline.
+     */
+    suspend fun sendDiaryEntry(
+        linkId: String,
+        text: String,
+        phase: com.jeremy.lumi.domain.model.CyclePhase,
+        authorName: String
+    ) {
+        try {
+            val uid = getCurrentUid() ?: return
+            
+            pruneIfNeeded(linkId)
+
+            val entry = com.jeremy.lumi.ui.screens.partner.DiaryEntry(
+                id          = "",               // Firestore genera el id
+                authorUid   = uid,
+                authorName  = authorName,
+                text        = text,
+                phase       = phase,
+                timestampMs = System.currentTimeMillis()
+            )
+            firestore.collection("diaries")
+                .document(linkId)
+                .collection("entries")
+                .add(entry.toMap())
+                .await()
         } catch (e: Exception) {
             // Ignore offline network exceptions
         }

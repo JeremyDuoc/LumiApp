@@ -72,7 +72,12 @@ fun DailyLogSheet(
         protectionUsed: Boolean?,
         contraceptionMethod: String?,
         intercourseNotes: String?,
-        showOnCalendar: Boolean
+        showOnCalendar: Boolean,
+        sleepHours: Float?,
+        energyLevel: Int?,
+        stressLevel: Int?,
+        basalBodyTemp: Float?,
+        spotting: Boolean
     ) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -92,6 +97,12 @@ fun DailyLogSheet(
     var selectedMethod   by remember { mutableStateOf<Int?>(null) }
     var intercourseNotes by remember { mutableStateOf("") }
     var showOnCalendar   by remember { mutableStateOf(true) }
+
+    var sleepHours       by remember { mutableStateOf<Float?>(null) }
+    var energyLevel      by remember { mutableStateOf<Int?>(null) }
+    var stressLevel      by remember { mutableStateOf<Int?>(null) }
+    var basalBodyTemp    by remember { mutableStateOf("") }
+    var spotting         by remember { mutableStateOf(false) }
 
     val flowOptions    = listOf(R.string.flow_light, R.string.flow_medium, R.string.flow_heavy)
     val moodOptions    = listOf(R.string.mood_happy, R.string.mood_sensitive, R.string.mood_sad, R.string.mood_irritated)
@@ -137,6 +148,12 @@ fun DailyLogSheet(
             }
             intercourseNotes = log.dailyLog.intercourseNotes ?: ""
             showOnCalendar   = log.dailyLog.showIntercourseOnCalendar
+            
+            sleepHours       = log.dailyLog.sleepHours
+            energyLevel      = log.dailyLog.energyLevel
+            stressLevel      = log.dailyLog.stressLevel
+            basalBodyTemp    = log.dailyLog.basalBodyTemp?.toString() ?: ""
+            spotting         = log.dailyLog.spotting
         }
     }
 
@@ -185,6 +202,9 @@ fun DailyLogSheet(
                 var intercourseExp   by remember { mutableStateOf(false) }
                 var notesExpanded    by remember { mutableStateOf(false) }
                 
+                var wellbeingExp     by remember { mutableStateOf(false) }
+                var vitalsExp        by remember { mutableStateOf(false) }
+                
                 var showMucusInfo    by remember { mutableStateOf(false) }
 
                 if (showMucusInfo) {
@@ -208,6 +228,8 @@ fun DailyLogSheet(
                         if (savedLog.dailyLog.cervicalMucus != null)  mucusExpanded    = true
                         if (savedLog.dailyLog.hadIntercourse)         intercourseExp   = true
                         if (!savedLog.dailyLog.notes.isNullOrBlank()) notesExpanded    = true
+                        if (savedLog.dailyLog.sleepHours != null || savedLog.dailyLog.energyLevel != null || savedLog.dailyLog.stressLevel != null) wellbeingExp = true
+                        if (savedLog.dailyLog.basalBodyTemp != null) vitalsExp = true
                     }
                 }
 
@@ -215,7 +237,7 @@ fun DailyLogSheet(
                 CollapsibleLogCard(
                     titleRes  = R.string.log_flow,
                     expanded  = flowExpanded,
-                    hasData   = selectedFlow != null,
+                    hasData   = selectedFlow != null || spotting,
                     onToggle  = { flowExpanded = !flowExpanded }
                 ) {
                     FlowSelector(
@@ -225,6 +247,15 @@ fun DailyLogSheet(
                             selectedFlow = if (selectedFlow == tapped) null else tapped
                         }
                     )
+                    Spacer(Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth().clickable { spotting = !spotting },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Manchado fuera del periodo (Spotting)", fontSize = 14.sp)
+                        Switch(checked = spotting, onCheckedChange = { spotting = it })
+                    }
                 }
 
                 // ── Dolor ────────────────────────────────────────────────────────
@@ -351,6 +382,63 @@ fun DailyLogSheet(
                         )
                     }
                 }
+                
+                // ── Bienestar (Sueño, Energía, Estrés) ────────────────────────────
+                if (activeCategories.contains("wellbeing")) {
+                    CollapsibleLogCard(
+                        titleRes = R.string.category_wellbeing, // Need to define or use string resource later
+                        expanded = wellbeingExp,
+                        hasData  = sleepHours != null || energyLevel != null || stressLevel != null,
+                        onToggle = { wellbeingExp = !wellbeingExp }
+                    ) {
+                        // Sueño
+                        Text("Horas de sueño: ${sleepHours?.let { String.format(Locale.US, "%.1f", it) } ?: "—"}", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        Slider(
+                            value = sleepHours ?: 0f,
+                            onValueChange = { sleepHours = if (it < 0.5f) null else it },
+                            valueRange = 0f..14f,
+                            steps = 27
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        
+                        // Energía
+                        Text("Nivel de energía: ${energyLevel ?: "—"}", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        Slider(
+                            value = energyLevel?.toFloat() ?: 0f,
+                            onValueChange = { energyLevel = if (it < 1f) null else it.toInt() },
+                            valueRange = 0f..10f,
+                            steps = 9
+                        )
+                        Spacer(Modifier.height(8.dp))
+
+                        // Estrés
+                        Text("Nivel de estrés: ${stressLevel ?: "—"}", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        Slider(
+                            value = stressLevel?.toFloat() ?: 0f,
+                            onValueChange = { stressLevel = if (it < 1f) null else it.toInt() },
+                            valueRange = 0f..10f,
+                            steps = 9
+                        )
+                    }
+                }
+
+                // ── Signos Vitales (Temperatura, Peso) ────────────────────────────
+                if (activeCategories.contains("vitals")) {
+                    CollapsibleLogCard(
+                        titleRes = R.string.category_vitals, // Need to define or use string resource later
+                        expanded = vitalsExp,
+                        hasData  = basalBodyTemp.isNotBlank(),
+                        onToggle = { vitalsExp = !vitalsExp }
+                    ) {
+                        OutlinedTextField(
+                            value = basalBodyTemp,
+                            onValueChange = { basalBodyTemp = it },
+                            label = { Text("Temperatura Basal (°C)") },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
 
                 // ── Notas ─────────────────────────────────────────────────────────
                 CollapsibleLogCard(
@@ -408,13 +496,19 @@ fun DailyLogSheet(
                     val finalSymptoms = selectedSymptoms.map { symptomStrings[symptomOptions.indexOf(it)] }
                     val finalMucus    = selectedMucus?.let   { mucusStrings[mucusOptions.indexOf(it)] }
                     val finalMethod   = selectedMethod?.let  { methodStrings[methodOptions.indexOf(it)] }
+                    val bbtParsed = basalBodyTemp.replace(",", ".").toFloatOrNull()
                     onSave(
                         finalFlow, painLevel.toInt(), finalMood, finalSymptoms, finalMucus, notes,
                         hadIntercourse,
                         if (hadIntercourse) protectionUsed else null,
                         if (hadIntercourse) finalMethod    else null,
                         if (hadIntercourse) intercourseNotes.takeIf { it.isNotBlank() } else null,
-                        showOnCalendar
+                        showOnCalendar,
+                        sleepHours,
+                        energyLevel,
+                        stressLevel,
+                        bbtParsed,
+                        spotting
                     )
                     onDismiss()
                 }
@@ -442,7 +536,9 @@ fun DailyLogSheet(
                     "physical" to stringResource(R.string.category_physical),
                     "digestive" to stringResource(R.string.category_digestive),
                     "mucus" to stringResource(R.string.category_mucus),
-                    "intercourse" to stringResource(R.string.category_intercourse)
+                    "intercourse" to stringResource(R.string.category_intercourse),
+                    "wellbeing" to stringResource(R.string.category_wellbeing),
+                    "vitals" to stringResource(R.string.category_vitals)
                 )
                 
                 categories.forEach { (key, title) ->

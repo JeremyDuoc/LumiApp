@@ -1,4 +1,4 @@
-﻿package com.jeremy.lumi.ui.screens.calendar
+package com.jeremy.lumi.ui.screens.calendar
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -95,8 +95,9 @@ fun LogHistorySheet(
 
 @Composable
 private fun LogHistoryRow(log: DailyLogWithSymptoms) {
-    val dateFormat = remember { SimpleDateFormat("d 'de' MMMM, yyyy", Locale("es")) }
-    val dateLabel = remember(log.dailyLog.date) {
+    val currentLocale = Locale.getDefault()
+    val dateFormat = remember(currentLocale) { SimpleDateFormat("d 'de' MMMM, yyyy", currentLocale) }
+    val dateLabel = remember(log.dailyLog.date, dateFormat) {
         dateFormat.format(Date(log.dailyLog.date)).replaceFirstChar { it.uppercase() }
     }
 

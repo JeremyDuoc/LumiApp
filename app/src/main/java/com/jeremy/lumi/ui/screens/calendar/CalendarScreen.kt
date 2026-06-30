@@ -1,4 +1,4 @@
-﻿package com.jeremy.lumi.ui.screens.calendar
+package com.jeremy.lumi.ui.screens.calendar
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -117,10 +117,36 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                     exit = shrinkVertically() + fadeOut()
                 ) {
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        CurrentPhasePill(
-                            currentPhase = uiState.currentPhase,
-                            currentDayOfCycle = uiState.currentDayOfCycle
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CurrentPhasePill(
+                                currentPhase = uiState.currentPhase,
+                                currentDayOfCycle = uiState.currentDayOfCycle
+                            )
+                            // FIX P2-2: Mostrar el banner de predicción del próximo período.
+                            // uiState.prediction existe pero antes nunca se renderizaba.
+                            uiState.prediction?.let { pred ->
+                                val bannerText = when {
+                                    pred.isLate -> stringResource(R.string.calendar_period_late, pred.delayDays)
+                                    pred.daysUntilNextPeriod == 0 -> stringResource(R.string.calendar_period_today)
+                                    pred.daysUntilNextPeriod == 1 -> stringResource(R.string.calendar_period_tomorrow)
+                                    pred.daysUntilNextPeriod > 0 -> stringResource(R.string.calendar_next_period_in, pred.daysUntilNextPeriod)
+                                    else -> null
+                                }
+                                val bannerColor = when {
+                                    pred.isLate -> MaterialTheme.colorScheme.error
+                                    pred.daysUntilNextPeriod <= 2 -> MaterialTheme.colorScheme.primary
+                                    else -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                                }
+                                if (bannerText != null) {
+                                    Text(
+                                        text = bannerText,
+                                        fontSize = 12.sp,
+                                        color = bannerColor,
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -185,10 +211,11 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                 selectedDayForLog = null
                 viewModel.clearSelectedLog()
             },
-            onSave = { flow, pain, mood, symptoms, mucus, notes, hadIntercourse, protectionUsed, method, intercourseNotes, showOnCalendar ->
+            onSave = { flow, pain, mood, symptoms, mucus, notes, hadIntercourse, protectionUsed, method, intercourseNotes, showOnCalendar, sleepHours, energyLevel, stressLevel, bbt, spotting ->
                 viewModel.saveDailyLog(
                     day, flow, pain, mood, symptoms, mucus, notes,
-                    hadIntercourse, protectionUsed, method, intercourseNotes, showOnCalendar
+                    hadIntercourse, protectionUsed, method, intercourseNotes, showOnCalendar,
+                    sleepHours, energyLevel, stressLevel, bbt, spotting
                 )
                 selectedDayForLog = null
                 scope.launch { snackbarHostState.showSnackbar(savedMsg) }
@@ -531,9 +558,7 @@ fun SmallMonthBox(modifier: Modifier = Modifier, monthName: String, days: List<C
                     
                     val color = when (day.phase) {
                         CyclePhase.MENSTRUAL -> phaseColors.menstrual
-                        CyclePhase.FOLLICULAR -> phaseColors.follicular
                         CyclePhase.OVULATION -> phaseColors.ovulation
-                        CyclePhase.LUTEAL -> phaseColors.luteal
                         CyclePhase.PREGNANCY -> primaryColor
                         else -> onBgColor.copy(alpha = 0.35f)
                     }
@@ -572,9 +597,7 @@ private fun LegendDialog(onDismiss: () -> Unit) {
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 LegendItem(phaseColor(CyclePhase.MENSTRUAL), phaseLabel(CyclePhase.MENSTRUAL))
-                LegendItem(phaseColor(CyclePhase.FOLLICULAR), phaseLabel(CyclePhase.FOLLICULAR))
                 LegendItem(phaseColor(CyclePhase.OVULATION), phaseLabel(CyclePhase.OVULATION))
-                LegendItem(phaseColor(CyclePhase.LUTEAL), phaseLabel(CyclePhase.LUTEAL))
                 
                 HorizontalDivider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f))
                 
@@ -663,8 +686,8 @@ fun DayCell(day: CalendarDay, index: Int, onClick: () -> Unit) {
     val bgAlpha = when (day.phase) {
         CyclePhase.MENSTRUAL  -> 0.26f
         CyclePhase.OVULATION  -> 0.28f
-        CyclePhase.FOLLICULAR -> 0.13f
-        CyclePhase.LUTEAL     -> 0.15f
+        CyclePhase.FOLLICULAR -> 0f
+        CyclePhase.LUTEAL     -> 0f
         else                  -> 0f
     } * predictionAlphaFactor
 

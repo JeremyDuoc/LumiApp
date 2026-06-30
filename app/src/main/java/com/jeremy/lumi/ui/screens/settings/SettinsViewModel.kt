@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jeremy.lumi.data.preferences.ChatPreferenceManager
 import com.jeremy.lumi.domain.repository.LumiRepository
+import com.jeremy.lumi.data.health.HealthConnectManager
 import com.jeremy.lumi.data.preferences.PhaseSlot
 import com.jeremy.lumi.data.preferences.ThemePreferenceManager
 import com.jeremy.lumi.ui.theme.AppThemePalette
@@ -25,8 +26,20 @@ class SettingsViewModel @Inject constructor(
     private val themePreferenceManager: ThemePreferenceManager,
     private val chatPreferenceManager: ChatPreferenceManager,
     private val onboardingPreferenceManager: OnboardingPreferenceManager,
-    private val repository: LumiRepository
+    private val repository: LumiRepository,
+    // FIX P3-2: El manager es privado — el Screen solo accede a propiedades
+    // expuestas por el ViewModel, no al objeto completo (patrón MVVM correcto).
+    private val healthConnectManager: HealthConnectManager,
+    private val mockDataGeneratorUseCase: com.jeremy.lumi.domain.usecase.MockDataGeneratorUseCase
 ) : ViewModel() {
+
+    /** ¿Está el SDK de Health Connect disponible en este dispositivo? */
+    val isHealthConnectAvailable: Boolean
+        get() = healthConnectManager.isAvailable()
+
+    /** Conjunto de permisos que la app necesita solicitar a Health Connect. */
+    val healthConnectPermissions: Set<String>
+        get() = healthConnectManager.permissions
 
     // ── Ajustes de Chat ────────────────────────────────────────────────────
     val saveRemindersInChat: StateFlow<Boolean> = chatPreferenceManager.saveRemindersFlow
@@ -48,12 +61,26 @@ class SettingsViewModel @Inject constructor(
     val isPregnant: StateFlow<Boolean> = onboardingPreferenceManager.isPregnantFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val isOnContraceptive: StateFlow<Boolean> = onboardingPreferenceManager.isOnContraceptiveFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val isHealthConnectEnabled: StateFlow<Boolean> = onboardingPreferenceManager.isHealthConnectEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     fun setUserGoal(goal: UserGoal) {
         viewModelScope.launch { onboardingPreferenceManager.setUserGoal(goal) }
     }
 
     fun setIsPregnant(isPregnant: Boolean) {
         viewModelScope.launch { onboardingPreferenceManager.setIsPregnant(isPregnant) }
+    }
+
+    fun setIsOnContraceptive(isOnContraceptive: Boolean) {
+        viewModelScope.launch { onboardingPreferenceManager.setIsOnContraceptive(isOnContraceptive) }
+    }
+
+    fun setIsHealthConnectEnabled(isEnabled: Boolean) {
+        viewModelScope.launch { onboardingPreferenceManager.setIsHealthConnectEnabled(isEnabled) }
     }
 
     // ── Tema general ───────────────────────────────────────────────────────
@@ -129,6 +156,18 @@ class SettingsViewModel @Inject constructor(
             // 3. Limpiar preferencias de chat
             chatPreferenceManager.clearAllPreferences()
             // 4. Matar el proceso — Android lo relanzará desde cero (onboarding)
+            android.os.Process.killProcess(android.os.Process.myPid())
+        }
+    }
+
+    /** 
+     * Inyecta 4 meses de historial (solo para Dev/Testing).
+     * Luego mata la app para forzar recarga. 
+     */
+    fun injectMockData() {
+        viewModelScope.launch {
+            mockDataGeneratorUseCase()
+            // Matamos el proceso para forzar a que todos los ViewModels (Home, Calendar, Insights) recarguen los datos
             android.os.Process.killProcess(android.os.Process.myPid())
         }
     }

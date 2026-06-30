@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jeremy.lumi.data.preferences.OnboardingPreferenceManager
 import com.jeremy.lumi.domain.model.OnboardingData
+import com.jeremy.lumi.domain.model.SecondaryGoal
 import com.jeremy.lumi.domain.model.UserGoal
 import com.jeremy.lumi.domain.repository.LumiRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,13 +18,14 @@ import java.time.ZoneId
 import javax.inject.Inject
 
 data class OnboardingUiState(
-    val currentPage  : Int           = 0,    // 0-6 (6 = pantalla de celebración)
+    val currentPage  : Int           = 0,    // 0-8 (8 = pantalla de celebración)
     val data         : OnboardingData = OnboardingData(),
-    val isCompleting : Boolean        = false // true mientras se guardan los datos
+    val isCompleting : Boolean        = false
 ) {
     val isNextEnabled: Boolean
         get() = when (currentPage) {
-            2 -> data.isRegular != null
+            1 -> data.medicalDisclaimerAccepted // New field we'll add
+            3 -> data.isRegular != null
             else -> true
         }
 }
@@ -42,7 +44,7 @@ class OnboardingViewModel @Inject constructor(
     fun nextPage() {
         _uiState.update {
             val next = it.currentPage + 1
-            it.copy(currentPage = next.coerceAtMost(6))
+            it.copy(currentPage = next.coerceAtMost(9))  // 0..9
         }
     }
 
@@ -86,6 +88,35 @@ class OnboardingViewModel @Inject constructor(
         _uiState.update { it.copy(data = it.data.copy(userGoal = goal)) }
     }
 
+    fun setAge(age: Int?) {
+        _uiState.update { it.copy(data = it.data.copy(age = age)) }
+    }
+
+    fun setHeight(height: Float?) {
+        _uiState.update { it.copy(data = it.data.copy(height = height)) }
+    }
+
+    fun setWeight(weight: Float?) {
+        _uiState.update { it.copy(data = it.data.copy(weight = weight)) }
+    }
+
+    fun toggleSecondaryGoal(goal: SecondaryGoal) {
+        _uiState.update {
+            val current = it.data.secondaryGoals
+            val updated = if (goal in current) current - goal else current + goal
+            it.copy(data = it.data.copy(secondaryGoals = updated))
+        }
+    }
+
+    // FIX P3-3: Setter para modo pastilla anticonceptiva desde el onboarding.
+    fun setIsOnContraceptive(value: Boolean) {
+        _uiState.update { it.copy(data = it.data.copy(isOnContraceptive = value)) }
+    }
+    
+    fun setMedicalDisclaimerAccepted(accepted: Boolean) {
+        _uiState.update { it.copy(data = it.data.copy(medicalDisclaimerAccepted = accepted)) }
+    }
+
     // ── Completar onboarding ──────────────────────────────────────────────────
 
     /**
@@ -100,12 +131,19 @@ class OnboardingViewModel @Inject constructor(
         viewModelScope.launch {
             // 1. Guardar perfil en DataStore
             prefs.saveOnboardingProfile(
-                userName     = data.userName,
-                isRegular    = data.isRegular,
-                cycleLength  = data.cycleLength,
-                periodLength = data.periodLength,
-                goal         = data.userGoal
+                userName       = data.userName,
+                isRegular      = data.isRegular,
+                cycleLength    = data.cycleLength,
+                periodLength   = data.periodLength,
+                goal           = data.userGoal,
+                age            = data.age,
+                height         = data.height,
+                weight         = data.weight,
+                secondaryGoals = data.secondaryGoals,
+                medicalDisclaimerAccepted = data.medicalDisclaimerAccepted
             )
+            // FIX P3-3: Persistir modo pastilla desde el onboarding.
+            prefs.setIsOnContraceptive(data.isOnContraceptive)
 
             // 2. Crear el primer ciclo en Room, SÓLO si sabemos cuándo empezó
             if (data.lastPeriodKnown && data.lastPeriodDate > 0L) {

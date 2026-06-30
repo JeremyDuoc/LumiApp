@@ -1,0 +1,11 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "entries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "timestampMs", "order": "ASCENDING" }
+      ]
+    }
+  ]
+}

@@ -13,9 +13,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
+import com.jeremy.lumi.R
 
 @HiltViewModel
 class RemindersViewModel @Inject constructor(
@@ -25,6 +27,9 @@ class RemindersViewModel @Inject constructor(
 
     val activeReminders: StateFlow<List<ReminderEntity>> = repository.getActiveReminders()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _errorFlow = kotlinx.coroutines.flow.MutableSharedFlow<String>()
+    val errorFlow = _errorFlow.asSharedFlow()
 
     /** Recordatorio "normal" (tipos con intervalo predeterminado de fábrica, incluido SUPPLY_REMINDER). */
     fun createReminder(
@@ -82,7 +87,11 @@ class RemindersViewModel @Inject constructor(
                 nextTriggerAt   = nextTrigger
             )
             val newId = repository.saveReminder(reminder)
-            AlarmScheduler.schedule(application, reminder.copy(id = newId.toInt()))
+            try {
+                AlarmScheduler.schedule(application, reminder.copy(id = newId.toInt()))
+            } catch (e: Exception) {
+                _errorFlow.emit("Failed to schedule alarm: ${e.message}")
+            }
         }
     }
 
@@ -112,7 +121,11 @@ class RemindersViewModel @Inject constructor(
                 nextTriggerAt    = triggerMillis
             )
             val newId = repository.saveReminder(reminder)
-            AlarmScheduler.schedule(application, reminder.copy(id = newId.toInt()))
+            try {
+                AlarmScheduler.schedule(application, reminder.copy(id = newId.toInt()))
+            } catch (e: Exception) {
+                _errorFlow.emit(application.getString(R.string.error_schedule_alarm, e.message ?: ""))
+            }
         }
     }
 
@@ -138,7 +151,11 @@ class RemindersViewModel @Inject constructor(
                     prediction.nextPeriodDate.minusDays(2), reminder.hourOfDay, reminder.minute
                 )
                 repository.updateNextTrigger(reminder.id, triggerMillis)
-                AlarmScheduler.schedule(application, reminder.copy(nextTriggerAt = triggerMillis))
+                try {
+                    AlarmScheduler.schedule(application, reminder.copy(nextTriggerAt = triggerMillis))
+                } catch (e: Exception) {
+                    _errorFlow.emit(application.getString(R.string.error_schedule_alarm, e.message ?: ""))
+                }
             }
 
             current.find { it.type == ReminderType.OVULATION_SOON }?.let { reminder ->
@@ -146,7 +163,11 @@ class RemindersViewModel @Inject constructor(
                     prediction.nextOvulationDate.minusDays(1), reminder.hourOfDay, reminder.minute
                 )
                 repository.updateNextTrigger(reminder.id, triggerMillis)
-                AlarmScheduler.schedule(application, reminder.copy(nextTriggerAt = triggerMillis))
+                try {
+                    AlarmScheduler.schedule(application, reminder.copy(nextTriggerAt = triggerMillis))
+                } catch (e: Exception) {
+                    _errorFlow.emit(application.getString(R.string.error_schedule_alarm, e.message ?: ""))
+                }
             }
 
             current.find { it.type == ReminderType.SUPPLY_REMINDER }?.let { reminder ->
@@ -154,7 +175,11 @@ class RemindersViewModel @Inject constructor(
                     prediction.nextPeriodDate.minusDays(3), reminder.hourOfDay, reminder.minute
                 )
                 repository.updateNextTrigger(reminder.id, triggerMillis)
-                AlarmScheduler.schedule(application, reminder.copy(nextTriggerAt = triggerMillis))
+                try {
+                    AlarmScheduler.schedule(application, reminder.copy(nextTriggerAt = triggerMillis))
+                } catch (e: Exception) {
+                    _errorFlow.emit(application.getString(R.string.error_schedule_alarm, e.message ?: ""))
+                }
             }
         }
     }

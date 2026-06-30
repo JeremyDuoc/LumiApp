@@ -15,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId = "com.jeremy.lumi"
-        minSdk = 34
+        minSdk = 26
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -114,4 +114,13 @@ dependencies {
     implementation("com.airbnb.android:lottie-compose:6.4.0")
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("com.valentinilk.shimmer:compose-shimmer:1.3.0")
+
+    // 13. TensorFlow Lite (Inteligencia Artificial Local)
+    implementation("org.tensorflow:tensorflow-lite:2.16.1")
+
+    // 14. Health Connect (Sincronización de Salud)
+    // NOTA P3-1: beta02 requiere compileSdk=36 (Android 16 preview), incompatible
+    // con la configuración actual (compileSdk=35). Se mantiene alpha07 que compila
+    // limpiamente. Actualizar cuando el proyecto migre a compileSdk 36.
+    implementation("androidx.health.connect:connect-client:1.1.0-alpha07")
 }

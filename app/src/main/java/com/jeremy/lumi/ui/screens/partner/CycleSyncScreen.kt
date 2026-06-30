@@ -1,4 +1,4 @@
-﻿package com.jeremy.lumi.ui.screens.partner
+package com.jeremy.lumi.ui.screens.partner
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -102,15 +102,14 @@ fun CycleSyncScreen(
 
     // Abrazo
     val isOnCooldown = uiState.isCareActionOnCooldown()
-    var displayCooldown by remember { mutableIntStateOf(uiState.careActionCooldownSeconds()) }
-    LaunchedEffect(isOnCooldown, uiState.careActionCooldownUntil) {
-        if (isOnCooldown) {
-            while (uiState.isCareActionOnCooldown()) {
-                displayCooldown = uiState.careActionCooldownSeconds()
-                delay(1000)
-            }
-            displayCooldown = 0
+    val cooldownUntil = uiState.careActionCooldownUntil
+    var displayCooldown by remember { mutableIntStateOf(0) }
+    LaunchedEffect(cooldownUntil) {
+        while (cooldownUntil > System.currentTimeMillis()) {
+            displayCooldown = ((cooldownUntil - System.currentTimeMillis()) / 1000L).coerceAtLeast(0L).toInt()
+            delay(1000)
         }
+        displayCooldown = 0
     }
 
     var showHugEffect by remember { mutableStateOf(false) }
@@ -133,13 +132,15 @@ fun CycleSyncScreen(
                     title = {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = if (theirName != null) "Sincronía con $theirName" else "Ciclos Sincronizados",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 17.sp
+                                text = if (theirName != null) stringResource(R.string.cycle_sync_sync_title, theirName) else stringResource(R.string.cycle_sync_title),
+                                color = Color.White,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Light,
+                                letterSpacing = 0.3.sp
                             )
                             AnimatedVisibility(visible = hugReceivedRecently) {
                                 Text(
-                                    "💌 ¡Recibiste un abrazo!",
+                                    stringResource(R.string.cycle_sync_hug_received),
                                     fontSize = 12.sp,
                                     color = theirColor,
                                     fontWeight = FontWeight.SemiBold
@@ -162,13 +163,7 @@ fun CycleSyncScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(bgColor1, MaterialTheme.colorScheme.background, bgColor2),
-                        start = Offset(0f, 0f),
-                        end = Offset(1000f, 2000f)
-                    )
-                )
+                .background(Color(0xFF0E0A1A))
         ) {
             Column(
                 modifier = Modifier
@@ -181,18 +176,15 @@ fun CycleSyncScreen(
             ) {
 
                 // ── Doble anillo de fases ─────────────────────────────────────
-                DualRingSection(
+                PhaseDualOrbit(
                     myPhase = myPhase,
-                    theirPhase = theirPhase,
+                    partnerPhase = theirPhase,
                     myColor = myColor,
-                    theirColor = theirColor,
-                    mySnapshot = mySnapshot,
-                    theirSnapshot = theirSnapshot,
-                    theirName = theirName,
-                    syncPulse = syncPulse,
-                    syncAlpha = syncAlpha,
-                    showHugEffect = showHugEffect,
-                    hugHaloAlpha = hugHaloAlpha
+                    partnerColor = theirColor,
+                    myEmoji = syncPhaseEmoji(myPhase),
+                    partnerEmoji = syncPhaseEmoji(theirPhase),
+                    myName = stringResource(R.string.story_you),
+                    partnerName = theirName ?: stringResource(R.string.partner_default_link_name)
                 )
 
                 // ── Compatibilidad de energías ────────────────────────────────
@@ -204,13 +196,13 @@ fun CycleSyncScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     MiniCycleCard(
-                        label = "Tú",
+                        label = stringResource(R.string.story_you),
                         snapshot = mySnapshot,
                         phaseColor = myColor,
                         modifier = Modifier.weight(1f)
                     )
                     MiniCycleCard(
-                        label = if (theirName != null) theirName else "Tu vínculo",
+                        label = theirName ?: stringResource(R.string.partner_default_link_name),
                         snapshot = theirSnapshot,
                         phaseColor = theirColor,
                         modifier = Modifier.weight(1f)
@@ -218,7 +210,14 @@ fun CycleSyncScreen(
                 }
 
                 // ── Consejo de fase cruzada ───────────────────────────────────
-                GlassCard(phaseColor = compatibility.color.copy(alpha = 0.5f)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color(0xFF1A1025))
+                        .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(16.dp))
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                ) {
                     Row(
                         modifier = Modifier.padding(18.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -265,7 +264,7 @@ fun CycleSyncScreen(
 
                 TextButton(onClick = onUnlink) {
                     Text(
-                        "Desvincular",
+                        stringResource(R.string.partner_unlink),
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.35f)
                     )
@@ -278,13 +277,7 @@ fun CycleSyncScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(bgColor1, MaterialTheme.colorScheme.background, bgColor2),
-                        start = Offset(0f, 0f),
-                        end = Offset(1000f, 2000f)
-                    )
-                )
+                .background(Color(0xFF0E0A1A))
         ) {
             Column(
                 modifier = Modifier
@@ -296,26 +289,32 @@ fun CycleSyncScreen(
             ) {
                 if (hugReceivedRecently) {
                     Text(
-                        "💌 ¡Recibiste un abrazo!",
+                        stringResource(R.string.cycle_sync_hug_received),
                         fontSize = 13.sp,
                         color = theirColor,
                         fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Center
                     )
                 }
-                DualRingSection(
-                    myPhase = myPhase, theirPhase = theirPhase,
-                    myColor = myColor, theirColor = theirColor,
-                    mySnapshot = mySnapshot, theirSnapshot = theirSnapshot,
-                    theirName = theirName, syncPulse = syncPulse, syncAlpha = syncAlpha,
-                    showHugEffect = showHugEffect, hugHaloAlpha = hugHaloAlpha
+                PhaseDualOrbit(
+                    myPhase = myPhase, partnerPhase = theirPhase,
+                    myColor = myColor, partnerColor = theirColor,
+                    myEmoji = syncPhaseEmoji(myPhase), partnerEmoji = syncPhaseEmoji(theirPhase),
+                    myName = stringResource(R.string.story_you), partnerName = theirName ?: stringResource(R.string.partner_default_link_name)
                 )
                 CompatibilityCard(compatibility = compatibility, myColor = myColor, theirColor = theirColor)
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    MiniCycleCard(label = "Tú", snapshot = mySnapshot, phaseColor = myColor, modifier = Modifier.weight(1f))
-                    MiniCycleCard(label = if (theirName != null) theirName else "Tu vínculo", snapshot = theirSnapshot, phaseColor = theirColor, modifier = Modifier.weight(1f))
+                    MiniCycleCard(label = stringResource(R.string.story_you), snapshot = mySnapshot, phaseColor = myColor, modifier = Modifier.weight(1f))
+                    MiniCycleCard(label = theirName ?: stringResource(R.string.partner_default_link_name), snapshot = theirSnapshot, phaseColor = theirColor, modifier = Modifier.weight(1f))
                 }
-                GlassCard(phaseColor = compatibility.color.copy(alpha = 0.5f)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color(0xFF1A1025))
+                        .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(16.dp))
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                ) {
                     Row(modifier = Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(compatibility.emoji, fontSize = 28.sp)
                         Spacer(Modifier.width(14.dp))
@@ -351,161 +350,66 @@ fun CycleSyncScreen(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun DualRingSection(
+private fun PhaseDualOrbit(
     myPhase: CyclePhase,
-    theirPhase: CyclePhase,
+    partnerPhase: CyclePhase,
     myColor: Color,
-    theirColor: Color,
-    mySnapshot: CycleSnapshot?,
-    theirSnapshot: CycleSnapshot?,
-    theirName: String?,
-    syncPulse: Float,
-    syncAlpha: Float,
-    showHugEffect: Boolean,
-    hugHaloAlpha: Float
+    partnerColor: Color,
+    myEmoji: String,
+    partnerEmoji: String,
+    myName: String,
+    partnerName: String
 ) {
-    val areSynced = myPhase == theirPhase && myPhase != CyclePhase.UNKNOWN
+    val infiniteTransition = rememberInfiniteTransition(label = "orbit")
+    val pulse by infiniteTransition.animateFloat(
+        initialValue = 0.94f,
+        targetValue = 1.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2800, easing = EaseInOutSine),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "orbit_pulse"
+    )
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(280.dp),
+            .height(200.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Halo de abrazo
-        if (showHugEffect) {
-            Box(
-                modifier = Modifier
-                    .size(320.dp)
-                    .graphicsLayer { alpha = 1f - hugHaloAlpha }
-                    .clip(CircleShape)
-                    .background(
-                        Brush.radialGradient(
-                            listOf(
-                                myColor.copy(alpha = 0.3f),
-                                theirColor.copy(alpha = 0.3f),
-                                Color.Transparent
-                            )
-                        )
-                    )
-            )
-        }
-
-        // Si están sincronizadas: un solo anillo doble pulsante
-        if (areSynced) {
-            Box(
-                modifier = Modifier
-                    .size(260.dp)
-                    .graphicsLayer { scaleX = syncPulse; scaleY = syncPulse; alpha = syncAlpha * 0.4f }
-                    .clip(CircleShape)
-                    .background(
-                        Brush.radialGradient(listOf(myColor.copy(alpha = 0.4f), Color.Transparent))
-                    )
-            )
-        }
-
-        // Anillo de la otra persona (derecha/arriba)
+        // Círculo izquierdo (tú)
         Box(
             modifier = Modifier
-                .offset(x = 60.dp, y = (-20).dp)
-                .size(160.dp)
-                .graphicsLayer { alpha = 0.85f }
+                .offset(x = (-48).dp)
+                .size(140.dp)
+                .scale(pulse)
                 .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        listOf(
-                            theirColor.copy(alpha = 0.2f),
-                            MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
-                        )
-                    )
-                )
-                .border(
-                    1.5.dp,
-                    Brush.linearGradient(listOf(theirColor.copy(alpha = 0.5f), theirColor.copy(alpha = 0.1f))),
-                    CircleShape
-                ),
+                .background(myColor.copy(alpha = 0.18f))
+                .border(1.5.dp, myColor.copy(alpha = 0.55f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(syncPhaseEmoji(theirPhase), fontSize = 28.sp)
-                Text(
-                    text = phaseLabelShort(theirPhase),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = theirColor,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-                if (theirName != null) {
-                    Text(
-                        theirName,
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-                    )
-                }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = myEmoji, fontSize = 32.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(text = myName, color = myColor, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
             }
         }
 
-        // Anillo propio (izquierda/abajo) — más prominente
+        // Círculo derecho (pareja)
         Box(
             modifier = Modifier
-                .offset(x = (-60).dp, y = 20.dp)
-                .size(180.dp)
+                .offset(x = 48.dp)
+                .size(140.dp)
+                .scale(2f - pulse)   // pulso inverso
                 .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        listOf(
-                            myColor.copy(alpha = 0.22f),
-                            MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
-                        )
-                    )
-                )
-                .border(
-                    2.dp,
-                    Brush.linearGradient(listOf(myColor.copy(alpha = 0.6f), myColor.copy(alpha = 0.1f))),
-                    CircleShape
-                ),
+                .background(partnerColor.copy(alpha = 0.18f))
+                .border(1.5.dp, partnerColor.copy(alpha = 0.55f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(syncPhaseEmoji(myPhase), fontSize = 32.sp)
-                Text(
-                    text = phaseLabelShort(myPhase),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = myColor,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-                Text(
-                    "Tú",
-                    fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-                )
-            }
-        }
-
-        // Badge de sincronía perfecta
-        if (areSynced) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 20.dp, end = 8.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(myColor.copy(alpha = 0.15f))
-                    .border(1.dp, myColor.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("✨", fontSize = 12.sp)
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        "¡Sincronía perfecta!",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = myColor
-                    )
-                }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = partnerEmoji, fontSize = 32.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(text = partnerName, color = partnerColor, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -526,7 +430,13 @@ private fun MiniCycleCard(
     val days = snapshot?.daysUntilNextPhase ?: 0
     val mood = snapshot?.currentMood
 
-    GlassCard(phaseColor = phaseColor, modifier = modifier) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFF1A1025))
+            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(16.dp))
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
         Column(
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -587,32 +497,20 @@ data class PhaseCompatibility(
 
 @Composable
 private fun CompatibilityCard(compatibility: PhaseCompatibility, myColor: Color, theirColor: Color) {
-    val surfaceColor = MaterialTheme.colorScheme.surface
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(
-                Brush.linearGradient(
-                    listOf(
-                        myColor.copy(alpha = 0.12f),
-                        surfaceColor.copy(alpha = 0.5f),
-                        theirColor.copy(alpha = 0.12f)
-                    )
-                )
-            )
-            .border(
-                1.dp,
-                Brush.linearGradient(listOf(myColor.copy(alpha = 0.3f), theirColor.copy(alpha = 0.3f))),
-                RoundedCornerShape(24.dp)
-            )
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFF1A1025))
+            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(16.dp))
+            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                "Energía Compartida",
+                stringResource(R.string.cycle_sync_shared_energy),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
@@ -621,15 +519,24 @@ private fun CompatibilityCard(compatibility: PhaseCompatibility, myColor: Color,
             Spacer(Modifier.height(10.dp))
 
             // Barra de compatibilidad (gradiente entre los dos colores)
+            val gradientBrush = Brush.horizontalGradient(
+                colors = listOf(myColor, theirColor)
+            )
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(6.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.horizontalGradient(listOf(myColor, theirColor))
-                    )
-            )
+                    .clip(RoundedCornerShape(50))
+                    .background(Color.White.copy(alpha = 0.1f))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(1f)
+                        .fillMaxHeight()
+                        .background(gradientBrush)
+                )
+            }
             Spacer(Modifier.height(14.dp))
             Text(
                 compatibility.title,
@@ -654,58 +561,42 @@ private fun SyncHugButton(
     cooldownSeconds: Int,
     onClick: () -> Unit
 ) {
-    val containerBrush = if (!isOnCooldown)
-        Brush.horizontalGradient(listOf(myColor, theirColor))
-    else
-        Brush.horizontalGradient(listOf(
-            Color.Gray.copy(alpha = 0.3f),
-            Color.Gray.copy(alpha = 0.3f)
-        ))
-
-    Box(
+    Button(
+        onClick = onClick,
+        enabled = !isOnCooldown,
         modifier = Modifier
             .fillMaxWidth()
-            .height(60.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(containerBrush)
-            .then(if (!isOnCooldown) Modifier else Modifier),
-        contentAlignment = Alignment.Center
-    ) {
-        Button(
-            onClick = onClick,
-            enabled = !isOnCooldown,
-            modifier = Modifier.fillMaxSize(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Transparent,
-                disabledContainerColor = Color.Transparent,
-                contentColor = Color.White,
-                disabledContentColor = Color.White.copy(alpha = 0.5f)
+            .height(52.dp)
+            .background(
+                brush = if (!isOnCooldown)
+                    Brush.linearGradient(listOf(Color(0xFF7B2FBE), Color(0xFFE91E8C)))
+                else
+                    Brush.linearGradient(listOf(Color.Gray, Color.Gray)),
+                shape = RoundedCornerShape(50)
             ),
-            shape = RoundedCornerShape(20.dp),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
-        ) {
-            AnimatedContent(
-                targetState = isOnCooldown,
-                transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(300)) },
-                label = "sync_hug_content"
-            ) { onCooldown ->
-                if (onCooldown) {
-                    val minutes = cooldownSeconds / 60
-                    val seconds = cooldownSeconds % 60
-                    val timeStr = if (minutes > 0) "${minutes}m ${seconds}s" else "${seconds}s"
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.Timer, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Siguiente abrazo en $timeStr", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                    }
-                } else {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.Favorite, null, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(10.dp))
-                        Text("Enviar un abrazo 💫", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-                    }
-                }
-            }
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.Transparent,
+            disabledContainerColor = Color.Transparent
+        ),
+        shape = RoundedCornerShape(50)
+    ) {
+        if (isOnCooldown) {
+            val minutes = cooldownSeconds / 60
+            val seconds = cooldownSeconds % 60
+            val timeStr = if (minutes > 0) "${minutes}m ${seconds}s" else "${seconds}s"
+            Text(
+                text = stringResource(R.string.cycle_sync_hug_cooldown, timeStr),
+                color = Color.White,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp
+            )
+        } else {
+            Text(
+                text = stringResource(R.string.cycle_sync_send_hug_button),
+                color = Color.White,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp
+            )
         }
     }
 }
@@ -740,38 +631,38 @@ fun phaseCompatibility(myPhase: CyclePhase, theirPhase: CyclePhase): PhaseCompat
 
     return when {
         synced -> PhaseCompatibility(
-            title = "¡Estáis sincronizadas! ✨",
-            advice = "Vuestras energías están perfectamente alineadas. Es el momento ideal para compartir planes y apoyarse mutuamente.",
+            title = stringResource(R.string.compat_synced_title),
+            advice = stringResource(R.string.compat_synced_advice),
             emoji = "🌕",
             color = myColor
         )
         bothHard -> PhaseCompatibility(
-            title = "Semana de calma y cuidado",
-            advice = "Ambas necesitáis descanso ahora. Sed pacientes la una con la otra y priorizad el autocuidado. Un buen momento para actividades tranquilas juntas.",
+            title = stringResource(R.string.compat_hard_title),
+            advice = stringResource(R.string.compat_hard_advice),
             emoji = "🌙",
             color = Color(0xFF7E57C2)
         )
         bothEnergetic -> PhaseCompatibility(
-            title = "¡Semana de alta energía!",
-            advice = "Las dos estáis en un momento brillante. Perfectas para proyectos, salidas o nuevos planes. ¡Aprovechadlo juntas!",
+            title = stringResource(R.string.compat_energetic_title),
+            advice = stringResource(R.string.compat_energetic_advice),
             emoji = "⚡",
             color = Color(0xFFF9A825)
         )
         complementary -> PhaseCompatibility(
-            title = "Energías complementarias",
-            advice = "Una de vosotras está en un momento de alta energía. Es una oportunidad para apoyar y ser apoyada con comprensión y cariño.",
+            title = stringResource(R.string.compat_complementary_title),
+            advice = stringResource(R.string.compat_complementary_advice),
             emoji = "☯️",
             color = Color(0xFF26A69A)
         )
         myPhase == CyclePhase.UNKNOWN || theirPhase == CyclePhase.UNKNOWN -> PhaseCompatibility(
-            title = "Datos pendientes",
-            advice = "Cuando ambas registréis vuestro ciclo, podréis ver vuestra energía compartida aquí.",
+            title = stringResource(R.string.compat_pending_title),
+            advice = stringResource(R.string.compat_pending_advice),
             emoji = "🌸",
             color = Color(0xFF9E9E9E)
         )
         else -> PhaseCompatibility(
-            title = "Ciclos en movimiento",
-            advice = "Cada ciclo es único. Compartir este camino con alguien especial hace que todo sea más llevadero.",
+            title = stringResource(R.string.compat_moving_title),
+            advice = stringResource(R.string.compat_moving_advice),
             emoji = "💫",
             color = myColor
         )
@@ -791,11 +682,12 @@ private fun syncPhaseEmoji(phase: CyclePhase): String = when (phase) {
     else                  -> "🌸"
 }
 
+@Composable
 private fun phaseLabelShort(phase: CyclePhase): String = when (phase) {
-    CyclePhase.MENSTRUAL  -> "Menstrual"
-    CyclePhase.FOLLICULAR -> "Folicular"
-    CyclePhase.OVULATION  -> "Ovulación"
-    CyclePhase.LUTEAL     -> "Lútea"
-    CyclePhase.PREGNANCY  -> "Embarazo"
-    else                  -> "Sin datos"
+    CyclePhase.MENSTRUAL  -> stringResource(R.string.phase_name_menstrual)
+    CyclePhase.FOLLICULAR -> stringResource(R.string.phase_name_follicular)
+    CyclePhase.OVULATION  -> stringResource(R.string.phase_name_ovulation)
+    CyclePhase.LUTEAL     -> stringResource(R.string.phase_name_luteal)
+    CyclePhase.PREGNANCY  -> stringResource(R.string.phase_name_pregnancy)
+    else                  -> stringResource(R.string.phase_name_unknown)
 }

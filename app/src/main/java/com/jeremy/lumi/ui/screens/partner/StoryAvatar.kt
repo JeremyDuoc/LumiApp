@@ -18,33 +18,57 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jeremy.lumi.domain.model.CyclePhase
 import com.jeremy.lumi.ui.theme.LocalPhaseColors
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.EaseInOutSine
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
 
 @Composable
 fun StoryAvatar(
     displayName: String,
     phase: CyclePhase,
     size: Dp,
-    isPending: Boolean = false
+    isPending: Boolean = false,
+    animated: Boolean = true
 ) {
     val phaseColors = LocalPhaseColors.current
     val basePhaseColor = when (phase) {
-        CyclePhase.MENSTRUAL -> phaseColors.menstrual
+        CyclePhase.MENSTRUAL  -> phaseColors.menstrual
         CyclePhase.FOLLICULAR -> phaseColors.follicular
-        CyclePhase.OVULATION -> phaseColors.ovulation
-        CyclePhase.LUTEAL -> phaseColors.luteal
-        else -> MaterialTheme.colorScheme.primary
+        CyclePhase.OVULATION  -> phaseColors.ovulation
+        CyclePhase.LUTEAL     -> phaseColors.luteal
+        else                  -> MaterialTheme.colorScheme.primary
     }
-    
     val phaseColor = if (isPending) Color.Gray else basePhaseColor
-    
     val initial = if (displayName.isNotBlank()) displayName.first().uppercase() else "?"
+
+    // Anillo animado solo si animated=true y no está pendiente
+    val transition = if (animated && !isPending) rememberInfiniteTransition(label = "avatar_ring") else null
+    val ringAlpha by if (transition != null) {
+        transition.animateFloat(
+            initialValue = 0.5f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1800, easing = EaseInOutSine),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "ring_alpha"
+        )
+    } else {
+        remember { mutableStateOf(if (isPending) 0.3f else 0.6f) }
+    }
 
     Box(
         modifier = Modifier
             .size(size)
             .clip(CircleShape)
             .background(phaseColor.copy(alpha = 0.2f))
-            .border(2.dp, phaseColor, CircleShape),
+            .border(2.dp, phaseColor.copy(alpha = ringAlpha), CircleShape),
         contentAlignment = Alignment.Center
     ) {
         Text(

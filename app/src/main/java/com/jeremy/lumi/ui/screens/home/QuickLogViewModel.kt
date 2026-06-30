@@ -31,15 +31,16 @@ class QuickLogViewModel @Inject constructor(
     private val prefsManager: OnboardingPreferenceManager
 ) : ViewModel() {
 
-    private val todayMidnightMillis: Long = java.time.LocalDate.now()
-        .atStartOfDay(java.time.ZoneId.of("UTC"))
-        .toInstant()
-        .toEpochMilli()
+    val todayMidnightMillis: Long
+        get() = java.time.LocalDate.now()
+            .atStartOfDay(java.time.ZoneId.of("UTC"))
+            .toInstant()
+            .toEpochMilli()
 
-    val todayDayOfMonth: Int = Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
+    val todayDayOfMonth: Int get() = Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
     /** Month value 1–12 (Calendar.MONTH es 0-based, lo corregimos aquí). */
-    val todayMonth: Int      = Calendar.getInstance().get(Calendar.MONTH) + 1
-    val todayYear: Int       = Calendar.getInstance().get(Calendar.YEAR)
+    val todayMonth: Int      get() = Calendar.getInstance().get(Calendar.MONTH) + 1
+    val todayYear: Int       get() = Calendar.getInstance().get(Calendar.YEAR)
 
     private val _todayLog = MutableStateFlow<DailyLogWithSymptoms?>(null)
     val todayLog: StateFlow<DailyLogWithSymptoms?> = _todayLog.asStateFlow()
@@ -76,7 +77,12 @@ class QuickLogViewModel @Inject constructor(
         protectionUsed: Boolean?,
         contraceptionMethod: String?,
         intercourseNotes: String?,
-        showIntercourseOnCalendar: Boolean
+        showIntercourseOnCalendar: Boolean,
+        sleepHours: Float?,
+        energyLevel: Int?,
+        stressLevel: Int?,
+        basalBodyTemp: Float?,
+        spotting: Boolean
     ) {
         viewModelScope.launch {
             try {
@@ -97,7 +103,12 @@ class QuickLogViewModel @Inject constructor(
                     protectionUsed = if (hadIntercourse) protectionUsed else null,
                     contraceptionMethod = if (hadIntercourse) contraceptionMethod else null,
                     intercourseNotes = if (hadIntercourse) intercourseNotes else null,
-                    showIntercourseOnCalendar = showIntercourseOnCalendar
+                    showIntercourseOnCalendar = showIntercourseOnCalendar,
+                    sleepHours = sleepHours,
+                    energyLevel = energyLevel,
+                    stressLevel = stressLevel,
+                    basalBodyTemp = basalBodyTemp,
+                    spotting = spotting
                 )
 
                 val symptoms = selectedSymptoms.map { symptomName ->
