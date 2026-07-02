@@ -290,6 +290,21 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     subtitle = if(currentPhasePalette == PhaseColorPalette.CUSTOM) "Personalizado" else phasePaletteOptions.find { it.palette == currentPhasePalette }?.name ?: "Original",
                     onClick = { showPhaseColorSheet = true }
                 )
+                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
+                SettingsItem(
+                    icon = Icons.Rounded.Favorite,
+                    title = "Añadir Widget",
+                    subtitle = "Coloca a Lumi en tu pantalla de inicio",
+                    onClick = {
+                        val appWidgetManager = android.appwidget.AppWidgetManager.getInstance(context)
+                        val myProvider = android.content.ComponentName(context, com.jeremy.lumi.ui.widget.LumiWidgetReceiver::class.java)
+                        if (appWidgetManager.isRequestPinAppWidgetSupported) {
+                            appWidgetManager.requestPinAppWidget(myProvider, null, null)
+                        } else {
+                            android.widget.Toast.makeText(context, "Tu dispositivo no soporta esto. Añádelo manualmente desde tu pantalla de inicio.", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    }
+                )
             }
 
             // â”€â”€ CHAT Y RECORDATORIOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
