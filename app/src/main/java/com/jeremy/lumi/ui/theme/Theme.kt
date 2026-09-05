@@ -413,12 +413,29 @@ private val CenizaColorScheme = lightColorScheme(
 //  COMPOSITION LOCALS
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────
+//  ESTILO DEL ARO (HOME DIAL)
+// ─────────────────────────────────────────────
+enum class DialStyle {
+    GRADIENT,
+    CYCLE_MAP,
+    MINIMALIST
+}
+
 val LocalIsDarkTheme = compositionLocalOf { false }
 
 // Expone los colores de fase activos a cualquier composable sin pasarlos como
 // parámetro. Se alimenta en LumiTheme con: preset elegido, o el set custom de
 // la usuaria cuando el preset activo es CUSTOM.
 val LocalPhaseColors = compositionLocalOf { PhaseColorsDefaultLight }
+
+// Colores semánticos de fase — SIEMPRE DEFAULT, independientes del tema.
+// Usar para etiquetas de fase, chip de fase, color del anillo de progreso.
+// Nunca usan AUTO_HARMONY ni paletas armónicas — solo rojo/teal/morado/ámbar fijos.
+val LocalSemanticPhaseColors = compositionLocalOf { PhaseColorsDefaultLight }
+
+// Expone el estilo visual del aro del Home (Gradiente continuo vs. Mapa por sectores vs. Minimalista)
+val LocalDialStyle = compositionLocalOf { DialStyle.GRADIENT }
 
 // Expone un gradiente de marca activo para componentes que deban destacar.
 // Será null si el tema activo no es Lumi Spark oficial.
@@ -434,8 +451,10 @@ val LocalBrandBackgroundGradient = compositionLocalOf<Brush?> { null }
 @Composable
 fun LumiTheme(
     selectedTheme        : AppThemePalette   = AppThemePalette.LUMI_SPARK_DARK,
-    selectedPhasePalette : PhaseColorPalette = PhaseColorPalette.DEFAULT,
+    selectedPhasePalette : PhaseColorPalette = PhaseColorPalette.AUTO_HARMONY,
     customPhaseColors    : PhaseColors?      = null,   // non-null cuando CUSTOM está guardado
+    dialStyle            : DialStyle         = DialStyle.GRADIENT,
+    selectedAmbient      : BackgroundAmbient = BackgroundAmbient.AURA,
     content              : @Composable () -> Unit
 ) {
     val colorScheme = when (selectedTheme) {
@@ -497,7 +516,7 @@ fun LumiTheme(
         if (selectedPhasePalette == PhaseColorPalette.CUSTOM && customPhaseColors != null) {
             customPhaseColors
         } else {
-            selectedPhasePalette.toPhaseColors(isDark)
+            selectedPhasePalette.toPhaseColors(isDark, selectedTheme)
         }
 
     val view = LocalView.current
@@ -528,36 +547,43 @@ fun LumiTheme(
     }
 
     val brandBackgroundGradient = when (selectedTheme) {
-        AppThemePalette.LUMI_SPARK -> Brush.verticalGradient(listOf(Color(0xFF9B72C0).copy(alpha = 0.35f), Color(0xFFE8A0C0).copy(alpha = 0.25f), Color.Transparent))
-        AppThemePalette.LUMI_SPARK_DARK -> Brush.verticalGradient(listOf(Color(0xFF9B72C0).copy(alpha = 0.45f), Color(0xFFE8A0C0).copy(alpha = 0.30f), Color.Transparent))
-        AppThemePalette.LUMI_OCEAN -> Brush.verticalGradient(listOf(Color(0xFF3A7BD5).copy(alpha = 0.25f), Color(0xFF00D2FF).copy(alpha = 0.15f), Color.Transparent))
-        AppThemePalette.LUMI_OCEAN_DARK -> Brush.verticalGradient(listOf(Color(0xFF3A7BD5).copy(alpha = 0.35f), Color(0xFF00D2FF).copy(alpha = 0.20f), Color.Transparent))
-        AppThemePalette.LUMI_FOREST -> Brush.verticalGradient(listOf(Color(0xFF1D976C).copy(alpha = 0.25f), Color(0xFF93F9B9).copy(alpha = 0.15f), Color.Transparent))
-        AppThemePalette.LUMI_FOREST_DARK -> Brush.verticalGradient(listOf(Color(0xFF1D976C).copy(alpha = 0.35f), Color(0xFF93F9B9).copy(alpha = 0.20f), Color.Transparent))
-        AppThemePalette.LUMI_SUNSET -> Brush.verticalGradient(listOf(Color(0xFFF12711).copy(alpha = 0.20f), Color(0xFFF5AF19).copy(alpha = 0.10f), Color.Transparent))
-        AppThemePalette.LUMI_SUNSET_DARK -> Brush.verticalGradient(listOf(Color(0xFFF12711).copy(alpha = 0.30f), Color(0xFFF5AF19).copy(alpha = 0.15f), Color.Transparent))
-        AppThemePalette.LUMI_DUNE -> Brush.verticalGradient(listOf(Color(0xFFB78628).copy(alpha = 0.25f), Color(0xFFFCC201).copy(alpha = 0.15f), Color.Transparent))
-        AppThemePalette.LUMI_DUNE_DARK -> Brush.verticalGradient(listOf(Color(0xFFB78628).copy(alpha = 0.35f), Color(0xFFFCC201).copy(alpha = 0.20f), Color.Transparent))
-        AppThemePalette.LUMI_LAVENDER -> Brush.verticalGradient(listOf(Color(0xFF8C72CB).copy(alpha = 0.25f), Color(0xFFC0A0E8).copy(alpha = 0.15f), Color.Transparent))
-        AppThemePalette.LUMI_LAVENDER_DARK -> Brush.verticalGradient(listOf(Color(0xFF8C72CB).copy(alpha = 0.35f), Color(0xFFC0A0E8).copy(alpha = 0.20f), Color.Transparent))
-        AppThemePalette.LUMI_SAGE -> Brush.verticalGradient(listOf(Color(0xFF6A9B82).copy(alpha = 0.25f), Color(0xFF90C2A8).copy(alpha = 0.15f), Color.Transparent))
-        AppThemePalette.LUMI_SAGE_DARK -> Brush.verticalGradient(listOf(Color(0xFF6A9B82).copy(alpha = 0.35f), Color(0xFF90C2A8).copy(alpha = 0.20f), Color.Transparent))
-        AppThemePalette.LUMI_EARTH -> Brush.verticalGradient(listOf(Color(0xFFA6856A).copy(alpha = 0.25f), Color(0xFFC4A68C).copy(alpha = 0.15f), Color.Transparent))
-        AppThemePalette.LUMI_EARTH_DARK -> Brush.verticalGradient(listOf(Color(0xFFA6856A).copy(alpha = 0.35f), Color(0xFFC4A68C).copy(alpha = 0.20f), Color.Transparent))
-        AppThemePalette.LUMI_SLATE -> Brush.verticalGradient(listOf(Color(0xFF6B7B8C).copy(alpha = 0.25f), Color(0xFF94A4B4).copy(alpha = 0.15f), Color.Transparent))
-        AppThemePalette.LUMI_SLATE_DARK -> Brush.verticalGradient(listOf(Color(0xFF6B7B8C).copy(alpha = 0.35f), Color(0xFF94A4B4).copy(alpha = 0.20f), Color.Transparent))
-        AppThemePalette.CYCLE_MENSTRUAL -> Brush.verticalGradient(listOf(Color(0xFFC05C7A).copy(alpha = 0.25f), Color(0xFFE08BA0).copy(alpha = 0.15f), Color.Transparent))
-        AppThemePalette.CYCLE_MENSTRUAL_DARK -> Brush.verticalGradient(listOf(Color(0xFFC05C7A).copy(alpha = 0.35f), Color(0xFFE08BA0).copy(alpha = 0.20f), Color.Transparent))
-        AppThemePalette.CYCLE_OVULATION -> Brush.verticalGradient(listOf(Color(0xFF4A90A4).copy(alpha = 0.25f), Color(0xFF75BCCF).copy(alpha = 0.15f), Color.Transparent))
-        AppThemePalette.CYCLE_OVULATION_DARK -> Brush.verticalGradient(listOf(Color(0xFF4A90A4).copy(alpha = 0.35f), Color(0xFF75BCCF).copy(alpha = 0.20f), Color.Transparent))
+        AppThemePalette.LUMI_SPARK -> Brush.verticalGradient(listOf(Color(0xFF9B72C0).copy(alpha = 0.08f), Color(0xFFE8A0C0).copy(alpha = 0.04f), Color.Transparent))
+        AppThemePalette.LUMI_SPARK_DARK -> Brush.verticalGradient(listOf(Color(0xFF9B72C0).copy(alpha = 0.35f), Color(0xFFE8A0C0).copy(alpha = 0.20f), Color.Transparent))
+        AppThemePalette.LUMI_OCEAN -> Brush.verticalGradient(listOf(Color(0xFF3A7BD5).copy(alpha = 0.08f), Color(0xFF00D2FF).copy(alpha = 0.04f), Color.Transparent))
+        AppThemePalette.LUMI_OCEAN_DARK -> Brush.verticalGradient(listOf(Color(0xFF3A7BD5).copy(alpha = 0.30f), Color(0xFF00D2FF).copy(alpha = 0.15f), Color.Transparent))
+        AppThemePalette.LUMI_FOREST -> Brush.verticalGradient(listOf(Color(0xFF1D976C).copy(alpha = 0.08f), Color(0xFF93F9B9).copy(alpha = 0.04f), Color.Transparent))
+        AppThemePalette.LUMI_FOREST_DARK -> Brush.verticalGradient(listOf(Color(0xFF1D976C).copy(alpha = 0.30f), Color(0xFF93F9B9).copy(alpha = 0.15f), Color.Transparent))
+        AppThemePalette.LUMI_SUNSET -> Brush.verticalGradient(listOf(Color(0xFFF12711).copy(alpha = 0.08f), Color(0xFFF5AF19).copy(alpha = 0.04f), Color.Transparent))
+        AppThemePalette.LUMI_SUNSET_DARK -> Brush.verticalGradient(listOf(Color(0xFFF12711).copy(alpha = 0.25f), Color(0xFFF5AF19).copy(alpha = 0.12f), Color.Transparent))
+        AppThemePalette.LUMI_DUNE -> Brush.verticalGradient(listOf(Color(0xFFB78628).copy(alpha = 0.08f), Color(0xFFFCC201).copy(alpha = 0.04f), Color.Transparent))
+        AppThemePalette.LUMI_DUNE_DARK -> Brush.verticalGradient(listOf(Color(0xFFB78628).copy(alpha = 0.30f), Color(0xFFFCC201).copy(alpha = 0.15f), Color.Transparent))
+        AppThemePalette.LUMI_LAVENDER -> Brush.verticalGradient(listOf(Color(0xFF8C72CB).copy(alpha = 0.08f), Color(0xFFC0A0E8).copy(alpha = 0.04f), Color.Transparent))
+        AppThemePalette.LUMI_LAVENDER_DARK -> Brush.verticalGradient(listOf(Color(0xFF8C72CB).copy(alpha = 0.30f), Color(0xFFC0A0E8).copy(alpha = 0.15f), Color.Transparent))
+        AppThemePalette.LUMI_SAGE -> Brush.verticalGradient(listOf(Color(0xFF6A9B82).copy(alpha = 0.08f), Color(0xFF90C2A8).copy(alpha = 0.04f), Color.Transparent))
+        AppThemePalette.LUMI_SAGE_DARK -> Brush.verticalGradient(listOf(Color(0xFF6A9B82).copy(alpha = 0.30f), Color(0xFF90C2A8).copy(alpha = 0.15f), Color.Transparent))
+        AppThemePalette.LUMI_EARTH -> Brush.verticalGradient(listOf(Color(0xFFA6856A).copy(alpha = 0.08f), Color(0xFFC4A68C).copy(alpha = 0.04f), Color.Transparent))
+        AppThemePalette.LUMI_EARTH_DARK -> Brush.verticalGradient(listOf(Color(0xFFA6856A).copy(alpha = 0.30f), Color(0xFFC4A68C).copy(alpha = 0.15f), Color.Transparent))
+        AppThemePalette.LUMI_SLATE -> Brush.verticalGradient(listOf(Color(0xFF6B7B8C).copy(alpha = 0.08f), Color(0xFF94A4B4).copy(alpha = 0.04f), Color.Transparent))
+        AppThemePalette.LUMI_SLATE_DARK -> Brush.verticalGradient(listOf(Color(0xFF6B7B8C).copy(alpha = 0.30f), Color(0xFF94A4B4).copy(alpha = 0.15f), Color.Transparent))
+        AppThemePalette.CYCLE_MENSTRUAL -> Brush.verticalGradient(listOf(Color(0xFFC05C7A).copy(alpha = 0.08f), Color(0xFFE08BA0).copy(alpha = 0.04f), Color.Transparent))
+        AppThemePalette.CYCLE_MENSTRUAL_DARK -> Brush.verticalGradient(listOf(Color(0xFFC05C7A).copy(alpha = 0.30f), Color(0xFFE08BA0).copy(alpha = 0.15f), Color.Transparent))
+        AppThemePalette.CYCLE_OVULATION -> Brush.verticalGradient(listOf(Color(0xFF4A90A4).copy(alpha = 0.08f), Color(0xFF75BCCF).copy(alpha = 0.04f), Color.Transparent))
+        AppThemePalette.CYCLE_OVULATION_DARK -> Brush.verticalGradient(listOf(Color(0xFF4A90A4).copy(alpha = 0.30f), Color(0xFF75BCCF).copy(alpha = 0.15f), Color.Transparent))
         else -> null
     }
+
+    // Los colores semánticos SIEMPRE son DEFAULT (rojo/teal/morado/ámbar).
+    // No se ven afectados por AUTO_HARMONY ni por la paleta de tema.
+    val semanticPhaseColors = selectedPhasePalette.toSemanticPhaseColors(isDark)
 
     CompositionLocalProvider(
         LocalIsDarkTheme provides isDark,
         LocalPhaseColors provides phaseColors,
+        LocalSemanticPhaseColors provides semanticPhaseColors,
+        LocalDialStyle provides dialStyle,
         LocalBrandGradient provides brandGradient,
-        LocalBrandBackgroundGradient provides brandBackgroundGradient
+        LocalBrandBackgroundGradient provides brandBackgroundGradient,
+        LocalBackgroundAmbient provides selectedAmbient
     ) {
         MaterialTheme(colorScheme = colorScheme, typography = Typography, content = content)
     }

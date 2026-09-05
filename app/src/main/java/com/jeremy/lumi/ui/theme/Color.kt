@@ -478,3 +478,16 @@ val CenizaBackground = Color(0xFFFAFAFA)   // Blanco puro
 val CenizaSurface    = Color(0xFFFFFFFF)
 val CenizaOnPrimary  = Color(0xFFFFFFFF)
 val CenizaOnBg       = Color(0xFF181818)
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  COLORES SEMÁNTICOS UTILITARIOS — fijos, independientes del tema
+//  No cambiar con el tema. Son tokens de significado (agua, sueño, etc.)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Agua — azul agua recognizable
+val SemanticWaterLight  = Color(0xFF2D9CDB)
+val SemanticWaterDark   = Color(0xFF56B4E8)
+
+// Sueño — violeta/índigo recognizable  
+val SemanticSleepLight  = Color(0xFF7B61FF)
+val SemanticSleepDark   = Color(0xFF9E86FF)

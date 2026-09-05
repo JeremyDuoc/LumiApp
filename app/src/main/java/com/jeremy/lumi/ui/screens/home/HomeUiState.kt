@@ -34,7 +34,10 @@ data class HomeUiState(
     val linkedCycles         : List<PartnerLink> = emptyList(),
     
     // ── Errores ───────────────────────────────────────────────────────────
-    val syncError            : Boolean          = false
+    val syncError            : Boolean          = false,
+
+    // ── Fecha seleccionada en el Timeline (null = hoy) ────────────────────
+    val selectedDate         : java.time.LocalDate? = null
 )
 
 data class CycleDayUi(
@@ -42,5 +45,8 @@ data class CycleDayUi(
     val dayOfMonth   : Int,
     val weekdayLabel : String,
     val phase        : CyclePhase,
-    val isToday      : Boolean
+    val isToday      : Boolean,
+    val isPrediction : Boolean = false,
+    val isSelected   : Boolean = false,
+    val hasLog       : Boolean = false
 )

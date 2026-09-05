@@ -19,3 +19,16 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# --- Lumi: Preservación de DTOs y modelos de datos para Gson, Room y TFLite ---
+-keepattributes Signature
+-keepattributes *Annotation*
+
+# DTOs de respaldo (Gson) y Room Entities
+-keep class com.jeremy.lumi.data.backup.** { *; }
+-keep class com.jeremy.lumi.data.local.entity.** { *; }
+-keep class com.jeremy.lumi.domain.model.** { *; }
+
+# TensorFlow Lite
+-keep class org.tensorflow.lite.** { *; }
+-keepclassmembers class org.tensorflow.lite.** { *; }

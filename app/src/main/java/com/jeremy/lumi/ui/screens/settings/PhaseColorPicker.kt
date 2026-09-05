@@ -97,7 +97,7 @@ fun PhaseColorPicker(
                 )
                 Spacer(Modifier.width(4.dp))
                 Text(
-                    text     = "Más colores",
+                    text     = stringResource(R.string.settings_more_colors),
                     fontSize = 12.sp,
                     color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f)
                 )

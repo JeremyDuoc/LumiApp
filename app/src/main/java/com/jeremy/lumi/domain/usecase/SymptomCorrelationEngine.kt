@@ -6,6 +6,7 @@ import com.jeremy.lumi.domain.repository.LumiRepository
 import kotlinx.coroutines.flow.firstOrNull
 import java.time.Instant
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
@@ -32,9 +33,9 @@ class SymptomCorrelationEngine @Inject constructor(
         if (closedCycles.size < minOccurrences) return emptyList()
 
         // Tomar solo los ciclos de los últimos N meses
-        val cutoffDate = Instant.now().atZone(ZoneId.of("UTC")).toLocalDate().minusMonths(monthsToAnalyze.toLong())
+        val cutoffDate = Instant.now().atZone(ZoneOffset.UTC).toLocalDate().minusMonths(monthsToAnalyze.toLong())
         val recentCycles = closedCycles.filter {
-            Instant.ofEpochMilli(it.endDate ?: it.startDate).atZone(ZoneId.of("UTC")).toLocalDate().isAfter(cutoffDate)
+            Instant.ofEpochMilli(it.endDate ?: it.startDate).atZone(ZoneOffset.UTC).toLocalDate().isAfter(cutoffDate)
         }
 
         if (recentCycles.isEmpty()) return emptyList()
@@ -47,13 +48,13 @@ class SymptomCorrelationEngine @Inject constructor(
 
         recentCycles.forEach { cycle ->
             if (cycle.endDate != null) {
-                val cycleEndLocal = Instant.ofEpochMilli(cycle.endDate).atZone(ZoneId.of("UTC")).toLocalDate()
+                val cycleEndLocal = Instant.ofEpochMilli(cycle.endDate).atZone(ZoneOffset.UTC).toLocalDate()
 
                 // Filtrar los logs que pertenecen a este ciclo
                 val cycleLogs = logsList.filter { it.dailyLog.cycleId == cycle.id }
 
                 cycleLogs.forEach { logWithSymptoms ->
-                    val logDateLocal = Instant.ofEpochMilli(logWithSymptoms.dailyLog.date).atZone(ZoneId.of("UTC")).toLocalDate()
+                    val logDateLocal = Instant.ofEpochMilli(logWithSymptoms.dailyLog.date).atZone(ZoneOffset.UTC).toLocalDate()
                     val daysBefore = ChronoUnit.DAYS.between(logDateLocal, cycleEndLocal).toInt()
 
                     logWithSymptoms.symptoms.forEach { symptom ->
@@ -70,7 +71,7 @@ class SymptomCorrelationEngine @Inject constructor(
         val patterns = mutableListOf<SymptomPattern>()
 
         // Buscar concentraciones
-        // Si un síntoma aparece minOccurrences veces dentro de un margen de +/- 1 día antes de la regla
+        // Si un síntoma aparece minOccurrences veces dentro de un margen de +/- 1 día antes de la periodo
         for ((symptomName, daysList) in occurrencesMap) {
             if (daysList.size >= minOccurrences) {
                 // Agrupar por días aproximados (+/- 1 día)

@@ -28,7 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import com.jeremy.lumi.R
 import com.jeremy.lumi.ui.theme.LocalBrandGradient
-import com.jeremy.lumi.ui.theme.LocalBrandBackgroundGradient
+
+
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -59,12 +60,8 @@ fun ConversationsScreen(
     val lastLumiMsg = lumiMessages.maxByOrNull { it.timestamp }
     val lastReminderMsg = reminderMessages.maxByOrNull { it.timestamp }
 
-    val brandBgGradient = LocalBrandBackgroundGradient.current
-    val containerModifier = if (brandBgGradient != null) {
-        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).background(brandBgGradient)
-    } else {
-        Modifier.fillMaxSize()
-    }
+    // Conversaciones usa fondo sólido — legibilidad prioritaria
+    val containerModifier = Modifier.fillMaxSize()
 
     Scaffold(
         topBar = {
@@ -73,11 +70,11 @@ fun ConversationsScreen(
                     Text(stringResource(R.string.chat_messages_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = if (brandBgGradient != null) Color.Transparent else MaterialTheme.colorScheme.background
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         },
-        containerColor = if (brandBgGradient != null) Color.Transparent else MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = containerModifier
@@ -102,8 +99,8 @@ fun ConversationsScreen(
             }
         // Hilo 1: Lumi (Siempre visible)
         LumiConversationItem(
-            lastMessage = lastLumiMsg?.text ?: "Toca aquí para ver tus resúmenes diarios.",
-            timeText = if (lastLumiMsg != null) "Hoy" else "",
+            lastMessage = lastLumiMsg?.text ?: stringResource(R.string.chat_conv_lumi_placeholder),
+            timeText = if (lastLumiMsg != null) stringResource(R.string.chat_day_today) else "",
             onClick = { onNavigateToChat("lumi") }
         )
 
@@ -115,9 +112,9 @@ fun ConversationsScreen(
                 )
 
                 ConversationItem(
-                    title = "Recordatorios",
+                    title = stringResource(R.string.chat_title_reminders),
                     icon = Icons.Rounded.Notifications,
-                    lastMessage = lastReminderMsg?.text ?: "No hay recordatorios recientes.",
+                    lastMessage = lastReminderMsg?.text ?: stringResource(R.string.chat_conv_reminders_empty),
                     timeText = "",
                     onClick = { onNavigateToChat("reminders") }
                 )
@@ -143,7 +140,7 @@ fun LumiConversationItem(
         // Avatar circular con la foto real
         Image(
             painter = painterResource(id = R.drawable.lumi_logo),
-            contentDescription = "Avatar de Lumi",
+            contentDescription = stringResource(R.string.chat_avatar_cd),
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(48.dp)
@@ -162,7 +159,7 @@ fun LumiConversationItem(
                 val brandGradient = LocalBrandGradient.current
                 if (brandGradient != null) {
                     Text(
-                        text = "Lumi",
+                        text = stringResource(R.string.chat_title_lumi),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         style = TextStyle(
@@ -173,7 +170,7 @@ fun LumiConversationItem(
                     )
                 } else {
                     Text(
-                        text = "Lumi",
+                        text = stringResource(R.string.chat_title_lumi),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary

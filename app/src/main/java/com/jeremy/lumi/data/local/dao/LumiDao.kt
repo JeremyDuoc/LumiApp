@@ -27,6 +27,21 @@ interface LumiDao {
     @Query("SELECT * FROM cycles WHERE endDate IS NULL LIMIT 1")
     suspend fun getCurrentActiveCycle(): CycleEntity?
 
+    @androidx.room.Update
+    suspend fun updateCycle(cycle: CycleEntity)
+
+    @androidx.room.Delete
+    suspend fun deleteCycle(cycle: CycleEntity)
+
+    @Query("DELETE FROM cycles WHERE id = :cycleId")
+    suspend fun deleteCycleById(cycleId: Int)
+
+    @Query("SELECT * FROM cycles WHERE id = :cycleId LIMIT 1")
+    suspend fun getCycleById(cycleId: Int): CycleEntity?
+
+    @Query("UPDATE daily_logs SET cycleId = :targetCycleId WHERE cycleId = :sourceCycleId")
+    suspend fun reassignDailyLogs(sourceCycleId: Int, targetCycleId: Int)
+
     // --- REGISTROS DIARIOS Y SÍNTOMAS ---
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDailyLog(dailyLog: DailyLogEntity): Long
@@ -37,6 +52,21 @@ interface LumiDao {
     // Borra los síntomas previos de un día antes de re-insertar (evita duplicados al editar)
     @Query("DELETE FROM symptoms WHERE dailyLogId = :dailyLogId")
     suspend fun deleteSymptomsForLog(dailyLogId: Int)
+
+    /**
+     * Operación atómica de guardado de registro diario y sus síntomas.
+     * Si ocurre algún fallo o cancelación de corrutina a la mitad, Room revierte
+     * los cambios evitando que se borren síntomas previos sin guardar los nuevos.
+     */
+    @Transaction
+    suspend fun upsertDailyLogWithSymptoms(dailyLog: DailyLogEntity, symptoms: List<SymptomEntity>) {
+        val dailyLogId = insertDailyLog(dailyLog)
+        val resolvedLogId = if (dailyLog.id != 0) dailyLog.id else dailyLogId.toInt()
+        deleteSymptomsForLog(resolvedLogId)
+        if (symptoms.isNotEmpty()) {
+            insertSymptoms(symptoms.map { it.copy(dailyLogId = resolvedLogId) })
+        }
+    }
 
     // Trae el registro de un día específico con todos sus síntomas
     @Transaction
@@ -128,4 +158,65 @@ interface LumiDao {
         deleteAllReminders()
         deleteAllChatMessages()
     }
+
+    // --- RESPALDO PRIVADO EN GOOGLE DRIVE ---
+
+    /** Instantánea completa de ciclos para serializar en el respaldo. */
+    @Query("SELECT * FROM cycles ORDER BY id ASC")
+    suspend fun getAllCyclesSnapshot(): List<CycleEntity>
+
+    /** Instantánea completa de registros diarios (planos, sin relaciones). */
+    @Query("SELECT * FROM daily_logs ORDER BY id ASC")
+    suspend fun getAllDailyLogsSnapshot(): List<DailyLogEntity>
+
+    /** Instantánea completa de síntomas. */
+    @Query("SELECT * FROM symptoms ORDER BY id ASC")
+    suspend fun getAllSymptomsSnapshot(): List<SymptomEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertCycles(cycles: List<CycleEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertDailyLogs(logs: List<DailyLogEntity>)
+
+    /**
+     * Lee las tres tablas de salud dentro de UNA transacción para que el
+     * respaldo sea internamente coherente (nunca un ciclo sin sus registros
+     * porque alguien escribió entre lectura y lectura).
+     */
+    @Transaction
+    suspend fun getHealthDataSnapshot(): HealthSnapshot {
+        return HealthSnapshot(
+            cycles   = getAllCyclesSnapshot(),
+            logs     = getAllDailyLogsSnapshot(),
+            symptoms = getAllSymptomsSnapshot()
+        )
+    }
+
+    /**
+     * Restauración atómica desde un respaldo: borra los datos de salud actuales
+     * e inserta los del respaldo EN UNA SOLA TRANSACCIÓN. Si algo falla a mitad
+     * de camino, Room revierte todo — nunca queda una base a medias.
+     * Recordatorios y chat NO forman parte del respaldo y no se tocan.
+     */
+    @Transaction
+    suspend fun restoreHealthDataSnapshot(
+        cycles: List<CycleEntity>,
+        logs: List<DailyLogEntity>,
+        symptoms: List<SymptomEntity>
+    ) {
+        deleteAllCycles()
+        deleteAllLogs()
+        deleteAllSymptoms()
+        insertCycles(cycles)
+        insertDailyLogs(logs)
+        insertSymptoms(symptoms)
+    }
 }
+
+/** Las tres tablas de salud leídas de forma coherente para el respaldo. */
+data class HealthSnapshot(
+    val cycles: List<CycleEntity>,
+    val logs: List<DailyLogEntity>,
+    val symptoms: List<SymptomEntity>
+)

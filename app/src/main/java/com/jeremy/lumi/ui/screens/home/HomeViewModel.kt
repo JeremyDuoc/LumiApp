@@ -7,6 +7,7 @@ import com.jeremy.lumi.domain.model.CyclePhase
 import com.jeremy.lumi.domain.model.PartnerLink
 import com.jeremy.lumi.domain.repository.LumiRepository
 import com.jeremy.lumi.domain.usecase.CycleContext
+import com.jeremy.lumi.domain.usecase.CyclePrediction
 import com.jeremy.lumi.domain.usecase.CyclePredictor
 import com.jeremy.lumi.domain.usecase.DelayState
 import com.jeremy.lumi.domain.usecase.LumiRulesEngine
@@ -17,6 +18,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.debounce
@@ -28,6 +32,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.TextStyle
+import com.jeremy.lumi.utils.LumiClock
 import java.util.Locale
 import javax.inject.Inject
 
@@ -42,12 +47,20 @@ enum class HomeMode {
 class HomeViewModel @Inject constructor(
     private val repository       : LumiRepository,
     private val prefsManager     : OnboardingPreferenceManager,
-    private val partnerRepository: com.jeremy.lumi.data.remote.PartnerRepository,
+    private val partnerRepository: com.jeremy.lumi.domain.repository.PartnerRepository,
     private val aiPredictor      : LumiAIPredictor,
     private val rulesEngine      : LumiRulesEngine,
     private val healthConnectManager: com.jeremy.lumi.data.health.HealthConnectManager,
     private val widgetUpdater    : com.jeremy.lumi.ui.widget.WidgetUpdater
 ) : ViewModel() {
+
+    sealed interface HomeEvent {
+        data class CycleStarted(val message: String) : HomeEvent
+        data class CycleRestored(val message: String) : HomeEvent
+    }
+
+    private val _eventFlow = kotlinx.coroutines.flow.MutableSharedFlow<HomeEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -56,10 +69,24 @@ class HomeViewModel @Inject constructor(
         observePreferences()
         observeHugs()
         observeLinkedCycles()
+        viewModelScope.launch {
+            LumiClock.offsetDays.collect {
+                loadCurrentCycle()
+            }
+        }
     }
 
     private var lastSeenHugTimestamps = java.util.concurrent.ConcurrentHashMap<String, Long>()
     private var hugAnimationJob: Job? = null
+
+    // ── Cache para recálculo dinámico al tocar días del timeline ───────────
+    private var cachedStartDate: LocalDate? = null
+    private var cachedCycleLen: Int = 28
+    private var cachedPeriodLen: Int = 5
+    private var cachedClosedCycles: List<com.jeremy.lumi.data.local.entity.CycleEntity> = emptyList()
+    private var cachedIsPregnant: Boolean = false
+    private var cachedIsOnContraceptive: Boolean = false
+    private var baseTodayPrediction: CyclePrediction? = null
 
     /** Observa los vínculos activos del usuario y actualiza homeMode */
     private fun observeLinkedCycles() {
@@ -180,11 +207,11 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             logsFlow.collect { logs ->
                 var streak = 0
-                val today = java.time.LocalDate.now()
+                val today = LumiClock.today()
                 var currentCheckDate = today
 
                 for (log in logs) {
-                    val logDate = java.time.Instant.ofEpochMilli(log.dailyLog.date).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+                    val logDate = java.time.Instant.ofEpochMilli(log.dailyLog.date).atZone(java.time.ZoneId.of("UTC")).toLocalDate()
                     if (logDate == currentCheckDate) {
                         streak++
                         currentCheckDate = currentCheckDate.minusDays(1)
@@ -226,7 +253,7 @@ class HomeViewModel @Inject constructor(
                 val shareSymptoms = prefsManager.shareSymptomsFlow.first()
                 val sharePredictions = prefsManager.sharePredictionsFlow.first()
 
-                val todayEpochMs = java.time.LocalDate.now().atStartOfDay(java.time.ZoneId.of("UTC")).toInstant().toEpochMilli()
+                val todayEpochMs = LumiClock.today().atStartOfDay(java.time.ZoneId.of("UTC")).toInstant().toEpochMilli()
                 val todayLog = repository.getDailyLog(todayEpochMs)
 
                 val currentMood = if (shareMood) todayLog?.dailyLog?.mood else null
@@ -234,13 +261,27 @@ class HomeViewModel @Inject constructor(
                     todayLog?.symptoms?.map { it.name } ?: emptyList()
                 } else emptyList()
 
+                // Proyección mínima del ciclo para el Calendario Compartido:
+                // tres números, nunca el historial. Solo viaja si comparte predicciones.
+                val activeCycle = repository.getCurrentActiveCycle()
+                val closedCycles = repository.getClosedCycles()
+                val effectiveLength = if (closedCycles.size >= 3) {
+                    com.jeremy.lumi.domain.usecase.CyclePredictor
+                        .weightedAverageCycleLength(closedCycles).toInt().coerceIn(15, 60)
+                } else {
+                    (activeCycle?.cycleLength ?: 28).coerceAtLeast(15)
+                }
+
                 val snapshot = com.jeremy.lumi.domain.model.CycleSnapshot(
                     currentPhase = if (sharePhase) state.currentPhase else CyclePhase.UNKNOWN,
                     daysUntilNextPhase = if (sharePredictions) (state.prediction?.daysUntilNextPeriod ?: 0) else 0,
                     isLate = if (sharePredictions) state.isLate else false,
                     delayDays = if (sharePredictions) state.delayDays else 0,
                     currentMood = currentMood,
-                    topSymptoms = topSymptoms
+                    topSymptoms = topSymptoms,
+                    cycleStartDateMs = if (sharePredictions) activeCycle?.startDate else null,
+                    cycleLengthDays = if (sharePredictions) effectiveLength else 0,
+                    periodLengthDays = if (sharePredictions) (activeCycle?.periodLength ?: 0) else 0
                 )
                 partnerRepository.publishSnapshot(snapshot)
                 _uiState.update { it.copy(syncError = false) }
@@ -302,43 +343,74 @@ class HomeViewModel @Inject constructor(
                     isOnContraceptive = isOnContraceptive
                 )
 
-                val today = LocalDate.now()
+                // Cache para recálculo dinámico al tocar días del timeline
+                cachedStartDate = startDate
+                cachedCycleLen = cycleLen
+                cachedPeriodLen = periodLen
+                cachedClosedCycles = closedCycles
+                cachedIsPregnant = isPregnant
+                cachedIsOnContraceptive = isOnContraceptive
+                baseTodayPrediction = prediction
 
-                // FIX P1-2: Pasar isOnContraceptive a phaseForDay para que la tira
-                // semanal no muestre OVULACIÓN a usuarias con pastilla anticonceptiva.
-                val weekDays = (-7..14).map { offset ->
+                val today = LumiClock.today()
+                val currentSelected = _uiState.value.selectedDate
+
+                // Timeline continuo: 14 días pasados + 75 días futuros (~3 ciclos)
+                val weekDays = (-14..75).map { offset ->
                     val date = today.plusDays(offset.toLong())
-                    val dayWrapped = CyclePredictor.dayInCycleWrapped(startDate, cycleLen, date)
+                    val (phase, isPrediction) = CyclePredictor.phaseForDateInActiveCycle(
+                        startDate = startDate,
+                        cycleLength = cycleLen,
+                        periodLength = periodLen,
+                        date = date,
+                        today = today,
+                        isPregnant = _uiState.value.isPregnant,
+                        isOnContraceptive = isOnContraceptive
+                    )
+                    val isToday = offset == 0
+                    val isSelected = (currentSelected != null && date == currentSelected) || (currentSelected == null && isToday)
                     CycleDayUi(
                         date = date,
                         dayOfMonth = date.dayOfMonth,
                         weekdayLabel = date.dayOfWeek
                             .getDisplayName(TextStyle.SHORT, Locale("es"))
                             .replaceFirstChar { it.uppercase() },
-                        phase = CyclePredictor.phaseForDay(
-                            dayWrapped, cycleLen, periodLen,
-                            isPregnant = _uiState.value.isPregnant,
-                            isOnContraceptive = isOnContraceptive  // FIX P1-2
-                        ),
-                        isToday = offset == 0
+                        phase = phase,
+                        isToday = isToday,
+                        isPrediction = isPrediction,
+                        isSelected = isSelected
                     )
+                }
+
+                val activePrediction = if (currentSelected != null && currentSelected != today) {
+                    CyclePredictor.predict(
+                        startDate = startDate,
+                        cycleLength = cycleLen,
+                        periodLength = periodLen,
+                        today = currentSelected,
+                        closedCycles = closedCycles,
+                        isPregnant = isPregnant,
+                        isOnContraceptive = isOnContraceptive
+                    )
+                } else {
+                    prediction
                 }
 
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         activeCycle = cycle,
-                        currentPhase = prediction.currentPhase,
-                        currentDayOfCycle = prediction.currentDayOfCycle,
-                        prediction = prediction,
+                        currentPhase = activePrediction.currentPhase,
+                        currentDayOfCycle = activePrediction.currentDayOfCycle,
+                        prediction = activePrediction,
                         weekDays = weekDays,
-                        delayState = prediction.delayState,
-                        delayDays = prediction.delayDays,
-                        isLate = prediction.isLate
+                        delayState = activePrediction.delayState,
+                        delayDays = activePrediction.delayDays,
+                        isLate = activePrediction.isLate
                     )
                 }
                 // ── Propagar contexto al motor de chat ───────────────────────
-                val todayMillis = LocalDate.now()
+                val todayMillis = LumiClock.today()
                     .atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
                 val todayLog = repository.getDailyLog(todayMillis)
 
@@ -360,7 +432,7 @@ class HomeViewModel @Inject constructor(
                     todayStressLevel   = todayLog?.dailyLog?.stressLevel,
                     todayMood          = todayLog?.dailyLog?.mood,
                     userGoal           = _uiState.value.userGoal ?: "TRACK_CYCLE",
-                    // FIX P2-1: Pasar el modo pastilla al motor de reglas para que
+                    // FIX P2-1: Pasar el modo pastilla al motor de periodos para que
                     // filtre preguntas de ventana fértil y dé respuestas apropiadas.
                     isOnContraceptive  = isOnContraceptive,
                     // FIX P2-4: Temperatura basal sincronizada desde Health Connect.
@@ -405,27 +477,26 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * La usuaria registra que le llegó la regla hoy.
+     * La usuaria registra que le llegó la periodo en una fecha determinada (por defecto, hoy).
      */
-    fun startNewPeriod() {
+    fun startNewPeriod(selectedDate: LocalDate = LumiClock.today()) {
         viewModelScope.launch {
-            val todayDate = LocalDate.now()
-            val todayMillis = todayDate.atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
+            val startMillis = selectedDate.atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
 
             val currentCycle = repository.getCurrentActiveCycle()
             if (currentCycle != null) {
                 val startOfLast = Instant.ofEpochMilli(currentCycle.startDate)
                     .atZone(ZoneId.of("UTC")).toLocalDate()
                 
-                // Guard: Si ya se inició un ciclo hoy, ignoramos para no corromper datos
-                if (startOfLast == todayDate) {
+                // Guard: Si la fecha seleccionada es igual o anterior al inicio del ciclo actual, ignoramos
+                if (!selectedDate.isAfter(startOfLast)) {
                     return@launch
                 }
 
                 val realLength = java.time.temporal.ChronoUnit.DAYS
-                    .between(startOfLast, todayDate).toInt().coerceIn(15, 90)
+                    .between(startOfLast, selectedDate).toInt().coerceIn(15, 90)
 
-                val endOfLast = todayDate.minusDays(1)
+                val endOfLast = selectedDate.minusDays(1)
                     .atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
 
                 repository.endCurrentCycle(endOfLast, realLength)
@@ -441,12 +512,26 @@ class HomeViewModel @Inject constructor(
             val newPeriodLen = currentCycle?.periodLength ?: 5
 
             repository.startNewCycle(
-                startDate = todayMillis,
+                startDate = startMillis,
                 cycleLength = newCycleLen,
                 periodLength = newPeriodLen
             )
             prefsManager.resetDelayBannerDismiss()
             loadCurrentCycle()
+            _eventFlow.emit(HomeEvent.CycleStarted("Ciclo iniciado"))
+        }
+    }
+
+    /**
+     * Revierte el inicio del último ciclo si se registró por error.
+     */
+    fun undoLastPeriod() {
+        viewModelScope.launch {
+            val restored = repository.undoLastPeriodStart()
+            if (restored) {
+                loadCurrentCycle()
+                _eventFlow.emit(HomeEvent.CycleRestored("Ciclo previo restaurado"))
+            }
         }
     }
 
@@ -462,7 +547,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             if (!healthConnectManager.isAvailable() || !healthConnectManager.hasAllPermissions()) return@launch
             
-            val today = java.time.LocalDate.now()
+            val today = LumiClock.today()
             val startOfDay = today.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant()
             val endOfDay = today.plusDays(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant()
             
@@ -495,6 +580,91 @@ class HomeViewModel @Inject constructor(
                     repository.saveDailyLogWithSymptoms(updatedLog, existingLog.symptoms)
                 }
             }
+        }
+    }
+
+    fun generateRandomSymptomsForToday() {
+        viewModelScope.launch {
+            val todayDate = LumiClock.today()
+            val todayMillis = todayDate.atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
+            val activeCycle = repository.getCurrentActiveCycle() ?: return@launch
+
+            val moods = listOf("Feliz", "Sensible", "Triste", "Irritado")
+            val randomMood = moods.random()
+            val randomPain = (1..10).random()
+            
+            val log = com.jeremy.lumi.data.local.entity.DailyLogEntity(
+                cycleId = activeCycle.id,
+                date = todayMillis,
+                mood = randomMood,
+                painLevel = randomPain,
+                energyLevel = (1..5).random(),
+                sleepHours = (4..9).random().toFloat()
+            )
+            repository.saveDailyLogWithSymptoms(log, emptyList())
+        }
+    }
+
+    /**
+     * Selecciona una fecha del timeline para previsualizar el estado del ciclo.
+     * Si la fecha seleccionada es hoy, restablece la vista a tiempo real.
+     */
+    fun selectDate(date: LocalDate) {
+        val today = LumiClock.today()
+        val targetDate = if (date == today) null else date
+        _uiState.update { state ->
+            state.copy(
+                selectedDate = targetDate,
+                weekDays = state.weekDays.map { day ->
+                    day.copy(isSelected = (targetDate != null && day.date == targetDate) || (targetDate == null && day.isToday))
+                }
+            )
+        }
+        updateDisplayForDate(targetDate ?: today)
+    }
+
+    /**
+     * Restablece la vista del Home al día de hoy.
+     */
+    fun resetToToday() {
+        selectDate(LumiClock.today())
+    }
+
+    private fun updateDisplayForDate(targetDate: LocalDate) {
+        val startDate = cachedStartDate ?: return
+        val today = LumiClock.today()
+
+        val pred = if (targetDate == today) {
+            baseTodayPrediction ?: CyclePredictor.predict(
+                startDate = startDate,
+                cycleLength = cachedCycleLen,
+                periodLength = cachedPeriodLen,
+                today = today,
+                closedCycles = cachedClosedCycles,
+                isPregnant = cachedIsPregnant,
+                isOnContraceptive = cachedIsOnContraceptive
+            )
+        } else {
+            CyclePredictor.predict(
+                startDate = startDate,
+                cycleLength = cachedCycleLen,
+                periodLength = cachedPeriodLen,
+                today = targetDate,
+                closedCycles = cachedClosedCycles,
+                isPregnant = cachedIsPregnant,
+                isOnContraceptive = cachedIsOnContraceptive
+            )
+        }
+
+        _uiState.update {
+            it.copy(
+                currentPhase = pred.currentPhase,
+                currentDayOfCycle = pred.currentDayOfCycle,
+                prediction = pred,
+                delayState = pred.delayState,
+                delayDays = pred.delayDays,
+                isLate = pred.isLate
+            )
         }
     }
 }

@@ -24,4 +24,7 @@ object AppRoutes {
 
     /** Hub central de conexiones (Modo Pareja rediseñado). */
     const val PARTNER_HUB = "partner_hub"
+
+    /** Respaldo privado cifrado en el Google Drive de la usuaria. */
+    const val BACKUP = "backup_settings"
 }

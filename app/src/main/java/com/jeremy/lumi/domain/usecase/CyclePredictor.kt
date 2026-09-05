@@ -5,6 +5,7 @@ import com.jeremy.lumi.domain.model.CyclePhase
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import kotlin.math.roundToInt
 
@@ -28,7 +29,17 @@ data class CyclePrediction(
     val delayState          : DelayState,
     val delayDays           : Int,
     val isLate              : Boolean,
-    val dayOfPhase          : Int
+    val dayOfPhase          : Int,
+    // --- Campos de fertilidad clínica (OMS / ACOG) ---
+    val fertileWindowStartDate : LocalDate = if (nextOvulationDate == LocalDate.MAX) LocalDate.MAX else nextOvulationDate.minusDays(5),
+    val fertileWindowEndDate   : LocalDate = if (nextOvulationDate == LocalDate.MAX) LocalDate.MAX else nextOvulationDate.plusDays(1),
+    val isInFertileWindow      : Boolean = false,
+    val isOvulationPeak        : Boolean = false,
+    // New probabilistic fields (defaults preserve existing behavior)
+    val earliestPeriodDate: LocalDate = nextPeriodDate, // 80% lower bound
+    val latestPeriodDate: LocalDate = nextPeriodDate,   // 80% upper bound  
+    val predictionConfidenceIndex: Float = 0.5f,         // 0.0 (no data) to 1.0 (high confidence)
+    val predictedCycleLengthStdDev: Float = 0f           // effective std dev used
 )
 
 object CyclePredictor {
@@ -80,13 +91,78 @@ object CyclePredictor {
         isOnContraceptive: Boolean = false
     ): CyclePhase {
         if (isPregnant) return CyclePhase.PREGNANCY
+        if (isOnContraceptive) {
+            return if (dayInCycle <= periodLength) CyclePhase.MENSTRUAL else CyclePhase.FOLLICULAR
+        }
         val c = cycleLength.coerceAtLeast(15)
         val ovulationDay = c - lutealLength
         return when {
             dayInCycle <= periodLength                            -> CyclePhase.MENSTRUAL
-            !isOnContraceptive && dayInCycle in (ovulationDay - 1)..(ovulationDay + 1) -> CyclePhase.OVULATION
-            dayInCycle <= ovulationDay                            -> CyclePhase.FOLLICULAR
+            // Ventana fértil biológica: 5 días previos a ovulación + día de ovulación + 1 día posterior (OMS/ACOG)
+            dayInCycle in (ovulationDay - 5)..(ovulationDay + 1)   -> CyclePhase.OVULATION
+            dayInCycle < (ovulationDay - 5)                       -> CyclePhase.FOLLICULAR
             else                                                 -> CyclePhase.LUTEAL
+        }
+    }
+
+    /**
+     * Determina la fase y si es predicción para una fecha específica en relación con el ciclo activo y el día de hoy.
+     * Garantiza rigor biológico:
+     * - Días pasados o hoy (date <= today) en retraso (> cycleLength) son LUTEAL (retraso), NUNCA MENSTRUAL.
+     * - Un día pasado solo es MENSTRUAL si está dentro de los días de sangrado inicial (1..periodLength).
+     * - Si hoy está en retraso, las predicciones futuras (date > today) proyectan el periodo a partir del día siguiente.
+     */
+    fun phaseForDateInActiveCycle(
+        startDate: LocalDate,
+        cycleLength: Int,
+        periodLength: Int,
+        date: LocalDate,
+        today: LocalDate = com.jeremy.lumi.utils.LumiClock.today(),
+        isPregnant: Boolean = false,
+        isOnContraceptive: Boolean = false
+    ): Pair<CyclePhase, Boolean> {
+        if (isPregnant) return Pair(CyclePhase.PREGNANCY, false)
+
+        val diffFromStart = ChronoUnit.DAYS.between(startDate, date).toInt()
+        val c = cycleLength.coerceAtLeast(15)
+        val pLen = periodLength.coerceIn(1, 10)
+        val isFuture = date.isAfter(today)
+
+        if (!isFuture) {
+            // Fecha en el pasado o hoy (date <= today): la usuaria ya vivió o está viviendo este día
+            return when {
+                diffFromStart < 0 -> Pair(CyclePhase.UNKNOWN, false)
+                diffFromStart < pLen -> Pair(CyclePhase.MENSTRUAL, false) // Periodo inicial registrado del ciclo activo
+                diffFromStart < c -> {
+                    val dayInCycle = diffFromStart + 1
+                    Pair(phaseForDay(dayInCycle, c, pLen, isPregnant = false, isOnContraceptive = isOnContraceptive), false)
+                }
+                else -> {
+                    // DÍA DE RETRASO (diffFromStart >= cycleLength):
+                    // Biológicamente es una fase lútea prolongada mientras no llegue el sangrado. NUNCA menstrual.
+                    Pair(CyclePhase.LUTEAL, false)
+                }
+            }
+        } else {
+            // Fecha en el futuro (date > today): predicción proyectada
+            val todayDiffFromStart = ChronoUnit.DAYS.between(startDate, today).toInt()
+            val isCurrentlyLate = todayDiffFromStart >= c
+
+            val phase = if (isCurrentlyLate) {
+                // Si el ciclo actual ya tiene retraso hoy, el periodo se proyecta a partir de los próximos días
+                val daysAheadFromToday = ChronoUnit.DAYS.between(today, date).toInt()
+                if (daysAheadFromToday in 1..pLen) {
+                    CyclePhase.MENSTRUAL
+                } else {
+                    val dayWrapped = ((daysAheadFromToday - pLen - 1) % c + c) % c + 1
+                    phaseForDay(dayWrapped, c, pLen, isPregnant = false, isOnContraceptive = isOnContraceptive)
+                }
+            } else {
+                // Ciclo normal a tiempo: predicción estándar repetida por módulo
+                val dayWrapped = dayInCycleWrapped(startDate, c, date)
+                phaseForDay(dayWrapped, c, pLen, isPregnant = false, isOnContraceptive = isOnContraceptive)
+            }
+            return Pair(phase, true)
         }
     }
 
@@ -167,17 +243,110 @@ object CyclePredictor {
         return if (totalWeight == 0.0) median.toFloat() else (weightedSum / totalWeight).toFloat()
     }
 
+    fun weightedStdDevCycleLength(closedCycles: List<CycleEntity>): Float {
+        if (closedCycles.isEmpty()) return 0f
+        
+        val durations = closedCycles.mapNotNull { cycle ->
+            if (cycle.endDate != null) {
+                val startLocal = cycle.startDate.toLocalDate()
+                val endLocal   = cycle.endDate.toLocalDate()
+                val duration   = ChronoUnit.DAYS.between(startLocal, endLocal).toInt()
+                if (duration in 15..60) duration else null
+            } else null
+        }
+        
+        if (durations.size < 3) return 0f
+
+        val sorted = durations.sorted()
+        val median = if (sorted.size % 2 == 0) {
+            (sorted[sorted.size / 2 - 1] + sorted[sorted.size / 2]) / 2.0
+        } else {
+            sorted[sorted.size / 2].toDouble()
+        }
+
+        val absoluteDeviations = durations.map { kotlin.math.abs(it - median) }.sorted()
+        val mad = if (absoluteDeviations.size % 2 == 0) {
+            (absoluteDeviations[absoluteDeviations.size / 2 - 1] + absoluteDeviations[absoluteDeviations.size / 2]) / 2.0
+        } else {
+            absoluteDeviations[absoluteDeviations.size / 2]
+        }
+        
+        val effectiveMad = if (mad == 0.0) 1.5 else mad
+        
+        var weightedSum = 0.0
+        var totalWeight = 0.0
+        val valuesAndWeights = mutableListOf<Pair<Int, Double>>()
+        
+        closedCycles.forEachIndexed { index, cycle ->
+            if (cycle.endDate != null) {
+                val startLocal = cycle.startDate.toLocalDate()
+                val endLocal   = cycle.endDate.toLocalDate()
+                val duration   = ChronoUnit.DAYS.between(startLocal, endLocal).toInt()
+                
+                if (duration in 15..60) {
+                    val baseWeight = Math.exp(-DECAY_LAMBDA * index)
+                    val isOutlier = kotlin.math.abs(duration - median) > (2.5 * effectiveMad)
+                    val finalWeight = if (isOutlier) baseWeight * 0.05 else baseWeight
+                    
+                    valuesAndWeights.add(Pair(duration, finalWeight))
+                    weightedSum += duration * finalWeight
+                    totalWeight += finalWeight
+                }
+            }
+        }
+        
+        if (totalWeight == 0.0 || valuesAndWeights.isEmpty()) return 1.0f
+        val meanW = weightedSum / totalWeight
+        var varSum = 0.0
+        for (vw in valuesAndWeights) {
+            varSum += vw.second * (vw.first - meanW) * (vw.first - meanW)
+        }
+        val varianceW = varSum / totalWeight
+        return kotlin.math.sqrt(varianceW).toFloat().coerceAtLeast(1.0f)
+    }
+
     /**
-     * Estima la fase lútea personal a partir del historial.
+     * Motor Sintotérmico (periodo 3-sobre-6 de la OMS / Criterios de Roetzer).
      *
-     * Lógica Corregida: Sin datos biológicos reales de ovulación (tests LH o temperatura basal),
-     * usar la diferencia entre `endDate` y `predictedOvulationDate` crea un bucle de retroalimentación
-     * donde la app "aprende" de sus propios errores de predicción. Clínicamente, la fase lútea es
-     * constante (14 días promedio) y lo que varía en un retraso es la fase folicular.
-     * Hasta que se implemente el registro de tests de ovulación, se debe devolver el valor clínico estándar.
+     * Analiza lecturas de temperatura basal (BBT) para detectar el salto térmico post-ovulatorio:
+     *   - Al menos 6 días preovulatorios para definir la línea de base (coverline).
+     *   - 3 días consecutivos por encima de la coverline.
+     *   - El 3er día supera la coverline en al menos 0.20 °C.
+     *
+     * @param temperaturesWithDay Lista de pares (día del ciclo, temperatura en °C).
+     * @return El día del ciclo de ovulación estimada (último día bajo), o null si no se detecta.
      */
-    fun personalLutealLength(closedCycles: List<CycleEntity>): Int {
-        // Fallback a valor clínico estándar para evitar corromper las predicciones con falsos positivos matemáticos.
+    fun detectBiphasicShift(temperaturesWithDay: List<Pair<Int, Float>>): Int? {
+        val valid = temperaturesWithDay.filter { it.second in 35.0f..38.5f }.sortedBy { it.first }
+        if (valid.size < 9) return null
+
+        for (i in 6..(valid.size - 3)) {
+            val preDays = valid.subList(i - 6, i)
+            val postDays = valid.subList(i, i + 3)
+
+            val coverline = preDays.maxOf { it.second }
+            val allHigher = postDays.all { it.second > coverline }
+            val thirdHigherEnough = (postDays[2].second - coverline) >= 0.20f
+
+            if (allHigher && thirdHigherEnough) {
+                return valid[i - 1].first
+            }
+        }
+        return null
+    }
+
+    /**
+     * Estima la fase lútea personal a partir del historial y de observaciones sintotérmicas reales.
+     * Si no hay suficientes ciclos con cambio térmico confirmado, devuelve el estándar clínico (14 días).
+     */
+    fun personalLutealLength(
+        closedCycles: List<CycleEntity>,
+        observedLutealLengths: List<Int> = emptyList()
+    ): Int {
+        val validObserved = observedLutealLengths.filter { it in 9..18 }
+        if (validObserved.size >= 2) {
+            return validObserved.average().roundToInt().coerceIn(10, 16)
+        }
         return LUTEAL_LENGTH_DEFAULT
     }
 
@@ -219,7 +388,7 @@ object CyclePredictor {
         startDate    : LocalDate,
         cycleLength  : Int             = 28,
         periodLength : Int             = 5,
-        today        : LocalDate       = LocalDate.now(),
+        today        : LocalDate       = com.jeremy.lumi.utils.LumiClock.today(),
         closedCycles : List<CycleEntity> = emptyList(),
         isPregnant   : Boolean         = false,
         isOnContraceptive: Boolean     = false
@@ -238,7 +407,15 @@ object CyclePredictor {
                 delayState          = DelayState.ON_TIME,
                 delayDays           = 0,
                 isLate              = false,
-                dayOfPhase          = ChronoUnit.DAYS.between(startDate, today).toInt() + 1
+                dayOfPhase          = ChronoUnit.DAYS.between(startDate, today).toInt() + 1,
+                fertileWindowStartDate = LocalDate.MAX,
+                fertileWindowEndDate   = LocalDate.MAX,
+                isInFertileWindow      = false,
+                isOvulationPeak        = false,
+                earliestPeriodDate = LocalDate.MAX,
+                latestPeriodDate = LocalDate.MAX,
+                predictionConfidenceIndex = 0f,
+                predictedCycleLengthStdDev = 0f
             )
         }
 
@@ -293,11 +470,33 @@ object CyclePredictor {
         }.coerceAtLeast(1)
 
         // ── Próximo inicio de periodo ────────────────────────────────────────
-        // No avanzar automáticamente al siguiente ciclo. La regla esperada sigue siendo la fecha original del ciclo actual.
+        // No avanzar automáticamente al siguiente ciclo. La periodo esperada sigue siendo la fecha original del ciclo actual.
         val nextPeriod = startDate.plusDays(c.toLong())
 
         // ── Próxima ovulación (usa lutealLen personal) ───────────────────────
-        val nextOvulation = if (isOnContraceptive) LocalDate.MAX else nextPeriod.minusDays(lutealLen.toLong())
+        val nextOvulation = if (isOnContraceptive) {
+            LocalDate.MAX
+        } else {
+            startDate.plusDays((ovulationDay - 1).toLong().coerceAtLeast(0))
+        }
+
+        val fertileStart = if (isOnContraceptive) LocalDate.MAX else nextOvulation.minusDays(5)
+        val fertileEnd   = if (isOnContraceptive) LocalDate.MAX else nextOvulation.plusDays(1)
+        val inFertile    = !isOnContraceptive && !today.isBefore(fertileStart) && !today.isAfter(fertileEnd)
+        val isPeak       = !isOnContraceptive && today == nextOvulation
+
+        val stdDev = if (closedCycles.size >= MIN_CYCLES_FOR_HISTORY) 
+            weightedStdDevCycleLength(closedCycles) else 4f
+
+        val z80 = 1.282f
+        val intervalDays = (z80 * stdDev).roundToInt().coerceIn(1, 14)
+
+        val earliest = nextPeriod.minusDays(intervalDays.toLong())
+        val latest = nextPeriod.plusDays(intervalDays.toLong())
+
+        val cycleCountBonus = (closedCycles.size.coerceAtMost(12) / 12f) * 0.50f
+        val regularityBonus = if (stdDev < 2f) 0.20f else if (stdDev < 4f) 0.10f else 0f
+        val confidenceIndex = (0.30f + cycleCountBonus + regularityBonus).coerceIn(0f, 1f)
 
         return CyclePrediction(
             currentDayOfCycle   = realDay,
@@ -311,11 +510,19 @@ object CyclePredictor {
             delayState          = delayState,
             delayDays           = delayDays,
             isLate              = delayDays > 0,
-            dayOfPhase          = dayOfPhase
+            dayOfPhase          = dayOfPhase,
+            fertileWindowStartDate = fertileStart,
+            fertileWindowEndDate   = fertileEnd,
+            isInFertileWindow      = inFertile,
+            isOvulationPeak        = isPeak,
+            earliestPeriodDate     = earliest,
+            latestPeriodDate       = latest,
+            predictionConfidenceIndex = confidenceIndex,
+            predictedCycleLengthStdDev = stdDev
         )
     }
 
     // ── Extension helper ─────────────────────────────────────────────────────
     private fun Long.toLocalDate(): LocalDate =
-        Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDate()
+        Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
 }

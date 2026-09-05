@@ -27,7 +27,7 @@ data class PuntoBarraCiclo(
  * Un punto en la gráfica de tendencia de dolor y estrés.
  * Cada punto corresponde a un día del ciclo con al menos uno de los dos valores.
  *
- * @param diaCiclo    Número de día dentro del ciclo (1 = primer día de la regla).
+ * @param diaCiclo    Número de día dentro del ciclo (1 = primer día de la periodo).
  * @param nivelDolor  Intensidad del dolor (0–10). Null si no fue registrado ese día.
  * @param nivelEstres Nivel de estrés (0–10). Null si no fue registrado ese día.
  * @param fecha       Fecha formateada para el tooltip (p.ej. "Lun 23").

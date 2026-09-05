@@ -3,6 +3,7 @@ package com.jeremy.lumi.ui.screens.splash
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,7 +21,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -82,10 +86,10 @@ fun SplashScreen(
     // ── Animatables ─────────────────────────────────────────────────────────
     val alpha = remember { Animatable(initialValue = 0f) }
     val scale = remember { Animatable(initialValue = 0.8f) }
+    var isAnimationFinished by remember { mutableStateOf(false) }
 
     // ── Lanzador de animación ────────────────────────────────────────────────
     LaunchedEffect(Unit) {
-        // Reemplaza el animationSpec en SplashScreen
         val animationSpec = spring<Float>(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow
@@ -101,12 +105,13 @@ fun SplashScreen(
 
         // Pequeña pausa para que el ojo "asiente" la imagen antes de navegar
         delay(POST_ANIMATION_DELAY_MS)
+        isAnimationFinished = true
     }
 
     // Usamos otro LaunchedEffect para esperar al onboardingState
-    LaunchedEffect(onboardingState, alpha.value) {
-        // Solo continuamos si la animación de entrada terminó (alpha == 1f) y el estado ya cargó
-        if (alpha.value == 1f && onboardingState != null) {
+    LaunchedEffect(onboardingState, isAnimationFinished) {
+        // Solo continuamos si la animación de entrada terminó y el estado ya cargó
+        if (isAnimationFinished && onboardingState != null) {
             onSplashFinished(onboardingState)
         }
     }
@@ -191,12 +196,11 @@ fun SplashContent(
                     )
                 }
 
-                Image(
-                    painter = painterResource(id = R.drawable.lumi_logo),
-                    contentDescription = "Lumi logo",
-                    contentScale = ContentScale.Fit,
+                // NUEVO LOGO ANIMADO DE FASES LUNARES
+                AnimatedMoonLogo(
+                    progress = alpha, // Usamos el alpha del Splash como progreso de apertura
                     modifier = Modifier
-                        .size(100.dp)
+                        .height(60.dp)
                         .offset(y = if (showGlow) floatY.dp else 0.dp)
                 )
             }
@@ -218,10 +222,10 @@ fun SplashContent(
                     )
                 )
                 Text(
-                    text = "Lumi",
+                    text = "LUMI", // Cambiado a MAYÚSCULAS como en el diseño de referencia
                     style = MaterialTheme.typography.displayMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 6.sp,
+                        letterSpacing = 12.sp, // Letra más espaciada como en el diseño
                         brush = brush
                     ),
                     textAlign = TextAlign.Center
@@ -241,6 +245,80 @@ fun SplashContent(
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f),
                     textAlign = TextAlign.Center
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Renderiza 7 lunas que se abren desde el centro hacia los lados de forma fluida.
+ */
+@Composable
+fun AnimatedMoonLogo(
+    progress: Float, // de 0f a 1f
+    modifier: Modifier = Modifier
+) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val moonCount = 7
+    val centerIndex = moonCount / 2
+    
+    // Curva de animación para que se abra suavemente
+    val easedProgress = FastOutSlowInEasing.transform(progress.coerceIn(0f, 1f))
+    
+    // Espaciado final entre lunas
+    val finalSpacing = 36.dp
+
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        for (i in 0 until moonCount) {
+            val distFromCenter = i - centerIndex
+            val currentOffset = finalSpacing * distFromCenter * easedProgress
+            
+            // Opacidad según distancia al centro (centro = 1f, bordes = más transparente)
+            val alpha = 1f - (kotlin.math.abs(distFromCenter) * 0.25f)
+            val color = primaryColor.copy(alpha = alpha)
+
+            Canvas(
+                modifier = Modifier
+                    .size(30.dp)
+                    .offset(x = currentOffset)
+            ) {
+                val radius = size.height / 2f
+                val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
+
+                if (distFromCenter == 0) {
+                    // Luna Llena (centro)
+                    drawCircle(color = color, radius = radius, center = center)
+                } else {
+                    // Lunas crecientes / menguantes
+                    // Usamos Path operations para hacer la figura de la luna restando un círculo
+                    val pathFull = androidx.compose.ui.graphics.Path().apply {
+                        addOval(androidx.compose.ui.geometry.Rect(center = center, radius = radius))
+                    }
+                    
+                    // Qué tanto desplazamos el círculo recortador
+                    // Si está más lejos del centro, el recorte es mayor (luna más fina)
+                    val cutOffsetRatio = if (kotlin.math.abs(distFromCenter) == 1) 0.5f else 1.2f
+                    // Dirección del recorte (izquierda o derecha)
+                    val cutDirection = if (distFromCenter < 0) 1f else -1f
+                    
+                    val pathCut = androidx.compose.ui.graphics.Path().apply {
+                        addOval(
+                            androidx.compose.ui.geometry.Rect(
+                                center = center.copy(x = center.x + (radius * cutOffsetRatio * cutDirection)), 
+                                radius = radius * 1.1f // Un poco más grande para que el corte sea suave
+                            )
+                        )
+                    }
+
+                    val crescentPath = androidx.compose.ui.graphics.Path().apply {
+                        op(pathFull, pathCut, androidx.compose.ui.graphics.PathOperation.Difference)
+                    }
+
+                    drawPath(path = crescentPath, color = color)
+                }
             }
         }
     }

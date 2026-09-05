@@ -1,378 +1,283 @@
 package com.jeremy.lumi.ui.screens.partner
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jeremy.lumi.R
 import com.jeremy.lumi.domain.model.CyclePhase
-import com.jeremy.lumi.ui.theme.LocalPhaseColors
+import com.jeremy.lumi.domain.model.DiaryEntry
 import java.time.Instant
-import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-data class DiaryEntry(
-    val id: String = "",
-    val authorUid: String = "",
-    val authorName: String = "",
-    val text: String = "",
-    val phase: CyclePhase = CyclePhase.UNKNOWN,           // fase de quien escribe en ese momento
-    val timestampMs: Long = 0L
-)
-
-private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-
-private fun Long.toLocalDateTime(): LocalDateTime =
-    LocalDateTime.ofInstant(Instant.ofEpochMilli(this), ZoneId.systemDefault())
-
-private fun List<DiaryEntry>.groupedByDate(formatter: DateTimeFormatter): Map<String, List<DiaryEntry>> =
-    groupBy { it.timestampMs.toLocalDateTime().toLocalDate().format(formatter) }
-
+/**
+ * Diario Compartido: espacio íntimo de notas entre las dos personas del
+ * vínculo. Cada entrada lleva el contexto de la fase de quien escribe,
+ * para leer los mensajes con empatía.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SharedDiaryScreen(
     currentUid: String,
-    myName: String,
     myPhase: CyclePhase,
-    entries: List<DiaryEntry>,        // viene del ViewModel, ordenadas por timestamp asc
-    isSending: Boolean = false,
-    onSend: (text: String) -> Unit,
+    entries: List<DiaryEntry>,
+    isSending: Boolean,
+    onSend: (String) -> Unit,
     onBack: () -> Unit
 ) {
-    val phaseColors = LocalPhaseColors.current
     var draft by remember { mutableStateOf("") }
-    val currentLocale = java.util.Locale.getDefault()
-    val grouped = remember(entries, currentLocale) { 
-        val formatter = DateTimeFormatter.ofPattern("d MMM", currentLocale)
-        entries.groupedByDate(formatter) 
+    val listState = rememberLazyListState()
+    val inputFocus = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+
+    // Autodesplazamiento al final cuando llega una entrada nueva
+    LaunchedEffect(entries.size) {
+        if (entries.isNotEmpty()) listState.animateScrollToItem(entries.lastIndex)
     }
 
-    val myPhaseColor = when (myPhase) {
-        CyclePhase.MENSTRUAL  -> phaseColors.menstrual
-        CyclePhase.FOLLICULAR -> phaseColors.follicular
-        CyclePhase.OVULATION  -> phaseColors.ovulation
-        CyclePhase.LUTEAL     -> phaseColors.luteal
-        else                  -> Color(0xFF7B2FBE)
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF0E0A1A))
-    ) {
-        // Header
-        Spacer(modifier = Modifier.height(48.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 8.dp)
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Rounded.ChevronLeft, contentDescription = stringResource(R.string.dual_calendar_back), tint = Color.White)
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.shared_diary_title),
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Light,
-                    letterSpacing = 0.3.sp
-                )
-                Text(
-                    text = stringResource(R.string.shared_diary_subtitle),
-                    color = Color.White.copy(alpha = 0.4f),
-                    fontSize = 12.sp
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-        HorizontalDivider(color = Color.White.copy(alpha = 0.06f))
-
-        // Lista de entradas
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            contentPadding = PaddingValues(vertical = 16.dp),
-            reverseLayout = false
-        ) {
-            grouped.forEach { (date, dayEntries) ->
-                item(key = "header_$date") {
-                    DateSeparator(label = date)
-                }
-                items(dayEntries, key = { it.id }) { entry ->
-                    AnimatedVisibility(
-                        visible = true,
-                        enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 }),
-                        exit = fadeOut()
-                    ) {
-                        DiaryEntryBubble(
-                            entry = entry,
-                            isMe = entry.authorUid == currentUid,
-                            phaseColors = phaseColors
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = stringResource(R.string.pm_diary_title),
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
                         )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Rounded.Lock,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
+                                modifier = Modifier.size(11.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = stringResource(R.string.pm_diary_subtitle),
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = stringResource(R.string.pm_back),
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .imePadding()
+        ) {
+            if (entries.isEmpty()) {
+                // Estado vacío unificado: invita a escribir la primera nota
+                // enfocando directamente el campo de texto.
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(horizontal = 40.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    com.jeremy.lumi.ui.components.LumiEmptyState(
+                        icon = Icons.Rounded.Lock,
+                        title = stringResource(R.string.pm_diary_empty_title),
+                        description = stringResource(R.string.pm_diary_empty_desc),
+                        ctaText = stringResource(R.string.pm_diary_empty_cta),
+                        ctaIcon = Icons.AutoMirrored.Rounded.Send,
+                        onCtaClick = {
+                            inputFocus.requestFocus()
+                            keyboard?.show()
+                        }
+                    )
+                }
+            } else {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                        horizontal = 16.dp, vertical = 12.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(entries, key = { it.id }) { entry ->
+                        DiaryBubble(entry = entry, isMine = entry.authorUid == currentUid)
                     }
                 }
             }
 
-            if (entries.isEmpty()) {
-                item {
-                    EmptyDiaryState()
-                }
-            }
-        }
-
-        // Input
-        DiaryInput(
-            draft = draft,
-            isSending = isSending,
-            accentColor = myPhaseColor,
-            onDraftChange = { draft = it },
-            onSend = {
-                if (draft.isNotBlank() && !isSending) {
-                    onSend(draft.trim())
-                    draft = ""
-                }
-            }
-        )
-    }
-}
-
-@Composable
-private fun DateSeparator(label: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(50))
-                .background(Color.White.copy(alpha = 0.07f))
-                .padding(horizontal = 12.dp, vertical = 4.dp)
-        ) {
-            Text(
-                text = label,
-                color = Color.White.copy(alpha = 0.45f),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
-    }
-}
-
-@Composable
-private fun DiaryEntryBubble(
-    entry: DiaryEntry,
-    isMe: Boolean,
-    phaseColors: com.jeremy.lumi.ui.theme.PhaseColors
-) {
-    val bubblePhaseColor = when (entry.phase) {
-        CyclePhase.MENSTRUAL  -> phaseColors.menstrual
-        CyclePhase.FOLLICULAR -> phaseColors.follicular
-        CyclePhase.OVULATION  -> phaseColors.ovulation
-        CyclePhase.LUTEAL     -> phaseColors.luteal
-        else                  -> Color(0xFF7B2FBE)
-    }
-    val time = entry.timestampMs.toLocalDateTime().format(timeFormatter)
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 3.dp),
-        horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start
-    ) {
-        // Avatar solo para mensajes de la otra persona
-        if (!isMe) {
-            Box(
+            // ── Barra de entrada ──
+            Row(
                 modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(bubblePhaseColor.copy(alpha = 0.2f))
-                    .border(1.dp, bubblePhaseColor.copy(alpha = 0.5f), CircleShape)
-                    .align(Alignment.Bottom),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.Bottom
             ) {
-                Text(
-                    text = entry.authorName.firstOrNull()?.uppercase() ?: "?",
-                    color = bubblePhaseColor,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
+                OutlinedTextField(
+                    value = draft,
+                    onValueChange = { draft = it.take(500) },
+                    placeholder = { Text(stringResource(R.string.pm_diary_hint)) },
+                    shape = RoundedCornerShape(24.dp),
+                    maxLines = 4,
+                    modifier = Modifier
+                        .weight(1f)
+                        .focusRequester(inputFocus)
                 )
+                Spacer(Modifier.width(8.dp))
+                FilledIconButton(
+                    onClick = {
+                        onSend(draft)
+                        draft = ""
+                    },
+                    enabled = draft.isNotBlank() && !isSending
+                ) {
+                    if (isSending) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.Send,
+                            contentDescription = stringResource(R.string.pm_diary_send)
+                        )
+                    }
+                }
             }
-            Spacer(modifier = Modifier.width(8.dp))
         }
+    }
+}
 
-        Column(
-            horizontalAlignment = if (isMe) Alignment.End else Alignment.Start,
-            modifier = Modifier.widthIn(max = 280.dp)
+@Composable
+private fun DiaryBubble(entry: DiaryEntry, isMine: Boolean) {
+    val timeText = remember(entry.timestampMs) {
+        Instant.ofEpochMilli(entry.timestampMs)
+            .atZone(ZoneId.systemDefault())
+            .format(DateTimeFormatter.ofPattern("HH:mm"))
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = if (isMine) Alignment.End else Alignment.Start
+    ) {
+        Surface(
+            shape = RoundedCornerShape(
+                topStart = 18.dp,
+                topEnd = 18.dp,
+                bottomStart = if (isMine) 18.dp else 4.dp,
+                bottomEnd = if (isMine) 4.dp else 18.dp
+            ),
+            color = if (isMine)
+                MaterialTheme.colorScheme.primaryContainer
+            else
+                MaterialTheme.colorScheme.surfaceVariant,
+            modifier = Modifier.widthIn(max = 300.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = 18.dp,
-                            topEnd = 18.dp,
-                            bottomStart = if (isMe) 18.dp else 4.dp,
-                            bottomEnd = if (isMe) 4.dp else 18.dp
-                        )
+            Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                if (!isMine && entry.authorName.isNotBlank()) {
+                    Text(
+                        text = entry.authorName,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
                     )
-                    .background(
-                        if (isMe) bubblePhaseColor.copy(alpha = 0.22f)
-                        else Color(0xFF1A1025)
-                    )
-                    .border(
-                        1.dp,
-                        bubblePhaseColor.copy(alpha = if (isMe) 0.45f else 0.15f),
-                        RoundedCornerShape(
-                            topStart = 18.dp,
-                            topEnd = 18.dp,
-                            bottomStart = if (isMe) 18.dp else 4.dp,
-                            bottomEnd = if (isMe) 4.dp else 18.dp
-                        )
-                    )
-                    .padding(horizontal = 14.dp, vertical = 10.dp)
-            ) {
+                    Spacer(Modifier.height(2.dp))
+                }
                 Text(
                     text = entry.text,
-                    color = Color.White.copy(alpha = 0.9f),
                     fontSize = 14.sp,
-                    lineHeight = 20.sp
+                    lineHeight = 20.sp,
+                    color = if (isMine)
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    else
+                        MaterialTheme.colorScheme.onSurface
                 )
-            }
-            Spacer(modifier = Modifier.height(3.dp))
-            Text(
-                text = time,
-                color = Color.White.copy(alpha = 0.3f),
-                fontSize = 10.sp
-            )
-        }
-    }
-}
-
-@Composable
-private fun EmptyDiaryState() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 64.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = "📔", fontSize = 48.sp)
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = stringResource(R.string.shared_diary_empty_title),
-            color = Color.White,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Light
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = stringResource(R.string.shared_diary_empty_desc),
-            color = Color.White.copy(alpha = 0.4f),
-            fontSize = 13.sp,
-            lineHeight = 19.sp,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
-    }
-}
-
-@Composable
-private fun DiaryInput(
-    draft: String,
-    isSending: Boolean,
-    accentColor: Color,
-    onDraftChange: (String) -> Unit,
-    onSend: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF120D20))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFF1A1025))
-                .border(1.dp, accentColor.copy(alpha = 0.25f), RoundedCornerShape(24.dp))
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-        ) {
-            if (draft.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.shared_diary_input_hint),
-                    color = Color.White.copy(alpha = 0.25f),
-                    fontSize = 14.sp
-                )
-            }
-            BasicTextField(
-                value = draft,
-                onValueChange = onDraftChange,
-                textStyle = TextStyle(
-                    color = Color.White,
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp
-                ),
-                cursorBrush = SolidColor(accentColor),
-                modifier = Modifier.fillMaxWidth(),
-                maxLines = 4
-            )
-        }
-
-        Spacer(modifier = Modifier.width(10.dp))
-
-        Box(
-            modifier = Modifier
-                .size(46.dp)
-                .clip(CircleShape)
-                .background(
-                    if (draft.isNotBlank()) accentColor
-                    else Color.White.copy(alpha = 0.08f)
-                )
-                .clickable(enabled = draft.isNotBlank() && !isSending, onClick = onSend),
-            contentAlignment = Alignment.Center
-        ) {
-            if (isSending) {
-                CircularProgressIndicator(
-                    color = Color.White,
-                    strokeWidth = 2.dp,
-                    modifier = Modifier.size(20.dp)
-                )
-            } else {
-                Icon(
-                    Icons.AutoMirrored.Rounded.Send,
-                    contentDescription = stringResource(R.string.shared_diary_send),
-                    tint = if (draft.isNotBlank()) Color.White else Color.White.copy(alpha = 0.3f),
-                    modifier = Modifier.size(20.dp)
-                )
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (entry.phase != CyclePhase.UNKNOWN) {
+                        Box(
+                            modifier = Modifier
+                                .size(7.dp)
+                                .background(phaseColor(entry.phase), CircleShape)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = stringResource(phaseLabelRes(entry.phase)),
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                    }
+                    Text(
+                        text = timeText,
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                }
             }
         }
     }

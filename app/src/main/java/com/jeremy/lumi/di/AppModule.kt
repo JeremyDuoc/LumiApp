@@ -23,4 +23,9 @@ object AppModule {
     @Singleton
     fun provideOnboardingPreferenceManager(@ApplicationContext context: Context): OnboardingPreferenceManager =
         OnboardingPreferenceManager(context)
+
+    @Provides
+    @Singleton
+    fun provideChatStringResolver(@ApplicationContext context: Context): com.jeremy.lumi.domain.usecase.ChatStringResolver =
+        com.jeremy.lumi.domain.usecase.AndroidChatStringResolver(context)
 }

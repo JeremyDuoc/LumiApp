@@ -25,6 +25,7 @@ import com.jeremy.lumi.data.local.entity.DailyLogWithSymptoms
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,7 +97,11 @@ fun LogHistorySheet(
 @Composable
 private fun LogHistoryRow(log: DailyLogWithSymptoms) {
     val currentLocale = Locale.getDefault()
-    val dateFormat = remember(currentLocale) { SimpleDateFormat("d 'de' MMMM, yyyy", currentLocale) }
+    val dateFormat = remember(currentLocale) {
+        SimpleDateFormat("d 'de' MMMM, yyyy", currentLocale).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+    }
     val dateLabel = remember(log.dailyLog.date, dateFormat) {
         dateFormat.format(Date(log.dailyLog.date)).replaceFirstChar { it.uppercase() }
     }

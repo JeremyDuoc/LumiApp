@@ -25,7 +25,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     testImplementation(libs.junit)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -98,11 +99,14 @@ dependencies {
 
     // 8. ZXing (Códigos QR)
     implementation("com.google.zxing:core:3.5.3")
+
+    // 9. Splash Screen API
+    implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 
     // 9. WheelPicker (Estilo iOS para fechas/horas)
     implementation("com.github.commandiron:WheelPickerCompose:1.1.11")
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 
     // 10. MotionLayout y ConstraintLayout para Compose
     implementation("androidx.constraintlayout:constraintlayout-compose:1.1.0")
@@ -127,4 +131,12 @@ dependencies {
     // 15. Jetpack Glance (Widgets)
     implementation("androidx.glance:glance-appwidget:1.1.0")
     implementation("androidx.glance:glance-material3:1.1.0")
+
+    // 16. Respaldo privado en Google Drive (appDataFolder)
+    //     - play-services-auth: AuthorizationClient (Identity) para pedir el scope drive.appdata.
+    //       NO usamos la clase GoogleSignIn deprecada.
+    //     - Gson: serialización del respaldo a JSON antes de cifrarlo.
+    //     La API REST de Drive se consume con HttpURLConnection: sin SDKs pesados.
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
+    implementation("com.google.code.gson:gson:2.11.0")
 }

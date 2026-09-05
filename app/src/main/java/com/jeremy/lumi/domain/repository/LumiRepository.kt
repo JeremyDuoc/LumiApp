@@ -30,6 +30,10 @@ interface LumiRepository {
 
     suspend fun getCycleForDate(dateMs: Long): CycleEntity?
 
+    suspend fun updateCycle(cycle: CycleEntity)
+    suspend fun deleteCycle(cycleId: Int)
+    suspend fun undoLastPeriodStart(): Boolean
+
     // Registros Diarios
     suspend fun saveDailyLogWithSymptoms(dailyLog: DailyLogEntity, symptoms: List<SymptomEntity>)
     suspend fun getDailyLog(date: Long): DailyLogWithSymptoms?

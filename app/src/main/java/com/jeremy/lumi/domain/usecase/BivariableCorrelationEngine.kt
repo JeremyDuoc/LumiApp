@@ -32,33 +32,38 @@ class BivariableCorrelationEngine @Inject constructor(
     }
 
     private fun computeSleepVsPain(logs: List<DailyLogWithSymptoms>): BivariableInsight? {
-        // Filtrar días que tengan tanto horas de sueño como nivel de dolor reportado
-        val validLogs = logs.filter { it.dailyLog.sleepHours != null && it.dailyLog.painLevel > 0 }
+        // Filtrar días que tengan horas de sueño registradas (incluyendo dolor 0 para no sesgar la muestra)
+        val validLogs = logs.filter { it.dailyLog.sleepHours != null }
         
         // Necesitamos suficientes datos para que sea estadísticamente relevante
         if (validLogs.size < 10) return null
 
-        val shortSleepLogs = validLogs.filter { it.dailyLog.sleepHours!! < 6f }
-        val goodSleepLogs = validLogs.filter { it.dailyLog.sleepHours!! >= 6f }
+        val shortSleepLogs = validLogs.filter { (it.dailyLog.sleepHours ?: 0f) < 6f }
+        val goodSleepLogs = validLogs.filter { (it.dailyLog.sleepHours ?: 0f) >= 6f }
 
         if (shortSleepLogs.size < 3 || goodSleepLogs.size < 3) return null
 
         val avgPainShortSleep = shortSleepLogs.map { it.dailyLog.painLevel }.average()
         val avgPainGoodSleep = goodSleepLogs.map { it.dailyLog.painLevel }.average()
 
-        if (avgPainGoodSleep == 0.0) return null
+        if (avgPainShortSleep <= avgPainGoodSleep) return null
 
-        val increaseRatio = (avgPainShortSleep - avgPainGoodSleep) / avgPainGoodSleep
+        // Si con buen sueño el dolor es 0 y con poco sueño hay dolor significativo, es una correlación del 100%
+        val increaseRatio = if (avgPainGoodSleep == 0.0) {
+            if (avgPainShortSleep >= 1.0) 1.0 else 0.0
+        } else {
+            (avgPainShortSleep - avgPainGoodSleep) / avgPainGoodSleep
+        }
 
         // Si el dolor aumenta más de un 20% cuando duerme poco
-        if (increaseRatio > 0.20) {
-            val percentage = (increaseRatio * 100).roundToInt()
+        if (increaseRatio > 0.20 && avgPainShortSleep >= 1.0) {
+            val percentage = (increaseRatio * 100).roundToInt().coerceAtMost(100)
             val title = context.getString(R.string.insight_title_sleep_pain)
             val message = getRandomString(R.array.insight_msg_sleep_pain, percentage)
             return BivariableInsight(
                 title = title,
                 message = message,
-                importance = increaseRatio.toFloat()
+                importance = increaseRatio.toFloat().coerceAtMost(1f)
             )
         }
         return null
@@ -68,27 +73,27 @@ class BivariableCorrelationEngine @Inject constructor(
         val validLogs = logs.filter { it.dailyLog.stressLevel != null && it.dailyLog.energyLevel != null }
         if (validLogs.size < 10) return null
 
-        val highStressLogs = validLogs.filter { it.dailyLog.stressLevel!! >= 7 }
-        val lowStressLogs = validLogs.filter { it.dailyLog.stressLevel!! <= 4 }
+        val highStressLogs = validLogs.filter { (it.dailyLog.stressLevel ?: 0) >= 7 }
+        val lowStressLogs = validLogs.filter { (it.dailyLog.stressLevel ?: 0) <= 4 }
 
         if (highStressLogs.size < 3 || lowStressLogs.size < 3) return null
 
-        val avgEnergyHighStress = highStressLogs.map { it.dailyLog.energyLevel!! }.average()
-        val avgEnergyLowStress = lowStressLogs.map { it.dailyLog.energyLevel!! }.average()
+        val avgEnergyHighStress = highStressLogs.map { it.dailyLog.energyLevel ?: 0 }.average()
+        val avgEnergyLowStress = lowStressLogs.map { it.dailyLog.energyLevel ?: 0 }.average()
 
-        if (avgEnergyLowStress == 0.0) return null
+        if (avgEnergyLowStress <= avgEnergyHighStress || avgEnergyLowStress == 0.0) return null
 
         val dropRatio = (avgEnergyLowStress - avgEnergyHighStress) / avgEnergyLowStress
 
         // Si la energía cae más de un 20% en días de alto estrés
-        if (dropRatio > 0.20 && avgEnergyHighStress < avgEnergyLowStress) {
-            val percentage = (dropRatio * 100).roundToInt()
+        if (dropRatio > 0.20) {
+            val percentage = (dropRatio * 100).roundToInt().coerceAtMost(100)
             val title = context.getString(R.string.insight_title_stress_energy)
             val message = getRandomString(R.array.insight_msg_stress_energy, percentage)
             return BivariableInsight(
                 title = title,
                 message = message,
-                importance = dropRatio.toFloat()
+                importance = dropRatio.toFloat().coerceAtMost(1f)
             )
         }
         return null

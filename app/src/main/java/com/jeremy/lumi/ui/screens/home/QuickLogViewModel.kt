@@ -32,15 +32,12 @@ class QuickLogViewModel @Inject constructor(
 ) : ViewModel() {
 
     val todayMidnightMillis: Long
-        get() = java.time.LocalDate.now()
-            .atStartOfDay(java.time.ZoneId.of("UTC"))
-            .toInstant()
-            .toEpochMilli()
+        get() = com.jeremy.lumi.utils.LumiClock.todayUtcMillis()
 
-    val todayDayOfMonth: Int get() = Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
-    /** Month value 1–12 (Calendar.MONTH es 0-based, lo corregimos aquí). */
-    val todayMonth: Int      get() = Calendar.getInstance().get(Calendar.MONTH) + 1
-    val todayYear: Int       get() = Calendar.getInstance().get(Calendar.YEAR)
+    val todayDayOfMonth: Int get() = com.jeremy.lumi.utils.LumiClock.today().dayOfMonth
+    /** Month value 1–12. */
+    val todayMonth: Int      get() = com.jeremy.lumi.utils.LumiClock.today().monthValue
+    val todayYear: Int       get() = com.jeremy.lumi.utils.LumiClock.today().year
 
     private val _todayLog = MutableStateFlow<DailyLogWithSymptoms?>(null)
     val todayLog: StateFlow<DailyLogWithSymptoms?> = _todayLog.asStateFlow()
@@ -81,6 +78,7 @@ class QuickLogViewModel @Inject constructor(
         sleepHours: Float?,
         energyLevel: Int?,
         stressLevel: Int?,
+        waterIntake: Float?,
         basalBodyTemp: Float?,
         spotting: Boolean
     ) {
@@ -107,6 +105,7 @@ class QuickLogViewModel @Inject constructor(
                     sleepHours = sleepHours,
                     energyLevel = energyLevel,
                     stressLevel = stressLevel,
+                    waterIntake = waterIntake,
                     basalBodyTemp = basalBodyTemp,
                     spotting = spotting
                 )

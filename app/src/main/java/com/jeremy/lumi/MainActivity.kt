@@ -8,11 +8,14 @@ import androidx.compose.runtime.getValue
 import com.jeremy.lumi.data.preferences.ThemePreferenceManager
 import com.jeremy.lumi.ui.navigation.AppNavGraph
 import com.jeremy.lumi.ui.theme.AppThemePalette
+import com.jeremy.lumi.ui.theme.BackgroundAmbient
+import com.jeremy.lumi.ui.theme.DialStyle
 import com.jeremy.lumi.ui.theme.LumiTheme
 import com.jeremy.lumi.ui.theme.PhaseColorPalette
 import androidx.activity.enableEdgeToEdge
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -22,6 +25,7 @@ class MainActivity : ComponentActivity() {
     lateinit var themePreferenceManager: ThemePreferenceManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
@@ -34,20 +38,32 @@ class MainActivity : ComponentActivity() {
 
             // Paleta de colores de fase elegida (preset o CUSTOM)
             val selectedPhasePalette by themePreferenceManager.selectedPhasePaletteFlow.collectAsStateWithLifecycle(
-                initialValue = PhaseColorPalette.DEFAULT
+                initialValue = PhaseColorPalette.AUTO_HARMONY
             )
 
-            // Colores individuales personalizados â€” solo se usan cuando
+            // Colores individuales personalizados — solo se usan cuando
             // selectedPhasePalette es CUSTOM; null mientras no haya nada guardado
             val customPhaseColors by themePreferenceManager.customPhaseColorsFlow.collectAsStateWithLifecycle(
                 initialValue = null
+            )
+
+            // Estilo visual del aro (Gradiente continuo, Mapa por sectores o Minimalista)
+            val dialStyle by themePreferenceManager.dialStyleFlow.collectAsStateWithLifecycle(
+                initialValue = DialStyle.GRADIENT
+            )
+
+            // Ambiente de fondo (Plano, Aura, Celeste, Orgánico)
+            val selectedAmbient by themePreferenceManager.backgroundAmbientFlow.collectAsStateWithLifecycle(
+                initialValue = BackgroundAmbient.AURA
             )
 
             // Le pasamos la elección de la usuaria a nuestro Tema
             LumiTheme(
                 selectedTheme        = selectedTheme,
                 selectedPhasePalette = selectedPhasePalette,
-                customPhaseColors    = customPhaseColors
+                customPhaseColors    = customPhaseColors,
+                dialStyle            = dialStyle,
+                selectedAmbient      = selectedAmbient
             ) {
                 AppNavGraph()
             }

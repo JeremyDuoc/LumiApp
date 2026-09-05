@@ -10,26 +10,47 @@ import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
-enum class ChatQuestion(
-    val displayText: String,
-    val category: QuestionCategory
-) {
-    WHY_FEEL_TIRED("¿Por qué me siento tan cansada hoy?", QuestionCategory.WELLBEING),
-    WHEN_NEXT_PERIOD("¿Cuándo llega mi próximo periodo?", QuestionCategory.CYCLE),
-    WHEN_FERTILE_WINDOW("¿Cuándo es mi próxima ventana fértil?", QuestionCategory.CYCLE),
-    WHY_MOOD_CHANGES("¿Por qué tengo tantos cambios de humor?", QuestionCategory.WELLBEING),
-    WHY_CRAMPS("¿Por qué tengo cólicos?", QuestionCategory.WELLBEING),
-    WHAT_PHASE_AM_I("¿En qué fase del ciclo estoy?", QuestionCategory.CYCLE),
-    HOW_IMPROVE_ENERGY("¿Cómo puedo tener más energía hoy?", QuestionCategory.TIPS),
-    SLEEP_AND_CYCLE("¿Cómo afecta el sueño a mi ciclo?", QuestionCategory.TIPS),
-    STRESS_AND_CYCLE("¿El estrés retrasa mi regla?", QuestionCategory.TIPS),
-    EXERCISE_RECOMMENDATION("¿Qué tipo de ejercicio me recomiendas hoy?", QuestionCategory.TIPS),
-    WHY_LATE_PERIOD("¿Por qué se retrasó mi regla?", QuestionCategory.CONCERN),
-    SPOTTING_EXPLANATION("Tengo manchado fuera de mi periodo, ¿es normal?", QuestionCategory.CONCERN);
+import androidx.annotation.StringRes
+
+enum class QuestionCategory(@StringRes val labelRes: Int) {
+    CYCLE(R.string.chat_cat_cycle),
+    SYMPTOMS(R.string.chat_cat_symptoms),
+    FERTILITY(R.string.chat_cat_fertility),
+    PATTERNS(R.string.chat_cat_patterns),
+    WELLBEING(R.string.chat_cat_wellbeing)
 }
 
-enum class QuestionCategory {
-    CYCLE, WELLBEING, TIPS, CONCERN
+enum class ChatQuestion(
+    @StringRes val displayTextRes: Int,
+    val category: QuestionCategory
+) {
+    // Mi Ciclo
+    WHEN_NEXT_PERIOD(R.string.chat_q_when_next_period, QuestionCategory.CYCLE),
+    WHAT_PHASE_AM_I(R.string.chat_q_what_phase_am_i, QuestionCategory.CYCLE),
+    WHY_LATE_PERIOD(R.string.chat_q_why_late_period, QuestionCategory.CYCLE),
+    SPOTTING_EXPLANATION(R.string.chat_q_spotting_explanation, QuestionCategory.CYCLE),
+
+    // Dolor y Síntomas
+    WHY_CRAMPS(R.string.chat_q_why_cramps, QuestionCategory.SYMPTOMS),
+    HEADACHE_RELIEF(R.string.chat_q_headache_relief, QuestionCategory.SYMPTOMS),
+    DIGESTIVE_RELIEF(R.string.chat_q_digestive_relief, QuestionCategory.SYMPTOMS),
+    WHY_FEEL_TIRED(R.string.chat_q_why_feel_tired, QuestionCategory.SYMPTOMS),
+    WHY_MOOD_CHANGES(R.string.chat_q_why_mood_changes, QuestionCategory.SYMPTOMS),
+
+    // Fertilidad y Métodos
+    WHEN_FERTILE_WINDOW(R.string.chat_q_when_fertile_window, QuestionCategory.FERTILITY),
+    UNPROTECTED_SEX(R.string.chat_q_unprotected_sex, QuestionCategory.FERTILITY),
+    CONTRACEPTION_INFO(R.string.chat_q_contraception_info, QuestionCategory.FERTILITY),
+
+    // Mis Patrones
+    BIO_PATTERNS(R.string.chat_q_bio_patterns, QuestionCategory.PATTERNS),
+    SLEEP_AND_CYCLE(R.string.chat_q_sleep_and_cycle, QuestionCategory.PATTERNS),
+    STRESS_AND_CYCLE(R.string.chat_q_stress_and_cycle, QuestionCategory.PATTERNS),
+
+    // Nutrición y Hábitos
+    NUTRITION_RECOMMENDATION(R.string.chat_q_nutrition_recommendation, QuestionCategory.WELLBEING),
+    EXERCISE_RECOMMENDATION(R.string.chat_q_exercise_recommendation, QuestionCategory.WELLBEING),
+    HOW_IMPROVE_ENERGY(R.string.chat_q_how_improve_energy, QuestionCategory.WELLBEING);
 }
 
 data class CycleContext(
@@ -78,9 +99,28 @@ class LumiRulesEngine @Inject constructor(
                              ctx.todaySymptoms.intersect(listOf("Dolor de cabeza", "Hinchazón", "Sensibilidad en los senos", "Cansancio", "Acné")).isNotEmpty() ||
                              (ctx.todayStressLevel != null && ctx.todayStressLevel >= 6)
         
+        val isTiredOrSad = ctx.todayMood in listOf("Triste", "Cansado", "Agotado") || ctx.todaySymptoms.contains("Cansancio")
+        val isHappyOrEnergetic = ctx.todayMood in listOf("Feliz", "Enérgico", "Calmado")
+
         if (isPmsWindow && hasPmsSymptoms) {
             val moodMsg = ctx.todayMood?.let { "te sientas ${it.lowercase()}" } ?: "tengas estos síntomas"
             return baseGreeting + String.format(getRandomStringArray(R.array.chat_welcome_pms), moodMsg)
+        }
+        
+        // periodo: Fase Folicular + Cansancio (Inusual)
+        if (ctx.phase == CyclePhase.FOLLICULAR && isTiredOrSad) {
+            return baseGreeting + context.getString(R.string.chat_welcome_follicular_tired)
+        }
+        
+        // periodo: Fase Folicular + Energía (Esperado)
+        if (ctx.phase == CyclePhase.FOLLICULAR && isHappyOrEnergetic) {
+            return baseGreeting + context.getString(R.string.chat_welcome_follicular_energy)
+        }
+        
+        // periodo: Fase Lútea Temprana/Media + Antojos o Cansancio
+        val hasLutealSymptoms = ctx.todaySymptoms.intersect(listOf("Antojos", "Hinchazón", "Digestión pesada")).isNotEmpty()
+        if (ctx.phase == CyclePhase.LUTEAL && !isPmsWindow && (hasLutealSymptoms || isTiredOrSad)) {
+            return baseGreeting + context.getString(R.string.chat_welcome_luteal_symptoms)
         }
 
         val painPrefix = if (ctx.todayPainLevel >= 7) {
@@ -97,20 +137,26 @@ class LumiRulesEngine @Inject constructor(
         return baseGreeting + painPrefix + phaseMessage
     }
 
-    fun answerQuestion(question: ChatQuestion, context: CycleContext): String {
+    fun answerQuestion(question: ChatQuestion, cycleContext: CycleContext): String {
         return when (question) {
-            ChatQuestion.WHY_FEEL_TIRED       -> answerTired(context)
-            ChatQuestion.WHEN_NEXT_PERIOD     -> answerNextPeriod(context)
-            ChatQuestion.WHEN_FERTILE_WINDOW  -> answerFertileWindow(context)
-            ChatQuestion.WHY_MOOD_CHANGES     -> answerMoodChanges(context)
-            ChatQuestion.WHY_CRAMPS           -> answerCramps(context)
-            ChatQuestion.WHAT_PHASE_AM_I      -> answerCurrentPhase(context)
-            ChatQuestion.HOW_IMPROVE_ENERGY   -> answerImproveEnergy(context)
-            ChatQuestion.SLEEP_AND_CYCLE      -> answerSleepAndCycle(context)
-            ChatQuestion.STRESS_AND_CYCLE     -> answerStressAndCycle(context)
-            ChatQuestion.EXERCISE_RECOMMENDATION -> answerExercise(context)
-            ChatQuestion.WHY_LATE_PERIOD      -> answerLatePeriod(context)
-            ChatQuestion.SPOTTING_EXPLANATION -> answerSpotting(context)
+            ChatQuestion.WHY_FEEL_TIRED          -> answerTired(cycleContext)
+            ChatQuestion.WHEN_NEXT_PERIOD        -> answerNextPeriod(cycleContext)
+            ChatQuestion.WHEN_FERTILE_WINDOW     -> answerFertileWindow(cycleContext)
+            ChatQuestion.WHY_MOOD_CHANGES        -> answerMoodChanges(cycleContext)
+            ChatQuestion.WHY_CRAMPS              -> answerCramps(cycleContext)
+            ChatQuestion.WHAT_PHASE_AM_I         -> answerCurrentPhase(cycleContext)
+            ChatQuestion.HOW_IMPROVE_ENERGY      -> answerImproveEnergy(cycleContext)
+            ChatQuestion.SLEEP_AND_CYCLE         -> answerSleepAndCycle(cycleContext)
+            ChatQuestion.STRESS_AND_CYCLE        -> answerStressAndCycle(cycleContext)
+            ChatQuestion.EXERCISE_RECOMMENDATION -> answerExercise(cycleContext)
+            ChatQuestion.WHY_LATE_PERIOD         -> answerLatePeriod(cycleContext)
+            ChatQuestion.SPOTTING_EXPLANATION    -> answerSpotting(cycleContext)
+            ChatQuestion.HEADACHE_RELIEF         -> context.getString(R.string.chat_smart_headache_body, "")
+            ChatQuestion.DIGESTIVE_RELIEF        -> context.getString(R.string.chat_smart_digestive_body)
+            ChatQuestion.UNPROTECTED_SEX         -> context.getString(R.string.chat_smart_unprotected_sex)
+            ChatQuestion.CONTRACEPTION_INFO      -> if (cycleContext.isOnContraceptive) context.getString(R.string.chat_smart_contraception_active) else context.getString(R.string.chat_smart_contraception_natural)
+            ChatQuestion.BIO_PATTERNS            -> context.getString(R.string.chat_smart_patterns_empty)
+            ChatQuestion.NUTRITION_RECOMMENDATION -> context.getString(R.string.chat_smart_nutrition_general)
         }
     }
 
@@ -118,19 +164,22 @@ class LumiRulesEngine @Inject constructor(
         val filtered = ChatQuestion.entries.filter { question ->
             when (question) {
                 ChatQuestion.WHY_LATE_PERIOD     -> context.isLate
-                ChatQuestion.SPOTTING_EXPLANATION -> false
+                ChatQuestion.SPOTTING_EXPLANATION -> context.todaySymptoms.any {
+                    it.contains("spotting", ignoreCase = true) || it.contains("manchado", ignoreCase = true)
+                }
                 ChatQuestion.WHY_CRAMPS          -> context.todayPainLevel > 0 || context.daysUntilPeriod in 0..2
-                ChatQuestion.WHEN_FERTILE_WINDOW -> !context.isOnContraceptive &&
-                    (context.userGoal in listOf("AVOID_PREGNANCY", "SEEK_PREGNANCY") || context.daysUntilOvulation in 0..2)
+                ChatQuestion.CONTRACEPTION_INFO  -> context.isOnContraceptive
+                ChatQuestion.WHEN_FERTILE_WINDOW -> !context.isOnContraceptive
                 else -> true
             }
         }
         
         return filtered.sortedByDescending { question ->
             when {
-                context.daysUntilPeriod in 0..2 && (question == ChatQuestion.WHEN_NEXT_PERIOD || question == ChatQuestion.WHY_CRAMPS) -> 2
-                context.daysUntilOvulation in 0..2 && question == ChatQuestion.WHEN_FERTILE_WINDOW -> 2
-                question.category == QuestionCategory.CONCERN && context.isLate -> 1
+                context.isLate && question == ChatQuestion.WHY_LATE_PERIOD -> 4
+                context.todayPainLevel >= 5 && question == ChatQuestion.WHY_CRAMPS -> 3
+                context.daysUntilPeriod in 0..2 && (question == ChatQuestion.WHEN_NEXT_PERIOD || question == ChatQuestion.WHY_CRAMPS) -> 3
+                context.daysUntilOvulation in 0..2 && question == ChatQuestion.WHEN_FERTILE_WINDOW -> 3
                 else -> 0
             }
         }
@@ -208,12 +257,12 @@ class LumiRulesEngine @Inject constructor(
 
     private fun answerCurrentPhase(ctx: CycleContext): String {
         val phaseName = when (ctx.phase) {
-            CyclePhase.MENSTRUAL  -> "Menstrual"
-            CyclePhase.FOLLICULAR -> "Folicular"
-            CyclePhase.OVULATION  -> "Ovulación"
-            CyclePhase.LUTEAL     -> "Lútea"
-            CyclePhase.PREGNANCY  -> "Embarazo"
-            CyclePhase.UNKNOWN    -> "Desconocida"
+            CyclePhase.MENSTRUAL  -> context.getString(R.string.phase_menstrual_name)
+            CyclePhase.FOLLICULAR -> context.getString(R.string.phase_follicular_name)
+            CyclePhase.OVULATION  -> context.getString(R.string.phase_ovulation_name)
+            CyclePhase.LUTEAL     -> context.getString(R.string.phase_luteal_name)
+            CyclePhase.PREGNANCY  -> context.getString(R.string.phase_pregnancy_name)
+            CyclePhase.UNKNOWN    -> context.getString(R.string.phase_unknown_name)
         }
         val phaseDescResId = when (ctx.phase) {
             CyclePhase.MENSTRUAL  -> R.array.chat_phase_desc_menstrual
@@ -223,7 +272,7 @@ class LumiRulesEngine @Inject constructor(
             else -> null
         }
         val phaseDesc = phaseDescResId?.let { getRandomStringArray(it) } ?: ""
-        val untilPeriod = if (ctx.daysUntilPeriod > 0) "Tu próximo periodo se estima en ${ctx.daysUntilPeriod} días." else ""
+        val untilPeriod = if (ctx.daysUntilPeriod > 0) context.getString(R.string.chat_phase_info_until_period, ctx.daysUntilPeriod) else ""
         
         return String.format(getRandomStringArray(R.array.chat_phase_info), 
             ctx.dayOfCycle, ctx.dayOfPhase, phaseName, phaseDesc, untilPeriod)

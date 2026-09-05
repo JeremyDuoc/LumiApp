@@ -131,9 +131,11 @@ class LumiAIPredictor @Inject constructor(
         val lutealPhaseLen     = 14f                                        // [2] constante clínica
         val mensesLen          = periodLength                               // [3]
         val totalMensesScore   = periodLength * 2f                          // [4] aproximación
-        val ageVal             = age    ?: means[5]                         // [5] fallback a media
-        val heightVal          = height ?: means[6]                         // [6]
-        val weightVal          = weight ?: means[7]                         // [7]
+        val ageVal             = age ?: means[5]                         // [5] fallback a media
+        // NOTA CLÍNICA: scaler_params.txt se entrenó en pulgadas y libras.
+        // Convertimos cm -> inches y kg -> lbs para que el Z-score normalizado sea biológicamente exacto.
+        val heightVal          = height?.let { it / 2.54f } ?: means[6]   // [6] pulgadas (media ~65.08 in)
+        val weightVal          = weight?.let { it * 2.20462f } ?: means[7] // [7] libras (media ~149.98 lbs)
         val bmi = if (height != null && weight != null && height > 0f) {
             val hm = height / 100f
             weight / (hm * hm)
@@ -153,36 +155,27 @@ class LumiAIPredictor @Inject constructor(
             (rawFeatures[i] - means[i]) / s
         }
 
-        // ── Inferencia TFLite ─────────────────────────────────────────────────
+        // ── Inferencia TFLite protegida contra accesos concurrentes ─────────
         val input  = arrayOf(scaledInput)
         val output = arrayOf(FloatArray(1))
 
-        return try {
-            interpreter!!.run(input, output)
-            val tflitePrediction = output[0][0].coerceIn(15f, 60f)
+        val (tflitePrediction, inferenceSuccess) = synchronized(this) {
+            val currentInterpreter = interpreter
+            if (currentInterpreter != null) {
+                try {
+                    currentInterpreter.run(input, output)
+                    Pair(output[0][0].coerceIn(15f, 60f), true)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error durante la inferencia TFLite: ${e.message}")
+                    Pair(currentCycleLen, false)
+                }
+            } else {
+                Pair(currentCycleLen, false)
+            }
+        }
 
-            // ── Blending adaptativo ───────────────────────────────────────────
-            // Con más historial y datos biométricos reales, confiamos más en TFLite
-            val blendWeight = if (closedCycles.size >= 6) TFLITE_BLEND_WEIGHT_HIGH
-                              else TFLITE_BLEND_WEIGHT_LOW
-            val blended = blendWeight * tflitePrediction + (1f - blendWeight) * currentCycleLen
-
-            // ── Puntuación de confianza ───────────────────────────────────────
-            val hasBiometrics = age != null && height != null && weight != null
-            val cycleBonus    = (closedCycles.size.coerceAtMost(12) / 12f) * 0.30f
-            val bioBonus      = if (hasBiometrics) 0.20f else 0f
-            val confidence    = (0.50f + cycleBonus + bioBonus).coerceIn(0f, 1f)
-
-            AIPredictionResult(
-                predictedCycleLength = blended,
-                confidenceScore      = confidence,
-                isIrregular          = isIrregular,
-                predictionRangeDays  = rangeDays,
-                source               = PredictionSource.BLENDED
-            )
-        } catch (e: Exception) {
-            Log.e(TAG, "Error durante la inferencia TFLite: ${e.message}")
-            AIPredictionResult(
+        if (!inferenceSuccess) {
+            return AIPredictionResult(
                 predictedCycleLength = currentCycleLen,
                 confidenceScore      = 0.3f,
                 isIrregular          = isIrregular,
@@ -190,6 +183,26 @@ class LumiAIPredictor @Inject constructor(
                 source               = PredictionSource.MATHEMATICAL
             )
         }
+
+        // ── Blending adaptativo ───────────────────────────────────────────
+        // Con más historial y datos biométricos reales, confiamos más en TFLite
+        val blendWeight = if (closedCycles.size >= 6) TFLITE_BLEND_WEIGHT_HIGH
+                          else TFLITE_BLEND_WEIGHT_LOW
+        val blended = blendWeight * tflitePrediction + (1f - blendWeight) * currentCycleLen
+
+        // ── Puntuación de confianza ───────────────────────────────────────
+        val hasBiometrics = age != null && height != null && weight != null
+        val cycleBonus    = (closedCycles.size.coerceAtMost(12) / 12f) * 0.30f
+        val bioBonus      = if (hasBiometrics) 0.20f else 0f
+        val confidence    = (0.50f + cycleBonus + bioBonus).coerceIn(0f, 1f)
+
+        return AIPredictionResult(
+            predictedCycleLength = blended,
+            confidenceScore      = confidence,
+            isIrregular          = isIrregular,
+            predictionRangeDays  = rangeDays,
+            source               = PredictionSource.BLENDED
+        )
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -203,8 +216,8 @@ class LumiAIPredictor @Inject constructor(
     private fun extractDurations(closedCycles: List<CycleEntity>): List<Float> =
         closedCycles.mapNotNull { cycle ->
             if (cycle.endDate == null) return@mapNotNull null
-            val start = Instant.ofEpochMilli(cycle.startDate).atZone(ZoneId.systemDefault()).toLocalDate()
-            val end   = Instant.ofEpochMilli(cycle.endDate).atZone(ZoneId.systemDefault()).toLocalDate()
+            val start = Instant.ofEpochMilli(cycle.startDate).atZone(ZoneId.of("UTC")).toLocalDate()
+            val end   = Instant.ofEpochMilli(cycle.endDate).atZone(ZoneId.of("UTC")).toLocalDate()
             val d     = ChronoUnit.DAYS.between(start, end).toFloat()
             if (d in 15f..60f) d else null
         }
@@ -218,9 +231,11 @@ class LumiAIPredictor @Inject constructor(
     }
 
     private fun loadModelFile(): MappedByteBuffer {
-        val fd = context.assets.openFd(MODEL_FILE)
-        return FileInputStream(fd.fileDescriptor).channel
-            .map(FileChannel.MapMode.READ_ONLY, fd.startOffset, fd.declaredLength)
+        return context.assets.openFd(MODEL_FILE).use { fd ->
+            FileInputStream(fd.fileDescriptor).use { stream ->
+                stream.channel.map(FileChannel.MapMode.READ_ONLY, fd.startOffset, fd.declaredLength)
+            }
+        }
     }
 
     private fun loadScalerParams() {
@@ -239,6 +254,7 @@ class LumiAIPredictor @Inject constructor(
         }
     }
 
+    @Synchronized
     fun close() {
         interpreter?.close()
         interpreter = null

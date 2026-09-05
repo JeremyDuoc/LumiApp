@@ -13,6 +13,7 @@ import dagger.hilt.components.SingletonComponent
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.ZoneOffset
 
 class WidgetUpdaterWorker(
     private val context: Context,
@@ -36,15 +37,15 @@ class WidgetUpdaterWorker(
             val closedCycles = repository.getClosedCycles()
             
             if (cycle != null) {
-                val startDate = Instant.ofEpochMilli(cycle.startDate).atZone(ZoneId.of("UTC")).toLocalDate()
+                val startDate = Instant.ofEpochMilli(cycle.startDate).atZone(ZoneOffset.UTC).toLocalDate()
                 val mathCycleLen = if (closedCycles.size >= 3) {
                     CyclePredictor.weightedAverageCycleLength(closedCycles).toInt().coerceIn(15, 60)
                 } else {
                     cycle.cycleLength.coerceAtLeast(15)
                 }
                 
-                val date = LocalDate.now()
-                val day = CyclePredictor.dayInCycleWrapped(startDate, mathCycleLen, date)
+                val date = com.jeremy.lumi.utils.LumiClock.todayLocalDate()
+                val day = CyclePredictor.dayInCycle(startDate, mathCycleLen, date)
                 val phaseEnum = CyclePredictor.phaseForDay(day, mathCycleLen, cycle.periodLength, isPregnant = false, isOnContraceptive = false)
                 
                 val phaseName = when (phaseEnum) {

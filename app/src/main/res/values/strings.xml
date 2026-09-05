@@ -8,6 +8,7 @@
     <string name="settings_phase_colors">Colores del ciclo</string>
     <string name="settings_phase_colors_desc">Elige cómo se ven las fases en tu calendario e inicio.</string>
     <string name="settings_phase_custom">Personalizar cada fase</string>
+    <string name="settings_more_colors">Más colores</string>
     <!-- Predicción -->
     <string name="predict_ovulation_in">Ovulación en %1$d días</string>
     <string name="predict_period_in">Periodo en %1$d días</string>
@@ -21,6 +22,8 @@
     <string name="chat_subtitle">Tu acompañante de ciclo</string>
     <string name="chat_empty_title">Aún no hay mensajes</string>
     <string name="chat_empty_desc">Cuando actives recordatorios, aparecerán aquí también</string>
+    <string name="chat_input_placeholder">Pregunta algo a Lumi…</string>
+    <string name="chat_send_cd">Enviar</string>
     <string name="chat_label_supply">Recordatorio</string>
     <string name="chat_label_method">Método</string>
     <string name="chat_label_custom">Personalizado</string>
@@ -207,7 +210,7 @@
     <string name="notif_patch_desc">Tu parche anticonceptivo necesita renovarse hoy</string>
 
     <!-- Notificaciones — tipos nuevos -->
-    <string name="notif_period_soon_title">Tu regla está cerca</string>
+    <string name="notif_period_soon_title">Tu periodo está cerca</string>
     <string name="notif_period_soon_desc">Según tu ciclo, debería llegar en los próximos días</string>
     <string name="notif_ovulation_title">Ventana fértil próxima</string>
     <string name="notif_ovulation_desc">Estás entrando en tu fase de ovulación</string>
@@ -233,16 +236,29 @@
 
     <!-- Opciones de Ánimo -->
     <string name="mood_happy">Feliz</string>
+    <string name="mood_calm">Calmada</string>
+    <string name="mood_energetic">Enérgica</string>
     <string name="mood_sensitive">Sensible</string>
     <string name="mood_sad">Triste</string>
+    <string name="mood_anxious">Ansiosa</string>
     <string name="mood_irritated">Irritable</string>
+    <string name="mood_overwhelmed">Abrumada</string>
 
     <!-- Opciones de Síntomas Comunes -->
     <string name="symp_cramps">Cólicos</string>
     <string name="symp_headache">Dolor de cabeza</string>
+    <string name="symp_migraine">Migraña</string>
+    <string name="symp_back_pain">Dolor lumbar</string>
     <string name="symp_acne">Acné</string>
     <string name="symp_bloating">Hinchazón</string>
     <string name="symp_fatigue">Fatiga</string>
+    <string name="symp_dizziness">Mareos</string>
+    <string name="symp_hot_flashes">Sofocos / Bochornos</string>
+    <string name="symp_insomnia">Insomnio</string>
+    <string name="symp_libido_high">Deseo sexual alto</string>
+    <string name="symp_libido_low">Deseo sexual bajo</string>
+    <string name="symp_lh_positive">Test ovulación LH (+)</string>
+    <string name="symp_lh_negative">Test ovulación LH (-)</string>
 
     <string name="cal_current_phase">Fase actual</string>
     <string name="phase_menstrual">Menstrual</string>
@@ -297,7 +313,7 @@
     <string name="insights_section_symptoms">Síntomas por fase</string>
     <string name="insights_section_mood">Estado de ánimo</string>
     <string name="insights_avg_cycle">Duración media</string>
-    <string name="insights_avg_period">Días de regla</string>
+    <string name="insights_avg_period">Días de periodo</string>
     <string name="insights_shortest">Ciclo más corto</string>
     <string name="insights_longest">Ciclo más largo</string>
     <string name="insights_days_suffix">días</string>
@@ -551,9 +567,9 @@
     <string name="observer_until_next">para el próximo cambio</string>
     
     <string name="phase_name_menstrual">Fase Menstrual</string>
-    <string name="phase_name_follicular">Fase Folicular</string>
-    <string name="phase_name_ovulation">Ovulación</string>
-    <string name="phase_name_luteal">Fase Lútea</string>
+    <string name="phase_name_follicular">F. Folicular (Estimada)</string>
+    <string name="phase_name_ovulation">Ventana Fértil (Estimada)</string>
+    <string name="phase_name_luteal">Fase Lútea (Estimada)</string>
     <string name="phase_name_pregnancy">Embarazo</string>
     <string name="phase_name_unknown">Esperando datos...</string>
     
@@ -582,107 +598,19 @@
     <string name="home_links_pill">Vínculos</string>
     <string name="home_stories_title">Tus vínculos</string>
 
-    <!-- Partner Pairing Screen -->
-    <string name="partner_links_title">Vínculos</string>
-    <string name="partner_empty_state_title">Tu círculo de cuidado</string>
-    <string name="partner_empty_state_desc">Conecta tu ciclo con alguien especial para acompañarse mutuamente.</string>
-    <string name="partner_empty_state_btn">Agregar vínculo</string>
-    <string name="partner_add_link">Agregar vínculo</string>
-    <string name="partner_loading_links">Cargando vínculos...</string>
-    <string name="partner_intimate_stories">Historias Íntimas</string>
-    <string name="partner_pending_links">Pendientes</string>
-    <string name="partner_default_name">Pareja</string>
-    <string name="partner_default_link_name">Vínculo</string>
-    <string name="partner_code_sent">Código enviado</string>
-    <string name="partner_observing_you">Tu vínculo te observa</string>
-    <string name="partner_cycle_of">Ciclo de %s</string>
-    <string name="partner_shared_cycle">Ciclo Compartido</string>
-    <string name="partner_waiting_join">Esperando a que tu pareja se una...</string>
-    <string name="partner_active_connection">Conexión Activa</string>
-    <string name="partner_invite_code">Código de invitación</string>
-    <string name="partner_copy_code">Copiar código</string>
-    <string name="partner_my_link">Mi Vínculo</string>
-    <string name="partner_active_link">Vínculo Activo</string>
-    <string name="partner_privacy_desc">Configura qué datos puede ver tu acompañante. Puedes cambiar esto en cualquier momento.</string>
-    <string name="partner_privacy_label">Privacidad</string>
-    <string name="partner_unlink">Desvincular</string>
-    <string name="partner_empty_links">Aún no tienes vínculos</string>
-    <string name="partner_empty_links_desc">Toca el botón + para compartir tu ciclo con alguien especial, o para acompañar a quien te importa.</string>
-    <string name="phase_name_active">Activo</string>
-    
-    <!-- Story Detail Screen -->
-    <string name="story_phase_menstrual_tip">Esta semana puede necesitar más descanso.</string>
-    <string name="story_phase_follicular_tip">Momento de energía y nuevos planes juntas.</string>
-    <string name="story_phase_ovulation_tip">Pico de energía — ideal para planes especiales.</string>
-    <string name="story_phase_luteal_tip">Puede preferir calma y momentos íntimos.</string>
-    <string name="story_mood">Ánimo: %s</string>
-    <string name="story_send_care_action">Enviar un detalle...</string>
-    <string name="story_care_action_cooldown">Ya enviaste un detalle reciente</string>
-    <string name="story_action_hug">Abrazo</string>
-    <string name="story_action_tea">Té</string>
-    <string name="story_action_coffee">Café</string>
-    <string name="story_action_choco">Choco</string>
-    <string name="story_action_help">Ayuda</string>
-
-    <!-- CycleSync Screen -->
-    <string name="cycle_sync_title">Ciclos Sincronizados</string>
-    <string name="cycle_sync_hug_received">💌 ¡Recibiste un abrazo!</string>
-    <string name="story_you">Tú</string>
-    <string name="cycle_sync_shared_energy">Energía Compartida</string>
-    <string name="cycle_sync_send_hug_button">Enviar un abrazo 🤗</string>
-    <string name="cycle_sync_hug_sent_button">Ya enviaste un abrazo 💜</string>
-    <string name="cycle_sync_hug_cooldown">Siguiente abrazo en %s</string>
-    <string name="cycle_sync_sync_title">Sincronía con %s</string>
-    
-    <!-- Phase Compatibility -->
-    <string name="compat_synced_title">¡Estáis sincronizadas! ✨</string>
-    <string name="compat_synced_advice">Vuestras energías están perfectamente alineadas. Es el momento ideal para compartir planes y apoyarse mutuamente.</string>
-    <string name="compat_hard_title">Semana de calma y cuidado</string>
-    <string name="compat_hard_advice">Ambas necesitáis descanso ahora. Sed pacientes la una con la otra y priorizad el autocuidado. Un buen momento para actividades tranquilas juntas.</string>
-    <string name="compat_energetic_title">¡Semana de alta energía!</string>
-    <string name="compat_energetic_advice">Las dos estáis en un momento brillante. Perfectas para proyectos, salidas o nuevos planes. ¡Aprovechadlo juntas!</string>
-    <string name="compat_complementary_title">Energías complementarias</string>
-    <string name="compat_complementary_advice">Una de vosotras está en un momento de alta energía. Es una oportunidad para apoyar y ser apoyada con comprensión y cariño.</string>
-    <string name="compat_pending_title">Datos pendientes</string>
-    <string name="compat_pending_advice">Cuando ambas registréis vuestro ciclo, podréis ver vuestra energía compartida aquí.</string>
-    <string name="compat_moving_title">Ciclos en movimiento</string>
-    <string name="compat_moving_advice">Cada ciclo es único. Compartir este camino con alguien especial hace que todo sea más llevadero.</string>
-
-    <!-- Dual Calendar -->
-    <string name="dual_calendar_back">Volver</string>
-    <string name="dual_calendar_title">Calendario compartido</string>
-    <string name="dual_calendar_energy_chip">✨ Energía</string>
-    <string name="dual_calendar_high_energy_banner">✨ Tienen semanas de alta energía compartida este mes — ideal para planes juntas.</string>
-
-    <!-- Shared Diary -->
-    <string name="shared_diary_title">Diario compartido</string>
-    <string name="shared_diary_subtitle">Solo visible entre vosotras</string>
-    <string name="shared_diary_empty_title">Vuestro espacio íntimo</string>
-    <string name="shared_diary_empty_desc">Mensajes privados, contextualizados\npor la fase del ciclo.</string>
-    <string name="shared_diary_input_hint">Escribe algo íntimo...</string>
-    <string name="shared_diary_send">Enviar</string>
-    
+    <!-- Los strings del Modo Pareja v1 se eliminaron: la versión nueva usa el prefijo pm_ (al final del archivo) -->
     <string name="error_schedule_alarm">Error al programar alarma: %1$s</string>
-    <string name="partner_mode_title">Modo Pareja</string>
-    <string name="partner_mode_subtitle">Tu constelación de ciclos</string>
-    <string name="cycle_echo_title">Semana de alta energía</string>
-    <string name="cycle_echo_desc">%1$s y %2$s están en fase alta al mismo tiempo</string>
-    <string name="partner_action_diary">Diario</string>
-    <string name="partner_action_calendar">Calendario</string>
-    <string name="partner_empty_title">Tu espacio de conexión</string>
-    <string name="partner_empty_desc">Comparte tu ciclo con alguien de confianza y conéctate en tiempo real.</string>
-    <string name="partner_add_btn">Añadir conexión</string>
     <!-- FIX P3-5: Strings de ajustes de anticonceptivos (antes hardcodeados) -->
     <string name="settings_contraceptive_title">Anticonceptivos Hormonales</string>
-    <string name="settings_contraceptive_desc">Pastillas (Ciclo exacto de 28 das)</string>
+    <string name="settings_contraceptive_desc">Pastillas (Ciclo exacto de 28 días)</string>
 
     <!-- FIX P2-5: Aviso para pantalla de Insights en modo pastilla -->
-    <string name="insights_pill_mode_note">Usas anticonceptivos hormonales. Los datos de ovulacin y fase ltea no aplican a tu ciclo regulado.</string>
+    <string name="insights_pill_mode_note">Usas anticonceptivos hormonales. Los datos de ovulación y fase lútea no aplican a tu ciclo regulado.</string>
     <!-- FIX P2-2: Textos del banner de prediccin en Calendario -->
-    <string name="calendar_next_period_in">Prxima menstruacin en %d das</string>
-    <string name="calendar_period_today">Tu periodo podra llegar hoy</string>
-    <string name="calendar_period_tomorrow">Tu periodo se espera maana</string>
-    <string name="calendar_period_late">Periodo con %d das de retraso</string>
+    <string name="calendar_next_period_in">Próxima menstruación en %d días</string>
+    <string name="calendar_period_today">Tu periodo podría llegar hoy</string>
+    <string name="calendar_period_tomorrow">Tu periodo se espera mañana</string>
+    <string name="calendar_period_late">Periodo con %d días de retraso</string>
 
     <!-- Bivariable Insights (Personalizados y Empáticos) -->
     <string name="insights_lumi_discoveries">Descubrimientos Lumi</string>
@@ -720,4 +648,439 @@
     <string name="onboarding_regular_subtitle">Esto nos ayuda a saber cómo hacer tus predicciones.</string>
     <string name="onboarding_last_period_title">¿Cuándo empezó tu último periodo?</string>
     <string name="onboarding_last_period_subtitle">Una fecha aproximada está bien.</string>
+
+    <!-- ═══════════ Respaldo privado en Google Drive ═══════════ -->
+    <string name="backup_screen_title">Respaldo privado</string>
+    <string name="backup_back">Volver</string>
+    <string name="backup_settings_entry_title">Respaldo en Google Drive</string>
+    <string name="backup_settings_entry_subtitle">Cifrado, privado y en tu propia cuenta</string>
+
+    <!-- Tarjeta hero de privacidad -->
+    <string name="backup_hero_title">Tus datos, solo en tu nube</string>
+    <string name="backup_hero_subtitle">Lumi no tiene servidores propios: tu información viaja cifrada directamente de tu teléfono a tu Google Drive personal.</string>
+    <string name="backup_hero_point_encrypted">Cifrado de extremo a extremo con una contraseña que solo tú conoces</string>
+    <string name="backup_hero_point_no_servers">Nunca pasa por servidores de Lumi ni de terceros</string>
+    <string name="backup_hero_point_hidden">Vive en una carpeta oculta de tu Drive, invisible para otras apps</string>
+
+    <!-- Conexión -->
+    <string name="backup_connect_button">Conectar con Google Drive</string>
+    <string name="backup_connect_hint">Solo pediremos el permiso de «datos de aplicación»: Lumi no puede ver tus archivos, fotos ni documentos.</string>
+    <string name="backup_connected_as">Conectada como %1$s</string>
+    <string name="backup_checking_remote">Buscando tu respaldo…</string>
+    <string name="backup_last_backup">Último respaldo: %1$s</string>
+    <string name="backup_no_remote">Aún no hay respaldos en tu Drive</string>
+
+    <!-- Acciones -->
+    <string name="backup_now_button">Respaldar ahora</string>
+    <string name="backup_restore_button">Restaurar</string>
+    <string name="backup_auto_title">Respaldo automático</string>
+    <string name="backup_auto_subtitle">Una vez al día, con conexión a internet</string>
+    <string name="backup_delete_remote">Eliminar respaldo de la nube</string>
+    <string name="backup_disconnect">Desconectar cuenta</string>
+
+    <!-- Estados de operación -->
+    <string name="backup_status_connecting">Conectando con Google…</string>
+    <string name="backup_status_preparing">Preparando tus datos…</string>
+    <string name="backup_status_uploading">Cifrando y subiendo a tu Drive…</string>
+    <string name="backup_status_downloading">Descargando tu respaldo…</string>
+    <string name="backup_status_restoring">Descifrando y restaurando tus datos…</string>
+    <string name="backup_status_deleting">Eliminando el respaldo…</string>
+    <string name="backup_status_disconnecting">Desconectando…</string>
+    <string name="backup_success_created">Respaldo guardado en tu Google Drive</string>
+    <string name="backup_success_deleted">Respaldo eliminado de tu Drive</string>
+
+    <!-- Errores -->
+    <string name="backup_error_generic">Algo salió mal. Inténtalo de nuevo.</string>
+    <string name="backup_error_network">Sin conexión con Google Drive. Revisa tu internet.</string>
+    <string name="backup_error_auth">No se pudo acceder a tu cuenta de Google. Vuelve a conectarte.</string>
+    <string name="backup_error_no_backup">No encontramos ningún respaldo en esta cuenta.</string>
+    <string name="backup_error_wrong_pass">Contraseña incorrecta. Vuelve a intentarlo.</string>
+    <string name="backup_error_corrupt">El archivo de respaldo está dañado o no es válido.</string>
+    <string name="backup_error_newer_version">Este respaldo se creó con una versión más nueva de Lumi. Actualiza la app para restaurarlo.</string>
+
+    <!-- Contraseña de cifrado -->
+    <string name="backup_pass_create_title">Crea tu contraseña de cifrado</string>
+    <string name="backup_pass_create_desc">Con ella se cifra tu respaldo antes de salir del teléfono. Es independiente de tu cuenta de Google.</string>
+    <string name="backup_pass_warning">Importante: si la olvidas, nadie —ni siquiera Lumi— podrá recuperar tu respaldo.</string>
+    <string name="backup_pass_label">Contraseña</string>
+    <string name="backup_pass_confirm_label">Confirmar contraseña</string>
+    <string name="backup_pass_min_error">Debe tener al menos 8 caracteres</string>
+    <string name="backup_pass_mismatch">Las contraseñas no coinciden</string>
+    <string name="backup_pass_enter_title">Introduce tu contraseña de cifrado</string>
+    <string name="backup_pass_enter_desc">Es la contraseña que creaste al hacer tu primer respaldo en cualquiera de tus dispositivos.</string>
+    <string name="backup_pass_show">Mostrar contraseña</string>
+    <string name="backup_pass_hide">Ocultar contraseña</string>
+
+    <!-- Confirmaciones -->
+    <string name="backup_restore_confirm_title">¿Restaurar respaldo?</string>
+    <string name="backup_restore_confirm_desc">Tus ciclos y registros actuales de este teléfono se reemplazarán por los del respaldo. Esta acción no se puede deshacer.</string>
+    <string name="backup_restart_title">Restauración completa</string>
+    <string name="backup_restart_desc">Lumi se reiniciará para cargar tus datos restaurados.</string>
+    <string name="backup_restart_button">Reiniciar ahora</string>
+    <string name="backup_disconnect_confirm_title">¿Desconectar tu cuenta?</string>
+    <string name="backup_disconnect_confirm_desc">Se borrará la clave de cifrado guardada en este teléfono y se desactivará el respaldo automático. Tu respaldo seguirá intacto en tu Drive.</string>
+    <string name="backup_delete_confirm_title">¿Eliminar el respaldo de tu Drive?</string>
+    <string name="backup_delete_confirm_desc">Se borrará el archivo cifrado de tu Google Drive. Los datos locales de este teléfono no se tocan.</string>
+    <string name="backup_action_cancel">Cancelar</string>
+    <string name="backup_action_continue">Continuar</string>
+    <string name="backup_action_confirm_delete">Sí, eliminar</string>
+    <string name="backup_action_confirm_disconnect">Sí, desconectar</string>
+
+    <!-- Preguntas frecuentes -->
+    <string name="backup_faq_title">¿Cómo funciona?</string>
+    <string name="backup_faq_q1">¿Dónde se guardan mis datos?</string>
+    <string name="backup_faq_a1">En el «App Data Folder» de tu Google Drive: una carpeta técnica que solo Lumi puede usar. No aparece entre tus archivos y ninguna otra app puede leerla. Puedes borrarla cuando quieras desde los ajustes de tu cuenta de Google (Drive → Gestionar aplicaciones).</string>
+    <string name="backup_faq_q2">¿Quién puede leer mi respaldo?</string>
+    <string name="backup_faq_a2">Solo tú. El archivo se cifra en tu teléfono con AES-256 usando tu contraseña antes de subirse. Ni Lumi ni Google pueden descifrarlo: sin tu contraseña es ilegible.</string>
+    <string name="backup_faq_q3">¿Cómo lo recupero en un teléfono nuevo?</string>
+    <string name="backup_faq_a3">Instala Lumi, conecta la misma cuenta de Google, pulsa «Restaurar» y escribe tu contraseña de cifrado. Tus ciclos, registros y síntomas volverán tal como estaban.</string>
+    <!-- Medical Pattern Alerts -->
+    <string name="alert_pcos_title">Patrón de Irregularidad Detectado</string>
+    <string name="alert_pcos_desc">Hemos notado una variación inusual en la duración de tus últimos ciclos. Aunque es normal tener variaciones por estrés o cambios de rutina, una irregularidad constante podría estar asociada a condiciones como el SOP. \n\n*Nota: LumiApp no es una herramienta de diagnóstico. Te sugerimos comentarlo con tu médico.*</string>
+    <string name="alert_endo_title">Patrón de Dolor Severo Detectado</string>
+    <string name="alert_endo_desc">Tus registros indican niveles de dolor muy altos de forma repetida durante la menstruación. Sentir un poco de molestia es común, pero el dolor incapacitante no lo es y podría ser un síntoma de Endometriosis. \n\n*Nota: LumiApp no es una herramienta de diagnóstico. Te recomendamos hablar de esto con un especialista.*</string>
+    <string name="alert_medical_disclaimer_short">Sugerencia basada en tus registros. LumiApp no diagnostica condiciones médicas.</string>
+
+    <!-- ═══════════ Modo Pareja v2 ═══════════ -->
+    <!-- Comunes -->
+    <string name="pm_back">Volver</string>
+    <string name="pm_next">Continuar</string>
+    <string name="pm_done">Listo</string>
+
+    <!-- Fases (vocabulario compartido del Modo Pareja) -->
+    <string name="pm_phase_menstrual">Menstruación</string>
+    <string name="pm_phase_follicular">Fase folicular</string>
+    <string name="pm_phase_ovulation">Ovulación</string>
+    <string name="pm_phase_luteal">Fase lútea</string>
+    <string name="pm_phase_pregnancy">Embarazo</string>
+    <string name="pm_phase_unknown">Sin datos</string>
+
+    <!-- Detalles (Care Actions) -->
+    <string name="pm_care_hug">Abrazo</string>
+    <string name="pm_care_tea">Té calentito</string>
+    <string name="pm_care_coffee">Café</string>
+    <string name="pm_care_chocolate">Chocolate</string>
+    <string name="pm_care_heating_pad">Almohadilla térmica</string>
+    <string name="pm_care_pharmacy">Ir a la farmacia</string>
+    <string name="pm_care_sheet_title">Envía un detalle</string>
+    <string name="pm_care_sheet_subtitle">Un gesto pequeño que llega al instante</string>
+    <string name="pm_care_cooldown">Podrás enviar otro detalle en %1$s</string>
+
+    <!-- Onboarding -->
+    <string name="pm_onboarding_title">Modo Pareja</string>
+    <string name="pm_chooser_title">Comparte tu ciclo con quien te cuida</string>
+    <string name="pm_chooser_subtitle">Vincúlate con tu pareja, una amiga o alguien de confianza. Tú controlas qué ve cada persona y puedes revocarlo cuando quieras.</string>
+    <string name="pm_chooser_create_title">Invitar a alguien</string>
+    <string name="pm_chooser_create_desc">Genera un código para que otra persona te acompañe</string>
+    <string name="pm_chooser_join_title">Tengo un código</string>
+    <string name="pm_chooser_join_desc">Alguien te invitó a acompañar su ciclo</string>
+    <string name="pm_role_title">¿Qué tipo de vínculo quieres?</string>
+    <string name="pm_role_subtitle">Define cómo participará la otra persona.</string>
+    <string name="pm_role_observer_title">Acompañante</string>
+    <string name="pm_role_observer_desc">La otra persona no registra su ciclo: te acompaña, ve solo lo que compartas y puede enviarte detalles.</string>
+    <string name="pm_role_sync_title">Sincronía</string>
+    <string name="pm_role_sync_desc">Ambas registran su ciclo y comparten un calendario para ver sus fases en paralelo.</string>
+    <string name="pm_privacy_title">Tú decides qué compartir</string>
+    <string name="pm_privacy_subtitle">Estos permisos aplican solo a este vínculo y puedes cambiarlos en cualquier momento.</string>
+    <string name="pm_privacy_phase">Fase del ciclo</string>
+    <string name="pm_privacy_phase_desc">En qué fase estás y el día del ciclo</string>
+    <string name="pm_privacy_mood">Estado de ánimo</string>
+    <string name="pm_privacy_mood_desc">Tu ánimo registrado del día</string>
+    <string name="pm_privacy_symptoms">Síntomas</string>
+    <string name="pm_privacy_symptoms_desc">Los síntomas que registres hoy</string>
+    <string name="pm_privacy_predictions">Predicciones</string>
+    <string name="pm_privacy_predictions_desc">Próximo periodo, retrasos y proyección del calendario compartido</string>
+    <string name="pm_privacy_note">Solo se comparte tu presente, nunca tu historial. Tus registros completos no salen de tu teléfono.</string>
+    <string name="pm_identity_title">Así te verá</string>
+    <string name="pm_identity_subtitle">Elige un nombre y un avatar para identificarte dentro del vínculo.</string>
+    <string name="pm_identity_name_label">Tu nombre</string>
+    <string name="pm_identity_relation_label">Etiqueta del vínculo (opcional)</string>
+    <string name="pm_create_link_cta">Crear invitación</string>
+    <string name="pm_join_cta">Unirme</string>
+    <string name="pm_code_result_title">Comparte este código</string>
+    <string name="pm_code_result_subtitle">Es de un solo uso: cuando la otra persona lo introduzca, el vínculo se activará.</string>
+    <string name="pm_share_link_button">Compartir enlace de invitación</string>
+    <string name="pm_share_link_text">Acompáñame en Lumi. Abre este enlace para vincularte: %1$s</string>
+    <string name="pm_join_code_title">Introduce el código</string>
+    <string name="pm_join_code_subtitle">Pídele a la otra persona el código de 6 dígitos de su invitación.</string>
+    <string name="pm_join_code_label">Código de 6 dígitos</string>
+    <string name="pm_join_success_title">Vínculo activado</string>
+    <string name="pm_join_success_subtitle">Ya están conectadas. Verás al instante lo que la otra persona comparta contigo.</string>
+    <string name="pm_go_to_hub">Ir al Modo Pareja</string>
+    <string name="pm_error_generic">Algo salió mal. Revisa tu conexión e inténtalo de nuevo.</string>
+    <string name="pm_error_invalid_code">Código inválido o ya utilizado.</string>
+
+    <!-- Hub -->
+    <string name="pm_hub_title">Modo Pareja</string>
+    <string name="pm_hub_subtitle">Tu constelación de vínculos</string>
+    <string name="pm_hub_empty_title">Tu espacio de conexión</string>
+    <string name="pm_hub_empty_desc">Comparte tu ciclo con alguien de confianza y recibe sus cuidados en tiempo real.</string>
+    <string name="pm_hub_add">Añadir vínculo</string>
+    <string name="pm_hub_pending_title">Invitación pendiente</string>
+    <string name="pm_hub_pending_desc">Código %1$s — esperando a que alguien se una</string>
+    <string name="pm_hub_view_story">Historia</string>
+    <string name="pm_hub_dual_calendar">Calendario</string>
+    <string name="pm_hub_send_care_short">Detalle</string>
+    <string name="pm_hub_unlink">Desvincular</string>
+    <string name="pm_hub_unlink_confirm_title">¿Desvincular?</string>
+    <string name="pm_hub_unlink_confirm_desc">La otra persona dejará de ver tu información y el vínculo quedará revocado. Esta acción no se puede deshacer.</string>
+    <string name="pm_hub_unlink_confirm_yes">Sí, desvincular</string>
+    <string name="pm_link_type_observer">Acompañante</string>
+    <string name="pm_link_type_sync">Sincronía</string>
+
+    <!-- Historia (dashboard tipo historias) -->
+    <string name="pm_story_close">Cerrar</string>
+    <string name="pm_story_updated">Actualizado %1$s</string>
+    <string name="pm_story_phase_title">Fase actual</string>
+    <string name="pm_story_day_label">Día %1$d del ciclo</string>
+    <string name="pm_story_mood_title">Ánimo de hoy</string>
+    <string name="pm_story_mood_empty">Sin registro de ánimo hoy</string>
+    <string name="pm_story_symptoms_title">Síntomas de hoy</string>
+    <string name="pm_story_symptoms_empty">Sin síntomas registrados hoy</string>
+    <string name="pm_story_prediction_title">Próximo periodo</string>
+    <string name="pm_story_prediction_days">En %1$d días</string>
+    <string name="pm_story_prediction_today">Podría llegar hoy</string>
+    <string name="pm_story_late_banner">Lleva %1$d días de retraso</string>
+    <string name="pm_story_no_data">Aún no hay datos compartidos</string>
+    <string name="pm_story_no_data_desc">Cuando registre su día, lo verás aquí al instante.</string>
+    <string name="pm_story_private">Contenido privado</string>
+    <string name="pm_story_private_desc">Ha preferido no compartir esta parte por ahora.</string>
+
+    <!-- Calendario Compartido -->
+    <string name="pm_dual_title">Calendario Compartido</string>
+    <string name="pm_dual_subtitle">%1$s y %2$s</string>
+    <string name="pm_dual_me">Yo</string>
+    <string name="pm_dual_partner_fallback">Mi vínculo</string>
+    <string name="pm_dual_month_prev">Mes anterior</string>
+    <string name="pm_dual_month_next">Mes siguiente</string>
+    <string name="pm_dual_overlap_banner">Sus fases menstruales coinciden %1$d días este mes</string>
+    <string name="pm_dual_overlap_none">Sin coincidencias de fase menstrual este mes</string>
+    <string name="pm_dual_no_partner_data">Aún no hay proyección del ciclo de %1$s</string>
+    <string name="pm_dual_no_partner_data_desc">Necesita registrar su ciclo y tener activado compartir predicciones para que su calendario aparezca aquí.</string>
+
+    <!-- Diario Compartido -->
+    <string name="pm_diary_title">Diario Compartido</string>
+    <string name="pm_diary_title_short">Diario</string>
+    <string name="pm_diary_subtitle">Solo visible entre ustedes</string>
+    <string name="pm_diary_empty_title">Su espacio íntimo</string>
+    <string name="pm_diary_empty_desc">Notas privadas con el contexto de la fase del ciclo de quien escribe.</string>
+    <string name="pm_diary_hint">Escribe algo íntimo…</string>
+    <string name="pm_diary_send">Enviar</string>
+
+    <!-- Notificaciones push del Modo Pareja -->
+    <string name="pm_notif_channel_name">Modo Pareja</string>
+    <string name="pm_notif_channel_desc">Detalles y avisos de tus vínculos</string>
+    <string name="pm_notif_sender_fallback">Tu vínculo</string>
+    <string name="pm_notif_care_title">Te han enviado un detalle</string>
+    <string name="pm_notif_care_hug">%1$s te envía un abrazo</string>
+    <string name="pm_notif_care_tea">%1$s te prepara un té</string>
+    <string name="pm_notif_care_coffee">%1$s te trae un café</string>
+    <string name="pm_notif_care_chocolate">%1$s te trae chocolate</string>
+    <string name="pm_notif_care_heating_pad">%1$s te acerca la almohadilla térmica</string>
+    <string name="pm_notif_care_pharmacy">%1$s va a la farmacia por ti</string>
+    <string name="pm_notif_late_title">Acompañamiento</string>
+    <string name="pm_notif_late_body">El periodo de %1$s lleva %2$d días de retraso. Quizá agradezca tu apoyo.</string>
+
+    <!-- ═══════════ Estados vacíos ═══════════ -->
+    <string name="empty_cal_today_title">Aún no has registrado síntomas hoy</string>
+    <string name="empty_cal_today_desc">Un minuto de registro ayuda a Lumi a afinar tus predicciones.</string>
+    <string name="empty_cal_today_cta">Registrar mi día</string>
+    <string name="empty_insights_title">Tus descubrimientos están en camino</string>
+    <string name="empty_insights_desc">Registra tu ciclo y tus días durante un par de semanas: aquí aparecerán tus patrones de sueño, dolor, energía y mucho más.</string>
+    <!-- HomeScreen Hardcoded Strings -->
+    <string name="home_greeting_hello">Hola</string>
+    <string name="home_greeting_day">Día %1$d</string>
+    
+    <string name="home_phase_menstrual">Fase Menstrual</string>
+    <string name="home_phase_follicular">Fase Folicular (estimada)</string>
+    <string name="home_phase_ovulation">Ventana de Ovulación (estimada)</string>
+    <string name="home_phase_luteal">Fase Lútea (estimada)</string>
+    <string name="home_phase_unknown">Fase Desconocida</string>
+    <string name="home_phase_hidden">Fase Oculta</string>
+    
+    <string name="home_ring_period_day">Día %1$d</string>
+    <string name="home_ring_period_active">de tu periodo</string>
+    <string name="home_ring_approx_days">~%1$d días</string>
+    <string name="home_ring_approx_days_range">En %1$d–%2$d días</string>
+    <string name="home_ring_soon">Próximos días</string>
+    <string name="home_ring_estimated_arrival">Llegada estimada</string>
+    <string name="home_ring_window_subtitle">Ventana: %1$s</string>
+    <string name="home_ring_normal_variation_title">Margen normal</string>
+    <string name="home_ring_normal_variation_sub">+%1$d días de variación habitual</string>
+    <string name="home_ring_late_title">+%1$d días</string>
+    <string name="home_ring_late_sub">Retraso en el ciclo</string>
+    <string name="home_ring_late">Retraso</string>
+    <string name="home_ring_days">%1$d días</string>
+    <string name="home_ring_dash">—</string>
+    <string name="home_ring_should_have_arrived">Tu periodo debería haber llegado</string>
+    <string name="home_ring_next_period">para el próximo periodo</string>
+    
+    <string name="home_metric_water">Agua</string>
+    <string name="home_metric_sleep">Sueño</string>
+    <string name="home_metric_water_empty">-- L</string>
+    <string name="home_metric_water_value">%1$.1f L</string>
+    <string name="home_metric_sleep_empty">-- h</string>
+    <string name="home_metric_sleep_value">%1$.1f h</string>
+    
+    <string name="home_insight_cd">IA Insight</string>
+    <string name="home_insight_title">Lumi Insight</string>
+    <string name="home_insight_discreet">Modo oculto activado. Tus datos están protegidos.</string>
+    
+    <string name="home_insight_menstrual_1">Tu cuerpo está trabajando duro. Es normal sentir poca energía y más necesidad de descanso hoy.</string>
+    <string name="home_insight_menstrual_2">El flujo empezará a disminuir pronto. Recuerda mantenerte hidratada y ser amable contigo misma.</string>
+    <string name="home_insight_follicular">Tus niveles de estrógeno están subiendo. Notarás más energía, mejor humor y mayor creatividad. ¡Aprovecha el impulso!</string>
+    <string name="home_insight_ovulation">Estás en tu pico de energía y magnetismo. Excelente momento para conectar con otros y abordar retos importantes.</string>
+    <string name="home_insight_luteal_1">Tu energía se vuelve más tranquila. Es un buen momento para tareas enfocadas y organización personal.</string>
+    <string name="home_insight_luteal_2">Tu cuerpo se prepara para el siguiente ciclo. Puedes notar cambios de humor o menor energía. Tómate las cosas con más calma.</string>
+    <string name="home_insight_luteal_window">Tu periodo suele presentarse en una ventana estimada. Es fisiológicamente normal que oscile unos días. Mantén tus suministros a mano y prioriza el descanso.</string>
+    <string name="home_insight_unknown">Comienza a registrar tu periodo para conocer qué está pasando en tu cuerpo.</string>
+    <string name="pm_diary_empty_cta">Escribir la primera nota</string>
+    <string name="home_timeline_viewing_date">Viendo: %1$s</string>
+    <string name="home_timeline_back_to_today">Volver a hoy</string>
+    <string name="home_timeline_preview_tag">Vista previa</string>
+
+    <!-- Dial Style Settings -->
+    <string name="settings_dial_style_title">Estilo del aro</string>
+    <string name="settings_dial_style_gradient">Gradiente continuo</string>
+    <string name="settings_dial_style_gradient_desc">El diseño clásico fluido que funde armónicamente los colores de todas las fases.</string>
+    <string name="settings_dial_style_cycle_map">Mapa del ciclo</string>
+    <string name="settings_dial_style_cycle_map_desc">Muestra los 4 sectores del ciclo de fondo y resalta el progreso actual.</string>
+    <string name="settings_dial_style_minimalist">Minimalista</string>
+    <string name="settings_dial_style_minimalist_desc">Enfoca el aro en el color de la fase biológica activa.</string>
+    <string name="settings_phase_palette_auto_harmony">Armonía automática (recomendado)</string>
+    
+    <!-- CalendarScreen Hardcoded Strings -->
+    <string name="cal_legend_title_cd">Leyenda</string>
+    <string name="cal_today_cd">Hoy</string>
+    <string name="cal_mode_month">Mes</string>
+    <string name="cal_mode_year">Año</string>
+    <string name="cal_current_phase_label">Fase: %1$s</string>
+    <string name="cal_current_day_pill"> • Día %1$d</string>
+    <string name="cal_prev_month_desc">Mes anterior</string>
+    <string name="cal_next_month_desc">Mes siguiente</string>
+    <string name="cal_legend_title">Leyenda del Calendario</string>
+    <string name="btn_understood">Entendido</string>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- MOTOR BIOESTADÍSTICO AVANZADO — Correlaciones, Clústeres, Alertas  -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+
+    <!-- Sección de correlaciones avanzadas en Insights -->
+    <string name="insights_section_correlations">Patrones personales detectados</string>
+    <string name="insights_section_correlations_subtitle">Basado en tus registros de los últimos meses</string>
+    <string name="insights_no_correlations">Sigue registrando cada día para que pueda descubrir tus patrones únicos. ¡Necesito al menos 8 días con datos!</string>
+    <string name="insights_correlation_confidence">Certeza estadística: %1$d%%</string>
+    <string name="insights_correlation_sample">Basado en %1$d días de registro</string>
+
+    <!-- Etiquetas de variables biológicas -->
+    <string name="bio_var_sleep">sueño</string>
+    <string name="bio_var_pain">dolor</string>
+    <string name="bio_var_stress">estrés</string>
+    <string name="bio_var_energy">energía</string>
+    <string name="bio_var_water">hidratación</string>
+    <string name="bio_var_bbt">temperatura basal</string>
+
+    <!-- Títulos de insights de correlación -->
+    <string name="insight_corr_title_sleep_pain">Tu sueño y tu bienestar físico</string>
+    <string name="insight_corr_title_sleep_stress">Sueño y estrés: conectados</string>
+    <string name="insight_corr_title_sleep_energy">El sueño como fuente de energía</string>
+    <string name="insight_corr_title_stress_energy">Estrés vs. vitalidad</string>
+    <string name="insight_corr_title_stress_pain">Estrés y molestias físicas</string>
+    <string name="insight_corr_title_water_pain">Hidratación y dolor</string>
+    <string name="insight_corr_title_bbt">Temperatura basal y tu ciclo</string>
+    <string name="insight_corr_title_general">Patrón personal detectado</string>
+
+    <!-- Mensajes de correlación — versiones positivas y negativas -->
+    <string-array name="insight_corr_msg_sleep_pain_positive">
+        <item>He analizado tus registros y encontré algo claro: cuando duermes bien, tu dolor disminuye significativamente. Tu cuerpo se recupera mientras descansas. 💜</item>
+        <item>Los datos muestran que el descanso es tu mejor aliado contra el malestar. Más sueño = menos dolor, y lo veo en tus propios registros.</item>
+        <item>Tu cuerpo habla muy claro: una buena noche de sueño se traduce en mucho menos dolor al día siguiente. ¡Priorizar el descanso es medicina!</item>
+    </string-array>
+    <string-array name="insight_corr_msg_sleep_pain_negative">
+        <item>He detectado un patrón en tus datos: cuando duermes menos, tu nivel de dolor sube. No es coincidencia, la privación de sueño aumenta la inflamación. 🌙</item>
+        <item>Tus registros revelan que los días de poco sueño coinciden con más malestar físico. Tu cuerpo necesita ese descanso para regular el dolor.</item>
+        <item>¿Sabías que el sueño es uno de los mejores analgésicos naturales? Tus datos lo confirman: a menos horas de sueño, más dolor experimentas.</item>
+    </string-array>
+
+    <string-array name="insight_corr_msg_stress_energy_negative">
+        <item>Lo veo claramente en tus registros: los días de alto estrés tu energía cae en picada. Tu cuerpo y mente están íntimamente conectados. ✨</item>
+        <item>El estrés está consumiendo tu batería interna. Tus datos muestran una caída clara de energía en los días más tensos. Una pausa puede cambiar todo.</item>
+        <item>He notado que cuando el estrés sube, tu vitalidad baja. No es debilidad, es biología. Tu sistema nervioso necesita momentos de calma para recargar. 🧘‍♀️</item>
+    </string-array>
+
+    <string-array name="insight_corr_msg_stress_pain_positive">
+        <item>Tus registros muestran que cuando el estrés es alto, las molestias físicas también suben. El estrés crónico tensiona los músculos y amplifica el dolor.</item>
+        <item>He detectado que el estrés y tu dolor van de la mano en tus datos. Técnicas de relajación no solo benefician tu mente, también alivian el cuerpo.</item>
+        <item>Un patrón claro emerge: más estrés = más malestar físico. Tu cuerpo te está pidiendo que cuides también tu bienestar emocional. 💜</item>
+    </string-array>
+
+    <string-array name="insight_corr_msg_sleep_energy_positive">
+        <item>¡Tu sueño es literalmente tu fuente de energía! Tus datos lo confirman: dormir más horas se traduce directamente en más vitalidad al día siguiente.</item>
+        <item>He notado que tus días con más energía coinciden con noches de mejor descanso. Tu cuerpo se recarga como un teléfono — ¡no ignores esa carga nocturna!</item>
+        <item>La conexión es clara en tus registros: el sueño alimenta tu energía. Priorizar el descanso no es un lujo, es tu inversión en el día siguiente. ✨</item>
+    </string-array>
+
+    <string-array name="insight_corr_msg_water_pain_negative">
+        <item>He encontrado algo interesante: en los días que te hidratas menos, las molestias físicas tienden a ser mayores. El agua es antiinflamatoria natural.</item>
+        <item>Tus registros sugieren que la hidratación tiene un efecto real en cómo te sientes. Beber más agua en los días difíciles puede marcar la diferencia. 💧</item>
+        <item>Un dato fascinante de tus logs: menos agua = más malestar. Tu cuerpo necesita hidratación para funcionar sin dolor. ¡Hoy llena la botella! 💙</item>
+    </string-array>
+
+    <!-- Mensajes para correlaciones con efecto diferido (lag T-1 → T) -->
+    <string-array name="insight_corr_msg_sleep_pain_lag">
+        <item>He descubierto algo fascinante: el insomnio de un día parece provocar más malestar AL DÍA SIGUIENTE. Tu cuerpo tarda unas horas en acusar la falta de sueño. 🌙</item>
+        <item>Tus datos revelan un efecto retardado: la mala noche de ayer influyó en cómo te sentiste hoy. Cada noche de buen sueño es una inversión para mañana.</item>
+    </string-array>
+    <string-array name="insight_corr_msg_stress_pain_lag">
+        <item>He notado un patrón diferido: el estrés del día anterior tiende a aparecer como malestar físico al día siguiente. Tu cuerpo acumula la tensión.</item>
+        <item>Curioso: tus momentos de alto estrés se "convierten" en dolor unas 24 horas después. Gestionar el estrés hoy es cuidarte mañana. 💜</item>
+    </string-array>
+
+    <!-- Mensajes de correlación general -->
+    <string-array name="insight_corr_msg_general">
+        <item>He encontrado una conexión estadísticamente significativa entre dos de tus métricas de bienestar. Sigue registrando para refinar este patrón personal.</item>
+        <item>Tus datos revelan una correlación personal interesante. Esto es exclusivo de tu biología — lo que funciona para ti, basado en tus propios registros.</item>
+    </string-array>
+
+    <!-- ── Clústeres de síntomas ──────────────────────────────────────────── -->
+    <string name="insights_section_symptom_clusters">Síntomas que aparecen juntos</string>
+    <string name="insights_section_clusters_subtitle">Tu patrón de síntomas co-ocurrentes</string>
+    <string name="insight_cluster_title">Patrón de síntomas detectado</string>
+    <string-array name="insight_cluster_msg">
+        <item>He notado que %1$s y %2$s aparecen juntos frecuentemente en tus registros. Esto es información valiosa para anticipar cómo te sentirás. 💡</item>
+        <item>Un patrón emerge en tus datos: cuando tienes %1$s, es muy probable que también sientas %2$s. Prepárate para los dos con antelación.</item>
+        <item>Tus registros muestran que %1$s y %2$s van de la mano en tu ciclo. Conocer este patrón te ayuda a planificar mejor tu semana. 🌸</item>
+    </string-array>
+    <string name="insight_cluster_phase_msg">Esto ocurre principalmente durante tu fase %1$s.</string>
+
+    <!-- Relative Risk por fase -->
+    <string name="insight_symptom_phase_risk_title">Tu síntoma más característico de fase</string>
+    <string-array name="insight_symptom_phase_risk_msg">
+        <item>Tus registros muestran que %1$s es %.1fx más probable durante tu fase %2$s comparado con el resto del ciclo. Puedes anticiparlo y prepararte. 💜</item>
+        <item>He detectado que %1$s aparece con mucha más frecuencia en tu fase %2$s. Este patrón es único tuyo — ahora puedes anticiparlo. 🌸</item>
+    </string-array>
+
+    <!-- ── Alertas médicas nuevas ─────────────────────────────────────────── -->
+
+    <!-- PMDD (Trastorno Disfórico Premenstrual) -->
+    <string name="alert_pmdd_title">Cambios de ánimo premenstruales intensos</string>
+    <string name="alert_pmdd_desc">He observado que en los días previos a tu periodo experimentas bajones de ánimo que mejoran claramente cuando comienza el sangrado. Este patrón, que se llama Trastorno Disfórico Premenstrual (TDPM), es tratable y tiene solución. Te recomiendo comentarlo con tu ginecóloga o médica de cabecera. ⚕️</string>
+
+    <!-- Perimenopause / STRAW+10 -->
+    <string name="alert_perimenopause_title">Variabilidad inusual en tu ciclo</string>
+    <string name="alert_perimenopause_desc">Tus últimos ciclos han mostrado variaciones de longitud mayores de lo habitual. Este tipo de irregularidad, especialmente acompañada de otros síntomas, puede ser una señal de cambios hormonales naturales. Tu ginecóloga puede orientarte con una analítica hormonal sencilla. No es nada alarmante, pero vale la pena consultarlo. 💙</string>
+
+    <!-- Luteal Phase Defect (LPD) -->
+    <string name="alert_lpd_title">Fase lútea corta detectada</string>
+    <string name="alert_lpd_desc">Tus registros de temperatura muestran que tu fase lútea (desde la ovulación hasta la menstruación) es consistentemente más corta de lo esperado. Esto puede afectar la regularidad del ciclo. Una consulta con tu ginecóloga puede ayudarte a entender qué está pasando y si necesitas apoyo hormonal. ⚕️</string>
+
+    <!-- ── Intervalos de confianza de predicción ─────────────────────────── -->
+    <string name="prediction_interval_title">Predicción de tu próximo periodo</string>
+    <string name="prediction_expected_date">Fecha más probable: %1$s</string>
+    <string name="prediction_interval_range">Entre el %1$s y el %2$s</string>
+    <string name="prediction_confidence_high">Alta certeza (basada en %1$d ciclos regulares)</string>
+    <string name="prediction_confidence_medium">Certeza moderada (sigo aprendiendo tu ritmo)</string>
+    <string name="prediction_confidence_low">Poca certeza aún (registro más días para afinar)</string>
+    <string name="prediction_std_dev_note">Tu ciclo varía ±%1$d días, lo que define este intervalo</string>
+
 </resources>

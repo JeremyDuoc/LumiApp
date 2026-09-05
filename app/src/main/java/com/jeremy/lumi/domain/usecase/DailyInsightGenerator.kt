@@ -13,7 +13,7 @@ object DailyInsightGenerator {
     @ArrayRes
     fun getInsightForDay(
         phase: CyclePhase,
-        dayOfPhase: Int, // Día 1 de la regla, Día 2 de la fase folicular, etc.
+        dayOfPhase: Int, // Día 1 de la periodo, Día 2 de la fase folicular, etc.
         cycleDay: Int,   // Día global del ciclo (1 a N)
         isLate: Boolean,
         userGoal: String = "health"
@@ -31,7 +31,7 @@ object DailyInsightGenerator {
                 when {
                     dayOfPhase == 1 -> R.array.insight_mens_day1
                     dayOfPhase == 2 -> R.array.insight_mens_day2
-                    dayOfPhase >= 3 -> R.array.insight_mens_day3
+                    dayOfPhase in 3..4 -> R.array.insight_mens_day3
                     else -> R.array.insight_mens_end
                 }
             }
@@ -57,7 +57,7 @@ object DailyInsightGenerator {
                 when {
                     dayOfPhase <= 3 -> R.array.insight_luteal_start
                     dayOfPhase in 4..7 -> R.array.insight_luteal_mid
-                    dayOfPhase >= 8 -> R.array.insight_luteal_pre
+                    dayOfPhase in 8..11 -> R.array.insight_luteal_pre
                     else -> R.array.insight_luteal_end
                 }
             }

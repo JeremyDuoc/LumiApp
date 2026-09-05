@@ -34,8 +34,8 @@ data class CalendarUiState(
     val monthYearTitle   : String       = "",
     val days             : List<CalendarDay> = emptyList(),
     val prediction       : CyclePrediction? = null,
-    val displayMonth     : Int          = java.time.LocalDate.now().monthValue,
-    val displayYear      : Int          = java.time.LocalDate.now().year,
+    val displayMonth     : Int          = com.jeremy.lumi.utils.LumiClock.today().monthValue,
+    val displayYear      : Int          = com.jeremy.lumi.utils.LumiClock.today().year,
     val currentPhase     : CyclePhase   = CyclePhase.UNKNOWN,
     val currentDayOfCycle: Int          = 0,
     val yearMonthsData   : List<Pair<String, List<CalendarDay>>> = emptyList() // For Year View
@@ -60,13 +60,28 @@ class CalendarViewModel @Inject constructor(
     private val allLogsMap = MutableStateFlow<Map<Long, DailyLogWithSymptoms>>(emptyMap())
 
     private val displayYearMonth = MutableStateFlow(
-        Pair(LocalDate.now().year, LocalDate.now().monthValue - 1)
+        Pair(com.jeremy.lumi.utils.LumiClock.today().year, com.jeremy.lumi.utils.LumiClock.today().monthValue - 1)
     )
 
     private var isPregnant = false
     private var isOnContraceptive = false
 
     init {
+        viewModelScope.launch {
+            com.jeremy.lumi.utils.LumiClock.offsetDays.collect {
+                // Forzar actualización cuando pasa de día
+                _uiState.update { state -> 
+                    state.copy(
+                        displayMonth = com.jeremy.lumi.utils.LumiClock.today().monthValue,
+                        displayYear  = com.jeremy.lumi.utils.LumiClock.today().year
+                    )
+                }
+                displayYearMonth.value = Pair(
+                    com.jeremy.lumi.utils.LumiClock.today().year,
+                    com.jeremy.lumi.utils.LumiClock.today().monthValue - 1
+                )
+            }
+        }
         viewModelScope.launch {
             kotlinx.coroutines.flow.combine(
                 repository.getAllLogs(descending = false),
@@ -113,8 +128,8 @@ class CalendarViewModel @Inject constructor(
     }
 
     fun goToToday() {
-        val today = Calendar.getInstance()
-        displayYearMonth.value = Pair(today.get(Calendar.YEAR), today.get(Calendar.MONTH))
+        val today = com.jeremy.lumi.utils.LumiClock.today()
+        displayYearMonth.value = Pair(today.year, today.monthValue - 1)
     }
 
     fun generateYearGrid(year: Int) {
@@ -161,7 +176,7 @@ class CalendarViewModel @Inject constructor(
                 LocalDate.ofInstant(java.time.Instant.ofEpochMilli(it.startDate), ZoneId.of("UTC"))
             }
 
-            val todayLocal = LocalDate.now()
+            val todayLocal = com.jeremy.lumi.utils.LumiClock.today()
             val currentDayOfCycle = cycleStartLocal?.let {
                 CyclePredictor.dayInCycle(it, cycleLength, todayLocal)
             } ?: 0
@@ -207,13 +222,13 @@ class CalendarViewModel @Inject constructor(
             set(Calendar.MILLISECOND,  0)
         }
 
-        val nowCal     = Calendar.getInstance()
-        val todayDay   = nowCal.get(Calendar.DAY_OF_MONTH)
-        val todayMonth = nowCal.get(Calendar.MONTH)
-        val todayYear  = nowCal.get(Calendar.YEAR)
+        val todayLocal = com.jeremy.lumi.utils.LumiClock.today()
+        val todayDay   = todayLocal.dayOfMonth
+        val todayMonth = todayLocal.monthValue - 1
+        val todayYear  = todayLocal.year
         val isCurrentMonth = year == todayYear && month == todayMonth
 
-        val todayStartMs = LocalDate.of(todayYear, todayMonth + 1, todayDay)
+        val todayStartMs = todayLocal
             .atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
 
         val title = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
@@ -283,26 +298,27 @@ class CalendarViewModel @Inject constructor(
 
             val (phase, isPrediction) = when {
                 matchedCycle == null -> Pair(CyclePhase.UNKNOWN, false) // No pertenece a ningún ciclo conocido
-                isFuture -> {
-                    // Predicción hacia el futuro (usamos el activeCycle)
+                activeCycle != null && (isFuture || matchedCycle.id == activeCycle.id) -> {
                     val monthsIntoFuture = java.time.temporal.ChronoUnit.MONTHS.between(LocalDate.of(todayYear, todayMonth + 1, todayDay), dayLocal)
-                    if (monthsIntoFuture > 6 || activeCycle == null) {
+                    if (monthsIntoFuture > 6) {
                         Pair(CyclePhase.UNKNOWN, false)
                     } else {
                         val activeCycleStartLocal = LocalDate.ofInstant(java.time.Instant.ofEpochMilli(activeCycle.startDate), ZoneId.of("UTC"))
-                        val p = runCatching {
-                            CyclePredictor.phaseForDay(
-                                CyclePredictor.dayInCycleWrapped(activeCycleStartLocal, cycleLength, dayLocal),
-                                cycleLength, periodLength,
+                        runCatching {
+                            CyclePredictor.phaseForDateInActiveCycle(
+                                startDate = activeCycleStartLocal,
+                                cycleLength = cycleLength,
+                                periodLength = periodLength,
+                                date = dayLocal,
+                                today = LocalDate.of(todayYear, todayMonth + 1, todayDay),
                                 isPregnant = isPregnant,
                                 isOnContraceptive = isOnContraceptive
                             )
-                        }.getOrDefault(CyclePhase.UNKNOWN)
-                        Pair(p, true)
+                        }.getOrDefault(Pair(CyclePhase.UNKNOWN, false))
                     }
                 }
                 else -> {
-                    // Pertenece a un ciclo histórico o al presente
+                    // Pertenece a un ciclo histórico cerrado
                     val matchedStartLocal = LocalDate.ofInstant(java.time.Instant.ofEpochMilli(matchedCycle.startDate), ZoneId.of("UTC"))
                     val matchedLen = matchedCycle.cycleLength
                     val matchedPeriodLen = matchedCycle.periodLength
@@ -342,7 +358,7 @@ class CalendarViewModel @Inject constructor(
         selectedSymptoms: List<String>, cervicalMucus: String?, notes: String, hadIntercourse: Boolean,
         protectionUsed: Boolean?, contraceptionMethod: String?,
         intercourseNotes: String?, showOnCalendar: Boolean,
-        sleepHours: Float?, energyLevel: Int?, stressLevel: Int?,
+        sleepHours: Float?, energyLevel: Int?, stressLevel: Int?, waterIntake: Float?,
         basalBodyTemp: Float?, spotting: Boolean
     ) {
         viewModelScope.launch {
@@ -382,6 +398,7 @@ class CalendarViewModel @Inject constructor(
                     sleepHours                = sleepHours,
                     energyLevel               = energyLevel,
                     stressLevel               = stressLevel,
+                    waterIntake               = waterIntake,
                     basalBodyTemp             = basalBodyTemp,
                     spotting                  = spotting
                 ),

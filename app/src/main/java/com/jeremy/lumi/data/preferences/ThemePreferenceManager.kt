@@ -9,6 +9,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.compose.ui.graphics.Color
 import com.jeremy.lumi.ui.theme.AppThemePalette
+import com.jeremy.lumi.ui.theme.BackgroundAmbient
+import com.jeremy.lumi.ui.theme.DialStyle
 import com.jeremy.lumi.ui.theme.PhaseColorPalette
 import com.jeremy.lumi.ui.theme.PhaseColors
 import com.jeremy.lumi.ui.theme.PhaseDefaultLight
@@ -32,7 +34,15 @@ class ThemePreferenceManager @Inject constructor(
 
         // ── Colores de fase ────────────────────────────────────────────────
         private val PHASE_PALETTE_KEY = stringPreferencesKey("phase_color_palette")
-        private val DEFAULT_PHASE_PALETTE = PhaseColorPalette.DEFAULT
+        private val DEFAULT_PHASE_PALETTE = PhaseColorPalette.AUTO_HARMONY
+
+        // ── Estilo del aro (Home dial) ─────────────────────────────────────
+        private val DIAL_STYLE_KEY = stringPreferencesKey("home_dial_style")
+        private val DEFAULT_DIAL_STYLE = DialStyle.GRADIENT
+
+        // ── Ambiente de fondo ───────────────────────────────────────────────
+        private val AMBIENT_KEY = stringPreferencesKey("background_ambient")
+        private val DEFAULT_AMBIENT = BackgroundAmbient.AURA
 
         // Overrides individuales — solo se leen cuando PHASE_PALETTE_KEY == CUSTOM.
         // Se guardan como Long (ARGB) porque Color no es serializable directamente.
@@ -55,6 +65,36 @@ class ThemePreferenceManager @Inject constructor(
     suspend fun saveTheme(theme: AppThemePalette) {
         context.dataStore.edit { prefs ->
             prefs[THEME_KEY] = theme.name
+        }
+    }
+
+    // ── Estilo de aro (DialStyle) ─────────────────────────────────────────────
+
+    val dialStyleFlow: Flow<DialStyle> = context.dataStore.data
+        .map { prefs ->
+            val saved = prefs[DIAL_STYLE_KEY]
+            runCatching { DialStyle.valueOf(saved ?: DEFAULT_DIAL_STYLE.name) }
+                .getOrDefault(DEFAULT_DIAL_STYLE)
+        }
+
+    suspend fun saveDialStyle(style: DialStyle) {
+        context.dataStore.edit { prefs ->
+            prefs[DIAL_STYLE_KEY] = style.name
+        }
+    }
+
+    // ── Ambiente de fondo ─────────────────────────────────────────────────
+
+    val backgroundAmbientFlow: Flow<BackgroundAmbient> = context.dataStore.data
+        .map { prefs ->
+            val saved = prefs[AMBIENT_KEY]
+            runCatching { BackgroundAmbient.valueOf(saved ?: DEFAULT_AMBIENT.name) }
+                .getOrDefault(DEFAULT_AMBIENT)
+        }
+
+    suspend fun saveBackgroundAmbient(ambient: BackgroundAmbient) {
+        context.dataStore.edit { prefs ->
+            prefs[AMBIENT_KEY] = ambient.name
         }
     }
 

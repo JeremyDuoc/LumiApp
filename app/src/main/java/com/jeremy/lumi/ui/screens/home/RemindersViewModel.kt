@@ -140,7 +140,7 @@ class RemindersViewModel @Inject constructor(
      * Sincroniza los recordatorios automáticos de ciclo con la predicción más
      * reciente. PERIOD_SOON y OVULATION_SOON se reprograman 2 días y 1 día
      * antes respectivamente; SUPPLY_REMINDER se reprograma 3 días antes para
-     * dar tiempo de prepararse incluso antes del aviso de regla próxima.
+     * dar tiempo de prepararse incluso antes del aviso de periodo próxima.
      */
     fun syncCycleReminders(prediction: CyclePrediction) {
         viewModelScope.launch {
@@ -159,14 +159,18 @@ class RemindersViewModel @Inject constructor(
             }
 
             current.find { it.type == ReminderType.OVULATION_SOON }?.let { reminder ->
-                val triggerMillis = AlarmScheduler.epochMillisAt(
-                    prediction.nextOvulationDate.minusDays(1), reminder.hourOfDay, reminder.minute
-                )
-                repository.updateNextTrigger(reminder.id, triggerMillis)
-                try {
-                    AlarmScheduler.schedule(application, reminder.copy(nextTriggerAt = triggerMillis))
-                } catch (e: Exception) {
-                    _errorFlow.emit(application.getString(R.string.error_schedule_alarm, e.message ?: ""))
+                if (prediction.nextOvulationDate != java.time.LocalDate.MAX) {
+                    val triggerMillis = AlarmScheduler.epochMillisAt(
+                        prediction.nextOvulationDate.minusDays(1), reminder.hourOfDay, reminder.minute
+                    )
+                    if (triggerMillis > 0) {
+                        repository.updateNextTrigger(reminder.id, triggerMillis)
+                        try {
+                            AlarmScheduler.schedule(application, reminder.copy(nextTriggerAt = triggerMillis))
+                        } catch (e: Exception) {
+                            _errorFlow.emit(application.getString(R.string.error_schedule_alarm, e.message ?: ""))
+                        }
+                    }
                 }
             }
 

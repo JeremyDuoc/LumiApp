@@ -11,7 +11,7 @@ package com.jeremy.lumi.domain.model
  * Estadísticas de un ciclo individual o del promedio histórico.
  *
  * @param durationDays       Duración total del ciclo (startDate→endDate).
- * @param bleedingDays       Días donde flowIntensity != null (días con regla registrada).
+ * @param bleedingDays       Días donde flowIntensity != null (días con periodo registrada).
  * @param cycleType          Clasificación según duración: CORTO (<21d), NORMAL, LARGO (>35d).
  * @param avgPainLevel       Promedio de nivel de dolor durante la menstruación.
  */
@@ -103,4 +103,40 @@ data class CycleInsights(
     val bivariableInsights   : List<BivariableInsight> = emptyList(),
     val moodDistribution     : MoodDistribution?,
     val recentCycleStats     : List<CycleStats>         // últimos N ciclos para el gráfico de barras
+)
+
+data class CorrelationInsight(
+    val variableA: BioVariable,
+    val variableB: BioVariable,
+    val correlationScore: Float,  // -1.0 to +1.0 (Spearman rho)
+    val pearsonR: Float,          // Pearson r, may equal rho for ordinal
+    val isLagged: Boolean,
+    val lagDays: Int,             // 0 if not lagged, 1 for T-1
+    val pValue: Float,
+    val sampleSize: Int,
+    val direction: CorrelationDirection,
+    val clinicalInterpretationKey: String  // string resource key for UI
+)
+
+enum class CorrelationDirection { POSITIVE, NEGATIVE }
+
+enum class BioVariable {
+    SLEEP_HOURS, PAIN_LEVEL, STRESS_LEVEL, ENERGY_LEVEL, WATER_INTAKE, BASAL_BODY_TEMP
+}
+
+data class SymptomCluster(
+    val symptomA: String,
+    val symptomB: String,
+    val jaccardScore: Float,
+    val coOccurrenceDays: Int,
+    val dominantPhase: CyclePhase?,
+    val relativeRiskInDominantPhase: Float
+)
+
+data class SymptomPhaseRisk(
+    val symptomName: String,
+    val phase: CyclePhase,
+    val relativeRisk: Float,
+    val occurrencesInPhase: Int,
+    val totalOccurrences: Int
 )

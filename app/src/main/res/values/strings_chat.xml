@@ -14,7 +14,7 @@
         <item>Noté que estás en tu fase premenstrual. Sentir que %1$s es súper común por el cambio de hormonas. Tómate las cosas con calma. ¿Qué te gustaría saber hoy?</item>
         <item>Veo que estás cerca de tu periodo. Es biológicamente normal que %1$s ahora mismo. Date permiso de descansar. ¿En qué te ayudo?</item>
         <item>Estás en los días previos a tu menstruación. Es comprensible que %1$s por el descenso de estrógenos. Estoy aquí para ti. ¿Qué vemos hoy?</item>
-        <item>La ventana premenstrual puede ser difícil. Es esperable que %1$s. Recuerda mimarte un poco hoy. ¿De qué quieres hablar?</item>
+        <item>La ventana premenstrual puede ser difícil. Es esperable que %1$s. Recuerda darte un respiro hoy. ¿De qué quieres hablar?</item>
     </string-array>
 
     <string-array name="chat_welcome_pain">
@@ -70,7 +70,7 @@
         <item>Durante la menstruación, la pérdida de sangre puede bajar tus niveles de hierro y causar fatiga. Es completamente normal.%1$s 💙</item>
         <item>Es muy común sentirte agotada ahora. Tu cuerpo está trabajando duro para renovar el endometrio.%1$s ✨</item>
         <item>El cansancio menstrual es una respuesta natural del cuerpo. Escucha tu necesidad de descanso y no te exijas de más.%1$s 🌱</item>
-        <item>Tu energía está baja porque los niveles hormonales caen durante tu regla. Intenta comer algo rico en hierro.%1$s 🌙</item>
+        <item>Tu energía está baja porque los niveles hormonales caen durante tu periodo. Intenta comer algo rico en hierro.%1$s 🌙</item>
         <item>Sentirte sin energía en estos días es la forma que tiene tu cuerpo de pedirte una pausa.%1$s 💜</item>
     </string-array>
     <string-array name="chat_tired_follicular">
@@ -112,7 +112,7 @@
     </string-array>
     <string-array name="chat_next_period_on_time">
         <item>Basándome en tu historial, tu próximo periodo %1$s. Recuerda que la biología no es un reloj exacto. 📅</item>
-        <item>Tu regla %1$s. Ten en cuenta que esto es solo una estimación. 🌸</item>
+        <item>Tu periodo %1$s. Ten en cuenta que esto es solo una estimación. 🌸</item>
         <item>Según mis cálculos, tu periodo %1$s. ¡Te avisaré si noto cambios! 💙</item>
         <item>Espero tu menstruación para %1$s. Mantén tus registros al día para mayor precisión. ✨</item>
         <item>Tu periodo %1$s. No olvides que pequeños adelantos o retrasos son comunes. 🌱</item>
@@ -175,7 +175,7 @@
     <string-array name="chat_mood_menstrual">
         <item>Durante la menstruación, los estrógenos caen y es normal sentirte más sensible o triste. Es pura biología, no te castigues por ello. 💜</item>
         <item>El bajón de hormonas durante el sangrado a menudo trae consigo sensibilidad emocional. Tómate las cosas con calma. 🌸</item>
-        <item>La menstruación hace que estrógeno y progesterona toquen fondo, afectando tu humor directamente. Es un buen momento para mimarte. 💙</item>
+        <item>La menstruación hace que estrógeno y progesterona toquen fondo, afectando tu humor directamente. Es un buen momento para priorizar tu descanso. 💙</item>
         <item>Sentir cambios de humor ahora es súper normal; tus hormonas están en su punto más bajo. Descansa y escúchate. ✨</item>
         <item>Tu cuerpo está pasando por una bajada hormonal fuerte, lo cual explica por qué te sientes tan susceptible hoy. 🌱</item>
     </string-array>
@@ -195,7 +195,7 @@
     </string-array>
     <string-array name="chat_mood_luteal">
         <item>En la fase lútea la progesterona domina y puede causar el famoso SPM: irritabilidad o tristeza. Es normal y pasará. 🌙</item>
-        <item>Tus cambios de humor son producto de la progesterona que prepara tu cuerpo. No te preocupes, se nivelará con tu regla. 💙</item>
+        <item>Tus cambios de humor son producto de la progesterona que prepara tu cuerpo. No te preocupes, se nivelará con tu periodo. 💙</item>
         <item>El Síndrome Premenstrual a menudo se manifiesta con sensibilidad emocional por la caída de estrógenos. Sé amable contigo. ✨</item>
         <item>Sentirte así en esta fase es el clásico SPM. Dale a tu cuerpo el autocuidado que te está pidiendo. 🌱</item>
         <item>Es totalmente comprensible que tu humor fluctúe ahora. La progesterona tiene ese efecto en nuestro estado de ánimo. 💜</item>
@@ -225,7 +225,7 @@
     </string-array>
     <string-array name="chat_cramps_unknown">
         <item>El dolor abdominal fuera del periodo puede tener varias causas. Si es recurrente y fuerte, te recomiendo mencionárselo a tu ginecóloga. %1$s</item>
-        <item>Tener cólicos sin regla a veces ocurre por la digestión, ovulación temprana o quistes. Si duele mucho, consúltalo. %1$s</item>
+        <item>Tener cólicos sin periodo a veces ocurre por la digestión, ovulación temprana o quistes. Si duele mucho, consúltalo. %1$s</item>
         <item>El dolor pélvico en esta fase no es lo más común. Vigílalo y habla con tu doctora si no se va. %1$s</item>
         <item>Si el dolor es constante y no estás en tus días, es mejor que lo evalúe un profesional médico. %1$s</item>
         <item>Registraremos este dolor. Si persiste por varios días fuera de la menstruación, busca asesoría médica. %1$s</item>
@@ -240,7 +240,7 @@
     </string-array>
     <string-array name="chat_cramps_advice_med">
         <item>Para cólicos moderados, el calor local y el movimiento suave (como caminar o yoga) pueden ayudar mucho.</item>
-        <item>Con este dolor moderado, un tecito caliente y unos estiramientos suaves suelen ser un gran alivio.</item>
+        <item>Con este dolor moderado, una infusión caliente y unos estiramientos suaves suelen ser un gran alivio.</item>
         <item>Prueba aplicar calor en la zona y moverte un poco si te sientes con ánimos; eso suele reducir la molestia moderada.</item>
         <item>Para cólicos de nivel medio, el yoga suave o simplemente recostarte con una almohadilla térmica te sentará bien.</item>
         <item>Un nivel de dolor moderado suele responder bien al calor local y a mantenerte abrigada.</item>
@@ -255,11 +255,11 @@
 
     <!-- Phase Info -->
     <string-array name="chat_phase_info">
-        <item>Estás en el día %1$d de tu ciclo (día %2$d de la fase %3$s). %4$s %5$s 📅</item>
-        <item>Llevas %1$d días de ciclo, y estás en el día %2$d de tu fase %3$s. %4$s %5$s 🌸</item>
-        <item>Te encuentras en tu día %1$d del ciclo, fase %3$s (día %2$d). %4$s %5$s 💙</item>
-        <item>Ciclo actual: día %1$d. Fase: %3$s (día %2$d). %4$s %5$s ✨</item>
-        <item>Hoy es tu día %1$d del ciclo y estás cursando la fase %3$s. %4$s %5$s 🌱</item>
+        <item>Según mis proyecciones, estás en el día %1$d de tu ciclo (probable fase %3$s, día %2$d). %4$s %5$s 📅</item>
+        <item>Llevas %1$d días de ciclo, y estimo que estás en tu fase %3$s (día %2$d). %4$s %5$s 🌸</item>
+        <item>De acuerdo a tu historial, estarías en tu día %1$d del ciclo, en una posible fase %3$s. %4$s %5$s 💙</item>
+        <item>Ciclo actual: día %1$d. Fase proyectada: %3$s (día %2$d). %4$s %5$s ✨</item>
+        <item>Hoy es tu día %1$d del ciclo. Matemáticamente, es probable que estés cursando la fase %3$s. %4$s %5$s 🌱</item>
     </string-array>
 
     <string-array name="chat_phase_desc_menstrual">
@@ -295,8 +295,8 @@
     <string-array name="chat_energy_menstrual">
         <item>%1$s En la menstruación, prioriza el descanso sobre el ejercicio intenso. Caminatas suaves, hidratación y alimentos ricos en hierro son tus aliados. 💙</item>
         <item>%1$s Tu cuerpo pide pausa durante el sangrado. No te sientas mal por descansar más y comer nutritivo. 🌸</item>
-        <item>%1$s Baja el ritmo estos días. Mímate con comida saludable, calor local y actividades muy relajadas. ✨</item>
-        <item>%1$s La regla gasta mucha energía. Reemplázala descansando bien y evitando esfuerzos extremos. 🌱</item>
+        <item>%1$s Baja el ritmo estos días. Prioriza alimentos nutritivos, calor local y actividades tranquilas. ✨</item>
+        <item>%1$s El periodo gasta mucha energía. Reemplázala descansando bien y evitando esfuerzos extremos. 🌱</item>
         <item>%1$s Escucha a tu cuerpo: si hoy pide sofá y películas, dale sofá. El descanso es productivo en esta fase. 💜</item>
     </string-array>
     <string-array name="chat_energy_follicular">
@@ -341,7 +341,7 @@
         <item>El sueño y el ciclo menstrual están profundamente conectados.%1$s La falta de sueño eleva el cortisol (hormona del estrés), que puede retrasar o irregularizar la ovulación. Dormir 7-9 horas mejora la regularidad del ciclo y reduce la intensidad de los síntomas del SPM. 🌙</item>
         <item>Dormir bien es fundamental para tus hormonas.%1$s Si no descansas, el estrés altera tu ovulación y empeora los cólicos. Intenta dormir entre 7 y 9 horas. 💙</item>
         <item>Tus hormonas necesitan que duermas para regularse.%1$s El poco sueño sube el cortisol y desordena tu ciclo. Prioriza un buen descanso. ✨</item>
-        <item>La calidad de tu sueño impacta directo en tu regla.%1$s Menos sueño significa más estrés y ciclo irregular. Un buen descanso previene síntomas fuertes de SPM. 🌱</item>
+        <item>La calidad de tu sueño impacta directo en tu periodo.%1$s Menos sueño significa más estrés y ciclo irregular. Un buen descanso previene síntomas fuertes de SPM. 🌱</item>
         <item>Descansar 7-9 horas ayuda a que tus hormonas funcionen en armonía.%1$s El insomnio, en cambio, altera tus fechas y empeora el humor. 💜</item>
     </string-array>
 
@@ -355,9 +355,9 @@
 
     <!-- Stress and Cycle -->
     <string-array name="chat_stress_cycle">
-        <item>Sí, el estrés puede retrasar tu regla.%1$s El cortisol (hormona del estrés) inhibe la producción de GnRH, la hormona que desencadena la ovulación. Sin ovulación, el ciclo se extiende. Técnicas como la respiración profunda, el ejercicio moderado y el sueño regular son las más efectivas para reducir este efecto. 💆</item>
+        <item>Sí, el estrés puede retrasar tu periodo.%1$s El cortisol (hormona del estrés) inhibe la producción de GnRH, la hormona que desencadena la ovulación. Sin ovulación, el ciclo se extiende. Técnicas como la respiración profunda, el ejercicio moderado y el sueño regular son las más efectivas para reducir este efecto. 💆</item>
         <item>Totalmente, el estrés retrasa el periodo.%1$s Tu cuerpo en "modo alerta" pausa la ovulación para protegerte. Relajarte es clave para que tu ciclo vuelva a la normalidad. 💙</item>
-        <item>El cortisol elevado por estrés bloquea las hormonas reproductivas.%1$s Si estás muy estresada, tu regla tardará más. Intenta hacer algo que te relaje hoy. ✨</item>
+        <item>El cortisol elevado por estrés bloquea las hormonas reproductivas.%1$s Si estás muy estresada, tu periodo tardará más. Intenta hacer algo que te relaje hoy. ✨</item>
         <item>El estrés y el ciclo son grandes enemigos.%1$s El estrés crónico frena la ovulación. El yoga, meditar o caminar pueden ayudarte a restablecer el balance. 🌱</item>
         <item>Cuando te estresas mucho, tu cuerpo pospone la ovulación, alargando tu ciclo.%1$s Encontrar formas de bajar el estrés es la mejor medicina. 💜</item>
     </string-array>
@@ -446,4 +446,216 @@
         <item>Pequeños manchados a mitad de ciclo suelen ser inofensivos. Sin embargo, si manchas mucho o hay dolor severo, repórtalo a tu doctora. ✨</item>
         <item>El manchado puede ser señal de que tu cuerpo está ajustando hormonas. Mientras sea leve y esporádico no suele ser grave, pero ante la duda, ve a tu médica. 🌱</item>
     </string-array>
+
+    <!-- UI General Chat -->
+    <string name="chat_search_placeholder">Buscar en el historial...</string>
+    <string name="chat_search_cd">Buscar</string>
+    <string name="chat_search_empty">No se encontraron resultados</string>
+    <string name="chat_filter_recommended">Recomendadas</string>
+    <string name="chat_title_reminders">Recordatorios</string>
+    <string name="chat_subtitle_history">Historial</string>
+    <string name="chat_day_today">Hoy</string>
+    <string name="chat_day_yesterday">Ayer</string>
+    <string name="chat_conv_lumi_placeholder">Toca aquí para ver tus resúmenes diarios.</string>
+    <string name="chat_conv_reminders_empty">No hay recordatorios recientes.</string>
+    <string name="chat_avatar_cd">Avatar de Lumi</string>
+
+    <!-- Categorías de Preguntas -->
+    <string name="chat_cat_cycle">Mi Ciclo</string>
+    <string name="chat_cat_symptoms">Dolor y Síntomas</string>
+    <string name="chat_cat_fertility">Fertilidad y Métodos</string>
+    <string name="chat_cat_patterns">Mis Patrones</string>
+    <string name="chat_cat_wellbeing">Nutrición y Hábitos</string>
+
+    <!-- Preguntas Predefinidas (ChatQuestion) -->
+    <string name="chat_q_when_next_period">¿Cuándo llega mi próximo periodo?</string>
+    <string name="chat_q_what_phase_am_i">¿En qué fase del ciclo estoy?</string>
+    <string name="chat_q_why_late_period">¿Por qué se retrasó mi periodo?</string>
+    <string name="chat_q_spotting_explanation">Tengo manchado fuera de mi periodo, ¿es normal?</string>
+    <string name="chat_q_why_cramps">¿Cómo puedo aliviar mis cólicos menstruales?</string>
+    <string name="chat_q_headache_relief">¿Por qué me duele la cabeza o tengo migraña?</string>
+    <string name="chat_q_digestive_relief">¿Por qué tengo náuseas o hinchazón?</string>
+    <string name="chat_q_why_feel_tired">¿Por qué me siento tan cansada hoy?</string>
+    <string name="chat_q_why_mood_changes">¿Por qué tengo tantos cambios de humor?</string>
+    <string name="chat_q_when_fertile_window">¿Cuándo es mi próxima ventana fértil?</string>
+    <string name="chat_q_unprotected_sex">Tuve relaciones sin protección, ¿qué debo hacer?</string>
+    <string name="chat_q_contraception_info">¿Cómo funciona mi método anticonceptivo?</string>
+    <string name="chat_q_bio_patterns">¿Cuáles son mis patrones y descubrimientos?</string>
+    <string name="chat_q_sleep_and_cycle">¿Cómo afecta el sueño a mi ciclo?</string>
+    <string name="chat_q_stress_and_cycle">¿El estrés retrasa mi periodo?</string>
+    <string name="chat_q_nutrition_recommendation">¿Qué nutrición me conviene según mi fase?</string>
+    <string name="chat_q_exercise_recommendation">¿Qué tipo de ejercicio me recomiendas hoy?</string>
+    <string name="chat_q_how_improve_energy">¿Cómo puedo tener más energía hoy?</string>
+
+    <!-- Nombres de Fases del Ciclo -->
+    <string name="phase_menstrual_name">Fase Menstrual</string>
+    <string name="phase_follicular_name">Fase Folicular</string>
+    <string name="phase_ovulation_name">Fase Ovulatoria</string>
+    <string name="phase_luteal_name">Fase Lútea</string>
+    <string name="phase_pregnancy_name">Embarazo</string>
+    <string name="phase_unknown_name">Ciclo</string>
+
+    <!-- periodos de Bienvenida (LumiRulesEngine) -->
+    <string name="chat_welcome_follicular_tired">Noto que te sientes sin energía a pesar de estar en tu fase folicular. Normalmente el estrógeno te daría un impulso ahora, así que asegúrate de descansar bien y alimentarte de forma nutritiva hoy.</string>
+    <string name="chat_welcome_follicular_energy">¡Fase folicular en marcha! ✨ Es muy habitual que te sientas con buena energía hoy. Tus niveles de estrógeno están subiendo, así que es un gran momento para tus proyectos o actividad física.</string>
+    <string name="chat_welcome_luteal_symptoms">Estás en fase lútea y la progesterona está tomando el control 🍵 Es completamente comprensible sentirte con un ritmo más pausado o con antojos. Escucha lo que te pide el cuerpo sin exigirte de más.</string>
+    <string name="chat_phase_info_until_period">Tu próximo periodo se estima en %1$d días.</string>
+
+    <!-- Respuestas Inteligentes LumiSmartChatEngine (Sin asteriscos de markdown, tono empático y adulto) -->
+    <string name="chat_smart_cramps_today_pain">Hoy registraste un dolor de %1$d/10. </string>
+    <string name="chat_smart_cramps_body">Alivio para cólicos menstruales y dolor pélvico 🤍\n\n%1$sLos cólicos se deben a la acción de las prostaglandinas, unas sustancias naturales que provocan contracciones en el útero para ayudar a desprender el endometrio.\n\nRecomendaciones útiles:\n• Calor local continuo: Aplicar una compresa tibia o guatero durante 15 a 20 minutos en la zona pélvica relaja los músculos del útero y alivia el dolor con gran eficacia.\n• Glicinato de magnesio: Contribuye a relajar la musculatura lisa y a disminuir la inflamación en los tejidos.\n• Movilidad suave: Posturas ligeras de yoga (como la postura del niño o estiramiento de caderas) disminuyen la tensión en la pelvis y zona lumbar.\n• Hidratación constante: Mantener una ingesta adecuada de agua reduce la retención de líquidos que a veces acentúa la sensación de presión.\n\nCuándo consultar a un profesional:\nSi el dolor no cede con analgésicos comunes, te impide realizar tus actividades cotidianas o se intensifica con el tiempo, es recomendable solicitar una consulta médica para descartar causas como endometriosis.</string>
+
+    <string name="chat_smart_headache_luteal">Estás en fase lútea (a %1$d días de tu menstruación). El descenso de estrógenos suele detonar migrañas hormonales.</string>
+    <string name="chat_smart_headache_menstrual">Estás en fase menstrual. Los niveles hormonales están en su punto basal más bajo, lo que puede sensibilizar las vías del dolor.</string>
+    <string name="chat_smart_headache_general">Estás en %1$s.</string>
+    <string name="chat_smart_headache_body">Manejo de dolor de cabeza y migraña hormonal 🌿\n\n%1$s\n\nEl estrógeno influye directamente en la serotonina y en la dilatación de los vasos sanguíneos cerebrales. Una bajada rápida en sus niveles puede provocar dilatación en las arterias de la cabeza, causando dolor pulsátil y sensibilidad a la luz o a los sonidos.\n\nRecomendaciones prácticas:\n• Espacio en penumbra: Reduce la exposición a pantallas y luces intensas durante 20 a 30 minutos.\n• Compresas frías: Colocar una compresa fría en la frente o nuca ayuda a contraer los vasos sanguíneos y calma las pulsaciones.\n• Hidratación y magnesio: Beber agua con regularidad y mantener niveles adecuados de magnesio ayuda a estabilizar la función vascular.\n• Prioriza el descanso: La falta de sueño o el descanso irregular es uno de los principales desencadenantes de cefaleas recurrentes.</string>
+
+    <string name="chat_smart_late_no_ctx">Análisis de retraso menstrual 🗓️\n\nUna variación de pocos días es común y suele asociarse a cambios en el descanso, estrés o postergación natural de la ovulación. Si el retraso supera las 2 semanas, consulta a tu médica/o.</string>
+    <string name="chat_smart_late_on_time">Tu ciclo se encuentra dentro de lo previsto 🗓️\n\nHoy estás en el día %1$d de un ciclo estimado de %2$d días. Faltan aproximadamente %3$d días para la fecha estimada de tu próximo periodo.\n\nUna fluctuación de 2 a 4 días es fisiológicamente normal y no se considera retraso clínico.</string>
+    <string name="chat_smart_late_delayed">Análisis de tu retraso (%1$d días) 🗓️\n\nTu ciclo actual lleva %2$d días (tu promedio habitual es de %3$d días).\n\nCausas más frecuentes:\n• Ovulación tardía: La primera fase del ciclo es variable. Si la ovulación se retrasó por estrés, desvelos, viajes o enfermedad, el periodo se pospondrá en concordancia.\n• Estrés y cortisol: Niveles elevados de cortisol interfieren temporalmente con el eje hormonal, postergando la señal ovulatoria.\n• Posibilidad de embarazo: Si tuviste relaciones sin método de protección en las últimas tres semanas, realiza una prueba de embarazo en orina (preferentemente con la primera orina del día).\n• Retraso prolongado: Si el atraso supera los 14 días y las pruebas son negativas, programa una consulta con tu ginecóloga.</string>
+
+    <string name="chat_smart_unprotected_sex">Orientación tras relaciones sexuales sin protección 🤍\n\nCualquier relación con penetración sin protección conlleva posibilidad de embarazo, ya que el momento exacto de la ovulación puede adelantarse o retrasarse por variaciones hormonales naturales.\n\nMedidas prioritarias:\n• Anticoncepción de emergencia: Si no planificas un embarazo, la pastilla de Levonorgestrel es más efectiva tomada dentro de las primeras 72 horas (3 días). El Acetato de Ulipristal ofrece cobertura hasta las 120 horas (5 días). Cuanto antes se administre, mayor es su eficacia.\n• Detección oportuna: Para un resultado confiable, realiza una prueba de embarazo en orina entre 14 y 19 días después de la relación sexual.\n• Prevención de infecciones: La anticoncepción de emergencia no protege contra infecciones de transmisión sexual (ITS). Si existe sospecha de exposición, acude a un centro de salud para valoración y profilaxis oportuna.</string>
+
+    <string name="chat_smart_fertility_no_ctx">Ventana fértil y ovulación ✨\n\nLa ventana fértil comprende los 5 días previos a la ovulación más el día en que se libera el óvulo. El cálculo depende de la regularidad histórica de tus ciclos.</string>
+    <string name="chat_smart_fertility_contraceptive">Modo anticonceptivo activo 🌿\n\nTienes registrado un método anticonceptivo hormonal. Su mecanismo principal consiste en inhibir la ovulación y modificar el moco cervical para dificultar el paso de los espermatozoides.\n\nCon un uso constante y correcto, la probabilidad de ovulación y embarazo es inferior al 1%, por lo que no se calcula una ventana fértil tradicional.</string>
+    <string name="chat_smart_fertility_ovulation_today">Hoy es tu día estimado de ovulación. Corresponde a la mayor probabilidad biológica de concepción del ciclo.</string>
+    <string name="chat_smart_fertility_in_window">Estás dentro de tu ventana fértil estimada. Los espermatozoides pueden sobrevivir hasta 5 días en presencia de moco fértil.</string>
+    <string name="chat_smart_fertility_before">Tu ventana fértil aún no ha iniciado (estimada a partir del día %1$d de tu ciclo).</string>
+    <string name="chat_smart_fertility_after">Tu ventana fértil ya ha cerrado para este ciclo.</string>
+    <string name="chat_smart_fertility_timing_future">Faltan aproximadamente %1$d días para tu ovulación estimada.</string>
+    <string name="chat_smart_fertility_timing_today">Hoy es tu día estimado de ovulación.</string>
+    <string name="chat_smart_fertility_timing_past">Tu ovulación estimada ocurrió hace %1$d días.</string>
+    <string name="chat_smart_fertility_body">Estado de fertilidad y ovulación (Día %1$d de %2$d) ✨\n\n%3$s\n\nDetalles del ciclo:\n• Ovulación: Día estimado %4$d (%5$s).\n• Ventana fértil biológica: Del día %6$d al día %7$d.\n• Indicadores clave: Moco cervical transparente y elástico (similar a clara de huevo) y elevación de la temperatura basal posterior a la ovulación.\n\nTen presente que los cálculos de calendario son proyecciones estadísticas y no deben utilizarse como método anticonceptivo exclusivo.</string>
+
+    <string name="chat_smart_mood_luteal">Estás en fase lútea (día %1$d). La caída de progesterona disminuye la síntesis de GABA (neurotransmisor asociado a la calma) y serotonina.</string>
+    <string name="chat_smart_mood_general">Estás en %1$s.</string>
+    <string name="chat_smart_mood_body">Comprendiendo tu estado de ánimo y tus hormonas 🌿\n\n%1$s\n\nLas fluctuaciones emocionales previas a la menstruación responden a cambios químicos reales en los receptores cerebrales, no a falta de voluntad.\n\nEstrategias de bienestar:\n• Estabilidad glucémica: Los descensos bruscos de glucosa aumentan la irritabilidad. Prefiere carbohidratos complejos (avena, legumbres, frutos secos) y evita picos de azúcares simples.\n• Pausas de respiración: Tomar unos minutos de respiraciones lentas y profundas estimula el sistema nervioso parasimpático para reducir la sensación de agobio.\n• Actividad física suave: Una caminata ligera estimula endorfinas sin añadir sobrecarga fisiológica.\n• Trastorno Disfórico Premenstrual (TDPM): Si experimentas tristeza profunda, desesperanza o irritabilidad incapacitante que desaparece tan pronto inicia el sangrado, consulta con tu especialista para una evaluación formal.</string>
+
+    <string name="chat_smart_sleep_today">Hoy registraste %1$s horas de sueño. </string>
+    <string name="chat_smart_sleep_body">Sueño, temperatura corporal y descanso ☁️\n\n%1$sEn la fase lútea, la progesterona eleva la temperatura basal en unos 0.3 a 0.5 °C. Para conciliar el sueño profundo, el cuerpo necesita descender su temperatura central, motivo por el cual es frecuente experimentar despertares nocturnos o sensación de calor antes del periodo.\n\nPautas para favorecer el descanso:\n• Ambiente fresco: Mantén la habitación entre 18 °C y 20 °C con tejidos transpirables de algodón.\n• Cena ligera: Alimentos con triptófano (plátano, avena o semillas) consumidos dos horas antes de dormir facilitan la producción de melatonina.\n• Filtro de luz azul: Evita pantallas al menos 30 minutos antes de acostarte para permitir la secreción natural de melatonina.\n• Impacto en el dolor: Un sueño inferior a 6 horas incrementa la sensibilidad al dolor y la intensidad de los cólicos al día siguiente.</string>
+
+    <string name="chat_smart_digestive_body">Alivio para náuseas, hinchazón y digestión 🍵\n\nEn la segunda mitad del ciclo, la progesterona relaja el músculo liso del tracto gastrointestinal, enlenteciendo el tránsito y propiciando gases e hinchazón. Al comenzar la menstruación, las prostaglandinas pueden estimular el intestino y causar evacuaciones frecuentes o náuseas.\n\nRecomendaciones prácticas:\n• Infusión de jengibre: El jengibre es un recurso natural eficaz para mitigar náuseas y regular el malestar gástrico.\n• Porciones moderadas: Fraccionar las comidas en porciones más pequeñas cada 3 a 4 horas alivia la carga de la digestión lenta.\n• Moderar el sodio: Reducir alimentos con mucha sal durante la fase lútea disminuye la retención hídrica.\n• Caminata suave: Quince minutos de caminata tranquila después de comer estimulan el movimiento digestivo natural.</string>
+
+    <string name="chat_smart_patterns_empty">Descubrimientos bioestadísticos de tu perfil 🤍\n\nAún no disponemos de registros suficientes para calcular correlaciones. A medida que completes tus registros de sueño, dolor y síntomas durante un par de ciclos, Lumi descubrirá tus patrones personales de forma automática y privada en tu dispositivo.</string>
+    <string name="chat_smart_patterns_body">Descubrimientos bioestadísticos de tu perfil 🌿\n\nAnalizando tu historial de registros en Lumi:\n\n%1$s\n%2$s\n\nLumi actualiza estos análisis de manera continua y confidencial en tu dispositivo conforme sumas nuevos días.</string>
+    <string name="chat_smart_patterns_insight_item">• %1$s se relaciona %2$s con %3$s (fuerza de correlación: %4$d%%)%5$s.</string>
+    <string name="chat_smart_patterns_insight_stable">• Tus variables fisiológicas registradas muestran estabilidad general sin desviaciones significativas.</string>
+    <string name="chat_smart_patterns_cluster_item">• Clúster detectado: Tus síntomas %1$s y %2$s tienden a manifestarse juntos (similitud: %3$d%%).</string>
+    <string name="chat_smart_patterns_dir_direct">directamente</string>
+    <string name="chat_smart_patterns_dir_inverse">inversamente</string>
+    <string name="chat_smart_patterns_lag"> (efecto acumulado de un día a otro)</string>
+
+    <string name="chat_smart_nutrition_menstrual">Nutrición recomendada: Fase Menstrual 🩸\n\n• Prioridad: Reponer hierro y favorecer la desinflamación.\n• Alimentos clave: Espinacas, lentejas, carnes magras, semillas de calabaza y chocolate negro con más del 70% de cacao.\n• Consejo de absorción: Acompaña las fuentes de hierro vegetal con vitamina C (limón, pimientos, cítricos) para maximizar su asimilación.\n• Bebidas recomendadas: Infusiones de manzanilla o canela.</string>
+    <string name="chat_smart_nutrition_follicular">Nutrición recomendada: Fase Folicular 🌿\n\n• Prioridad: Energía, alimentos frescos y soporte metabólico.\n• Alimentos clave: Verduras de hoja verde, aguacate/palta, pescado rico en omega-3, huevos y alimentos fermentados (yogur o kéfir) que favorecen el metabolismo hepático del estrógeno.\n• Carbohidratos: Mayor sensibilidad a la insulina; aprovecha avena, quinoa y fruta fresca.</string>
+    <string name="chat_smart_nutrition_ovulation">Nutrición recomendada: Fase Ovulatoria ✨\n\n• Prioridad: Fibra para metabolizar el estrógeno e hidratación.\n• Alimentos clave: Brócoli, coliflor, frutos rojos, nueces y semillas de chía o lino.\n• Hidratación: Al menos dos litros de agua al día para mantener la consistencia adecuada de los fluidos corporales.</string>
+    <string name="chat_smart_nutrition_luteal">Nutrición recomendada: Fase Lútea 🍵\n\n• Prioridad: Magnesio, complejo B y saciedad sostenida.\n• Alimentos clave: Camote/batata, arroz integral, semillas de girasol, plátano y legumbres.\n• Consejo: Mantén horarios estables de comida para prevenir caídas de glucosa que acentúan la irritabilidad premenstrual.</string>
+    <string name="chat_smart_nutrition_general">Nutrición y ciclo 🌿\n\nPrioriza una alimentación basada en alimentos frescos, suficiente proteína, grasas saludables e hidratación de al menos dos litros de agua al día.</string>
+
+    <string name="chat_smart_exercise_menstrual">Actividad física: Fase Menstrual 🤍\n\n• Tu organismo concentra energía en el desprendimiento endometrial.\n• Recomendado: Yoga suave, estiramientos, caminatas al aire libre o descanso activo si experimentas cólicos pronunciados. Escuchar el ritmo de tu cuerpo es clave.</string>
+    <string name="chat_smart_exercise_follicular">Actividad física: Fase Folicular 🌿\n\n• El incremento de estrógenos optimiza la fuerza, la tolerancia al esfuerzo y la recuperación muscular.\n• Recomendado: Entrenamiento de fuerza con sobrecarga progresiva, sesiones de carrera o actividades dinámicas.</string>
+    <string name="chat_smart_exercise_ovulation">Actividad física: Fase Ovulatoria ✨\n\n• Corresponde al punto más alto de vitalidad y potencia física del ciclo.\n• Recomendado: Sesiones de intervalos de alta intensidad (HIIT), levantamiento moderado a pesado o deportes de agilidad. Realiza un buen calentamiento preventivo articular.</string>
+    <string name="chat_smart_exercise_luteal">Actividad física: Fase Lútea ☁️\n\n• El predominio de progesterona incrementa la temperatura corporal y la sensación de cansancio.\n• Recomendado: Pilates de control, ejercicios con peso moderado, natación y caminatas a ritmo sostenido. Modera la exigencia en los días inmediatamente previos al periodo.</string>
+    <string name="chat_smart_exercise_general">Actividad física y bienestar 🌿\n\nAdapta la intensidad de tu ejercicio a cómo responda tu cuerpo cada día, alternando entrenamiento y descanso adecuado.</string>
+
+    <string name="chat_smart_discharge_body">Guía sobre moco cervical y manchado 🌸\n\nLas características del flujo varían de forma normal a lo largo del ciclo:\n• Transparente y elástico (clara de huevo): Característico de los días fértiles y ovulación; facilita el transporte espermático.\n• Blanco cremoso: Habitual al inicio de la fase folicular y durante la fase lútea bajo predominio de progesterona.\n• Manchado marrón o rosado: Puede corresponder a restos de sangre al inicio o final de la menstruación, o a un leve sangrado por ovulación o implantación.\n\nSignos de alarma que requieren consulta médica:\nFlujo con olor fétido, color verdoso o amarillento intenso, consistencia grumosa tipo requesón, o acompañado de picor, dolor al orinar o ardor vulvar.</string>
+
+    <string name="chat_smart_next_period_no_ctx">Tu próximo periodo se calcula en función de la duración histórica de tus ciclos 🗓️</string>
+    <string name="chat_smart_next_period_late">Tu periodo presenta un retraso de %1$d días sobre tu ciclo habitual de %2$d días 🗓️</string>
+    <string name="chat_smart_next_period_estimate">Tu próximo periodo se estima para dentro de aproximadamente %1$d días (Día %2$d de %3$d) 🗓️</string>
+
+    <string name="chat_smart_current_phase_no_ctx">No disponemos de información suficiente de ciclo para determinar tu fase actual 🌿</string>
+    <string name="chat_smart_current_phase_body">Fase actual de tu ciclo 🌿\n\nHoy te encuentras en el día %1$d de tu ciclo, correspondiente a la %2$s (día %3$d de esta fase).\n\nFaltan aproximadamente %4$d días para el inicio estimado de tu siguiente periodo.</string>
+
+    <string name="chat_smart_contraception_active">Información sobre tu método anticonceptivo 🌿\n\nTu método anticonceptivo hormonal actúa principalmente inhibiendo la liberación del óvulo (ovulación) y espesando el moco del cuello uterino para impedir el ingreso de espermatozoides.\n\nEs fundamental tomar o aplicar el método en los horarios o plazos indicados para mantener su efectividad superior al 99%.</string>
+    <string name="chat_smart_contraception_natural">Métodos anticonceptivos 🌿\n\nActualmente tienes configurado un seguimiento de ciclo natural. Si deseas iniciar un método anticonceptivo (píldora, DIU, implante, parche, inyección o preservativo), es aconsejable agendar una consulta médica para elegir la opción que mejor se adapte a tu salud y estilo de vida.</string>
+
+    <string name="chat_smart_stress_body">Impacto del estrés en tu ciclo menstrual 🌿\n\nEl estrés agudo o continuado activa la secreción de cortisol a través del eje neurohormonal. Niveles elevados de cortisol inhiben temporalmente la liberación de GnRH, lo cual puede posponer la ovulación varios días o provocar la falta transitoria del periodo.\n\nUna vez que el factor estresante disminuye y el cuerpo recupera el equilibrio, el eje hormonal suele regularizarse por sí mismo.</string>
+
+    <string name="chat_smart_energy_body">Cómo optimizar tu nivel de energía ☀️\n\n• Alineación con tu fase: En la fase folicular y ovulatoria tu energía suele ser más alta; en la fase lútea y menstrual es natural necesitar un ritmo más pausado.\n• Hidratación y electrolitos: La deshidratación leve suele manifestarse como letargo o pesadez mental.\n• Sueño reparador: Mantén horarios consistentes para dormir y levantarte.\n• Comidas balanceadas: Incluye proteínas y grasas saludables para evitar fluctuaciones bruscas de energía.</string>
+
+    <string name="chat_smart_greeting_ctx">Hoy estás en tu día %1$d (%2$s).</string>
+    <string name="chat_smart_greeting_no_ctx">Estoy lista para orientarte.</string>
+    <string name="chat_smart_greeting_body">Hola 🤍 %1$s\n\nPuedes consultar sobre los temas disponibles en los botones inferiores:\n• Dudas sobre tu periodo y fase actual\n• Alivio de cólicos, dolores de cabeza o síntomas digestivos\n• Fertilidad, ovulación y salud sexual\n• Tus patrones bioestadísticos personales\n• Recomendaciones de nutrición y actividad física</string>
+
+    <string name="chat_smart_fallback_ctx">Actualmente estás en el día %1$d de tu ciclo (%2$s), a aproximadamente %3$d días de tu siguiente periodo.</string>
+    <string name="chat_smart_fallback_no_ctx">Estoy lista para orientarte sobre tu salud y ciclo.</string>
+    <string name="chat_smart_fallback_body">%1$s\n\nPara brindarte información precisa y segura con respaldo clínico, por favor selecciona una de las preguntas de salud y bienestar organizadas en los temas inferiores.</string>
+
+    <!-- Chat common cd -->
+    <string name="chat_cd_back">Atrás</string>
+
+    <!-- Consulta Médica / SOS Mode Sheet -->
+    <string name="insights_btn_prep_doctor">Preparar mi visita al médico 🩺</string>
+    <string name="insights_btn_export_pdf">Exportar informe para el médico</string>
+    <string name="insights_pdf_generating">Preparando tu informe...</string>
+    <string name="insights_pdf_desc">Documento PDF clínico listo para imprimir o compartir</string>
+
+    <string name="sos_sheet_title">Preparar visita médica 🩺</string>
+    <string name="sos_sheet_subtitle">Resumen estructurado y claro para tu consulta</string>
+    <string name="sos_header_intro">Preparar tu consulta ginecológica te permite dialogar con mayor tranquilidad y claridad. Aquí tienes los datos principales sobre tus ciclos, listos para tu especialista.</string>
+    <string name="sos_cd_close">Cerrar</string>
+    <string name="sos_cd_copy">Copiar resumen</string>
+
+    <string name="sos_script_card_title">Guión sugerido para iniciar la consulta 💬</string>
+    <string name="sos_script_copy_toast">Resumen copiado. Puedes pegarlo en tus notas.</string>
+    <string name="sos_script_copy_tip">Tip: Puedes copiar este resumen para tenerlo a mano o leerlo durante tu cita.</string>
+
+    <string name="sos_script_intro">Hola doctor/a, el primer día de mi último periodo fue el %1$s (%2$s).</string>
+    <string name="sos_script_cycle_length">Mis ciclos suelen durar unos %1$d días,</string>
+    <string name="sos_script_regular">con variaciones leves de hasta %1$d días (bastante regulares).</string>
+    <string name="sos_script_variable">pero varían unos %1$d días entre ciclos.</string>
+    <string name="sos_script_period_duration">El sangrado suele extenderse alrededor de %1$d días.</string>
+    <string name="sos_script_pain">He presentado cólicos con intensidad de hasta %1$d/10 y quisiera evaluarlo en conjunto.</string>
+    <string name="sos_script_contraceptive_yes">Actualmente utilizo métodos anticonceptivos.</string>
+    <string name="sos_script_contraceptive_no">No tomo anticonceptivos hormonales.</string>
+    <string name="sos_script_outro">Traigo este informe con mis registros y curvas para revisarlo si resulta de utilidad.</string>
+
+    <string name="sos_lmp_not_registered">Aún no registrada</string>
+    <string name="sos_days_elapsed">hace %1$d días (vas por el día %2$d de tu ciclo)</string>
+    <string name="sos_days_elapsed_pending">fecha pendiente</string>
+    <string name="sos_empty_history">Cuando registres tu primer ciclo completo, verás aquí el resumen automático para tu especialista.</string>
+
+    <string name="sos_sec_doctor_questions">Preguntas habituales en la consulta</string>
+    <string name="sos_tag_lmp">Último periodo 🗓️</string>
+    <string name="sos_q_lmp">¿Cuándo fue el primer día de tu último periodo?</string>
+    <string name="sos_expl_lmp_days">Conocido en consulta como FUM (Fecha de Última Menstruación). Vas por el día %1$d de tu ciclo actual (hace %2$d días).</string>
+    <string name="sos_expl_lmp_pending">Registra la fecha de inicio de tu última menstruación para tenerla presente en la cita.</string>
+
+    <string name="sos_tag_cycle">Ritmo del ciclo 🌿</string>
+    <string name="sos_q_cycle">¿Cada cuántos días se presenta y cómo es su regularidad?</string>
+    <string name="sos_ans_cycle">Cada %1$d días aproximadamente · %2$s</string>
+    <string name="sos_regularity_regular">Bastante regular (variación de %1$d días)</string>
+    <string name="sos_regularity_variable">Variable (cambia unos %1$d días entre ciclos)</string>
+    <string name="sos_expl_cycle">Tus ciclos oscilan entre %1$d y %2$d días. Cierta variabilidad es normal; si cambia más de una semana de un mes a otro, conviene conversarlo en la consulta.</string>
+
+    <string name="sos_tag_period">Sangrado 🩸</string>
+    <string name="sos_q_period">¿Cuántos días suele durar el sangrado?</string>
+    <string name="sos_ans_period">Alrededor de %1$d días en promedio · %2$s</string>
+    <string name="sos_duration_normal">Dentro de lo habitual (hasta 8 días)</string>
+    <string name="sos_duration_long">Más de una semana (recomendable evaluar)</string>
+    <string name="sos_expl_period">Lo habitual es entre 3 y 8 días. Si experimentas sangrado muy abundante, necesidad de cambios frecuentes o manchado entre períodos, menciónalo en la cita.</string>
+
+    <string name="sos_tag_pain">Cólicos y dolor 🩺</string>
+    <string name="sos_q_pain">¿Presentas cólicos y cuál suele ser su intensidad?</string>
+    <string name="sos_pain_high">Dolor severo que limita actividades (%1$d/10)</string>
+    <string name="sos_pain_moderate">Dolor moderado (%1$d/10)</string>
+    <string name="sos_pain_mild">Molestias leves o tolerables (%1$d/10)</string>
+    <string name="sos_expl_pain">El dolor menstrual severo no debe normalizarse si interfiere con tu día a día. Tu especialista evaluará si amerita descartar causas como endometriosis y recomendarte un tratamiento oportuno.</string>
+
+    <string name="sos_sec_key_notes">Puntos clave para mencionar en la cita 📋</string>
+    <string name="sos_notes_box_title">Puntos sugeridos para la conversación:</string>
+    <string name="sos_notes_box_subtitle">Son aspectos identificados a partir de tus registros que pueden orientar de manera útil la valoración clínica:</string>
+    <string name="sos_note_pain">• Cólicos significativos (%1$d/10): Comenta cómo impactan en tus actividades diarias y consulta si se recomienda una ecografía pélvica.</string>
+    <string name="sos_note_variation">• Variabilidad de ciclos (%1$d días de diferencia): Puedes preguntar si conviene realizar una analítica hormonal o de función tiroidea.</string>
+    <string name="sos_note_period">• Sangrado superior a 8 días: Es oportuno revisarlo para descartar pérdidas elevadas de hierro.</string>
+
+    <string name="sos_sec_checklist_title">Dudas sugeridas para llevar anotadas 📝</string>
+    <string name="sos_checklist_q1">¿Considera conveniente realizar una ecografía para evaluar útero y ovarios?</string>
+    <string name="sos_checklist_q2">¿Recomienda una analítica de sangre para revisar tiroides, hierro y perfil hormonal?</string>
+    <string name="sos_checklist_q3">Con la intensidad de cólicos que he tenido, ¿deberíamos descartar causas específicas o ajustar la analgesia?</string>
+    <string name="sos_checklist_q4">¿El método anticonceptivo que utilizo sigue siendo el más adecuado para mis necesidades?</string>
+    <string name="sos_checklist_q5">¿Qué pauta de analgésico o antiinflamatorio me sugiere ante los primeros síntomas de dolor?</string>
+
+    <string name="sos_btn_export_pdf">Generar informe clínico en PDF 📄</string>
+    <string name="sos_pdf_footer_note">Genera un documento formal en PDF de 2 páginas con curvas de temperatura basal, clasificación FIGO y espacio para indicaciones médicas.</string>
 </resources>

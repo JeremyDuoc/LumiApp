@@ -38,7 +38,7 @@ data class ChatMessageEntity(
 
 enum class ChatMessageType {
     GREETING,          // saludo / mensaje informal de Lumi
-    PERIOD_SOON,       // aviso de regla próxima
+    PERIOD_SOON,       // aviso de periodo próxima
     OVULATION_SOON,    // aviso de ovulación
     SUPPLY_REMINDER,   // "lleva tampón/copa/toallitas" — nuevo
     METHOD_REMINDER,   // pastilla/parche/anillo/inyección

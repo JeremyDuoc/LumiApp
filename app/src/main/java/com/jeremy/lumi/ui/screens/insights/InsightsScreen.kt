@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.MonitorHeart
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.*
@@ -41,9 +42,6 @@ import com.jeremy.lumi.domain.model.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  INSIGHTS SCREEN
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,7 +68,7 @@ fun InsightsScreen(
 
     LaunchedEffect(uiState.pdfBytes) {
         if (uiState.pdfBytes != null) {
-            val today = java.time.LocalDate.now()
+            val today = com.jeremy.lumi.utils.LumiClock.today()
             pdfLauncher.launch("Lumi_Reporte_Medico_$today.pdf")
         }
     }
@@ -169,6 +167,18 @@ fun InsightsScreen(
                     }
                 }
 
+                // --- Alertas Médicas Locales ---
+                if (uiState.medicalAlerts.isNotEmpty()) {
+                    uiState.medicalAlerts.forEachIndexed { index, alert ->
+                        InsightsFadeIn(screenReady, index) {
+                            MedicalAlertCard(
+                                alert = alert,
+                                onDismiss = { viewModel.dismissAlert(alert) }
+                            )
+                        }
+                    }
+                }
+
                 // â”€â”€ Resumen de ciclos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 insights.historicalStats?.let { stats ->
                     InsightsFadeIn(screenReady, 0) {
@@ -226,7 +236,7 @@ fun InsightsScreen(
                     ) {
                         Icon(androidx.compose.material.icons.Icons.Rounded.MonitorHeart, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Preparar visita médica", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.insights_btn_prep_doctor), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
 
@@ -250,7 +260,7 @@ fun InsightsScreen(
                                 color     = MaterialTheme.colorScheme.primary
                             )
                             Spacer(Modifier.width(10.dp))
-                            Text("Generando reporte...", fontSize = 15.sp,
+                            Text(stringResource(R.string.insights_pdf_generating), fontSize = 15.sp,
                                 color = MaterialTheme.colorScheme.primary)
                         } else {
                             Icon(
@@ -261,7 +271,7 @@ fun InsightsScreen(
                             )
                             Spacer(Modifier.width(10.dp))
                             Text(
-                                "Exportar para mi Doctor \uD83D\uDCC4",
+                                stringResource(R.string.insights_btn_export_pdf),
                                 fontSize   = 15.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color      = MaterialTheme.colorScheme.primary
@@ -274,9 +284,20 @@ fun InsightsScreen(
             }
             
             if (showSosSheet) {
-                SosModeSheet(insights = insights) {
-                    showSosSheet = false
-                }
+                SosModeSheet(
+                    insights = insights,
+                    medicalAlerts = uiState.medicalAlerts,
+                    isOnContraceptive = uiState.isOnContraceptive,
+                    lmpDate = uiState.lmpDate,
+                    daysSinceLmp = uiState.daysSinceLmp,
+                    onExportPdf = {
+                        showSosSheet = false
+                        viewModel.generateMedicalReport()
+                    },
+                    onDismiss = {
+                        showSosSheet = false
+                    }
+                )
             }
         }
     }
@@ -446,9 +467,6 @@ private fun RecentCyclesBarChart(cycles: List<CycleStats>) {
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  TARJETA 3 — Heatmap de Correlaciones síntoma × fase
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun SymptomCorrelationCard(correlations: List<SymptomCorrelation>) {
@@ -535,9 +553,6 @@ private fun SymptomCorrelationRow(corr: SymptomCorrelation) {
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  TARJETA 4 â€” Distribución de humor
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun MoodDistributionCard(mood: MoodDistribution) {
@@ -602,40 +617,22 @@ private fun MoodDistributionCard(mood: MoodDistribution) {
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  EMPTY STATE
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun InsightsEmptyState(modifier: Modifier = Modifier) {
+    // Estado vacío unificado de Lumi: halo animado + mensaje que explica
+    // qué se desbloquea aquí cuando haya registros suficientes.
     Box(modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Box(
-                Modifier.size(72.dp).clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Rounded.Analytics, null,
-                    Modifier.size(36.dp), MaterialTheme.colorScheme.primary)
-            }
-            Text(
-                text       = stringResource(R.string.insights_no_data),
-                fontSize   = 14.sp,
-                textAlign  = TextAlign.Center,
-                lineHeight = 22.sp,
-                color      = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                modifier   = Modifier.padding(horizontal = 16.dp)
-            )
-        }
+        com.jeremy.lumi.ui.components.LumiEmptyState(
+            icon = Icons.Rounded.Analytics,
+            title = stringResource(R.string.empty_insights_title),
+            description = stringResource(R.string.empty_insights_desc)
+        )
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  HELPERS VISUALES
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun InsightsFadeIn(visible: Boolean, delayMs: Int, content: @Composable () -> Unit) {
@@ -842,7 +839,6 @@ fun BivariableInsightsCard(insights: List<com.jeremy.lumi.domain.model.Bivariabl
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Icono mágico con fondo brillante
                 Box(
                     modifier = Modifier
                         .size(36.dp)
@@ -855,7 +851,7 @@ fun BivariableInsightsCard(insights: List<com.jeremy.lumi.domain.model.Bivariabl
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.Star, // Changed from AutoAwesome to Star which is definitely in core
+                        imageVector = Icons.Rounded.Star,
                         contentDescription = null,
                         tint = primary,
                         modifier = Modifier.size(20.dp)
@@ -923,6 +919,68 @@ fun BivariableInsightsCard(insights: List<com.jeremy.lumi.domain.model.Bivariabl
                 if (index < insights.size - 1) {
                     Spacer(Modifier.height(12.dp))
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun MedicalAlertCard(
+    alert: MedicalAlert,
+    onDismiss: () -> Unit
+) {
+    val containerColor = if (alert.severity == AlertSeverity.CRITICAL) {
+        Color(0xFFFFEBEE) // Rojo muy suave
+    } else {
+        Color(0xFFFFF8E1) // Ámbar muy suave
+    }
+    
+    val contentColor = if (alert.severity == AlertSeverity.CRITICAL) {
+        Color(0xFFB71C1C) // Rojo oscuro
+    } else {
+        Color(0xFFF57F17) // Ámbar oscuro
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(containerColor)
+            .border(1.dp, contentColor.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
+            .clickable(onClick = onDismiss)
+            .padding(16.dp)
+    ) {
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Rounded.MonitorHeart,
+                    contentDescription = null,
+                    tint = contentColor,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = stringResource(alert.titleRes),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    color = contentColor
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(alert.descriptionRes),
+                fontSize = 13.sp,
+                lineHeight = 18.sp,
+                color = contentColor.copy(alpha = 0.85f)
+            )
+            if (alert.requiresDisclaimer) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.alert_medical_disclaimer_short),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = contentColor.copy(alpha = 0.6f)
+                )
             }
         }
     }

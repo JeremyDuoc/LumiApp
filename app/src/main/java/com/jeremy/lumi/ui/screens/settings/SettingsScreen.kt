@@ -11,9 +11,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CloudUpload
 import androidx.compose.material.icons.rounded.DeleteForever
+import androidx.compose.material.icons.rounded.DonutLarge
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Security
@@ -36,12 +39,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.jeremy.lumi.R
 import com.jeremy.lumi.data.preferences.PhaseSlot
 import com.jeremy.lumi.ui.theme.*
+import com.jeremy.lumi.ui.components.AmbientBackgroundLayer
+import com.jeremy.lumi.ui.theme.AmbientScreen
+import androidx.compose.ui.graphics.drawscope.clipPath
 import com.jeremy.lumi.ui.components.CupertinoSwitch
 import com.jeremy.lumi.ui.components.CupertinoActionSheet
 import com.jeremy.lumi.ui.components.CupertinoActionSheetButton
 import com.jeremy.lumi.ui.components.CupertinoActionSheetCancelButton
 
-// â”€â”€ Modelo de dato para cada opción de tema â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Modelo de dato para cada opción de tema ───────────────────────────────────
 
 private data class ThemeOption(
     val palette : AppThemePalette,
@@ -51,7 +57,7 @@ private data class ThemeOption(
     val darkBg  : Color   = Color(0xFF1A1A2E)
 )
 
-// â”€â”€ Listas por grupo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Listas por grupo ──────────────────────────────────────────────────────────
 
 private val clarasOptions = listOf(
     ThemeOption(AppThemePalette.LUMI_SPARK, "Lumi Spark", LumiSparkPrimary),
@@ -97,7 +103,7 @@ private val minimalistasOptions = listOf(
     ThemeOption(AppThemePalette.CENIZA,  "Ceniza",  CenizaPrimary),
 )
 
-// â”€â”€ Modelo de dato para cada preset de colores de fase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Modelo de dato para cada preset de colores de fase ────────────────────────
 
 private data class PhasePaletteOption(
     val palette: PhaseColorPalette,
@@ -105,6 +111,7 @@ private data class PhasePaletteOption(
 )
 
 private val phasePaletteOptions = listOf(
+    PhasePaletteOption(PhaseColorPalette.AUTO_HARMONY, "Armonía con el tema"),
     PhasePaletteOption(PhaseColorPalette.DEFAULT,     "Original"),
     PhasePaletteOption(PhaseColorPalette.OCEANO_GRADIENT, "Lumi Océano"),
     PhasePaletteOption(PhaseColorPalette.BOSQUE_GRADIENT, "Lumi Bosque"),
@@ -124,10 +131,16 @@ private val phasePaletteOptions = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
+fun SettingsScreen(
+    onNavigateToBackup: () -> Unit = {},
+    onNavigateToPartner: () -> Unit = {},
+    viewModel: SettingsViewModel = hiltViewModel()
+) {
     val currentTheme        by viewModel.currentTheme.collectAsStateWithLifecycle()
     val currentPhasePalette by viewModel.currentPhasePalette.collectAsStateWithLifecycle()
     val customPhaseColors   by viewModel.customPhaseColors.collectAsStateWithLifecycle()
+    val dialStyle           by viewModel.dialStyle.collectAsStateWithLifecycle()
+    val backgroundAmbient   by viewModel.backgroundAmbient.collectAsStateWithLifecycle()
     val isDark = currentTheme.isDark()
     val saveReminders by viewModel.saveRemindersInChat.collectAsStateWithLifecycle()
     val userGoal by viewModel.userGoal.collectAsStateWithLifecycle()
@@ -137,11 +150,12 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val activePhaseColors = if (currentPhasePalette == PhaseColorPalette.CUSTOM && customPhaseColorsVal != null) {
         customPhaseColorsVal
     } else {
-        currentPhasePalette.toPhaseColors(isDark)
+        currentPhasePalette.toPhaseColors(isDark, currentTheme)
     }
 
     var showThemeSheet by remember { mutableStateOf(false) }
     var showPhaseColorSheet by remember { mutableStateOf(false) }
+    var showDialStyleSheet by remember { mutableStateOf(false) }
     var showGoalSheet by remember { mutableStateOf(false) }
     var showPregnancyEndDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
@@ -292,6 +306,22 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
                 SettingsItem(
+                    icon = Icons.Rounded.DonutLarge,
+                    title = stringResource(R.string.settings_dial_style_title),
+                    subtitle = when (dialStyle) {
+                        DialStyle.GRADIENT -> stringResource(R.string.settings_dial_style_gradient)
+                        DialStyle.CYCLE_MAP -> stringResource(R.string.settings_dial_style_cycle_map)
+                        DialStyle.MINIMALIST -> stringResource(R.string.settings_dial_style_minimalist)
+                    },
+                    onClick = { showDialStyleSheet = true }
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
+                AmbientPickerRow(
+                    current  = backgroundAmbient,
+                    onChange = { viewModel.changeBackgroundAmbient(it) }
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
+                SettingsItem(
                     icon = Icons.Rounded.Favorite,
                     title = "Añadir Widget",
                     subtitle = "Coloca a Lumi en tu pantalla de inicio",
@@ -323,6 +353,13 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             SettingsSectionTitle("Datos y Respaldo")
             SettingsCard {
                 SettingsItem(
+                    icon = Icons.Rounded.CloudUpload,
+                    title = stringResource(R.string.backup_settings_entry_title),
+                    subtitle = stringResource(R.string.backup_settings_entry_subtitle),
+                    onClick = onNavigateToBackup
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
+                SettingsItem(
                     icon = Icons.Rounded.Check,
                     title = "Crear Copia de Seguridad",
                     subtitle = "Exportar tus datos a un archivo ZIP",
@@ -344,7 +381,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     icon = Icons.Rounded.Favorite,
                     title = stringResource(R.string.settings_partner),
                     subtitle = stringResource(R.string.settings_partner_desc),
-                    onClick = { /* TODO */ }
+                    onClick = { onNavigateToPartner() }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
                 SettingsItem(
@@ -504,10 +541,11 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     Text(stringResource(R.string.settings_cycle_colors), fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(8.dp))
                     PhasePaletteCarousel(
-                        options       = phasePaletteOptions,
-                        currentPalette= currentPhasePalette,
-                        isDark        = isDark,
-                        onSelect      = { viewModel.changePhasePalette(it) }
+                        options        = phasePaletteOptions,
+                        currentPalette = currentPhasePalette,
+                        currentTheme   = currentTheme,
+                        isDark         = isDark,
+                        onSelect       = { viewModel.changePhasePalette(it) }
                     )
                     Spacer(Modifier.height(24.dp))
                     Text(stringResource(R.string.settings_customize_phase), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 24.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.7f))
@@ -544,6 +582,144 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                             currentColor  = activePhaseColors.luteal,
                             onColorPicked = { viewModel.changeSinglePhaseColor(PhaseSlot.LUTEAL, it, isDark) }
                         )
+                    }
+                }
+            }
+        }
+
+        if (showDialStyleSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showDialStyleSheet = false },
+                containerColor = MaterialTheme.colorScheme.surface
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 32.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.settings_dial_style_title),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(Modifier.height(8.dp))
+
+                    val dialOptions = listOf(
+                        Triple(
+                            DialStyle.GRADIENT,
+                            stringResource(R.string.settings_dial_style_gradient),
+                            stringResource(R.string.settings_dial_style_gradient_desc)
+                        ),
+                        Triple(
+                            DialStyle.CYCLE_MAP,
+                            stringResource(R.string.settings_dial_style_cycle_map),
+                            stringResource(R.string.settings_dial_style_cycle_map_desc)
+                        ),
+                        Triple(
+                            DialStyle.MINIMALIST,
+                            stringResource(R.string.settings_dial_style_minimalist),
+                            stringResource(R.string.settings_dial_style_minimalist_desc)
+                        )
+                    )
+
+                    dialOptions.forEach { (style, title, desc) ->
+                        val isSelected = dialStyle == style
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.changeDialStyle(style)
+                                    showDialStyleSheet = false
+                                }
+                                .padding(horizontal = 24.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = isSelected,
+                                onClick = null,
+                                colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
+                            )
+                            Spacer(Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = title,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 16.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(Modifier.height(2.dp))
+                                Text(
+                                    text = desc,
+                                    fontSize = 12.5.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                                    lineHeight = 16.sp
+                                )
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            // Miniatura visual del aro ilustrativa
+                            Box(
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(CircleShape)
+                                    .border(
+                                        width = 1.dp,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                androidx.compose.foundation.Canvas(modifier = Modifier.size(32.dp)) {
+                                    val strokeW = 4.dp.toPx()
+                                    drawCircle(
+                                        color = if (isDark) Color(0xFF383842) else Color(0xFFE4E4EC),
+                                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeW)
+                                    )
+                                    when (style) {
+                                        DialStyle.GRADIENT -> {
+                                            val miniSweep = androidx.compose.ui.graphics.Brush.sweepGradient(
+                                                listOf(
+                                                    activePhaseColors.menstrual,
+                                                    activePhaseColors.follicular,
+                                                    activePhaseColors.ovulation,
+                                                    activePhaseColors.luteal,
+                                                    activePhaseColors.menstrual
+                                                )
+                                            )
+                                            drawCircle(
+                                                brush = miniSweep,
+                                                style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeW)
+                                            )
+                                        }
+                                        DialStyle.CYCLE_MAP -> {
+                                            val softAlpha = 0.35f
+                                            drawArc(activePhaseColors.menstrual.copy(alpha = softAlpha), -90f, 65f, false, style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeW))
+                                            drawArc(activePhaseColors.follicular.copy(alpha = softAlpha), -25f, 95f, false, style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeW))
+                                            drawArc(activePhaseColors.ovulation.copy(alpha = softAlpha), 70f, 90f, false, style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeW))
+                                            drawArc(activePhaseColors.luteal.copy(alpha = softAlpha), 160f, 110f, false, style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeW))
+                                            // Arco activo al frente
+                                            drawArc(
+                                                color = activePhaseColors.menstrual,
+                                                startAngle = -90f,
+                                                sweepAngle = 65f,
+                                                useCenter = false,
+                                                style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeW, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                                            )
+                                        }
+                                        DialStyle.MINIMALIST -> {
+                                            drawArc(
+                                                color = activePhaseColors.menstrual,
+                                                startAngle = -90f,
+                                                sweepAngle = 65f,
+                                                useCenter = false,
+                                                style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeW, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -764,6 +940,7 @@ private fun ThemeSelector(
 private fun PhasePaletteCarousel(
     options       : List<PhasePaletteOption>,
     currentPalette: PhaseColorPalette,
+    currentTheme  : AppThemePalette,
     isDark        : Boolean,
     onSelect      : (PhaseColorPalette) -> Unit
 ) {
@@ -772,7 +949,7 @@ private fun PhasePaletteCarousel(
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(options, key = { it.palette.name }) { option ->
-            val colors = option.palette.toPhaseColors(isDark)
+            val colors = option.palette.toPhaseColors(isDark, currentTheme)
             val isSelected = currentPalette == option.palette
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -811,6 +988,204 @@ private fun PhasePaletteCarousel(
                     color      = MaterialTheme.colorScheme.onBackground.copy(alpha = if (isSelected) 0.9f else 0.65f),
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                     maxLines   = 1
+                )
+            }
+        }
+    }
+}
+
+// ── Selector de ambiente de fondo ─────────────────────────────────────────────
+
+/**
+ * Row inline que muestra los 4 ambientes como chips seleccionables.
+ * Cada chip tiene una mini-preview del efecto y el nombre del modo.
+ */
+@Composable
+private fun AmbientPickerRow(
+    current  : BackgroundAmbient,
+    onChange : (BackgroundAmbient) -> Unit
+) {
+    val isDark = LocalIsDarkTheme.current
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(start = 40.dp)
+        ) {
+            Icon(
+                imageVector        = Icons.Rounded.AutoAwesome,
+                contentDescription = null,
+                modifier           = Modifier.size(20.dp),
+                tint               = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text       = "Ambiente de fondo",
+                fontWeight = FontWeight.Medium,
+                fontSize   = 15.sp,
+                color      = MaterialTheme.colorScheme.onSurface
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            BackgroundAmbient.entries.forEach { ambient ->
+                AmbientChip(
+                    ambient   = ambient,
+                    selected  = ambient == current,
+                    isDark    = isDark,
+                    onClick   = { onChange(ambient) },
+                    modifier  = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AmbientChip(
+    ambient  : BackgroundAmbient,
+    selected : Boolean,
+    isDark   : Boolean,
+    onClick  : () -> Unit,
+    modifier : Modifier = Modifier
+) {
+    val borderColor  = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+    val bgColor      = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = if (isDark) 0.18f else 0.10f)
+                       else MaterialTheme.colorScheme.surface
+    val contentColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
+
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(14.dp))
+            .background(bgColor)
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        // Mini-preview del efecto
+        AmbientMiniPreview(ambient = ambient, selected = selected, isDark = isDark)
+
+        Text(
+            text      = ambient.labelEs,
+            fontSize  = 11.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            color     = contentColor,
+            textAlign = TextAlign.Center,
+            maxLines  = 1
+        )
+    }
+}
+
+/**
+ * Miniatura cuadrada 40×40dp que da una idea visual del ambiente.
+ * FLAT: fondo sólido. AURA: punto de luz central. CELESTIAL: puntos de estrella + luna.
+ * ORGANIC: dos manchas de color en esquinas.
+ */
+@Composable
+private fun AmbientMiniPreview(
+    ambient  : BackgroundAmbient,
+    selected : Boolean,
+    isDark   : Boolean
+) {
+    val semanticColors = LocalSemanticPhaseColors.current
+    val primaryColor   = MaterialTheme.colorScheme.primary
+    val bgColor        = MaterialTheme.colorScheme.surface
+
+    androidx.compose.foundation.Canvas(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(bgColor)
+    ) {
+        val w = size.width
+        val h = size.height
+
+        when (ambient) {
+            BackgroundAmbient.FLAT -> {
+                // Cuadrado sólido con gradiente sutil del borde
+                drawRect(
+                    brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                        colors = listOf(
+                            primaryColor.copy(alpha = if (isDark) 0.20f else 0.08f),
+                            androidx.compose.ui.graphics.Color.Transparent
+                        )
+                    )
+                )
+            }
+            BackgroundAmbient.AURA -> {
+                // Halo central
+                drawCircle(
+                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        colors = listOf(
+                            primaryColor.copy(alpha = if (isDark) 0.60f else 0.35f),
+                            primaryColor.copy(alpha = 0.05f),
+                            androidx.compose.ui.graphics.Color.Transparent
+                        ),
+                        center = androidx.compose.ui.geometry.Offset(w * 0.5f, h * 0.55f),
+                        radius = w * 0.55f
+                    ),
+                    radius = w * 0.55f,
+                    center = androidx.compose.ui.geometry.Offset(w * 0.5f, h * 0.55f)
+                )
+            }
+            BackgroundAmbient.CELESTIAL -> {
+                // Estrellitas
+                val starPositions = listOf(
+                    Pair(0.15f, 0.20f), Pair(0.55f, 0.10f), Pair(0.80f, 0.30f),
+                    Pair(0.30f, 0.55f), Pair(0.70f, 0.60f), Pair(0.45f, 0.80f)
+                )
+                starPositions.forEach { (fx, fy) ->
+                    drawCircle(
+                        color  = androidx.compose.ui.graphics.Color.White.copy(alpha = if (isDark) 0.55f else 0.20f),
+                        radius = 1.5f,
+                        center = androidx.compose.ui.geometry.Offset(w * fx, h * fy)
+                    )
+                }
+                // Mini luna
+                val moonR = w * 0.14f
+                val moonC = androidx.compose.ui.geometry.Offset(w * 0.78f, h * 0.22f)
+                drawCircle(
+                    color  = androidx.compose.ui.graphics.Color(0xFFE8E0D0).copy(alpha = if (isDark) 0.80f else 0.25f),
+                    radius = moonR,
+                    center = moonC
+                )
+                // Sombra del cuarto creciente
+                val moonPath = androidx.compose.ui.graphics.Path().apply {
+                    addOval(androidx.compose.ui.geometry.Rect(moonC.x - moonR, moonC.y - moonR, moonC.x + moonR, moonC.y + moonR))
+                }
+                clipPath(moonPath) {
+                    drawCircle(bgColor, moonR, androidx.compose.ui.geometry.Offset(moonC.x - moonR * 0.1f, moonC.y))
+                }
+            }
+            BackgroundAmbient.ORGANIC -> {
+                // Dos blobs de color en esquinas
+                val alphaB = if (isDark) 0.55f else 0.30f
+                drawCircle(
+                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        colors = listOf(semanticColors.menstrual.copy(alpha = alphaB), androidx.compose.ui.graphics.Color.Transparent),
+                        center = androidx.compose.ui.geometry.Offset(-w * 0.05f, -h * 0.05f),
+                        radius = w * 0.65f
+                    ),
+                    radius = w * 0.65f,
+                    center = androidx.compose.ui.geometry.Offset(-w * 0.05f, -h * 0.05f)
+                )
+                drawCircle(
+                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        colors = listOf(semanticColors.follicular.copy(alpha = alphaB * 0.70f), androidx.compose.ui.graphics.Color.Transparent),
+                        center = androidx.compose.ui.geometry.Offset(w * 1.05f, h * 1.05f),
+                        radius = w * 0.60f
+                    ),
+                    radius = w * 0.60f,
+                    center = androidx.compose.ui.geometry.Offset(w * 1.05f, h * 1.05f)
                 )
             }
         }

@@ -19,6 +19,7 @@ data class DailyLogEntity(
     val energyLevel: Int? = null,       // 0–10 (0 = agotada, 10 = con mucha energía)
     val sleepHours: Float? = null,      // Horas de sueño (ej. 6.5)
     val stressLevel: Int? = null,       // 0–10
+    val waterIntake: Float? = null,     // Litros de agua (ej. 1.2)
 
     // --- DATOS BIOLÓGICOS AVANZADOS (opcionales, para predicción fina) ---
     val basalBodyTemp: Float? = null,   // Temperatura basal corporal en °C (ej. 36.7)

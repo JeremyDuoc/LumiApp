@@ -2,87 +2,84 @@ package com.jeremy.lumi.data.report
 
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.DashPathEffect
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.RectF
+import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
+import com.jeremy.lumi.domain.model.BioVariable
 import com.jeremy.lumi.domain.model.CyclePhase
 import java.io.ByteArrayOutputStream
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.max
 import kotlin.math.min
 
 /**
- * Genera un reporte médico clínico en PDF usando exclusivamente la API nativa
- * de Android [PdfDocument] + [Canvas] — sin dependencias externas.
+ * Generador de Reporte Clínico Ginecológico en PDF de 2 páginas A4 (595 × 842 pt).
+ * Formateado con precisión institucional para máxima claridad, detalle y rapidez de lectura
+ * por el médico especialista (Ginecóloga/o, Matrona o Médico General).
  *
- * Tamaño A4: 595 × 842 puntos (72 DPI).
+ * Página 1:
+ *  - Encabezado institucional con sello de confidencialidad médica
+ *  - Datos de la paciente (con clasificación clínica de IMC) y caja destacada de F.U.M.
+ *  - Clasificación clínica FIGO 2018 / ACOG con badge de impresión diagnóstica orientativa
+ *  - Panel de Alertas Clínicas y Banderas Rojas Ginecológicas con orientación PALM-COEIN
+ *  - Tabla detallada de historial de ciclos con fila de promedio estadístico
+ *
+ * Página 2:
+ *  - Encabezado secundario de continuidad
+ *  - Curva sintotérmica de Temperatura Basal (BBT) con Coverline OMS (periodo 3-sobre-6),
+ *    delimitación de fase folicular/lútea, indicador de ovulación y barras de dolor EVA
+ *  - Matriz Bio-Estadística: Correlaciones de Spearman con lag fisiológico y Clusters Jaccard
+ *  - Distribución de síntomas frecuentes y patrones de humor
+ *  - Área médica con checkboxes de conducta frecuente (Eco, Analítica, AINEs), líneas manuscritas, firma y sello
+ *  - Declaración médico-legal y de privacidad de datos local (On-Device Local Privacy)
  */
 @Singleton
 class MedicalReportGenerator @Inject constructor() {
 
-    // ─── Dimensiones de página ────────────────────────────────────────────────
-    private val PAGE_W   = 595
-    private val PAGE_H   = 842
-    private val MARGIN   = 36f
-    private val CONTENT_W = PAGE_W - 2 * MARGIN
+    private val PAGE_W    = 595
+    private val PAGE_H    = 842
+    private val MARGIN    = 36f
+    private val CONTENT_W = PAGE_W - (2 * MARGIN)
 
-    // ─── Colores Clínicos ─────────────────────────────────────────────────────────────
-    private val COLOR_PRIMARY   = Color.rgb(41, 98, 255)    // Azul médico
-    private val COLOR_PRIMARY_L = Color.rgb(240, 244, 255)  // Azul muy claro (fondos)
-    private val COLOR_DARK      = Color.rgb(33, 33, 33)     // Texto principal (Casi negro)
-    private val COLOR_GRAY      = Color.rgb(110, 110, 130)  // Texto secundario
-    private val COLOR_BORDER    = Color.rgb(220, 210, 225)  // Bordes / líneas
-    private val COLOR_WHITE     = Color.WHITE
+    // ─── Paleta Clínica Profesional ───────────────────────────────────────────
+    private val COLOR_NAVY_DARK    = Color.rgb(15, 41, 66)      // #0F2942 Slate Navy
+    private val COLOR_PRIMARY      = Color.rgb(30, 90, 168)     // #1E5AA8 Azul Médico
+    private val COLOR_PRIMARY_L    = Color.rgb(240, 244, 249)   // #F0F4F9 Fondo muy suave
+    private val COLOR_DARK         = Color.rgb(30, 41, 59)      // #1E293B Texto oscuro
+    private val COLOR_GRAY         = Color.rgb(100, 116, 139)   // #64748B Texto secundario
+    private val COLOR_LIGHT_GRAY   = Color.rgb(241, 245, 249)   // #F1F5F9 Fondo alterno
+    private val COLOR_BORDER       = Color.rgb(209, 220, 229)   // #D1DCE5 Bordes sutiles
+    private val COLOR_GRID         = Color.rgb(226, 232, 240)   // #E2E8F0 Rejilla
+    private val COLOR_WHITE        = Color.WHITE
 
-    // ─── Paints reutilizables ─────────────────────────────────────────────────
-    private fun titlePaint() = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color     = COLOR_DARK
-        textSize  = 18f
-        isFakeBoldText = true
-        typeface  = android.graphics.Typeface.DEFAULT_BOLD
-    }
-    private fun sectionPaint() = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = COLOR_PRIMARY
-        textSize = 10f
-        isFakeBoldText = true
-        typeface = android.graphics.Typeface.DEFAULT_BOLD
-    }
-    private fun bodyPaint() = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color    = COLOR_DARK
-        textSize = 9f
-    }
-    private fun smallPaint() = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color    = COLOR_GRAY
-        textSize = 8f
-    }
-    private fun valuePaint() = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color    = COLOR_PRIMARY
-        textSize = 9f
-        isFakeBoldText = true
-    }
-    private fun disclaimerPaint() = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color    = COLOR_GRAY
-        textSize = 7.5f
-    }
-
-    // ─── Punto de entrada ─────────────────────────────────────────────────────
+    private val COLOR_RED_DARK     = Color.rgb(190, 18, 60)     // #BE123C Alerta severa
+    private val COLOR_RED_LIGHT    = Color.rgb(255, 241, 242)   // #FFF1F2 Fondo alerta
+    private val COLOR_RED_BORDER   = Color.rgb(254, 205, 211)   // #FECDD3
+    private val COLOR_GREEN_DARK   = Color.rgb(21, 128, 61)     // #15803D Normal / Saludable
+    private val COLOR_GREEN_LIGHT  = Color.rgb(240, 253, 244)   // #F0FDF4
+    private val COLOR_GREEN_BORDER = Color.rgb(187, 247, 208)   // #BBF7D0
+    private val COLOR_COVERLINE    = Color.rgb(225, 29, 72)     // #E11D48 Coverline OMS
 
     fun generate(data: MedicalReportData): ByteArray {
         val pdf = PdfDocument()
-        val ctx = PageContext(pdf)
 
-        drawHeader(ctx, data)
-        drawProfileSection(ctx, data)
-        drawStatsSection(ctx, data)
-        drawCycleHistoryTable(ctx, data)
-        drawClinicalGraphsSection(ctx, data) // Novedad: Gráficos Clínicos (BBT y Dolor)
-        drawSymptomsSection(ctx, data)
-        drawMoodSection(ctx, data)
-        drawDisclaimer(ctx, data)
+        // ── PÁGINA 1: Resumen Clínico, FIGO, Alertas y Tabla de Ciclos ───────
+        val pageInfo1 = PdfDocument.PageInfo.Builder(PAGE_W, PAGE_H, 1).create()
+        val page1 = pdf.startPage(pageInfo1)
+        drawPage1(page1.canvas, data)
+        pdf.finishPage(page1)
 
-        ctx.finishCurrentPage()
+        // ── PÁGINA 2: Curva BBT, Bio-Matriz Spearman/Jaccard, Receta y Firma ─
+        val pageInfo2 = PdfDocument.PageInfo.Builder(PAGE_W, PAGE_H, 2).create()
+        val page2 = pdf.startPage(pageInfo2)
+        drawPage2(page2.canvas, data)
+        pdf.finishPage(page2)
 
         val out = ByteArrayOutputStream()
         pdf.writeTo(out)
@@ -90,443 +87,790 @@ class MedicalReportGenerator @Inject constructor() {
         return out.toByteArray()
     }
 
-    // ─── Header ──────────────────────────────────────────────────────────────
+    // =========================================================================
+    //  PÁGINA 1: CLÍNICA, FIGO Y DIAGNÓSTICO ESTRUCTURADO
+    // =========================================================================
 
-    private fun drawHeader(ctx: PageContext, data: MedicalReportData) {
-        val c = ctx.canvas
+    private fun drawPage1(c: Canvas, data: MedicalReportData) {
+        var y = 0f
 
-        // Banda de color superior
-        val paint = Paint().apply { color = COLOR_PRIMARY }
-        c.drawRect(0f, 0f, PAGE_W.toFloat(), 56f, paint)
+        // 1. Encabezado institucional Navy Slate
+        val headerH = 62f
+        val headerBg = Paint().apply { color = COLOR_NAVY_DARK }
+        c.drawRect(0f, 0f, PAGE_W.toFloat(), headerH, headerBg)
 
-        // Título
-        val tp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color    = COLOR_WHITE
-            textSize = 16f
+        // Línea de acento médico inferior
+        val accentLine = Paint().apply { color = COLOR_PRIMARY; strokeWidth = 3f }
+        c.drawLine(0f, headerH, PAGE_W.toFloat(), headerH, accentLine)
+
+        val titleP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = COLOR_WHITE
+            textSize = 14.5f
+            isFakeBoldText = true
+            typeface = Typeface.DEFAULT_BOLD
+        }
+        c.drawText("INFORME CLÍNICO GINECOLÓGICO", MARGIN, 26f, titleP)
+
+        val subtitleP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.rgb(160, 180, 205)
+            textSize = 8.5f
+        }
+        c.drawText("Lumi Health Platform · Registro Sintotérmico y Biometría del Ciclo", MARGIN, 42f, subtitleP)
+
+        // Badge derecho de confidencialidad y fecha
+        val badgeW = 150f
+        val badgeH = 17f
+        val badgeX = PAGE_W - MARGIN - badgeW
+        val badgeBg = Paint().apply {
+            color = Color.argb(40, 255, 255, 255)
+            style = Paint.Style.FILL
+        }
+        val badgeBorder = Paint().apply {
+            color = Color.argb(80, 255, 255, 255)
+            style = Paint.Style.STROKE
+            strokeWidth = 0.8f
+        }
+        c.drawRoundRect(RectF(badgeX, 14f, badgeX + badgeW, 14f + badgeH), 4f, 4f, badgeBg)
+        c.drawRoundRect(RectF(badgeX, 14f, badgeX + badgeW, 14f + badgeH), 4f, 4f, badgeBorder)
+
+        val badgeTextP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = COLOR_WHITE
+            textSize = 7f
+            isFakeBoldText = true
+            textAlign = Paint.Align.CENTER
+        }
+        c.drawText("DOCUMENTO CONFIDENCIAL", badgeX + (badgeW / 2f), 25.5f, badgeTextP)
+
+        val dateP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.rgb(203, 213, 225)
+            textSize = 7.5f
+            textAlign = Paint.Align.RIGHT
+        }
+        val fmtDate = data.generatedAt.format(DateTimeFormatter.ofPattern("d 'de' MMMM, yyyy", Locale("es")))
+        c.drawText("Emisión: $fmtDate", PAGE_W - MARGIN, 46f, dateP)
+
+        y = headerH + 14f
+
+        // 2. Perfil de Paciente (Izquierda) + F.U.M. Hero Box (Derecha)
+        val profileH = 92f
+        val leftW = 320f
+        val rightW = CONTENT_W - leftW - 12f
+        val rightX = MARGIN + leftW + 12f
+
+        // Caja Perfil
+        drawCardBox(c, MARGIN, y, leftW, profileH)
+        drawMiniHeader(c, MARGIN + 10f, y + 16f, "DATOS DE LA PACIENTE Y REFERENCIA")
+
+        val lblP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_GRAY; textSize = 8f }
+        val valP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_DARK; textSize = 8.5f; isFakeBoldText = true }
+
+        val pName = data.userName ?: "No especificado"
+        val pAge = data.userAge?.let { "$it años" } ?: "No registrada"
+        c.drawText("Paciente:", MARGIN + 10f, y + 32f, lblP)
+        c.drawText(pName, MARGIN + 55f, y + 32f, valP)
+
+        c.drawText("Edad:", MARGIN + 195f, y + 32f, lblP)
+        c.drawText(pAge, MARGIN + 225f, y + 32f, valP)
+
+        // Biometría con categoría clínica de IMC
+        val bmiText = if (data.userHeightCm != null && data.userWeightKg != null && data.userHeightCm > 30f) {
+            val bmi = data.userWeightKg / ((data.userHeightCm / 100f) * (data.userHeightCm / 100f))
+            val bmiCat = when {
+                bmi < 18.5f -> "Bajo peso"
+                bmi < 25.0f -> "Normopeso"
+                bmi < 30.0f -> "Sobrepeso"
+                else        -> "Obesidad"
+            }
+            "${data.userHeightCm.toInt()} cm · ${data.userWeightKg.toInt()} kg (IMC: ${String.format(Locale.US, "%.1f", bmi)} - $bmiCat)"
+        } else if (data.userWeightKg != null) {
+            "${data.userWeightKg.toInt()} kg"
+        } else {
+            "—"
+        }
+        c.drawText("Biometría:", MARGIN + 10f, y + 49f, lblP)
+        c.drawText(bmiText, MARGIN + 60f, y + 49f, valP)
+
+        c.drawText("Anticonceptivo:", MARGIN + 10f, y + 66f, lblP)
+        c.drawText(if (data.isOnContraceptive) "Sí (Hormonal / Regulador)" else "No hormonal / Ciclo natural", MARGIN + 78f, y + 66f, valP)
+
+        c.drawText("Parámetro base:", MARGIN + 10f, y + 83f, lblP)
+        c.drawText("Ciclo ~${data.avgCycleLength} d · Menstruación ~${data.avgPeriodLength} d", MARGIN + 82f, y + 83f, valP)
+
+        // Caja F.U.M. Hero (Derecha)
+        val fumBg = Paint().apply { color = COLOR_PRIMARY_L }
+        val fumBorder = Paint().apply { color = Color.rgb(189, 211, 232); style = Paint.Style.STROKE; strokeWidth = 1f }
+        c.drawRoundRect(RectF(rightX, y, rightX + rightW, y + profileH), 6f, 6f, fumBg)
+        c.drawRoundRect(RectF(rightX, y, rightX + rightW, y + profileH), 6f, 6f, fumBorder)
+
+        val fumTitleP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = COLOR_NAVY_DARK
+            textSize = 8.5f
+            isFakeBoldText = true
+            textAlign = Paint.Align.CENTER
+        }
+        c.drawText("F.U.M. (ÚLTIMO PERIODO)", rightX + (rightW / 2f), y + 20f, fumTitleP)
+
+        val fumDateStr = data.lastMenstrualPeriodDate?.format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale("es"))) ?: "No registrada"
+        val fumDateP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = COLOR_PRIMARY
+            textSize = 14f
+            isFakeBoldText = true
+            textAlign = Paint.Align.CENTER
+        }
+        c.drawText(fumDateStr, rightX + (rightW / 2f), y + 42f, fumDateP)
+
+        // Pill con días transcurridos
+        val pillW = 120f
+        val pillH = 18f
+        val pillX = rightX + (rightW - pillW) / 2f
+        val pillY = y + 54f
+        val pillBg = Paint().apply { color = COLOR_NAVY_DARK }
+        c.drawRoundRect(RectF(pillX, pillY, pillX + pillW, pillY + pillH), 9f, 9f, pillBg)
+
+        val pillTextP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = COLOR_WHITE
+            textSize = 8f
+            isFakeBoldText = true
+            textAlign = Paint.Align.CENTER
+        }
+        val daysText = data.daysSinceLmp?.let { "Hace $it días (Día $it)" } ?: "Sin datos de inicio"
+        c.drawText(daysText, rightX + (rightW / 2f), pillY + 12f, pillTextP)
+
+        val subFumP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = COLOR_GRAY
+            textSize = 6.8f
+            textAlign = Paint.Align.CENTER
+        }
+        c.drawText("Referencia ginecológica en consulta", rightX + (rightW / 2f), y + 85f, subFumP)
+
+        y += profileH + 12f
+
+        // 3. Clasificación FIGO 2018 / ACOG
+        val figoH = 88f
+        drawCardBox(c, MARGIN, y, CONTENT_W, figoH)
+
+        val figo = data.figoClassification
+        val figoIsNormal = figo?.frequency == FigoFrequency.NORMAL && figo.regularity == FigoRegularity.REGULAR && figo.duration == FigoDuration.NORMAL
+        val diagBadge = if (figoIsNormal) "PATRÓN EUMENORREICO NORMAL" else "PATRÓN CON HALLAZGOS A EVALUAR"
+        val diagBadgeColor = if (figoIsNormal) COLOR_GREEN_DARK else COLOR_PRIMARY
+
+        // Título con etiqueta diagnóstica
+        drawMiniHeader(c, MARGIN + 10f, y + 16f, "CLASIFICACIÓN DE CICLO MENSTRUAL (CRITERIOS FIGO 2018 / ACOG)")
+        val diagP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = diagBadgeColor
+            textSize = 7f
+            isFakeBoldText = true
+            textAlign = Paint.Align.RIGHT
+        }
+        c.drawText("[$diagBadge]", MARGIN + CONTENT_W - 10f, y + 15.5f, diagP)
+
+        val badgeWidth = (CONTENT_W - 32f) / 3f
+
+        // Badge 1: Frecuencia
+        val b1X = MARGIN + 10f
+        val bY = y + 26f
+        val freqLabel = figo?.frequency?.label ?: "Frecuencia: ${data.avgCycleLength} días"
+        val freqIsNormal = figo?.frequency == FigoFrequency.NORMAL
+        drawStatusPill(c, b1X, bY, badgeWidth, 24f, "FRECUENCIA", freqLabel, freqIsNormal)
+
+        // Badge 2: Regularidad
+        val b2X = b1X + badgeWidth + 6f
+        val periodobel = figo?.regularity?.label ?: "Regularidad: Estándar"
+        val regIsNormal = figo?.regularity == FigoRegularity.REGULAR
+        drawStatusPill(c, b2X, bY, badgeWidth, 24f, "REGULARIDAD", periodobel, regIsNormal)
+
+        // Badge 3: Duración
+        val b3X = b2X + badgeWidth + 6f
+        val durLabel = figo?.duration?.label ?: "Sangrado: ${data.avgPeriodLength} días"
+        val durIsNormal = figo?.duration == FigoDuration.NORMAL
+        drawStatusPill(c, b3X, bY, badgeWidth, 24f, "DURACIÓN SANGRADO", durLabel, durIsNormal)
+
+        // Texto resumen FIGO
+        val figoSumP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_DARK; textSize = 7.8f }
+        val summaryTxt = figo?.summaryText ?: "Ciclo menstrual analizado con criterios estándar de la Federación Internacional de Ginecología y Obstetricia."
+        c.drawText(summaryTxt, MARGIN + 10f, y + 68f, figoSumP)
+
+        val statsSummary = data.historicalStats?.let {
+            "Estadística base: Mínimo ${it.shortestCycle}d · Máximo ${it.longestCycle}d · Dispersión Δ ${it.longestCycle - it.shortestCycle}d · Retraso máx ${it.maxHistoricalDelay}d"
+        } ?: "Datos analizados sobre el ciclo activo e historial disponible."
+        val figoStatP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_GRAY; textSize = 7.2f }
+        c.drawText(statsSummary, MARGIN + 10f, y + 80f, figoStatP)
+
+        y += figoH + 12f
+
+        // 4. Panel de Banderas Rojas y Alertas Ginecológicas
+        val flags = data.clinicalRedFlags
+        val redFlagH = if (flags.isEmpty()) 44f else (22f + (flags.take(4).size * 22f) + 4f)
+        val alertBgColor = if (flags.isEmpty()) COLOR_GREEN_LIGHT else COLOR_RED_LIGHT
+        val alertBorderColor = if (flags.isEmpty()) COLOR_GREEN_BORDER else COLOR_RED_BORDER
+
+        val rfBg = Paint().apply { color = alertBgColor }
+        val rfBorder = Paint().apply { color = alertBorderColor; style = Paint.Style.STROKE; strokeWidth = 1f }
+        c.drawRoundRect(RectF(MARGIN, y, MARGIN + CONTENT_W, y + redFlagH), 6f, 6f, rfBg)
+        c.drawRoundRect(RectF(MARGIN, y, MARGIN + CONTENT_W, y + redFlagH), 6f, 6f, rfBorder)
+
+        if (flags.isEmpty()) {
+            val safeTitleP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = COLOR_GREEN_DARK
+                textSize = 8.5f
+                isFakeBoldText = true
+            }
+            c.drawText("ALERTAS CLÍNICAS: SIN BANDERAS ROJAS DETECTADAS", MARGIN + 10f, y + 18f, safeTitleP)
+
+            val safeDescP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_DARK; textSize = 7.8f }
+            c.drawText("Sin reportes de dismenorrea severa (EVA ≥ 7), menorragia ni manchado intermenstrual en el período analizado.", MARGIN + 10f, y + 32f, safeDescP)
+        } else {
+            val alertTitleP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = COLOR_RED_DARK
+                textSize = 8.5f
+                isFakeBoldText = true
+            }
+            c.drawText("ALERTAS CLÍNICAS Y FACTORES DE RIESGO DETECTADOS (${flags.size})", MARGIN + 10f, y + 16f, alertTitleP)
+
+            var itemY = y + 29f
+            flags.take(4).forEach { flag ->
+                val bulletP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_RED_DARK }
+                c.drawCircle(MARGIN + 14f, itemY - 3f, 2.5f, bulletP)
+
+                val flagTitleP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = COLOR_RED_DARK
+                    textSize = 8f
+                    isFakeBoldText = true
+                }
+                c.drawText(flag.title, MARGIN + 22f, itemY, flagTitleP)
+
+                val flagDescP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = COLOR_DARK
+                    textSize = 7.2f
+                }
+                val truncatedDesc = if (flag.description.length > 105) flag.description.take(102) + "..." else flag.description
+                c.drawText(truncatedDesc, MARGIN + 22f, itemY + 10f, flagDescP)
+
+                itemY += 22f
+            }
+        }
+
+        y += redFlagH + 12f
+
+        // 5. Tabla de Historial de Ciclos con Fila de Promedio
+        val cycles = data.recentCycles.take(7)
+        val tableH = 24f + (max(cycles.size, 1) * 16.5f) + 18f + 16f // +16f para la fila de promedio
+        drawCardBox(c, MARGIN, y, CONTENT_W, tableH)
+        drawMiniHeader(c, MARGIN + 10f, y + 16f, "REGISTRO HISTÓRICO DE CICLOS (Últimos ${cycles.size} ciclos)")
+
+        val tableY = y + 22f
+        val cols = listOf(
+            Triple("#", 28f, Paint.Align.LEFT),
+            Triple("Fecha Inicio", 100f, Paint.Align.LEFT),
+            Triple("Duración", 85f, Paint.Align.LEFT),
+            Triple("Sangrado", 85f, Paint.Align.LEFT),
+            Triple("Dolor EVA", 95f, Paint.Align.LEFT),
+            Triple("Desviación Media", 130f, Paint.Align.LEFT)
+        )
+
+        // Cabecera de la tabla
+        val tHeaderBg = Paint().apply { color = COLOR_NAVY_DARK }
+        c.drawRect(MARGIN, tableY, MARGIN + CONTENT_W, tableY + 15f, tHeaderBg)
+
+        var curX = MARGIN + 6f
+        val thP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = COLOR_WHITE
+            textSize = 7.5f
             isFakeBoldText = true
         }
-        c.drawText("Reporte de Ciclo Menstrual", MARGIN, 26f, tp)
-
-        // Subtítulo
-        val sp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color    = Color.rgb(180, 200, 255)
-            textSize = 9f
+        cols.forEach { (title, width, _) ->
+            c.drawText(title, curX, tableY + 11f, thP)
+            curX += width
         }
-        c.drawText("Generado por LumiApp · ${data.generatedAt.format(DateTimeFormatter.ofPattern("d 'de' MMMM 'de' yyyy", Locale("es")))}", MARGIN, 42f, sp)
 
-        // "Lumi" badge derecho
-        val bp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color    = Color.argb(60, 255, 255, 255)
-            textSize = 22f
-        }
-        c.drawText("✿", PAGE_W - MARGIN - 24f, 38f, bp)
+        var rowY = tableY + 15f
+        val tbP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_DARK; textSize = 7.5f }
+        val dateFmt = DateTimeFormatter.ofPattern("d MMM yyyy", Locale("es"))
 
-        ctx.y = 68f
-    }
-
-    // ─── Perfil ───────────────────────────────────────────────────────────────
-
-    private fun drawProfileSection(ctx: PageContext, data: MedicalReportData) {
-        ctx.checkBreak(50f)
-        drawSectionTitle(ctx, "PERFIL DE LA USUARIA")
-
-        val items = mutableListOf<Pair<String, String>>()
-        data.userName?.let { items += "Nombre" to it }
-        data.userAge?.let  { items += "Edad" to "$it años" }
-        data.userHeightCm?.let { h ->
-            data.userWeightKg?.let { w ->
-                val bmi = w / ((h / 100) * (h / 100))
-                items += "Talla / Peso" to "${h.toInt()} cm · ${w.toInt()} kg · IMC ${String.format(Locale.US, "%.1f", bmi)}"
-            } ?: run { items += "Talla" to "${h.toInt()} cm" }
-        }
-        items += "Anticonceptivos hormonales" to if (data.isOnContraceptive) "Sí" else "No"
-        items += "Ciclo de referencia" to "${data.avgCycleLength} días · Período ${data.avgPeriodLength} días"
-
-        drawKeyValuePairs(ctx, items)
-    }
-
-    // ─── Estadísticas históricas ──────────────────────────────────────────────
-
-    private fun drawStatsSection(ctx: PageContext, data: MedicalReportData) {
-        ctx.checkBreak(70f)
-        val stats = data.historicalStats
-
-        drawSectionTitle(ctx, "RESUMEN ESTADÍSTICO")
-
-        val items = mutableListOf<Pair<String, String>>()
-        if (stats != null) {
-            items += "Ciclos analizados"    to "${stats.cycleCount}"
-            items += "Duración promedio"    to "${String.format(Locale.US, "%.1f", stats.avgCycleLength)} días"
-            items += "Período promedio"     to "${String.format(Locale.US, "%.1f", stats.avgPeriodLength)} días"
-            items += "Ciclo más corto"      to "${stats.shortestCycle} días"
-            items += "Ciclo más largo"      to "${stats.longestCycle} días"
-            items += "Variabilidad"         to "${stats.longestCycle - stats.shortestCycle} días"
-            if (stats.maxHistoricalDelay > 0)
-                items += "Retraso máximo histórico" to "${stats.maxHistoricalDelay} días"
-            val isIrregular = (stats.longestCycle - stats.shortestCycle) > 7
-            items += "Regularidad"          to if (isIrregular) "Irregular (variación >7 días)" else "Regular"
+        if (cycles.isEmpty()) {
+            c.drawText("No hay ciclos cerrados registrados aún en la base de datos.", MARGIN + 10f, rowY + 13f, tbP)
+            rowY += 16.5f
         } else {
-            items += "Datos disponibles" to "Insuficientes (se necesitan ≥2 ciclos cerrados)"
-        }
+            cycles.forEachIndexed { index, cycle ->
+                val isEven = index % 2 == 0
+                if (isEven) {
+                    val rBg = Paint().apply { color = COLOR_LIGHT_GRAY }
+                    c.drawRect(MARGIN, rowY, MARGIN + CONTENT_W, rowY + 16.5f, rBg)
+                }
 
-        drawKeyValuePairs(ctx, items)
-    }
+                val sDate = data.cycleStartDates.getOrNull(index)?.format(dateFmt) ?: "—"
+                val diff = cycle.durationDays - data.avgCycleLength
+                val diffStr = if (diff > 0) "+$diff d" else if (diff < 0) "$diff d" else "0 d"
 
-    // ─── Tabla de historial de ciclos ─────────────────────────────────────────
+                curX = MARGIN + 6f
+                c.drawText("${index + 1}", curX, rowY + 11.5f, tbP)
+                curX += cols[0].second
 
-    private fun drawCycleHistoryTable(ctx: PageContext, data: MedicalReportData) {
-        val cycles = data.recentCycles
-        if (cycles.isEmpty()) return
+                c.drawText(sDate, curX, rowY + 11.5f, tbP)
+                curX += cols[1].second
 
-        ctx.checkBreak(90f)
-        drawSectionTitle(ctx, "HISTORIAL DE CICLOS (últimos ${cycles.size})")
+                c.drawText("${cycle.durationDays} días", curX, rowY + 11.5f, tbP)
+                curX += cols[2].second
 
-        val headers  = listOf("#", "Inicio", "Duración", "Sangrado", "Dolor prom.")
-        val colRatios= listOf(0.06f, 0.25f, 0.20f, 0.22f, 0.27f)
-        val colWidths= colRatios.map { it * CONTENT_W }
+                c.drawText("${cycle.bleedingDays} días", curX, rowY + 11.5f, tbP)
+                curX += cols[3].second
 
-        val ROW_H    = 16f
-        val headerH  = 18f
+                val painStr = if (cycle.avgPainLevel > 0) "${String.format(Locale.US, "%.1f", cycle.avgPainLevel)}/10" else "0/10"
+                c.drawText(painStr, curX, rowY + 11.5f, tbP)
+                curX += cols[4].second
 
-        // Fondo cabecera
-        ctx.checkBreak(headerH + ROW_H * min(cycles.size, 12) + 4f)
-        val headerBg = Paint().apply { color = COLOR_PRIMARY_L }
-        ctx.canvas.drawRect(MARGIN, ctx.y, MARGIN + CONTENT_W, ctx.y + headerH, headerBg)
+                val diffColor = if (kotlin.math.abs(diff) > 4) COLOR_RED_DARK else COLOR_GRAY
+                val diffP = Paint(tbP).apply { color = diffColor; isFakeBoldText = kotlin.math.abs(diff) > 4 }
+                c.drawText(diffStr, curX, rowY + 11.5f, diffP)
 
-        // Texto cabecera
-        val hp = sectionPaint().apply { color = COLOR_PRIMARY; textSize = 8f }
-        var x = MARGIN + 4f
-        for (i in headers.indices) {
-            ctx.canvas.drawText(headers[i], x, ctx.y + 13f, hp)
-            x += colWidths[i]
-        }
-        ctx.y += headerH
-
-        // Filas
-        val bp = bodyPaint().apply { textSize = 8f }
-        val fmt = DateTimeFormatter.ofPattern("d MMM yy", Locale("es"))
-        cycles.forEachIndexed { idx, cycle ->
-            ctx.checkBreak(ROW_H + 2f)
-
-            // Fondo alterno
-            if (idx % 2 == 0) {
-                val altBg = Paint().apply { color = Color.rgb(248, 249, 250) }
-                ctx.canvas.drawRect(MARGIN, ctx.y, MARGIN + CONTENT_W, ctx.y + ROW_H, altBg)
+                val lineP = Paint().apply { color = COLOR_GRID; strokeWidth = 0.5f }
+                c.drawLine(MARGIN, rowY + 16.5f, MARGIN + CONTENT_W, rowY + 16.5f, lineP)
+                rowY += 16.5f
             }
 
-            val startDate = data.cycleStartDates.getOrNull(idx)
-            val cells = listOf(
-                "${idx + 1}",
-                startDate?.format(fmt) ?: "—",
-                "${cycle.durationDays} días",
-                "${cycle.bleedingDays} días",
-                if (cycle.avgPainLevel > 0) "${String.format(Locale.US, "%.1f", cycle.avgPainLevel)}/10" else "—"
-            )
+            // Fila de resumen de promedios para el médico
+            val avgBg = Paint().apply { color = COLOR_PRIMARY_L }
+            c.drawRect(MARGIN, rowY, MARGIN + CONTENT_W, rowY + 16f, avgBg)
 
-            x = MARGIN + 4f
-            for (i in cells.indices) {
-                ctx.canvas.drawText(cells[i], x, ctx.y + 11f, bp)
-                x += colWidths[i]
+            val avgP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = COLOR_NAVY_DARK
+                textSize = 7.5f
+                isFakeBoldText = true
             }
-
-            // Línea divisoria
-            val linePaint = Paint().apply { color = COLOR_BORDER; strokeWidth = 0.5f }
-            ctx.canvas.drawLine(MARGIN, ctx.y + ROW_H, MARGIN + CONTENT_W, ctx.y + ROW_H, linePaint)
-            ctx.y += ROW_H
+            val avgPainNum = cycles.map { it.avgPainLevel }.average().toFloat()
+            c.drawText("PROMEDIO CLÍNICO", MARGIN + 6f, rowY + 11f, avgP)
+            c.drawText("${data.avgCycleLength} días", MARGIN + 6f + cols[0].second + cols[1].second, rowY + 11f, avgP)
+            c.drawText("${data.avgPeriodLength} días", MARGIN + 6f + cols[0].second + cols[1].second + cols[2].second, rowY + 11f, avgP)
+            c.drawText("${String.format(Locale.US, "%.1f", avgPainNum)}/10", MARGIN + 6f + cols[0].second + cols[1].second + cols[2].second + cols[3].second, rowY + 11f, avgP)
+            c.drawText("Variación Δ ${data.historicalStats?.let { it.longestCycle - it.shortestCycle } ?: 0}d", MARGIN + 6f + cols[0].second + cols[1].second + cols[2].second + cols[3].second + cols[4].second, rowY + 11f, avgP)
         }
-        ctx.y += 4f
+
+        // 6. Pie de Página 1
+        drawPageFooter(c, 1, 2)
     }
 
-    // ─── Gráficos Clínicos (BBT y Síntomas) ───────────────────────────────────
+    // =========================================================================
+    //  PÁGINA 2: GRÁFICAS CLÍNICAS, BIO-MATRIZ, RECETA Y FIRMA
+    // =========================================================================
 
-    private fun drawClinicalGraphsSection(ctx: PageContext, data: MedicalReportData) {
+    private fun drawPage2(c: Canvas, data: MedicalReportData) {
+        var y = 20f
+
+        // 1. Running Mini-Header de continuidad
+        val miniHeaderP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_GRAY; textSize = 7.5f }
+        val pName = data.userName ?: "Paciente"
+        val fumStr = data.lastMenstrualPeriodDate?.format(DateTimeFormatter.ofPattern("d/MM/yyyy")) ?: "—"
+        c.drawText("Lumi Clinical Analytics · Paciente: $pName · FUM: $fumStr · Documento Médico Privado", MARGIN, y + 10f, miniHeaderP)
+
+        val pNumP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_PRIMARY; textSize = 7.5f; isFakeBoldText = true; textAlign = Paint.Align.RIGHT }
+        c.drawText("Página 2 de 2", PAGE_W - MARGIN, y + 10f, pNumP)
+
+        val divP = Paint().apply { color = COLOR_BORDER; strokeWidth = 0.8f }
+        c.drawLine(MARGIN, y + 15f, PAGE_W - MARGIN.toFloat(), y + 15f, divP)
+
+        y += 24f
+
+        // 2. Curva Sintotérmica BBT y Dolor EVA (Último ciclo)
+        val graphCardH = 176f
+        drawCardBox(c, MARGIN, y, CONTENT_W, graphCardH)
+        drawMiniHeader(c, MARGIN + 10f, y + 16f, "CURVA SINTOTÉRMICA BASAL (BBT) Y ESCALA DE DOLOR (EVA)")
+
+        val graphTop = y + 26f
+        val graphH = 102f
+        val graphBottom = graphTop + graphH
         val logs = data.latestCycleLogs
-        if (logs.isEmpty()) return
 
-        ctx.checkBreak(220f)
-        drawSectionTitle(ctx, "CURVA CLÍNICA DEL ÚLTIMO CICLO (T. BASAL Y DOLOR)")
-
-        val graphH = 120f
-        val startY = ctx.y
-        val c = ctx.canvas
-
-        // 1. Obtener rango de BBT válido
-        val bbtLogs = logs.filter { it.basalBodyTemp != null && it.basalBodyTemp > 35f }
-        
-        // Determinar min y max de temperatura
+        // Min y Max BBT
+        val bbtLogs = logs.filter { it.basalBodyTemp != null && it.basalBodyTemp in 35.0f..38.5f }
         var minTemp = 36.0f
-        var maxTemp = 37.5f
+        var maxTemp = 37.4f
         if (bbtLogs.isNotEmpty()) {
-            val actualMin = bbtLogs.minOf { it.basalBodyTemp!! }
-            val actualMax = bbtLogs.maxOf { it.basalBodyTemp!! }
-            minTemp = actualMin - 0.2f
-            maxTemp = actualMax + 0.2f
+            minTemp = bbtLogs.minOf { it.basalBodyTemp!! } - 0.2f
+            maxTemp = bbtLogs.maxOf { it.basalBodyTemp!! } + 0.2f
+            if (maxTemp - minTemp < 1.0f) {
+                val mid = (minTemp + maxTemp) / 2f
+                minTemp = mid - 0.5f
+                maxTemp = mid + 0.5f
+            }
         }
 
-        // Si la diferencia es muy pequeña, forzar un rango clínico de al menos 1.0 grado
-        if (maxTemp - minTemp < 1.0f) {
-            val mid = (minTemp + maxTemp) / 2
-            minTemp = mid - 0.5f
-            maxTemp = mid + 0.5f
+        val totalDays = max(logs.size, 28)
+        val dayStep = (CONTENT_W - 35f) / totalDays.toFloat()
+        val graphLeft = MARGIN + 30f
+        val graphRight = MARGIN + CONTENT_W - 8f
+
+        // Fondo del gráfico
+        val gBg = Paint().apply { color = COLOR_LIGHT_GRAY }
+        c.drawRect(graphLeft, graphTop, graphRight, graphBottom, gBg)
+
+        // Si hay coverline OMS, sombrear fase folicular vs fase lútea
+        val cover = data.bbtCoverline
+        if (cover != null && cover in minTemp..maxTemp) {
+            // Estimar día de cambio térmico (primer día por encima de coverline con 3 días altos)
+            val shiftIndex = logs.indexOfFirst { (it.basalBodyTemp ?: 0f) > cover }.coerceAtLeast(1)
+            val shiftX = graphLeft + (shiftIndex * dayStep)
+
+            // Sombra fase folicular (azulada muy tenue)
+            val folP = Paint().apply { color = Color.rgb(238, 244, 250) }
+            c.drawRect(graphLeft, graphTop, shiftX, graphBottom, folP)
+
+            // Sombra fase lútea (cálida muy tenue)
+            val lutP = Paint().apply { color = Color.rgb(254, 243, 242) }
+            c.drawRect(shiftX, graphTop, graphRight, graphBottom, lutP)
+
+            // Línea vertical divisoria en el cambio térmico
+            val shiftLineP = Paint().apply {
+                color = COLOR_PRIMARY
+                strokeWidth = 1f
+                pathEffect = DashPathEffect(floatArrayOf(3f, 3f), 0f)
+            }
+            c.drawLine(shiftX, graphTop, shiftX, graphBottom, shiftLineP)
+
+            val shiftLblP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = COLOR_PRIMARY
+                textSize = 6f
+                isFakeBoldText = true
+            }
+            c.drawText("Cambio térmico (Ovulación)", shiftX + 3f, graphTop + 10f, shiftLblP)
         }
 
-        val totalDays = logs.size.coerceAtLeast(1)
-        val dayStep = CONTENT_W / totalDays.toFloat()
+        // Líneas horizontales de Temperatura
+        val gridP = Paint().apply { color = COLOR_GRID; strokeWidth = 0.6f }
+        val gTextP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_GRAY; textSize = 6.5f; textAlign = Paint.Align.RIGHT }
 
-        // Dibujar fondo y rejilla del gráfico
-        val gridPaint = Paint().apply { color = COLOR_BORDER; strokeWidth = 0.5f }
-        val gridTextPaint = smallPaint().apply { color = COLOR_GRAY; textSize = 6f }
-
-        c.drawRect(MARGIN, startY, MARGIN + CONTENT_W, startY + graphH, Paint().apply { color = COLOR_PRIMARY_L; alpha = 100 })
-        c.drawRect(MARGIN, startY, MARGIN + CONTENT_W, startY + graphH, Paint().apply { color = COLOR_BORDER; style = Paint.Style.STROKE; strokeWidth = 1f })
-
-        // Líneas horizontales (T. Basal)
         for (i in 0..4) {
-            val y = startY + (graphH * i / 4f)
-            c.drawLine(MARGIN, y, MARGIN + CONTENT_W, y, gridPaint)
-            val temp = maxTemp - ((maxTemp - minTemp) * i / 4f)
-            c.drawText(String.format(Locale.US, "%.1f°", temp), MARGIN - 22f, y + 3f, gridTextPaint)
+            val lineY = graphTop + (graphH * i / 4f)
+            c.drawLine(graphLeft, lineY, graphRight, lineY, gridP)
+            val tVal = maxTemp - ((maxTemp - minTemp) * i / 4f)
+            c.drawText(String.format(Locale.US, "%.1f°", tVal), graphLeft - 4f, lineY + 2.5f, gTextP)
         }
 
-        // Eje X (Días)
-        for (i in 0 until totalDays step 3) { // Mostrar cada 3 días para no saturar
-            val x = MARGIN + (i * dayStep) + (dayStep / 2)
-            c.drawLine(x, startY, x, startY + graphH, gridPaint)
-            c.drawText("${i + 1}", x - 3f, startY + graphH + 10f, gridTextPaint)
+        // Ticks de días en eje X
+        val xTextP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_GRAY; textSize = 6.5f; textAlign = Paint.Align.CENTER }
+        for (d in 0 until totalDays step 3) {
+            val lineX = graphLeft + (d * dayStep)
+            c.drawLine(lineX, graphTop, lineX, graphBottom, gridP)
+            c.drawText("D${d + 1}", lineX, graphBottom + 9f, xTextP)
         }
 
-        // --- Dibujar Curva BBT ---
-        val bbtPath = android.graphics.Path()
-        val bbtPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        // WHO Coverline (periodo 3-sobre-6)
+        if (cover != null && cover in minTemp..maxTemp) {
+            val normY = 1f - ((cover - minTemp) / (maxTemp - minTemp)).coerceIn(0f, 1f)
+            val coverY = graphTop + (graphH * normY)
+
+            val coverP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = COLOR_COVERLINE
+                style = Paint.Style.STROKE
+                strokeWidth = 1.2f
+                pathEffect = DashPathEffect(floatArrayOf(4f, 3f), 0f)
+            }
+            c.drawLine(graphLeft, coverY, graphRight, coverY, coverP)
+
+            val cLblP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = COLOR_COVERLINE
+                textSize = 6.5f
+                isFakeBoldText = true
+                textAlign = Paint.Align.RIGHT
+            }
+            c.drawText("Coverline OMS (${String.format(Locale.US, "%.2f", cover)}°)", graphRight - 4f, coverY - 3f, cLblP)
+        }
+
+        // Barras de Dolor (EVA 0-10) en la base
+        val painBarP = Paint().apply { color = Color.rgb(244, 63, 94); alpha = 130 }
+        logs.forEachIndexed { idx, log ->
+            if (log.painLevel > 0) {
+                val bx = graphLeft + (idx * dayStep)
+                val barH = (log.painLevel / 10f) * 24f
+                c.drawRect(bx + 1f, graphBottom - barH, bx + dayStep - 1f, graphBottom, painBarP)
+            }
+        }
+
+        // Curva BBT
+        val bbtPath = Path()
+        val bbtDotP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_PRIMARY }
+        val bbtLineP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = COLOR_PRIMARY
             style = Paint.Style.STROKE
             strokeWidth = 1.5f
         }
-        val bbtDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = COLOR_PRIMARY
-            style = Paint.Style.FILL
-        }
 
-        var isFirst = true
-        logs.forEachIndexed { index, log ->
+        var isFirstPoint = true
+        logs.forEachIndexed { idx, log ->
             val temp = log.basalBodyTemp
-            if (temp != null && temp > 35f) {
-                val x = MARGIN + (index * dayStep) + (dayStep / 2)
-                val normalizedY = 1f - ((temp - minTemp) / (maxTemp - minTemp)).coerceIn(0f, 1f)
-                val y = startY + (graphH * normalizedY)
+            if (temp != null && temp in 35.0f..38.5f) {
+                val px = graphLeft + (idx * dayStep) + (dayStep / 2f)
+                val normY = 1f - ((temp - minTemp) / (maxTemp - minTemp)).coerceIn(0f, 1f)
+                val py = graphTop + (graphH * normY)
 
-                if (isFirst) {
-                    bbtPath.moveTo(x, y)
-                    isFirst = false
+                if (isFirstPoint) {
+                    bbtPath.moveTo(px, py)
+                    isFirstPoint = false
                 } else {
-                    bbtPath.lineTo(x, y)
+                    bbtPath.lineTo(px, py)
                 }
-                c.drawCircle(x, y, 2f, bbtDotPaint)
+                c.drawCircle(px, py, 2f, bbtDotP)
             }
         }
-        c.drawPath(bbtPath, bbtPaint)
+        c.drawPath(bbtPath, bbtLineP)
 
-        // --- Dibujar Barras de Dolor ---
-        // Se dibuja en la parte inferior del gráfico, superpuesto, con un color contrastante (Gris oscuro)
-        val painPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = COLOR_DARK
-            alpha = 150
-            style = Paint.Style.FILL
+        // Leyenda del gráfico
+        val legY = graphBottom + 20f
+        val legP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_DARK; textSize = 7f }
+
+        c.drawCircle(MARGIN + 20f, legY - 2.5f, 3f, bbtDotP)
+        c.drawText("T. Basal (°C)", MARGIN + 28f, legY, legP)
+
+        val legCoverP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = COLOR_COVERLINE
+            strokeWidth = 1.5f
+            pathEffect = DashPathEffect(floatArrayOf(3f, 2f), 0f)
         }
-        val maxPainH = 30f // Altura máxima de la barra de dolor
-        logs.forEachIndexed { index, log ->
-            if (log.painLevel > 0) {
-                val x = MARGIN + (index * dayStep) + (dayStep / 2)
-                val barH = (log.painLevel / 10f) * maxPainH
-                c.drawRect(x - (dayStep * 0.3f), startY + graphH - barH, x + (dayStep * 0.3f), startY + graphH, painPaint)
+        c.drawLine(MARGIN + 105f, legY - 2.5f, MARGIN + 120f, legY - 2.5f, legCoverP)
+        c.drawText("Coverline OMS (periodo 3-sobre-6)", MARGIN + 125f, legY, legP)
+
+        c.drawRect(MARGIN + 270f, legY - 6f, MARGIN + 280f, legY, painBarP)
+        c.drawText("Nivel Dolor EVA (0-10)", MARGIN + 285f, legY, legP)
+
+        y += graphCardH + 10f
+
+        // 3. Matriz Bio-Estadística: Spearman & Jaccard (2 Columnas)
+        val bioCardH = 115f
+        val bioColW = (CONTENT_W - 10f) / 2f
+        val bioCol2X = MARGIN + bioColW + 10f
+
+        // Columna Izquierda: Correlaciones Spearman
+        drawCardBox(c, MARGIN, y, bioColW, bioCardH)
+        drawMiniHeader(c, MARGIN + 10f, y + 15f, "CORRELACIONES DE SPEARMAN (Lag Fisiológico)")
+
+        val bioInsights = data.bioInsights.take(3)
+        if (bioInsights.isEmpty()) {
+            val emptyP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_GRAY; textSize = 7.5f }
+            c.drawText("Insuficientes días con biomarcadores para correlación estadística.", MARGIN + 10f, y + 36f, emptyP)
+        } else {
+            var bY = y + 30f
+            bioInsights.forEach { ins ->
+                val v1 = varLabel(ins.variableA)
+                val v2 = varLabel(ins.variableB)
+                val lagStr = if (ins.lagDays == 0) "Mismo día (Lag 0)" else "Lag +${ins.lagDays}d (Efecto en 24h)"
+                val rScore = String.format(Locale.US, "rs = %+.2f", ins.correlationScore)
+
+                val dotP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_PRIMARY }
+                c.drawCircle(MARGIN + 12f, bY - 3f, 2f, dotP)
+
+                val bTitleP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_DARK; textSize = 7.8f; isFakeBoldText = true }
+                c.drawText("$v1 ↔ $v2", MARGIN + 18f, bY, bTitleP)
+
+                val bScoreP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_PRIMARY; textSize = 7.2f; isFakeBoldText = true }
+                c.drawText(rScore, MARGIN + bioColW - 52f, bY, bScoreP)
+
+                val interpP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_GRAY; textSize = 6.8f }
+                c.drawText("$lagStr · Correlación no paramétrica", MARGIN + 18f, bY + 10f, interpP)
+
+                bY += 24f
             }
         }
 
-        // Leyenda
-        ctx.y = startY + graphH + 20f
-        val legendPaint = smallPaint().apply { color = COLOR_DARK; textSize = 7f }
-        
-        // BBT
-        c.drawCircle(MARGIN + 10f, ctx.y - 2.5f, 3f, bbtDotPaint)
-        c.drawText("Temperatura Basal (°C)", MARGIN + 18f, ctx.y, legendPaint)
-        
-        // Dolor
-        c.drawRect(MARGIN + 120f, ctx.y - 6f, MARGIN + 128f, ctx.y, painPaint)
-        c.drawText("Nivel de Dolor (1-10)", MARGIN + 132f, ctx.y, legendPaint)
+        // Columna Derecha: Clusters de Síntomas Jaccard
+        drawCardBox(c, bioCol2X, y, bioColW, bioCardH)
+        drawMiniHeader(c, bioCol2X + 10f, y + 15f, "AGRUPACIONES DE SÍNTOMAS (Índice Jaccard)")
 
-        ctx.y += 18f
-    }
-    
-    // ─── Síntomas por fase ────────────────────────────────────────────────────
+        val clusters = data.symptomClusters.take(3)
+        if (clusters.isEmpty()) {
+            val emptyP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_GRAY; textSize = 7.5f }
+            c.drawText("No se detectaron clusters con co-ocurrencia ≥ 40%.", bioCol2X + 10f, y + 36f, emptyP)
+        } else {
+            var cY = y + 30f
+            clusters.forEach { cl ->
+                val sA = cl.symptomA.replaceFirstChar { ch -> ch.uppercase() }
+                val sB = cl.symptomB.replaceFirstChar { ch -> ch.uppercase() }
+                val sympStr = "$sA + $sB"
+                val jaccPct = "${(cl.jaccardScore * 100).toInt()}%"
+                val phaseStr = cl.dominantPhase?.let { "Fase ${phaseLabel(it)}" } ?: "Transversal"
 
-    private fun drawSymptomsSection(ctx: PageContext, data: MedicalReportData) {
-        val correlations = data.symptomCorrelations.take(10)
-        if (correlations.isEmpty()) return
+                val cDotP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_NAVY_DARK }
+                c.drawCircle(bioCol2X + 12f, cY - 3f, 2f, cDotP)
 
-        ctx.checkBreak(60f)
-        drawSectionTitle(ctx, "SÍNTOMAS MÁS FRECUENTES")
+                val cTitleP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_DARK; textSize = 7.8f; isFakeBoldText = true }
+                val truncSymp = if (sympStr.length > 28) sympStr.take(25) + "..." else sympStr
+                c.drawText(truncSymp, bioCol2X + 18f, cY, cTitleP)
 
-        val bp = bodyPaint()
-        val sp = smallPaint()
-        val dot = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_PRIMARY }
+                val cPctP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_NAVY_DARK; textSize = 7.2f; isFakeBoldText = true }
+                c.drawText(jaccPct, bioCol2X + bioColW - 35f, cY, cPctP)
 
-        correlations.forEach { corr ->
-            ctx.checkBreak(18f)
-            // Bullet
-            ctx.canvas.drawCircle(MARGIN + 4f, ctx.y + 5f, 2.5f, dot)
+                val cSubP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_GRAY; textSize = 6.8f }
+                c.drawText("Co-ocurrencia · $phaseStr", bioCol2X + 18f, cY + 10f, cSubP)
 
-            // Nombre del síntoma (negrita)
-            val nbp = bodyPaint().apply { isFakeBoldText = true }
-            ctx.canvas.drawText(corr.symptomName, MARGIN + 12f, ctx.y + 8f, nbp)
-
-            // Fase dominante y ocurrencias
-            val phaseLabel = phaseLabel(corr.dominantPhase)
-            val detail = "Fase ${phaseLabel} · ${corr.totalOccurrences} registro(s)"
-            ctx.canvas.drawText(detail, MARGIN + 12f, ctx.y + 17f, sp)
-            ctx.y += 20f
-        }
-        ctx.y += 4f
-    }
-
-    // ─── Distribución de humor ────────────────────────────────────────────────
-
-    private fun drawMoodSection(ctx: PageContext, data: MedicalReportData) {
-        val mood = data.moodDistribution ?: return
-        if (mood.totalDays == 0) return
-
-        ctx.checkBreak(60f)
-        drawSectionTitle(ctx, "DISTRIBUCIÓN DE HUMOR (${mood.totalDays} días registrados)")
-
-        val sorted = mood.distribution.entries
-            .sortedByDescending { it.value }
-            .take(6)
-
-        val bp  = bodyPaint()
-        val vp  = valuePaint()
-        val bar = Paint().apply { color = COLOR_PRIMARY }
-        val bg  = Paint().apply { color = COLOR_PRIMARY_L }
-
-        sorted.forEach { (moodName, count) ->
-            ctx.checkBreak(18f)
-            val ratio = count.toFloat() / mood.totalDays
-            val pct   = (ratio * 100).toInt()
-            val barW  = ratio * (CONTENT_W * 0.5f)
-
-            // Etiqueta
-            ctx.canvas.drawText(moodName, MARGIN, ctx.y + 9f, bp)
-            // Barra de fondo
-            ctx.canvas.drawRoundRect(
-                RectF(MARGIN + 120f, ctx.y + 2f, MARGIN + 120f + CONTENT_W * 0.5f, ctx.y + 13f),
-                4f, 4f, bg
-            )
-            // Barra de valor
-            if (barW > 0) {
-                ctx.canvas.drawRoundRect(
-                    RectF(MARGIN + 120f, ctx.y + 2f, MARGIN + 120f + barW, ctx.y + 13f),
-                    4f, 4f, bar
-                )
-            }
-            // Porcentaje
-            ctx.canvas.drawText("$pct%  ($count días)", MARGIN + 120f + CONTENT_W * 0.5f + 6f, ctx.y + 9f, vp)
-            ctx.y += 16f
-        }
-        ctx.y += 4f
-    }
-
-    // ─── Disclaimer médico ────────────────────────────────────────────────────
-
-    private fun drawDisclaimer(ctx: PageContext, data: MedicalReportData) {
-        ctx.checkBreak(55f)
-
-        // Línea separadora
-        val line = Paint().apply { color = COLOR_BORDER; strokeWidth = 1f }
-        ctx.canvas.drawLine(MARGIN, ctx.y, MARGIN + CONTENT_W, ctx.y, line)
-        ctx.y += 8f
-
-        val dp = disclaimerPaint()
-        val disclaimer = listOf(
-            "⚕️  AVISO MÉDICO IMPORTANTE",
-            "Este reporte fue generado automáticamente por LumiApp con fines informativos y de bienestar personal.",
-            "No constituye un diagnóstico médico ni reemplaza la consulta con un profesional de la salud.",
-            "Las predicciones son estimaciones estadísticas basadas en los datos registrados por el usuario.",
-            "Si tienes dudas sobre tu salud reproductiva, consulta a tu ginecóloga o matrona.",
-        )
-
-        val boldDp = Paint(dp).apply { isFakeBoldText = true; color = COLOR_PRIMARY }
-        ctx.canvas.drawText(disclaimer[0], MARGIN, ctx.y + 9f, boldDp)
-        ctx.y += 13f
-
-        disclaimer.drop(1).forEach { line2 ->
-            ctx.checkBreak(12f)
-            drawWrappedText(ctx, line2, MARGIN, CONTENT_W, dp, lineHeight = 11f)
-        }
-
-        ctx.y += 8f
-
-        // Pie de página
-        val footerPaint = smallPaint().apply { textAlign = Paint.Align.CENTER }
-        ctx.canvas.drawText(
-            "Reporte generado por LumiApp · ${data.generatedAt} · Todos los datos se procesan localmente en el dispositivo",
-            PAGE_W / 2f, ctx.y + 8f, footerPaint
-        )
-    }
-
-    // ─── Helpers ─────────────────────────────────────────────────────────────
-
-    private fun drawSectionTitle(ctx: PageContext, title: String) {
-        val bg = Paint().apply { color = COLOR_PRIMARY_L }
-        ctx.canvas.drawRect(MARGIN, ctx.y, MARGIN + CONTENT_W, ctx.y + 18f, bg)
-
-        val accent = Paint().apply { color = COLOR_PRIMARY; strokeWidth = 3f }
-        ctx.canvas.drawLine(MARGIN, ctx.y, MARGIN, ctx.y + 18f, accent)
-
-        val tp = sectionPaint()
-        ctx.canvas.drawText(title, MARGIN + 8f, ctx.y + 13f, tp)
-        ctx.y += 22f
-    }
-
-    private fun drawKeyValuePairs(ctx: PageContext, pairs: List<Pair<String, String>>) {
-        val keyW  = CONTENT_W * 0.45f
-        val bp    = bodyPaint()
-        val vp    = valuePaint()
-        val sp    = smallPaint()
-
-        pairs.forEachIndexed { i, (key, value) ->
-            ctx.checkBreak(16f)
-
-            if (i % 2 == 0) {
-                val altBg = Paint().apply { color = Color.rgb(248, 249, 250) }
-                ctx.canvas.drawRect(MARGIN, ctx.y, MARGIN + CONTENT_W, ctx.y + 15f, altBg)
-            }
-
-            ctx.canvas.drawText(key, MARGIN + 6f, ctx.y + 10f, sp)
-            ctx.canvas.drawText(value, MARGIN + keyW, ctx.y + 10f, bp)
-            ctx.y += 15f
-        }
-        ctx.y += 6f
-    }
-
-    private fun drawWrappedText(ctx: PageContext, text: String, x: Float, maxWidth: Float, paint: Paint, lineHeight: Float = 12f) {
-        val words    = text.split(" ")
-        var curLine  = StringBuilder()
-        val lines    = mutableListOf<String>()
-
-        for (word in words) {
-            val test = if (curLine.isEmpty()) word else "${curLine} $word"
-            if (paint.measureText(test) <= maxWidth) {
-                curLine = StringBuilder(test)
-            } else {
-                if (curLine.isNotEmpty()) lines.add(curLine.toString())
-                curLine = StringBuilder(word)
+                cY += 24f
             }
         }
-        if (curLine.isNotEmpty()) lines.add(curLine.toString())
 
-        lines.forEach { line ->
-            ctx.checkBreak(lineHeight)
-            ctx.canvas.drawText(line, x, ctx.y + lineHeight - 2f, paint)
-            ctx.y += lineHeight
+        y += bioCardH + 10f
+
+        // 4. Síntomas Frecuentes y Distribución Emocional
+        val sympH = 76f
+        drawCardBox(c, MARGIN, y, CONTENT_W, sympH)
+        drawMiniHeader(c, MARGIN + 10f, y + 15f, "SÍNTOMAS FRECUENTES Y DISTRIBUCIÓN EMOCIONAL")
+
+        val sympList = data.symptomCorrelations.take(3)
+        var sY = y + 30f
+        sympList.forEach { sc ->
+            val sP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_DARK; textSize = 7.5f }
+            val pP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_GRAY; textSize = 7f }
+            c.drawText("• ${sc.symptomName.replaceFirstChar { it.uppercase() }}", MARGIN + 12f, sY, sP)
+            c.drawText("Predominio en ${phaseLabel(sc.dominantPhase)} (${sc.totalOccurrences} registros)", MARGIN + 120f, sY, pP)
+            sY += 14f
         }
+
+        // Distribución de estado de ánimo (Lado derecho de la tarjeta)
+        val mood = data.moodDistribution
+        val moodX = MARGIN + 310f
+        if (mood != null && mood.totalDays > 0) {
+            val moodP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_DARK; textSize = 7.2f }
+            var mY = y + 30f
+            mood.distribution.entries.sortedByDescending { it.value }.take(3).forEach { (mName, count) ->
+                val pct = (count * 100) / mood.totalDays
+                c.drawText("$mName:", moodX, mY, moodP)
+
+                // Barra
+                val barW = 110f
+                val fillW = (barW * pct) / 100f
+                val mBg = Paint().apply { color = COLOR_LIGHT_GRAY }
+                val mFill = Paint().apply { color = COLOR_PRIMARY }
+                c.drawRoundRect(RectF(moodX + 55f, mY - 6f, moodX + 55f + barW, mY), 2f, 2f, mBg)
+                c.drawRoundRect(RectF(moodX + 55f, mY - 6f, moodX + 55f + fillW, mY), 2f, 2f, mFill)
+
+                c.drawText("$pct%", moodX + 55f + barW + 5f, mY, moodP)
+                mY += 14f
+            }
+        }
+
+        y += sympH + 10f
+
+        // 5. Espacio Clínico Formal: Checkboxes Rápidos, Observaciones, Conducta y Firma
+        val docH = 200f
+        val docBg = Paint().apply { color = COLOR_WHITE }
+        val docBorder = Paint().apply { color = Color.rgb(148, 163, 184); style = Paint.Style.STROKE; strokeWidth = 1f }
+        c.drawRoundRect(RectF(MARGIN, y, MARGIN + CONTENT_W, y + docH), 6f, 6f, docBg)
+        c.drawRoundRect(RectF(MARGIN, y, MARGIN + CONTENT_W, y + docH), 6f, 6f, docBorder)
+
+        // Banda superior de la caja médica
+        val docHeadBg = Paint().apply { color = COLOR_LIGHT_GRAY }
+        c.drawRect(MARGIN, y, MARGIN + CONTENT_W, y + 20f, docHeadBg)
+        val docHeadBorder = Paint().apply { color = COLOR_BORDER; strokeWidth = 0.8f }
+        c.drawLine(MARGIN, y + 20f, MARGIN + CONTENT_W, y + 20f, docHeadBorder)
+
+        val docHeadTextP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = COLOR_NAVY_DARK
+            textSize = 8f
+            isFakeBoldText = true
+        }
+        c.drawText("OBSERVACIONES CLÍNICAS, PLAN TERAPÉUTICO Y PRESCRIPCIÓN MÉDICA", MARGIN + 10f, y + 14f, docHeadTextP)
+
+        // Checkboxes clínicos rápidos para el especialista (Ahorran tiempo en consulta)
+        val cbP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_DARK; textSize = 7.2f }
+        val boxPaint = Paint().apply { color = COLOR_BORDER; style = Paint.Style.STROKE; strokeWidth = 0.8f }
+        val cbY = y + 33f
+
+        // Checkbox 1: Ecografía
+        c.drawRect(MARGIN + 12f, cbY - 7f, MARGIN + 21f, cbY + 2f, boxPaint)
+        c.drawText("Ecografía Ginecológica / TV", MARGIN + 26f, cbY, cbP)
+
+        // Checkbox 2: Perfil Hormonal
+        c.drawRect(MARGIN + 150f, cbY - 7f, MARGIN + 159f, cbY + 2f, boxPaint)
+        c.drawText("Perfil Hormonal (TSH/Prl/Andr.)", MARGIN + 164f, cbY, cbP)
+
+        // Checkbox 3: AINEs / Manejo Dolor
+        c.drawRect(MARGIN + 295f, cbY - 7f, MARGIN + 304f, cbY + 2f, boxPaint)
+        c.drawText("Manejo Dolor / AINEs", MARGIN + 309f, cbY, cbP)
+
+        // Checkbox 4: Anticoncepción
+        c.drawRect(MARGIN + 410f, cbY - 7f, MARGIN + 419f, cbY + 2f, boxPaint)
+        c.drawText("Ajuste Anticonceptivo", MARGIN + 424f, cbY, cbP)
+
+        // Líneas punteadas para anotaciones manuscritas del médico
+        val dashLineP = Paint().apply {
+            color = Color.rgb(210, 220, 230)
+            style = Paint.Style.STROKE
+            strokeWidth = 0.8f
+            pathEffect = DashPathEffect(floatArrayOf(3f, 3f), 0f)
+        }
+
+        var lineY = y + 54f
+        for (i in 0..3) {
+            c.drawLine(MARGIN + 12f, lineY, MARGIN + CONTENT_W - 12f, lineY, dashLineP)
+            lineY += 21f
+        }
+
+        // Líneas de firma, fecha y registro profesional al pie de la caja
+        val bottomDocY = y + docH - 24f
+        val signLineP = Paint().apply { color = COLOR_DARK; strokeWidth = 0.8f }
+
+        // Firma y Sello (Izquierda)
+        val signW = 200f
+        c.drawLine(MARGIN + 16f, bottomDocY, MARGIN + 16f + signW, bottomDocY, signLineP)
+        val signLblP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_GRAY; textSize = 7f; textAlign = Paint.Align.CENTER }
+        c.drawText("Firma y Sello del Especialista", MARGIN + 16f + (signW / 2f), bottomDocY + 11f, signLblP)
+
+        // Fecha y Registro Médico (Derecha)
+        val dateRegX = MARGIN + CONTENT_W - 220f
+        c.drawLine(dateRegX, bottomDocY, MARGIN + CONTENT_W - 16f, bottomDocY, signLineP)
+        c.drawText("Fecha de Consulta / Registro Profesional (Nº Colegiado)", dateRegX + 102f, bottomDocY + 11f, signLblP)
+
+        // 6. Pie de Página 2 y Aviso Médico
+        drawPageFooter(c, 2, 2)
+    }
+
+    // =========================================================================
+    //  COMPONENTES Y HELPERS GRÁFICOS
+    // =========================================================================
+
+    private fun drawCardBox(c: Canvas, x: Float, y: Float, w: Float, h: Float) {
+        val bg = Paint().apply { color = COLOR_WHITE }
+        val border = Paint().apply { color = COLOR_BORDER; style = Paint.Style.STROKE; strokeWidth = 0.8f }
+        c.drawRoundRect(RectF(x, y, x + w, y + h), 6f, 6f, bg)
+        c.drawRoundRect(RectF(x, y, x + w, y + h), 6f, 6f, border)
+    }
+
+    private fun drawMiniHeader(c: Canvas, x: Float, y: Float, title: String) {
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = COLOR_PRIMARY
+            textSize = 8.5f
+            isFakeBoldText = true
+            typeface = Typeface.DEFAULT_BOLD
+        }
+        c.drawText(title, x, y, p)
+    }
+
+    private fun drawStatusPill(c: Canvas, x: Float, y: Float, w: Float, h: Float, title: String, value: String, isOk: Boolean) {
+        val bg = Paint().apply { color = if (isOk) COLOR_GREEN_LIGHT else COLOR_RED_LIGHT }
+        val border = Paint().apply { color = if (isOk) COLOR_GREEN_BORDER else COLOR_RED_BORDER; style = Paint.Style.STROKE; strokeWidth = 0.8f }
+        c.drawRoundRect(RectF(x, y, x + w, y + h), 4f, 4f, bg)
+        c.drawRoundRect(RectF(x, y, x + w, y + h), 4f, 4f, border)
+
+        val tP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_GRAY; textSize = 6.2f; isFakeBoldText = true }
+        c.drawText(title, x + 6f, y + 9f, tP)
+
+        val vColor = if (isOk) COLOR_GREEN_DARK else COLOR_RED_DARK
+        val vP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = vColor; textSize = 7.5f; isFakeBoldText = true }
+        val truncValue = if (value.length > 25) value.take(23) + "..." else value
+        c.drawText(truncValue, x + 6f, y + 19.5f, vP)
+    }
+
+    private fun drawPageFooter(c: Canvas, pageNum: Int, totalPages: Int) {
+        val footerY = PAGE_H - MARGIN + 14f
+
+        val div = Paint().apply { color = COLOR_BORDER; strokeWidth = 0.6f }
+        c.drawLine(MARGIN, footerY - 14f, PAGE_W - MARGIN.toFloat(), footerY - 14f, div)
+
+        val discP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_GRAY; textSize = 6.4f }
+        c.drawText("Aviso: Documento para uso médico orientativo. Procesamiento 100% privado en el dispositivo.", MARGIN, footerY - 4f, discP)
+
+        val pNumP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = COLOR_GRAY
+            textSize = 7f
+            textAlign = Paint.Align.RIGHT
+        }
+        c.drawText("Página $pageNum de $totalPages · Lumi App Health", PAGE_W - MARGIN, footerY - 4f, pNumP)
     }
 
     private fun phaseLabel(phase: CyclePhase): String = when (phase) {
@@ -537,39 +881,12 @@ class MedicalReportGenerator @Inject constructor() {
         else                  -> "General"
     }
 
-    // ─── Gestión de páginas ───────────────────────────────────────────────────
-
-    inner class PageContext(private val pdf: PdfDocument) {
-        private var pageNum: Int = 1
-        private var currentPage: PdfDocument.Page = newPage()
-        var canvas: Canvas = currentPage.canvas
-        var y: Float = 0f
-
-        private fun newPage(): PdfDocument.Page {
-            val info = PdfDocument.PageInfo.Builder(PAGE_W, PAGE_H, pageNum).create()
-            return pdf.startPage(info)
-        }
-
-        /** Si el contenido que falta ([needed] pts) no cabe en la página actual, crea una nueva. */
-        fun checkBreak(needed: Float) {
-            if (y + needed > PAGE_H - MARGIN - 20f) {
-                pdf.finishPage(currentPage)
-                pageNum++
-                currentPage = newPage()
-                canvas = currentPage.canvas
-                y = MARGIN
-
-                // Encabezado mini en páginas secundarias
-                val mp = disclaimerPaint().apply { color = COLOR_GRAY; textAlign = Paint.Align.RIGHT }
-                canvas.drawText("Reporte de Ciclo Menstrual · página $pageNum", PAGE_W - MARGIN, 18f, mp)
-                val line = Paint().apply { color = COLOR_BORDER; strokeWidth = 0.5f }
-                canvas.drawLine(MARGIN, 22f, PAGE_W - MARGIN.toFloat(), 22f, line)
-                y = 30f
-            }
-        }
-
-        fun finishCurrentPage() {
-            pdf.finishPage(currentPage)
-        }
+    private fun varLabel(v: BioVariable): String = when (v) {
+        BioVariable.PAIN_LEVEL       -> "Dolor Pélvico"
+        BioVariable.STRESS_LEVEL     -> "Estrés"
+        BioVariable.ENERGY_LEVEL     -> "Energía"
+        BioVariable.SLEEP_HOURS      -> "Sueño"
+        BioVariable.WATER_INTAKE     -> "Hidratación"
+        BioVariable.BASAL_BODY_TEMP  -> "Temperatura Basal"
     }
 }

@@ -22,11 +22,18 @@ object AlarmScheduler {
     //  el trigger de PERIOD_SOON / OVULATION_SOON a partir de la predicción.
     // ─────────────────────────────────────────────────────────────────────
     fun epochMillisAt(date: LocalDate, hourOfDay: Int, minute: Int): Long {
-        return date
-            .atTime(hourOfDay, minute)
-            .atZone(ZoneId.systemDefault())
-            .toInstant()
-            .toEpochMilli()
+        if (date == LocalDate.MAX || date == LocalDate.MIN || date.year > 9999 || date.year < 1900) {
+            return -1L
+        }
+        return try {
+            date
+                .atTime(hourOfDay, minute)
+                .atZone(ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli()
+        } catch (e: Exception) {
+            -1L
+        }
     }
 
     /**
@@ -60,7 +67,8 @@ object AlarmScheduler {
      */
     fun computeFollowingTrigger(type: ReminderType, previousTriggerAt: Long): Long {
         val intervalDays = type.defaultRepeatIntervalDays() ?: 1L
-        return previousTriggerAt + (intervalDays * 24L * 60L * 60L * 1000L)
+        val zdt = java.time.Instant.ofEpochMilli(previousTriggerAt).atZone(ZoneId.systemDefault())
+        return zdt.plusDays(intervalDays).toInstant().toEpochMilli()
     }
 
     /** Programa (o reprograma) la alarma exacta para un recordatorio. */

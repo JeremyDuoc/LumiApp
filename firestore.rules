@@ -2,17 +2,27 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Reglas para la colección partner_links
+    // periodos para la colección partner_links
     match /partner_links/{linkId} {
       
       // Permitir lectura si:
       // 1. Eres el dueño (ownerUid)
       // 2. Eres la pareja vinculada (partnerUid)
-      // 3. El link está PENDING (para poder buscarlo con el código y unirse)
-      allow read: if request.auth != null && (
+      // Separamos get de list para impedir la enumeración o volcado masivo de enlaces pendientes
+      allow get: if request.auth != null && (
         resource.data.ownerUid == request.auth.uid ||
         resource.data.partnerUid == request.auth.uid ||
         resource.data.status == 'PENDING'
+      );
+
+      // En queries (list), solo el titular o la pareja pueden listar sus propios vínculos,
+      // o resolver 1 vínculo pendiente por código para unirse (PartnerRepositoryImpl.joinPartnerLink).
+      // NOTA ARQUITECTÓNICA: En producción de alta escala se recomienda delegar joinPartnerLink a una
+      // Cloud Function callable con rate limiting para evitar enumeración de códigos cortos.
+      allow list: if request.auth != null && (
+        resource.data.ownerUid == request.auth.uid ||
+        resource.data.partnerUid == request.auth.uid ||
+        (resource.data.status == 'PENDING' && request.query.limit == 1)
       );
       
       // Permitir creación si:
@@ -47,9 +57,10 @@ service cloud.firestore {
     }
 
     match /diaries/{linkId}/entries/{entryId} {
-      // Solo los dos participantes del vínculo pueden leer
+      // Solo los dos participantes de un vínculo ACTIVO pueden leer
       allow read: if request.auth != null
         && exists(/databases/$(database)/documents/partner_links/$(linkId))
+        && get(/databases/$(database)/documents/partner_links/$(linkId)).data.status == 'ACTIVE'
         && (
           get(/databases/$(database)/documents/partner_links/$(linkId)).data.ownerUid
             == request.auth.uid
@@ -58,13 +69,14 @@ service cloud.firestore {
             == request.auth.uid
         );
 
-      // Solo pueden escribir si son participantes Y el authorUid coincide con quien escribe
+      // Solo pueden escribir si el vínculo está ACTIVO Y el authorUid coincide con quien escribe
       allow create: if request.auth != null
         && request.resource.data.authorUid == request.auth.uid
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 500
         && exists(/databases/$(database)/documents/partner_links/$(linkId))
+        && get(/databases/$(database)/documents/partner_links/$(linkId)).data.status == 'ACTIVE'
         && (
           get(/databases/$(database)/documents/partner_links/$(linkId)).data.ownerUid
             == request.auth.uid
@@ -73,8 +85,20 @@ service cloud.firestore {
             == request.auth.uid
         );
 
-      // Nadie puede editar ni borrar — el diario es inmutable
-      allow update, delete: if false;
+      // Inmutable: nadie puede editar el texto de una entrada existente
+      allow update: if false;
+
+      // Poda autorizada: los participantes de un vínculo activo pueden borrar entradas antiguas
+      allow delete: if request.auth != null
+        && exists(/databases/$(database)/documents/partner_links/$(linkId))
+        && get(/databases/$(database)/documents/partner_links/$(linkId)).data.status == 'ACTIVE'
+        && (
+          get(/databases/$(database)/documents/partner_links/$(linkId)).data.ownerUid
+            == request.auth.uid
+          ||
+          get(/databases/$(database)/documents/partner_links/$(linkId)).data.partnerUid
+            == request.auth.uid
+        );
     }
   }
 }

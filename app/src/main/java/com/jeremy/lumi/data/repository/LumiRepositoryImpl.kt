@@ -19,7 +19,11 @@ class LumiRepositoryImpl(
 
     override suspend fun startNewCycle(startDate: Long, cycleLength: Int, periodLength: Int) {
         // FIX: Reemplazar suma fija de ms (falla en Daylight Saving Time) por java.time
-        val zone = java.time.ZoneId.systemDefault()
+        // FIX (bug de zona horaria): [startDate] llega normalizado a medianoche UTC
+        // (convención de toda la app: QuickLog, Calendar, Onboarding). Interpretarlo
+        // con la zona local corría la fecha un día hacia atrás en zonas UTC- (p. ej.
+        // Chile), desplazando la ovulación predicha. Usamos UTC de forma consistente.
+        val zone = java.time.ZoneId.of("UTC")
         val startLocalDate = java.time.Instant.ofEpochMilli(startDate).atZone(zone).toLocalDate()
 
         // La ovulación se predice como: fin_esperado - fase_lútea_estándar (14 días)
@@ -62,20 +66,32 @@ class LumiRepositoryImpl(
         return dao.getCycleForDate(dateMs)
     }
 
+    override suspend fun updateCycle(cycle: CycleEntity) {
+        dao.updateCycle(cycle)
+    }
+
+    override suspend fun deleteCycle(cycleId: Int) {
+        dao.deleteCycleById(cycleId)
+    }
+
+    override suspend fun undoLastPeriodStart(): Boolean {
+        val activeCycle = dao.getCurrentActiveCycle() ?: return false
+        val closedCycles = dao.getClosedCycles()
+        val previousCycle = closedCycles.firstOrNull() ?: return false
+
+        // 1. Reasignar cualquier log asociado al ciclo cancelado hacia el ciclo reabierto
+        dao.reassignDailyLogs(sourceCycleId = activeCycle.id, targetCycleId = previousCycle.id)
+
+        // 2. Eliminar el ciclo activo erróneo
+        dao.deleteCycleById(activeCycle.id)
+
+        // 3. Reabrir el ciclo previo (limpiando endDate)
+        dao.updateCycle(previousCycle.copy(endDate = null))
+        return true
+    }
+
     override suspend fun saveDailyLogWithSymptoms(dailyLog: DailyLogEntity, symptoms: List<SymptomEntity>) {
-        // Guardamos el día primero para obtener su ID autogenerado (o actualizar si ya existía)
-        val dailyLogId = dao.insertDailyLog(dailyLog)
-        val resolvedLogId = if (dailyLog.id != 0) dailyLog.id else dailyLogId.toInt()
-
-        // FIX: si estamos editando un registro existente, primero limpiamos sus síntomas
-        // anteriores. Sin esto, un síntoma desmarcado por la usuaria se quedaría guardado
-        // para siempre (el REPLACE del insert solo pisa los que coinciden por id).
-        dao.deleteSymptomsForLog(resolvedLogId)
-
-        if (symptoms.isNotEmpty()) {
-            val symptomsToInsert = symptoms.map { it.copy(dailyLogId = resolvedLogId) }
-            dao.insertSymptoms(symptomsToInsert)
-        }
+        dao.upsertDailyLogWithSymptoms(dailyLog, symptoms)
     }
 
     override suspend fun getDailyLog(date: Long): DailyLogWithSymptoms? {

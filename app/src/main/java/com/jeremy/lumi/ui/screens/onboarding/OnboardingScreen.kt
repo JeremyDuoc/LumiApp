@@ -70,11 +70,11 @@ fun OnboardingScreen(
     ) {
         Column(Modifier.fillMaxSize()) {
 
-            // â”€â”€ Indicador de progreso (oculto en página de celebración) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-            if (uiState.currentPage < 8) {
+            // ── Indicador de progreso (oculto en página de celebración) ────────────────
+            if (uiState.currentPage < 9) {
                 Spacer(Modifier.height(52.dp))
                 PageIndicator(
-                    totalPages   = 8,
+                    totalPages   = 9,
                     currentPage  = uiState.currentPage,
                     modifier     = Modifier.align(Alignment.CenterHorizontally)
                 )
@@ -234,7 +234,7 @@ private fun BottomNavButtons(
                 )
             } else {
                 Text(
-                    text       = if (currentPage < 7) "Continuar" else "Comenzar mi ciclo ✨",
+                    text       = if (currentPage < 8) "Continuar" else "Comenzar mi ciclo ✨",
                     fontWeight = FontWeight.SemiBold,
                     fontSize   = 16.sp
                 )
@@ -258,7 +258,7 @@ private fun BottomNavButtons(
             }
 
             // Saltar: disponible en páginas opcionales (nombre, perfil físico, objetivos)
-            if (currentPage in listOf(1, 5, 6)) {
+            if (currentPage in listOf(2, 6, 7)) {
                 TextButton(onClick = onSkip) {
                     Text(
                         "Saltar",
@@ -532,7 +532,7 @@ private fun PageRegularity(isRegular: Boolean?, onChange: (Boolean?) -> Unit) {
 }
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  PÁGINA 4 — FECHA DE ÚLTIMA REGLA (Wheel picker)
+//  PÁGINA 4 — FECHA DE ÚLTIMA periodo (Wheel picker)
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
@@ -706,7 +706,7 @@ private fun PageCycleLength(days: Int, isRegular: Boolean?, onChange: (Int) -> U
         icon     = Icons.Rounded.Loop,
         title    = "¿Cuánto dura tu ciclo?",
         subtitle = if (isRegular == false) "Ya que eres irregular, usaremos un promedio inicial para aprender."
-                   else "Desde el primer día de tu regla hasta el día antes de la siguiente."
+                   else "Desde el primer día de tu periodo hasta el día antes de la siguiente."
     ) {
         // Valor grande central
         Text(
@@ -787,7 +787,7 @@ private fun PagePeriodAndGoal(
     ) {
         // â”€â”€ Duración del periodo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         Text(
-            "Duración de tu regla",
+            "Duración de tu periodo",
             fontSize   = 14.sp,
             fontWeight = FontWeight.SemiBold,
             color      = MaterialTheme.colorScheme.onBackground

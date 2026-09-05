@@ -25,9 +25,21 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.LocalFlorist
+import androidx.compose.material.icons.rounded.Cloud
+import androidx.compose.material.icons.rounded.Nightlight
+import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.WaterDrop
+import androidx.compose.material.icons.rounded.LocalHospital
+import androidx.compose.material.icons.rounded.Opacity
+import androidx.compose.material.icons.rounded.Spa
+import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.Psychology
+import androidx.compose.material.icons.rounded.Waves
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,6 +50,9 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -76,6 +91,7 @@ fun DailyLogSheet(
         sleepHours: Float?,
         energyLevel: Int?,
         stressLevel: Int?,
+        waterIntake: Float?,
         basalBodyTemp: Float?,
         spotting: Boolean
     ) -> Unit
@@ -99,18 +115,30 @@ fun DailyLogSheet(
     var showOnCalendar   by remember { mutableStateOf(true) }
 
     var sleepHours       by remember { mutableStateOf<Float?>(null) }
+    var waterIntake      by remember { mutableStateOf<Float?>(null) }
     var energyLevel      by remember { mutableStateOf<Int?>(null) }
     var stressLevel      by remember { mutableStateOf<Int?>(null) }
     var basalBodyTemp    by remember { mutableStateOf("") }
     var spotting         by remember { mutableStateOf(false) }
 
     val flowOptions    = listOf(R.string.flow_light, R.string.flow_medium, R.string.flow_heavy)
-    val moodOptions    = listOf(R.string.mood_happy, R.string.mood_sensitive, R.string.mood_sad, R.string.mood_irritated)
+    val moodOptions    = listOf(
+        R.string.mood_happy, R.string.mood_calm, R.string.mood_energetic, R.string.mood_sensitive,
+        R.string.mood_sad, R.string.mood_anxious, R.string.mood_irritated, R.string.mood_overwhelmed
+    )
     val mucusOptions   = listOf(R.string.mucus_dry, R.string.mucus_sticky, R.string.mucus_creamy, R.string.mucus_watery, R.string.mucus_egg_white)
     
-    val physicalSymptoms = listOf(R.string.symp_cramps, R.string.symp_headache, R.string.symp_acne, R.string.symp_bloating, R.string.symp_fatigue, R.string.symp_pelvic_pain, R.string.symp_breast_tenderness, R.string.symp_fever)
+    val physicalSymptoms = listOf(
+        R.string.symp_cramps, R.string.symp_headache, R.string.symp_migraine, R.string.symp_back_pain,
+        R.string.symp_acne, R.string.symp_bloating, R.string.symp_fatigue, R.string.symp_pelvic_pain,
+        R.string.symp_breast_tenderness, R.string.symp_dizziness, R.string.symp_hot_flashes, R.string.symp_insomnia, R.string.symp_fever
+    )
     val digestiveSymptoms = listOf(R.string.symp_nausea, R.string.symp_diarrhea, R.string.symp_constipation)
-    val symptomOptions = physicalSymptoms + digestiveSymptoms
+    val clinicalSymptoms  = listOf(
+        R.string.symp_libido_high, R.string.symp_libido_low,
+        R.string.symp_lh_positive, R.string.symp_lh_negative
+    )
+    val symptomOptions = physicalSymptoms + digestiveSymptoms + clinicalSymptoms
     
     val methodOptions  = listOf(
         R.string.method_condom, R.string.method_pill, R.string.method_iud,
@@ -150,6 +178,7 @@ fun DailyLogSheet(
             showOnCalendar   = log.dailyLog.showIntercourseOnCalendar
             
             sleepHours       = log.dailyLog.sleepHours
+            waterIntake      = log.dailyLog.waterIntake
             energyLevel      = log.dailyLog.energyLevel
             stressLevel      = log.dailyLog.stressLevel
             basalBodyTemp    = log.dailyLog.basalBodyTemp?.toString() ?: ""
@@ -163,7 +192,6 @@ fun DailyLogSheet(
         containerColor   = MaterialTheme.colorScheme.background,
         modifier         = Modifier.fillMaxHeight(),
         dragHandle = {
-            // Pill handle más delicado
             Box(
                 modifier = Modifier
                     .padding(top = 10.dp, bottom = 4.dp)
@@ -188,12 +216,10 @@ fun DailyLogSheet(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Spacer(Modifier.height(4.dp))
 
-                // ── Estados de expansión ────────────────────────────────────────
-                // Flujo y Dolor: expandidos por defecto. El resto: colapsado salvo que haya datos.
                 var flowExpanded     by remember { mutableStateOf(true) }
                 var painExpanded     by remember { mutableStateOf(true) }
                 var moodExpanded     by remember { mutableStateOf(false) }
@@ -220,7 +246,6 @@ fun DailyLogSheet(
                     )
                 }
 
-                // Si hay datos guardados en secciones colapsadas, auto-expandir
                 LaunchedEffect(savedLog) {
                     if (savedLog != null) {
                         if (savedLog.dailyLog.mood != null)           moodExpanded     = true
@@ -233,9 +258,12 @@ fun DailyLogSheet(
                     }
                 }
 
-                // ── Flujo ────────────────────────────────────────────────────────
+                // ── GRUPO 1: Sangrado y Dolor ────────────────────────────────────────
+                Text("Sangrado y Dolor", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 4.dp))
+
                 CollapsibleLogCard(
                     titleRes  = R.string.log_flow,
+                    icon      = Icons.Rounded.WaterDrop,
                     expanded  = flowExpanded,
                     hasData   = selectedFlow != null || spotting,
                     onToggle  = { flowExpanded = !flowExpanded }
@@ -249,7 +277,12 @@ fun DailyLogSheet(
                     )
                     Spacer(Modifier.height(16.dp))
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { spotting = !spotting },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .clickable { spotting = !spotting }
+                            .padding(horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -258,9 +291,9 @@ fun DailyLogSheet(
                     }
                 }
 
-                // ── Dolor ────────────────────────────────────────────────────────
                 CollapsibleLogCard(
                     titleRes = R.string.log_pain,
+                    icon     = Icons.Rounded.LocalHospital,
                     expanded = painExpanded,
                     hasData  = painLevel > 0f,
                     onToggle = { painExpanded = !painExpanded }
@@ -271,9 +304,13 @@ fun DailyLogSheet(
                     )
                 }
 
-                // ── Estado de ánimo ───────────────────────────────────────────────
+                // ── GRUPO 2: Estado y Síntomas ───────────────────────────────────────
+                Spacer(Modifier.height(8.dp))
+                Text("Estado y Síntomas", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 4.dp))
+
                 CollapsibleLogCard(
                     titleRes = R.string.log_mood,
+                    icon     = Icons.Rounded.Cloud,
                     expanded = moodExpanded,
                     hasData  = selectedMood != null,
                     onToggle = { moodExpanded = !moodExpanded }
@@ -285,10 +322,10 @@ fun DailyLogSheet(
                     )
                 }
 
-                // ── Síntomas ──────────────────────────────────────────────────────
                 if (activeCategories.contains("physical") || activeCategories.contains("digestive")) {
                     CollapsibleLogCard(
                         titleRes = R.string.log_symptoms,
+                        icon     = Icons.Rounded.Info,
                         expanded = symptomsExpanded,
                         hasData  = selectedSymptoms.isNotEmpty(),
                         onToggle = { symptomsExpanded = !symptomsExpanded }
@@ -296,11 +333,12 @@ fun DailyLogSheet(
                         val visibleSymptoms = mutableListOf<Int>()
                         if (activeCategories.contains("physical"))  visibleSymptoms.addAll(physicalSymptoms)
                         if (activeCategories.contains("digestive")) visibleSymptoms.addAll(digestiveSymptoms)
+                        visibleSymptoms.addAll(clinicalSymptoms)
 
                         Box(modifier = Modifier.fillMaxWidth()) {
                             LazyRow(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                contentPadding        = PaddingValues(end = 32.dp)
+                                contentPadding        = PaddingValues(end = 32.dp, top = 4.dp, bottom = 4.dp)
                             ) {
                                 items(visibleSymptoms) { optionRes ->
                                     val isSelected = selectedSymptoms.contains(optionRes)
@@ -330,10 +368,10 @@ fun DailyLogSheet(
                     }
                 }
 
-                // ── Moco Cervical ─────────────────────────────────────────────────
                 if (activeCategories.contains("mucus")) {
                     CollapsibleLogCard(
                         titleRes = R.string.log_cervical_mucus,
+                        icon     = Icons.Rounded.Opacity,
                         expanded = mucusExpanded,
                         hasData  = selectedMucus != null,
                         onToggle = { mucusExpanded = !mucusExpanded },
@@ -341,7 +379,7 @@ fun DailyLogSheet(
                     ) {
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            contentPadding        = PaddingValues(horizontal = 0.dp)
+                            contentPadding        = PaddingValues(start = 0.dp, top = 4.dp, end = 0.dp, bottom = 4.dp)
                         ) {
                             items(mucusOptions) { optionRes ->
                                 PillChip(
@@ -356,10 +394,14 @@ fun DailyLogSheet(
                     }
                 }
 
-                // ── Relaciones ────────────────────────────────────────────────────
+                // ── GRUPO 3: Bienestar e Intimidad ───────────────────────────────────
+                Spacer(Modifier.height(8.dp))
+                Text("Bienestar e Intimidad", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 4.dp))
+
                 if (activeCategories.contains("intercourse")) {
                     CollapsibleLogCard(
                         titleRes = R.string.log_intercourse,
+                        icon     = Icons.Rounded.Favorite,
                         expanded = intercourseExp,
                         hasData  = hadIntercourse,
                         onToggle = { intercourseExp = !intercourseExp }
@@ -383,49 +425,73 @@ fun DailyLogSheet(
                     }
                 }
                 
-                // ── Bienestar (Sueño, Energía, Estrés) ────────────────────────────
                 if (activeCategories.contains("wellbeing")) {
                     CollapsibleLogCard(
-                        titleRes = R.string.category_wellbeing, // Need to define or use string resource later
+                        titleRes = R.string.category_wellbeing,
+                        icon     = Icons.Rounded.LocalFlorist,
                         expanded = wellbeingExp,
-                        hasData  = sleepHours != null || energyLevel != null || stressLevel != null,
+                        hasData  = sleepHours != null || waterIntake != null || energyLevel != null || stressLevel != null,
                         onToggle = { wellbeingExp = !wellbeingExp }
                     ) {
-                        // Sueño
-                        Text("Horas de sueño: ${sleepHours?.let { String.format(Locale.US, "%.1f", it) } ?: "—"}", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                        Slider(
-                            value = sleepHours ?: 0f,
-                            onValueChange = { sleepHours = if (it < 0.5f) null else it },
-                            valueRange = 0f..14f,
-                            steps = 27
-                        )
-                        Spacer(Modifier.height(8.dp))
+                        val haptic = LocalHapticFeedback.current
                         
-                        // Energía
-                        Text("Nivel de energía: ${energyLevel ?: "—"}", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                        Slider(
-                            value = energyLevel?.toFloat() ?: 0f,
-                            onValueChange = { energyLevel = if (it < 1f) null else it.toInt() },
-                            valueRange = 0f..10f,
-                            steps = 9
+                        WellbeingSliderRow(
+                            label = "Horas de sueño",
+                            value = sleepHours,
+                            valueDisplay = sleepHours?.let { String.format(Locale.US, "%.1f", it) } ?: "—",
+                            range = 0f..14f,
+                            steps = 27,
+                            onValueChange = { 
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                sleepHours = if (it < 0.5f) null else it 
+                            }
                         )
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(16.dp))
+                        
+                        WellbeingSliderRow(
+                            label = "Agua (Litros)",
+                            value = waterIntake,
+                            valueDisplay = waterIntake?.let { String.format(Locale.US, "%.1f", it) } ?: "—",
+                            range = 0f..5f,
+                            steps = 9,
+                            onValueChange = { 
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                waterIntake = if (it < 0.2f) null else it 
+                            }
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        
+                        WellbeingSliderRow(
+                            label = "Nivel de energía",
+                            value = energyLevel?.toFloat(),
+                            valueDisplay = energyLevel?.toString() ?: "—",
+                            range = 0f..10f,
+                            steps = 9,
+                            onValueChange = { 
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                energyLevel = if (it < 1f) null else it.toInt() 
+                            }
+                        )
+                        Spacer(Modifier.height(16.dp))
 
-                        // Estrés
-                        Text("Nivel de estrés: ${stressLevel ?: "—"}", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                        Slider(
-                            value = stressLevel?.toFloat() ?: 0f,
-                            onValueChange = { stressLevel = if (it < 1f) null else it.toInt() },
-                            valueRange = 0f..10f,
-                            steps = 9
+                        WellbeingSliderRow(
+                            label = "Nivel de estrés",
+                            value = stressLevel?.toFloat(),
+                            valueDisplay = stressLevel?.toString() ?: "—",
+                            range = 0f..10f,
+                            steps = 9,
+                            onValueChange = { 
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                stressLevel = if (it < 1f) null else it.toInt() 
+                            }
                         )
                     }
                 }
 
-                // ── Signos Vitales (Temperatura, Peso) ────────────────────────────
                 if (activeCategories.contains("vitals")) {
                     CollapsibleLogCard(
-                        titleRes = R.string.category_vitals, // Need to define or use string resource later
+                        titleRes = R.string.category_vitals,
+                        icon     = Icons.Rounded.Info,
                         expanded = vitalsExp,
                         hasData  = basalBodyTemp.isNotBlank(),
                         onToggle = { vitalsExp = !vitalsExp }
@@ -435,14 +501,19 @@ fun DailyLogSheet(
                             onValueChange = { basalBodyTemp = it },
                             label = { Text("Temperatura Basal (°C)") },
                             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 52.dp),
+                            shape = RoundedCornerShape(14.dp)
                         )
                     }
                 }
 
                 // ── Notas ─────────────────────────────────────────────────────────
+                Spacer(Modifier.height(8.dp))
                 CollapsibleLogCard(
                     titleRes = R.string.log_notes,
+                    icon     = Icons.Rounded.Edit,
                     expanded = notesExpanded,
                     hasData  = notes.isNotBlank(),
                     onToggle = { notesExpanded = !notesExpanded }
@@ -452,7 +523,7 @@ fun DailyLogSheet(
                         onValueChange = { notes = it },
                         modifier      = Modifier
                             .fillMaxWidth()
-                            .height(90.dp),
+                            .height(120.dp),
                         placeholder   = {
                             Text(
                                 stringResource(id = R.string.log_notes_hint),
@@ -473,10 +544,12 @@ fun DailyLogSheet(
 
                 Spacer(Modifier.height(4.dp))
 
-                // Botón Personalizar Registro
                 TextButton(
                     onClick = { showCustomizeSheet = true },
-                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 8.dp)
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(vertical = 8.dp)
+                        .height(52.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.btn_customize_log),
@@ -507,6 +580,7 @@ fun DailyLogSheet(
                         sleepHours,
                         energyLevel,
                         stressLevel,
+                        waterIntake,
                         bbtParsed,
                         spotting
                     )
@@ -545,12 +619,13 @@ fun DailyLogSheet(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .heightIn(min = 52.dp)
                             .clickable {
                                 val newCats = activeCategories.toMutableSet()
                                 if (newCats.contains(key)) newCats.remove(key) else newCats.add(key)
                                 onActiveCategoriesChange(newCats)
                             }
-                            .padding(horizontal = 24.dp, vertical = 16.dp),
+                            .padding(horizontal = 24.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Checkbox(
@@ -567,6 +642,45 @@ fun DailyLogSheet(
     }
 }
 
+@Composable
+private fun WellbeingSliderRow(
+    label: String,
+    value: Float?,
+    valueDisplay: String,
+    range: ClosedFloatingPointRange<Float>,
+    steps: Int,
+    onValueChange: (Float) -> Unit
+) {
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(label, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = valueDisplay,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+        Slider(
+            value = value ?: range.start,
+            onValueChange = onValueChange,
+            valueRange = range,
+            steps = steps
+        )
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  HEADER
 // ─────────────────────────────────────────────────────────────────────────────
@@ -578,10 +692,9 @@ private fun SheetHeader(day: Int, month: Int, year: Int) {
             .format(DateTimeFormatter.ofPattern("d 'de' MMMM", Locale("es")))
     }
     Row(
-        modifier          = Modifier.fillMaxWidth(),
+        modifier          = Modifier.fillMaxWidth().heightIn(min = 52.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Burbuja con el número del día
         Box(
             modifier = Modifier
                 .size(44.dp)
@@ -647,12 +760,14 @@ private fun CardSectionTitle(titleRes: Int) {
 @Composable
 private fun CollapsibleLogCard(
     titleRes : Int,
+    icon     : ImageVector,
     expanded : Boolean,
     hasData  : Boolean,
     onToggle : () -> Unit,
     onInfoClick: (() -> Unit)? = null,
     content  : @Composable ColumnScope.() -> Unit
 ) {
+    val haptic = LocalHapticFeedback.current
     val chevronRotation by animateFloatAsState(
         targetValue   = if (expanded) 180f else 0f,
         animationSpec = tween(250),
@@ -665,60 +780,71 @@ private fun CollapsibleLogCard(
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.surface)
     ) {
-        // ── Header clickeable ────────────────────────────────────────────────
         Row(
             modifier          = Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onToggle)
+                .heightIn(min = 56.dp)
+                .clickable {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onToggle()
+                }
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(Modifier.width(12.dp))
+            
             Text(
                 text          = stringResource(id = titleRes),
-                fontSize      = 13.sp,
+                fontSize      = 14.sp,
                 fontWeight    = FontWeight.SemiBold,
-                color         = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
+                color         = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f),
                 letterSpacing = 0.4.sp,
                 modifier      = Modifier.weight(1f)
             )
             
             if (onInfoClick != null) {
                 IconButton(
-                    onClick = onInfoClick,
-                    modifier = Modifier.size(24.dp)
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onInfoClick()
+                    },
+                    modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Info,
                         contentDescription = "Información",
                         tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
                 Spacer(Modifier.width(8.dp))
             }
             
-            // Punto verde si hay datos guardados
             if (hasData) {
                 Box(
                     modifier = Modifier
-                        .size(7.dp)
+                        .size(8.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primary)
                 )
                 Spacer(Modifier.width(8.dp))
             }
-            // Chevron animado
             Icon(
                 imageVector        = Icons.Rounded.ExpandMore,
                 contentDescription = null,
                 modifier           = Modifier
-                    .size(20.dp)
+                    .size(24.dp)
                     .rotate(chevronRotation),
                 tint               = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f)
             )
         }
 
-        // ── Contenido colapsable ──────────────────────────────────────────────
         AnimatedVisibility(
             visible = expanded,
             enter   = expandVertically() + fadeIn(tween(200)),
@@ -733,11 +859,12 @@ private fun CollapsibleLogCard(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  FLOW SELECTOR — 3 opciones con icono de gota animado
+//  FLOW SELECTOR
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun FlowSelector(options: List<Int>, selected: Int?, onSelect: (Int) -> Unit) {
+    val haptic = LocalHapticFeedback.current
     Row(
         modifier              = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -745,36 +872,42 @@ private fun FlowSelector(options: List<Int>, selected: Int?, onSelect: (Int) -> 
         options.forEachIndexed { index, optionRes ->
             val isSelected = selected == optionRes
             val bgAnim by animateColorAsState(
-                if (isSelected) MaterialTheme.colorScheme.primary
+                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                 else            MaterialTheme.colorScheme.surfaceVariant,
                 animationSpec = tween(220), label = "flow_bg_$index"
             )
             val contentAnim by animateColorAsState(
-                if (isSelected) MaterialTheme.colorScheme.onPrimary
+                if (isSelected) MaterialTheme.colorScheme.primary
                 else            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f),
                 animationSpec = tween(220), label = "flow_fg_$index"
             )
+            val borderModifier = if (isSelected) Modifier.border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp)) else Modifier
             val scaleAnim by animateFloatAsState(
-                targetValue   = if (isSelected) 1.04f else 1f,
+                targetValue   = if (isSelected) 1.02f else 1f,
                 animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMediumLow),
                 label         = "flow_scale_$index"
             )
+            
             Box(
                 modifier = Modifier
                     .weight(1f)
+                    .height(76.dp)
                     .scale(scaleAnim)
-                    .clip(RoundedCornerShape(14.dp))
+                    .clip(RoundedCornerShape(16.dp))
+                    .then(borderModifier)
                     .background(bgAnim)
                     .clickable(
                         indication             = null,
                         interactionSource      = remember { MutableInteractionSource() }
-                    ) { onSelect(optionRes) }
-                    .padding(vertical = 14.dp),
+                    ) { 
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onSelect(optionRes) 
+                    }
+                    .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
-                // Dots indicando intensidad (1, 2 o 3 puntos)
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         repeat(index + 1) {
                             Box(
                                 modifier = Modifier
@@ -784,11 +917,11 @@ private fun FlowSelector(options: List<Int>, selected: Int?, onSelect: (Int) -> 
                             )
                         }
                     }
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(Modifier.height(8.dp))
                     Text(
                         text       = stringResource(id = optionRes),
-                        fontSize   = 12.sp,
-                        fontWeight = FontWeight.Medium,
+                        fontSize   = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
                         color      = contentAnim
                     )
                 }
@@ -798,56 +931,87 @@ private fun FlowSelector(options: List<Int>, selected: Int?, onSelect: (Int) -> 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  MOOD SELECTOR — chips más grandes con emoji visual
+//  MOOD SELECTOR 
 // ─────────────────────────────────────────────────────────────────────────────
 
-private val moodEmojis = listOf("🌸", "🌧️", "🌙", "🔥")
+private val moodIcons = listOf(
+    Icons.Rounded.LocalFlorist,
+    Icons.Rounded.Spa,
+    Icons.Rounded.Bolt,
+    Icons.Rounded.FavoriteBorder,
+    Icons.Rounded.Cloud,
+    Icons.Rounded.Psychology,
+    Icons.Rounded.LocalFireDepartment,
+    Icons.Rounded.Waves
+)
 
 @Composable
 private fun MoodSelector(options: List<Int>, selected: Int?, onSelect: (Int) -> Unit) {
-    Row(
-        modifier              = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    val haptic = LocalHapticFeedback.current
+    val chunked = options.chunked(4)
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        options.forEachIndexed { index, optionRes ->
-            val isSelected = selected == optionRes
-            val bgAnim by animateColorAsState(
-                if (isSelected) MaterialTheme.colorScheme.secondary
-                else            MaterialTheme.colorScheme.surfaceVariant,
-                animationSpec = tween(200), label = "mood_bg_$index"
-            )
-            val textAnim by animateColorAsState(
-                if (isSelected) MaterialTheme.colorScheme.onSecondary
-                else            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                animationSpec = tween(200), label = "mood_text_$index"
-            )
-            val scaleAnim by animateFloatAsState(
-                targetValue   = if (isSelected) 1.05f else 1f,
-                animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMediumLow),
-                label         = "mood_scale_$index"
-            )
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .scale(scaleAnim)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(bgAnim)
-                    .clickable(
-                        indication        = null,
-                        interactionSource = remember { MutableInteractionSource() }
-                    ) { onSelect(optionRes) }
-                    .padding(vertical = 12.dp),
-                contentAlignment = Alignment.Center
+        chunked.forEachIndexed { rowIndex, rowOptions ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = moodEmojis.getOrElse(index) { "•" }, fontSize = 20.sp)
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text       = stringResource(id = optionRes),
-                        fontSize   = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color      = textAnim
+                rowOptions.forEachIndexed { colIndex, optionRes ->
+                    val globalIndex = rowIndex * 4 + colIndex
+                    val isSelected = selected == optionRes
+                    val bgAnim by animateColorAsState(
+                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                        else MaterialTheme.colorScheme.surfaceVariant,
+                        animationSpec = tween(200), label = "mood_bg_$globalIndex"
                     )
+                    val textAnim by animateColorAsState(
+                        if (isSelected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                        animationSpec = tween(200), label = "mood_text_$globalIndex"
+                    )
+                    val borderModifier = if (isSelected) Modifier.border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp)) else Modifier
+                    val scaleAnim by animateFloatAsState(
+                        targetValue = if (isSelected) 1.02f else 1f,
+                        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMediumLow),
+                        label = "mood_scale_$globalIndex"
+                    )
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(76.dp)
+                            .scale(scaleAnim)
+                            .clip(RoundedCornerShape(16.dp))
+                            .then(borderModifier)
+                            .background(bgAnim)
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() }
+                            ) {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                onSelect(optionRes)
+                            }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                            Icon(
+                                imageVector = moodIcons.getOrElse(globalIndex) { Icons.Rounded.Info },
+                                contentDescription = null,
+                                tint = textAnim,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = stringResource(id = optionRes),
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = textAnim,
+                                maxLines = 1
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -855,17 +1019,17 @@ private fun MoodSelector(options: List<Int>, selected: Int?, onSelect: (Int) -> 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  PAIN SELECTOR — slider con barra de color y número animado
+//  PAIN SELECTOR
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun PainSelector(painLevel: Float, onValueChange: (Float) -> Unit) {
+    val haptic = LocalHapticFeedback.current
     val neutral = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f)
     val safe    = MaterialTheme.colorScheme.primary
     val warning = MaterialTheme.colorScheme.tertiary
     val danger  = MaterialTheme.colorScheme.error
 
-    // Con 0 = sin dolor, el color es neutro; de 1 a 10 interpolamos
     val rawColor = if (painLevel == 0f) neutral else {
         val t = (painLevel - 1f) / 9f
         if (t < 0.5f) lerp(safe, warning, t * 2f)
@@ -874,7 +1038,6 @@ private fun PainSelector(painLevel: Float, onValueChange: (Float) -> Unit) {
     val animColor by animateColorAsState(rawColor, tween(280), label = "pain_color")
 
     Column {
-        // Número + etiqueta
         Row(
             verticalAlignment     = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -896,36 +1059,38 @@ private fun PainSelector(painLevel: Float, onValueChange: (Float) -> Unit) {
                         color      = animColor
                     )
                 }
-                Spacer(Modifier.width(4.dp))
+                Spacer(Modifier.width(6.dp))
                 Text(
                     text       = "/ 10",
                     fontSize   = 16.sp,
-                    fontWeight = FontWeight.Light,
-                    color      = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.35f),
+                    fontWeight = FontWeight.Medium,
+                    color      = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
                     modifier   = Modifier.padding(bottom = 6.dp)
                 )
             }
-            // Etiqueta descriptiva
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .background(animColor.copy(alpha = 0.12f))
-                    .padding(horizontal = 10.dp, vertical = 5.dp)
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Text(
                     text       = stringResource(id = painLabelRes(painLevel.toInt())),
-                    fontSize   = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    fontSize   = 13.sp,
+                    fontWeight = FontWeight.Bold,
                     color      = animColor
                 )
             }
         }
 
-        Spacer(Modifier.height(2.dp))
+        Spacer(Modifier.height(8.dp))
 
         Slider(
             value         = painLevel,
-            onValueChange = onValueChange,
+            onValueChange = { 
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onValueChange(it) 
+            },
             valueRange    = 0f..10f,
             steps         = 9,
             colors        = SliderDefaults.colors(
@@ -945,7 +1110,7 @@ private fun painLabelRes(level: Int): Int = when (level) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  INTERCOURSE CARD — sección expandible
+//  INTERCOURSE CARD
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -962,46 +1127,24 @@ private fun IntercourseCard(
     showOnCalendar: Boolean,
     onShowOnCalendarChange: (Boolean) -> Unit
 ) {
+    val haptic = LocalHapticFeedback.current
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.surface)
+        modifier = Modifier.fillMaxWidth()
     ) {
-        // Fila principal del toggle
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment     = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.error.copy(alpha = 0.12f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector        = Icons.Rounded.Favorite,
-                        contentDescription = null,
-                        tint               = MaterialTheme.colorScheme.error,
-                        modifier           = Modifier.size(16.dp)
-                    )
-                }
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    text       = stringResource(id = R.string.log_intercourse),
-                    fontSize   = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color      = MaterialTheme.colorScheme.onBackground
-                )
-            }
+            Text(
+                text       = "¿Hubo relaciones sexuales?",
+                fontSize   = 14.sp,
+                color      = MaterialTheme.colorScheme.onBackground
+            )
             com.popovanton0.heartswitch.HeartSwitch(
                 checked         = hadIntercourse,
                 onCheckedChange = { checked ->
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onHadIntercourseChange(checked)
                     if (!checked) {
                         onProtectionChange(null)
@@ -1012,7 +1155,6 @@ private fun IntercourseCard(
             )
         }
 
-        // Contenido expandible
         AnimatedVisibility(
             visible = hadIntercourse,
             enter   = expandVertically(animationSpec = tween(280, easing = EaseOutCubic)) + fadeIn(tween(240)),
@@ -1021,32 +1163,34 @@ private fun IntercourseCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                    .padding(top = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Divisor sutil
                 HorizontalDivider(
                     color     = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.07f),
                     thickness = 1.dp
                 )
 
-                // Protección
                 CardSectionTitle(titleRes = R.string.log_protection)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PillChip(
                         text       = stringResource(id = R.string.protection_yes),
                         isSelected = protectionUsed == true,
-                        onClick    = { onProtectionChange(if (protectionUsed == true) null else true) }
+                        onClick    = { 
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onProtectionChange(if (protectionUsed == true) null else true) 
+                        }
                     )
                     PillChip(
                         text       = stringResource(id = R.string.protection_no),
                         isSelected = protectionUsed == false,
-                        onClick    = { onProtectionChange(if (protectionUsed == false) null else false) }
+                        onClick    = { 
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onProtectionChange(if (protectionUsed == false) null else false) 
+                        }
                     )
                 }
 
-                // Método — solo cuando hay protección (protectionUsed == true)
-                // Si no hay protección, no tiene sentido mostrar métodos anticonceptivos
                 AnimatedVisibility(
                     visible = protectionUsed == true,
                     enter   = expandVertically(tween(250)) + fadeIn(tween(200)),
@@ -1054,21 +1198,25 @@ private fun IntercourseCard(
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         CardSectionTitle(titleRes = R.string.log_method)
-                        // "Ninguno" no tiene sentido si protectionUsed=true — filtrar
                         val filteredMethods = methodOptions.filter { it != R.string.method_none }
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(top = 4.dp, bottom = 4.dp)
+                        ) {
                             items(filteredMethods) { optionRes ->
                                 PillChip(
                                     text       = stringResource(id = optionRes),
                                     isSelected = selectedMethod == optionRes,
-                                    onClick    = { onMethodSelect(optionRes) }
+                                    onClick    = { 
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        onMethodSelect(optionRes) 
+                                    }
                                 )
                             }
                         }
                     }
                 }
 
-                // Notas de relaciones
                 OutlinedTextField(
                     value         = intercourseNotes,
                     onValueChange = onIntercourseNotesChange,
@@ -1092,25 +1240,25 @@ private fun IntercourseCard(
                     textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
                 )
 
-                // Mostrar en calendario
                 Row(
-                    modifier              = Modifier.fillMaxWidth(),
+                    modifier              = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment     = Alignment.CenterVertically
                 ) {
                     Text(
                         text     = stringResource(id = R.string.log_show_on_calendar),
-                        fontSize = 13.sp,
-                        color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f),
+                        fontSize = 14.sp,
+                        color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
                         modifier = Modifier.weight(1f)
                     )
                     Switch(
                         checked         = showOnCalendar,
-                        onCheckedChange = onShowOnCalendarChange,
-                        colors          = SwitchDefaults.colors(
-                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                            checkedTrackColor = MaterialTheme.colorScheme.primary
-                        )
+                        onCheckedChange = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onShowOnCalendarChange(it)
+                        }
                     )
                 }
             }
@@ -1119,25 +1267,25 @@ private fun IntercourseCard(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  PILL CHIP — reutilizable, animado
+//  PILL CHIP
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 fun PillChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
+    val haptic = LocalHapticFeedback.current
     val bg by animateColorAsState(
-        if (isSelected) MaterialTheme.colorScheme.primary
-        else            Color.Transparent,
+        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+        else            MaterialTheme.colorScheme.surfaceVariant,
         tween(220), label = "chip_bg"
     )
     val fg by animateColorAsState(
-        if (isSelected) MaterialTheme.colorScheme.onPrimary
-        else            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+        if (isSelected) MaterialTheme.colorScheme.primary
+        else            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
         tween(220), label = "chip_fg"
     )
-    val borderColor = if (isSelected) Color.Transparent
-    else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.15f)
+    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
     val scale by animateFloatAsState(
-        targetValue   = if (isSelected) 1.04f else 1f,
+        targetValue   = if (isSelected) 1.02f else 1f,
         animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMediumLow),
         label         = "chip_scale"
     )
@@ -1145,17 +1293,21 @@ fun PillChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .scale(scale)
-            .clip(CircleShape)
+            .clip(RoundedCornerShape(26.dp))
             .background(bg)
-            .border(1.dp, borderColor, CircleShape)
+            .border(1.dp, borderColor, RoundedCornerShape(26.dp))
             .clickable(
                 indication        = null,
                 interactionSource = remember { MutableInteractionSource() }
-            ) { onClick() }
-            .padding(horizontal = 16.dp, vertical = 9.dp),
+            ) { 
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onClick() 
+            }
+            .padding(horizontal = 20.dp)
+            .heightIn(min = 52.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(text = text, color = fg, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        Text(text = text, color = fg, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -1165,29 +1317,39 @@ fun PillChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun SaveButton(isEditing: Boolean = false, onClick: () -> Unit) {
-    Button(
-        onClick  = onClick,
+    val haptic = LocalHapticFeedback.current
+    val gradientBrush = Brush.horizontalGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.primary,
+            MaterialTheme.colorScheme.secondary
+        )
+    )
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(54.dp),
-        shape  = RoundedCornerShape(16.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary
-        ),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+            .height(56.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(gradientBrush)
+            .clickable {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onClick()
+            },
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text       = if (isEditing) stringResource(id = R.string.btn_update_log)
                          else           stringResource(id = R.string.btn_save_log),
             fontSize   = 16.sp,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = 0.3.sp
+            fontWeight = FontWeight.Bold,
+            color      = MaterialTheme.colorScheme.onPrimary,
+            letterSpacing = 0.5.sp
         )
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  LEGACY — Se mantienen por compatibilidad si se usan en otros lugares
+//  LEGACY
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
@@ -1213,7 +1375,6 @@ fun ChipSelectionRow(options: List<Int>, singleSelection: Int?, onSelect: (Int) 
     }
 }
 
-/** Alias de compatibilidad para código externo que aún use CleanChip */
 @Composable
 fun CleanChip(text: String, isSelected: Boolean, onClick: () -> Unit) =
     PillChip(text = text, isSelected = isSelected, onClick = onClick)

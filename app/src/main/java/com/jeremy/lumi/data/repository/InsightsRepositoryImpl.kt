@@ -35,12 +35,14 @@ class InsightsRepositoryImpl @Inject constructor(
     // ─────────────────────────────────────────────────────────────────────────
 
     override suspend fun getInsights(cyclesLimit: Int): CycleInsights {
+        val activeCycle  = dao.getCurrentActiveCycle()
         val closedCycles = dao.getClosedCycles().take(cyclesLimit)
+        val allCycles    = listOfNotNull(activeCycle) + closedCycles
         val allLogs      = dao.getLogsInRange(0L, Long.MAX_VALUE)
 
         return CycleInsights(
             historicalStats     = computeHistoricalStats(closedCycles, allLogs),
-            symptomCorrelations = computeSymptomCorrelations(allLogs, closedCycles, minOccurrences = 2),
+            symptomCorrelations = computeSymptomCorrelations(allLogs, allCycles, minOccurrences = 2),
             bivariableInsights  = bivariableEngine.computeInsights(allLogs),
             moodDistribution    = computeMoodDistribution(allLogs),
             recentCycleStats    = computeRecentCycleStats(closedCycles.take(6), allLogs)
@@ -113,11 +115,11 @@ class InsightsRepositoryImpl @Inject constructor(
      * Al final calcula el porcentaje y la fase dominante.
      *
      * Este es el "wow factor" de Lumi: "el 80% de tus dolores de cabeza
-     * ocurren 2 días antes de tu regla".
+     * ocurren 2 días antes de tu periodo".
      */
     private fun computeSymptomCorrelations(
         allLogs      : List<DailyLogWithSymptoms>,
-        closedCycles : List<CycleEntity>,
+        cycles       : List<CycleEntity>,
         minOccurrences: Int
     ): List<SymptomCorrelation> {
         // Mapa: symptomName → Map<CyclePhase, Int>
@@ -129,7 +131,7 @@ class InsightsRepositoryImpl @Inject constructor(
             val logDate = logWithSymptoms.dailyLog.date.toLocalDate()
 
             // Encontrar el ciclo al que pertenece este día
-            val ownerCycle = closedCycles.firstOrNull { cycle ->
+            val ownerCycle = cycles.firstOrNull { cycle ->
                 val start = cycle.startDate.toLocalDate()
                 val end   = cycle.endDate?.toLocalDate() ?: LocalDate.now()
                 !logDate.isBefore(start) && !logDate.isAfter(end)

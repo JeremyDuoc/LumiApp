@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
@@ -38,7 +39,7 @@ class GraficasViewModel @Inject constructor(
     private val _estadoUi = MutableStateFlow(EstadoGraficasUi())
     val estadoUi: StateFlow<EstadoGraficasUi> = _estadoUi.asStateFlow()
 
-    private val zona         = ZoneId.systemDefault()
+    private val zona         = ZoneOffset.UTC
     private val formatoCorto = DateTimeFormatter.ofPattern("d MMM", java.util.Locale("es"))
     private val formatoDia   = DateTimeFormatter.ofPattern("EEE d", java.util.Locale("es"))
 

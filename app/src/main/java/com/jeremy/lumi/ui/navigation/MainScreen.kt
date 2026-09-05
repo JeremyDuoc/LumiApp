@@ -28,7 +28,6 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.navigation.compose.*
 import com.jeremy.lumi.ui.theme.LocalBrandGradient
 import com.jeremy.lumi.ui.screens.home.HomeScreen
-import com.jeremy.lumi.ui.screens.partner.PartnerPairingScreen
 import com.jeremy.lumi.ui.screens.settings.SettingsScreen
 import com.jeremy.lumi.ui.screens.calendar.CalendarScreen
 import com.jeremy.lumi.ui.screens.forum.ForumScreen
@@ -109,6 +108,9 @@ fun AppNavGraph() {
             MainScreen(
                 onNavigateToPartner = {
                     rootNavController.navigate(AppRoutes.PARTNER_HUB)
+                },
+                onNavigateToBackup = {
+                    rootNavController.navigate(AppRoutes.BACKUP)
                 }
             )
         }
@@ -119,8 +121,15 @@ fun AppNavGraph() {
                 onNavigateBack = { rootNavController.popBackStack() }
             )
         }
+
+        // ——— Respaldo privado en Google Drive ————————————————————————————————
+        composable(route = AppRoutes.BACKUP) {
+            com.jeremy.lumi.ui.screens.settings.backup.BackupSettingsScreen(
+                onNavigateBack = { rootNavController.popBackStack() }
+            )
+        }
         
-        // ——— Partner Pairing (Moviendo a la raíz para manejar deep links correctamente) ———
+        // ——— Onboarding del Modo Pareja (crear vínculo o unirse; deep links) ———
         composable(
             route = AppRoutes.PARTNER,
             deepLinks = listOf(
@@ -129,57 +138,69 @@ fun AppNavGraph() {
             )
         ) { backStackEntry ->
             val initialCode = backStackEntry.arguments?.getString("code")
-            PartnerPairingScreen(
+            com.jeremy.lumi.ui.screens.partner.PartnerOnboardingScreen(
                 initialCode = initialCode?.takeIf { it.isNotBlank() },
-                onNavigateBack = { rootNavController.popBackStack() }
+                onNavigateBack = { rootNavController.popBackStack() },
+                onFinished = {
+                    rootNavController.navigate(AppRoutes.PARTNER_HUB) {
+                        popUpTo(AppRoutes.PARTNER) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
-        // ——— Shared Diary ——————————————————————————————————————————————————————
+        // ——— Diario Compartido —————————————————————————————————————————————————
         composable("shared_diary/{linkId}") { backStack ->
             val linkId = backStack.arguments?.getString("linkId") ?: return@composable
             val viewModel: com.jeremy.lumi.ui.screens.partner.PartnerViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            
+            // Inyectamos HomeViewModel para obtener la fase real del usuario
+            val homeViewModel: com.jeremy.lumi.ui.screens.home.HomeViewModel = hiltViewModel()
+            val homeState by homeViewModel.uiState.collectAsStateWithLifecycle()
+            val realPhase = homeState.currentPhase
 
             LaunchedEffect(linkId) { viewModel.observeDiary(linkId) }
 
             com.jeremy.lumi.ui.screens.partner.SharedDiaryScreen(
                 currentUid = uiState.currentUid ?: "",
-                myName = uiState.currentUserName ?: "Yo",
-                myPhase = com.jeremy.lumi.domain.model.CyclePhase.UNKNOWN, // Fase actual
+                myPhase = realPhase,
                 entries = uiState.diaryEntries,
                 isSending = uiState.isDiarySending,
-                onSend = { text -> viewModel.sendDiaryEntry(linkId, text, com.jeremy.lumi.domain.model.CyclePhase.UNKNOWN) },
+                onSend = { text -> viewModel.sendDiaryEntry(linkId, text, realPhase) },
                 onBack = { rootNavController.popBackStack() }
             )
         }
 
-        // ——— Partner Hub (Nuevo Modo Pareja) ———————————————————————————————————
+        // ——— Hub del Modo Pareja ———————————————————————————————————————————————
         composable(route = AppRoutes.PARTNER_HUB) {
             val viewModel: com.jeremy.lumi.ui.screens.partner.PartnerViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-            // Disparador de reacciones
+            // Disparador de las animaciones de Detalles
             val careReactionState = com.jeremy.lumi.ui.screens.partner.rememberCareReactionState()
 
             Box(modifier = Modifier.fillMaxSize()) {
-                com.jeremy.lumi.ui.screens.partner.PartnerConnectionScreen(
+                com.jeremy.lumi.ui.screens.partner.PartnerHubScreen(
                     uiState = uiState,
                     onOpenStory = { link -> rootNavController.navigate("story_detail/${link.linkId}") },
-                    onSendCareAction = { linkId, action -> 
+                    onSendCareAction = { linkId, action ->
                         viewModel.sendCareAction(linkId, action)
                         careReactionState.fire(action)
                     },
                     onOpenAddPartner = { rootNavController.navigate(AppRoutes.PARTNER.replace("?code={code}", "")) },
                     onOpenDiary = { link -> rootNavController.navigate("shared_diary/${link.linkId}") },
-                    onOpenDualCalendar = { link -> rootNavController.navigate("dual_calendar/${link.linkId}") }
+                    onOpenDualCalendar = { link -> rootNavController.navigate("dual_calendar/${link.linkId}") },
+                    onUnlink = { link -> viewModel.unlink(link.linkId) },
+                    onNavigateBack = { rootNavController.popBackStack() }
                 )
-                
-                // Capa superior para animaciones
+
+                // Capa superior para las animaciones
                 com.jeremy.lumi.ui.screens.partner.CareReactionOverlay(state = careReactionState)
             }
         }
 
-        // ——— Story Detail ——————————————————————————————————————————————————————
+        // ——— Historia del vínculo ——————————————————————————————————————————————
         composable("story_detail/{linkId}") { backStack ->
             val linkId = backStack.arguments?.getString("linkId") ?: return@composable
             val viewModel: com.jeremy.lumi.ui.screens.partner.PartnerViewModel = hiltViewModel()
@@ -187,30 +208,23 @@ fun AppNavGraph() {
             val link = uiState.activeLinks.find { it.linkId == linkId }
 
             if (link != null) {
-                com.jeremy.lumi.ui.screens.partner.StoryDetailScreen(
+                com.jeremy.lumi.ui.screens.partner.PartnerStoryScreen(
                     link = link,
-                    currentUid = uiState.currentUid ?: "",
+                    myUid = uiState.currentUid ?: "",
+                    uiState = uiState,
                     onSendCareAction = { action -> viewModel.sendCareAction(link.linkId, action) },
                     onClose = { rootNavController.popBackStack() }
                 )
             }
         }
 
-        // ——— Dual Calendar —————————————————————————————————————————————————————
+        // ——— Calendario Compartido —————————————————————————————————————————————
         composable("dual_calendar/{linkId}") { backStack ->
             val linkId = backStack.arguments?.getString("linkId") ?: return@composable
-            val viewModel: com.jeremy.lumi.ui.screens.partner.PartnerViewModel = hiltViewModel()
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-            val link = uiState.activeLinks.find { it.linkId == linkId }
-
-            if (link != null) {
-                com.jeremy.lumi.ui.screens.partner.DualCalendarScreen(
-                    myName = uiState.currentUserName ?: "Yo",
-                    partnerName = link.relationLabel.ifBlank { "Pareja" },
-                    days = emptyList(),
-                    onBack = { rootNavController.popBackStack() }
-                )
-            }
+            com.jeremy.lumi.ui.screens.partner.DualCalendarScreen(
+                linkId = linkId,
+                onBack = { rootNavController.popBackStack() }
+            )
         }
     }
 }
@@ -226,7 +240,8 @@ fun AppNavGraph() {
  */
 @Composable
 fun MainScreen(
-    onNavigateToPartner: () -> Unit = {}
+    onNavigateToPartner: () -> Unit = {},
+    onNavigateToBackup: () -> Unit = {}
 ) {
     val navController = rememberNavController()
     
@@ -322,12 +337,15 @@ fun MainScreen(
                                 navController.navigate("chat/$thread")
                             }
                         )
-                        BottomNavItem.Settings -> SettingsScreen()
+                        BottomNavItem.Settings -> SettingsScreen(
+                            onNavigateToBackup = onNavigateToBackup,
+                            onNavigateToPartner = onNavigateToPartner
+                        )
                         else -> {}
                     }
                 }
             }
-            // Ruta partner eliminada y movida a AppNavGraph para arreglar Deep Links
+            // Ruta partner eliminada y movida a AppNavGraph para arperiodor Deep Links
             composable("chat/{thread}") { backStackEntry ->
                 val thread = backStackEntry.arguments?.getString("thread") ?: "lumi"
                 ChatScreen(
@@ -409,29 +427,55 @@ private fun AnimatedBottomNavItem(
 
     val interactionSource = remember { MutableInteractionSource() }
 
-    Box(
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .clip(CircleShape)
-            .background(backgroundColor)
             .clickable(
                 interactionSource = interactionSource,
-                indication = null, // Desactivar ripple por defecto para que sea fluido
+                indication = null,
                 onClick = onClick
             )
-            .padding(horizontal = if (selected) 16.dp else 12.dp, vertical = 10.dp),
-        contentAlignment = Alignment.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+        // Píldora seleccionada con ícono (+ label expandido inline)
+        Box(
+            modifier = Modifier
+                .clip(CircleShape)
+                .background(backgroundColor)
+                .padding(horizontal = if (selected) 16.dp else 12.dp, vertical = 8.dp),
+            contentAlignment = Alignment.Center
         ) {
-            // Ícono con badge
-            if (unreadCount > 0) {
-                BadgedBox(
-                    badge = { Badge(containerColor = MaterialTheme.colorScheme.error) { Text(unreadCount.toString()) } }
-                ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                // Ícono con badge
+                if (unreadCount > 0) {
+                    BadgedBox(
+                        badge = { Badge(containerColor = MaterialTheme.colorScheme.error) { Text(unreadCount.toString()) } }
+                    ) {
+                        if (isBrandActive) {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = stringResource(id = item.titleRes),
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp).graphicsLayer(alpha = 0.99f).drawWithCache {
+                                    onDrawWithContent {
+                                        drawContent()
+                                        drawRect(brandGradient!!, blendMode = androidx.compose.ui.graphics.BlendMode.SrcAtop)
+                                    }
+                                }
+                            )
+                        } else {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = stringResource(id = item.titleRes),
+                                tint = contentColor,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                } else {
                     if (isBrandActive) {
-                        // Trick to render vector with gradient
                         Icon(
                             imageVector = item.icon,
                             contentDescription = stringResource(id = item.titleRes),
@@ -452,53 +496,42 @@ private fun AnimatedBottomNavItem(
                         )
                     }
                 }
-            } else {
-                if (isBrandActive) {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = stringResource(id = item.titleRes),
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp).graphicsLayer(alpha = 0.99f).drawWithCache {
-                            onDrawWithContent {
-                                drawContent()
-                                drawRect(brandGradient!!, blendMode = androidx.compose.ui.graphics.BlendMode.SrcAtop)
-                            }
-                        }
-                    )
-                } else {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = stringResource(id = item.titleRes),
-                        tint = contentColor,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-            
-            // Texto animado
-            AnimatedVisibility(
-                visible = selected
-            ) {
-                if (isBrandActive) {
-                    Text(
-                        text = stringResource(id = item.titleRes),
-                        style = TextStyle(
-                            brush = brandGradient,
+
+                // Texto expandido inline — solo visible cuando está seleccionado
+                AnimatedVisibility(visible = selected) {
+                    if (isBrandActive) {
+                        Text(
+                            text = stringResource(id = item.titleRes),
+                            style = TextStyle(
+                                brush = brandGradient,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp
+                            ),
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(id = item.titleRes),
+                            color = contentColor,
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp
-                        ),
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
-                } else {
-                    Text(
-                        text = stringResource(id = item.titleRes),
-                        color = contentColor,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
                 }
             }
+        }
+
+        // Etiqueta pequeña siempre visible — solo cuando NO está seleccionado
+        // (cuando está seleccionado, el texto inline de la píldora ya lo muestra)
+        AnimatedVisibility(visible = !selected) {
+            Text(
+                text = stringResource(id = item.titleRes),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Normal,
+                modifier = Modifier.padding(top = 2.dp)
+            )
         }
     }
 }
