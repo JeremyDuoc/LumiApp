@@ -2,7 +2,7 @@
 <resources>
     <!-- Bonds Main Module -->
     <string name="bonds_title">Bonds</string>
-    <string name="bonds_subtitle">Support, share, stay close.</string>
+    <string name="bonds_subtitle">Apoyo mutuo, sincronía y cercanía.</string>
     <string name="bonds_tagline">Tu gente. Tus momentos. Tu círculo.</string>
     <string name="bonds_my_circle">Mi círculo</string>
     <string name="bonds_add_connection">Añadir</string>
@@ -45,8 +45,14 @@
     <string name="bonds_link_circles_title">Vincula tu círculo</string>
     <string name="bonds_link_circles_desc">Escanea el código QR o introduce el código para conectar con tu persona de confianza.</string>
     <string name="bonds_pairing_code_label">Código de vinculación</string>
-    <string name="bonds_enter_code_hint">Introduce código de 6 dígitos</string>
+    <string name="bonds_enter_code_hint">Introduce el código (8 dígitos)</string>
     <string name="bonds_join_button">Vincular con código</string>
+    <string name="bonds_scan_qr_button">Escanear código QR</string>
+    <string name="bonds_scan_qr_prompt">Apunta la cámara al código QR de Lumi</string>
+    <string name="bonds_scan_qr_success">Código detectado: %1$s</string>
+    <string name="bonds_regenerate_code">Regenerar código</string>
+    <string name="bonds_code_regenerated">Nuevo código de 8 dígitos generado</string>
+    <string name="bonds_invalid_qr">Código QR no reconocido como invitación de Lumi</string>
     <string name="bonds_what_you_share_title">Lo que compartes</string>
     <string name="bonds_what_you_share_desc">Elige lo que te sientas cómoda compartiendo. Puedes cambiarlo en cualquier momento.</string>
     
@@ -60,7 +66,7 @@
     <string name="bonds_toggle_predictions_desc">Fase estimada, ventana fértil, recordatorios</string>
     
     <string name="bonds_privacy_matters_title">Tu privacidad importa</string>
-    <string name="bonds_privacy_matters_desc">Estos datos se comparten exclusivamente con la persona autorizada y nunca se usan para otros fines.</string>
+    <string name="bonds_privacy_matters_desc">Tus datos nunca se comparten sin autorización. Estas opciones definen tu configuración por defecto. Cada vínculo requiere consentimiento explícito mutuo.</string>
 
     <!-- Shared Calendar Screen -->
     <string name="bonds_shared_calendar_title">Calendario compartido</string>

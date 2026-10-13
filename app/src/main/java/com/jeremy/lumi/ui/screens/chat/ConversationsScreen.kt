@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.*
@@ -39,6 +40,7 @@ import com.jeremy.lumi.data.local.entity.ChatMessageType
 @Composable
 fun ConversationsScreen(
     viewModel: ChatViewModel = hiltViewModel(),
+    onNavigateBack: (() -> Unit)? = null,
     onNavigateToChat: (String) -> Unit // "lumi" o "reminders"
 ) {
     val messages by viewModel.messages.collectAsStateWithLifecycle()
@@ -68,6 +70,17 @@ fun ConversationsScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(stringResource(R.string.chat_messages_title), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                },
+                navigationIcon = {
+                    if (onNavigateBack != null) {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                contentDescription = stringResource(R.string.btn_back),
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                    }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background

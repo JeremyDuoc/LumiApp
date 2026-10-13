@@ -1,9 +1,11 @@
 package com.jeremy.lumi.ui.screens.bonds
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import com.jeremy.lumi.ui.theme.LumiThemeTokens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -195,7 +197,8 @@ fun BondsSharedCalendarScreen(
             // ── Rejilla del calendario ──────────────────────────────────────────
             Surface(
                 shape = BondsTheme.CardShapeLarge,
-                color = Color.White,
+                color = BondsTheme.WarmWhite,
+                border = BorderStroke(1.dp, BondsTheme.BorderSubtle),
                 shadowElevation = 2.dp,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -310,8 +313,8 @@ private fun CalendarFilterPill(
 ) {
     Surface(
         shape = BondsTheme.PillShape,
-        color = if (isSelected) color else Color.White,
-        border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, BondsTheme.BorderSubtle),
+        color = if (isSelected) color else BondsTheme.WarmWhite,
+        border = if (isSelected) null else BorderStroke(1.dp, BondsTheme.BorderSubtle),
         modifier = Modifier.clickable { onClick() }
     ) {
         Row(
@@ -331,7 +334,7 @@ private fun CalendarFilterPill(
                 text = title,
                 fontSize = 12.5.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (isSelected) Color.White else BondsTheme.DeepNavy
+                color = if (isSelected) (if (LumiThemeTokens.current.isDark) Color(0xFF0B0B11) else Color.White) else BondsTheme.DeepNavy
             )
         }
     }
@@ -346,6 +349,7 @@ private fun CalendarDayCell(
     indicators: List<MemberIndicator>,
     modifier: Modifier = Modifier
 ) {
+    val isDark = LumiThemeTokens.current.isDark
     Column(
         modifier = modifier
             .padding(2.dp)
@@ -365,7 +369,7 @@ private fun CalendarDayCell(
             fontSize = 13.sp,
             fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
             color = when {
-                isSelected -> Color.White
+                isSelected -> if (isDark) Color(0xFF0B0B11) else Color.White
                 isToday -> BondsTheme.DeepNavy
                 else -> BondsTheme.TextPrimary
             }
@@ -383,7 +387,7 @@ private fun CalendarDayCell(
                     modifier = Modifier
                         .size(4.5.dp)
                         .clip(CircleShape)
-                        .background(if (isSelected) Color.White.copy(alpha = 0.9f) else ind.color)
+                        .background(if (isSelected) (if (isDark) Color(0xFF0B0B11).copy(alpha = 0.85f) else Color.White.copy(alpha = 0.9f)) else ind.color)
                 )
             }
             if (indicators.size > 3) {
@@ -391,7 +395,7 @@ private fun CalendarDayCell(
                     modifier = Modifier
                         .size(3.dp)
                         .clip(CircleShape)
-                        .background(if (isSelected) Color.White else BondsTheme.TextTertiary)
+                        .background(if (isSelected) (if (isDark) Color(0xFF0B0B11) else Color.White) else BondsTheme.TextTertiary)
                 )
             }
         }
@@ -441,7 +445,8 @@ private fun SelectedDayDetailCard(
 
     Card(
         shape = BondsTheme.CardShapeLarge,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = BondsTheme.WarmWhite),
+        border = BorderStroke(1.dp, BondsTheme.BorderSubtle),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = modifier.fillMaxWidth()
     ) {
@@ -527,6 +532,7 @@ private fun getMemberColor(name: String): Color {
     return colors[hash % colors.size]
 }
 
+@Composable
 private fun phaseColor(phase: CyclePhase): Color = when (phase) {
     CyclePhase.MENSTRUAL -> BondsTheme.DotMenstrual
     CyclePhase.FOLLICULAR -> BondsTheme.DotFollicular

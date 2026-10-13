@@ -27,7 +27,7 @@ object BondsPreviewFixtures {
                 avatarId = "flor",
                 phase = CyclePhase.FOLLICULAR,
                 cycleDay = 12,
-                mood = "A bit sensitive, but still in good spirits. 💜",
+                mood = "Sensible hoy, pero con buen ánimo 💜",
                 symptoms = listOf("Calambres suaves"),
                 cycleStartDateMs = now - (11L * dayMs),
                 cycleLengthDays = 28,

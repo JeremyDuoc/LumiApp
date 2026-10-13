@@ -34,8 +34,12 @@ import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.PersonOutline
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.QrCode
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.WbSunny
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -124,67 +128,72 @@ fun BondsHomeScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // ── 4.2 Carrusel horizontal de personas ──────────────────────────────
-            BondsCircleCarousel(
-                members = uiState.members,
-                selectedMember = selected,
-                onSelectMember = onSelectMember,
-                onAddClick = onOpenPairingPrivacy
-            )
-
-            Spacer(modifier = Modifier.height(28.dp))
-
-            // ── 4.3 Tarjeta contextual: "How she's feeling today" ────────────────
-            Box(modifier = Modifier.padding(horizontal = 20.dp)) {
-                if (selected != null) {
-                    BondsFeelingCard(
-                        member = selected,
-                        onClick = { onOpenMemberDetail(selected) }
-                    )
-                } else {
-                    BondsEmptyCircleCard(onClick = onOpenPairingPrivacy)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // ── 4.4 Gestos afectivos: "Send a caring gesture" ────────────────────
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = stringResource(R.string.bonds_send_caring_gesture),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = BondsTheme.DeepNavy
-                    )
-
-                    Text(
-                        text = stringResource(R.string.bonds_shared_calendar_title),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = BondsTheme.SoftViolet,
-                        modifier = Modifier
-                            .clip(BondsTheme.PillShape)
-                            .clickable { onOpenSharedCalendar() }
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                BondsGesturesCarousel(
-                    onGestureClick = { action ->
-                        onOpenSendGesture(selected, action)
-                    }
+            if (uiState.members.isEmpty()) {
+                Spacer(modifier = Modifier.height(20.dp))
+                BondsEmptyStateView(
+                    onPairClick = onOpenPairingPrivacy
                 )
+            } else {
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // ── 4.2 Carrusel horizontal de personas ──────────────────────────────
+                BondsCircleCarousel(
+                    members = uiState.members,
+                    selectedMember = selected,
+                    onSelectMember = onSelectMember,
+                    onAddClick = onOpenPairingPrivacy
+                )
+
+                Spacer(modifier = Modifier.height(28.dp))
+
+                // ── 4.3 Tarjeta contextual: "Cómo se siente hoy" ────────────────
+                if (selected != null) {
+                    Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                        BondsFeelingCard(
+                            member = selected,
+                            onClick = { onOpenMemberDetail(selected) }
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(28.dp))
+                }
+
+                // ── SECCIÓN 1: Calendario compartido (independiente y separada) ───
+                BondsSharedCalendarBanner(
+                    onOpenCalendar = onOpenSharedCalendar
+                )
+
+                Spacer(modifier = Modifier.height(28.dp))
+
+                // ── SECCIÓN 2: Gestos afectivos (independiente) ────────────────────
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.bonds_send_caring_gesture),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = BondsTheme.DeepNavy
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = if (selected != null) "Envía un detalle reconfortante a ${selected.displayName}"
+                                   else "Envía un detalle reconfortante a tu círculo",
+                            fontSize = 12.5.sp,
+                            color = BondsTheme.TextSecondary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    BondsGesturesCarousel(
+                        onGestureClick = { action ->
+                            onOpenSendGesture(selected, action)
+                        }
+                    )
+                }
             }
         }
     }
@@ -208,11 +217,22 @@ private fun BondsTopHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Logo Lumi minimalista a la izquierda con círculo degradado
+        // Logo Lumi minimalista a la izquierda con botón atrás explícito
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.clickable { onNavigateBack() }
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            IconButton(
+                onClick = onNavigateBack,
+                modifier = Modifier.size(34.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                    contentDescription = stringResource(R.string.btn_back),
+                    tint = BondsTheme.DeepNavy,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(4.dp))
             Box(
                 modifier = Modifier
                     .size(26.dp)
@@ -227,7 +247,7 @@ private fun BondsTopHeader(
                         )
                     )
             )
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "Lumi",
                 fontSize = 20.sp,
@@ -302,15 +322,19 @@ private fun BondsAvatarItem(
 ) {
     val spec = AvatarCatalog.byId(member.avatarId)
 
+    val defaultRingGradient = BondsTheme.AvatarRingGradient
+    val peachColor = BondsTheme.Peach
+    val blushColor = BondsTheme.Blush
+    val lavenderColor = BondsTheme.Lavender
     // Gradiente exclusivo por persona para coincidir con la riqueza visual de la referencia
-    val ringGradient = remember(member.displayName, isSelected) {
+    val ringGradient = remember(member.displayName, isSelected, defaultRingGradient, peachColor, blushColor, lavenderColor) {
         when (member.displayName.lowercase()) {
             "camila" -> Brush.sweepGradient(listOf(Color(0xFFFF9E7D), Color(0xFFF37CA5), Color(0xFFC8B5F1), Color(0xFFFF9E7D)))
             "sofia" -> Brush.sweepGradient(listOf(Color(0xFFFFB75E), Color(0xFFED8F03), Color(0xFFFFE259), Color(0xFFFFB75E)))
             "valentina" -> Brush.sweepGradient(listOf(Color(0xFF48C6EF), Color(0xFF2F80ED), Color(0xFF89F7FE), Color(0xFF48C6EF)))
             "anto" -> Brush.sweepGradient(listOf(Color(0xFFFF8FA3), Color(0xFFE84393), Color(0xFFF857A6), Color(0xFFFF8FA3)))
-            else -> if (isSelected) BondsTheme.AvatarRingGradient else Brush.sweepGradient(
-                listOf(BondsTheme.Peach, BondsTheme.Blush, BondsTheme.Lavender, BondsTheme.Peach)
+            else -> if (isSelected) defaultRingGradient else Brush.sweepGradient(
+                listOf(peachColor, blushColor, lavenderColor, peachColor)
             )
         }
     }
@@ -341,12 +365,12 @@ private fun BondsAvatarItem(
                 .padding(if (isSelected) 3.5.dp else 2.5.dp),
             contentAlignment = Alignment.Center
         ) {
-            // Separador blanco fino
+            // Separador fino armónico con el tema
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(CircleShape)
-                    .background(Color.White)
+                    .background(BondsTheme.WarmWhite)
                     .padding(2.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -442,31 +466,31 @@ private fun BondsAddCircleItem(onClick: () -> Unit) {
             modifier = Modifier
                 .size(68.dp)
                 .clip(CircleShape)
-                .background(Color.White)
+                .background(BondsTheme.PureWhite)
                 .border(1.5.dp, BondsTheme.BorderSubtle, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "+1",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = BondsTheme.TextSecondary
+            Icon(
+                imageVector = Icons.Rounded.Add,
+                contentDescription = stringResource(R.string.bonds_add_connection),
+                tint = BondsTheme.TextSecondary,
+                modifier = Modifier.size(24.dp)
             )
         }
 
         Spacer(modifier = Modifier.height(7.dp))
 
         Text(
-            text = "+1",
+            text = stringResource(R.string.bonds_add_connection),
             fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
-            color = BondsTheme.TextSecondary
+            fontWeight = FontWeight.SemiBold,
+            color = BondsTheme.TextPrimary
         )
 
         Spacer(modifier = Modifier.height(2.dp))
 
         Text(
-            text = stringResource(R.string.bonds_add_connection),
+            text = "Vínculo",
             fontSize = 11.sp,
             color = BondsTheme.TextTertiary
         )
@@ -513,7 +537,7 @@ private fun BondsFeelingCard(
                             modifier = Modifier
                                 .size(34.dp)
                                 .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.7f)),
+                                .background(BondsTheme.WarmWhite.copy(alpha = 0.7f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -555,10 +579,10 @@ private fun BondsFeelingCard(
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                // Subtarjeta blanca translúcida con sugerencia de apoyo (Phone 1)
+                // Subtarjeta translúcida con sugerencia de apoyo (Phone 1)
                 Surface(
                     shape = RoundedCornerShape(22.dp),
-                    color = Color.White.copy(alpha = 0.82f),
+                    color = BondsTheme.WarmWhite.copy(alpha = 0.82f),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -595,51 +619,176 @@ private fun BondsFeelingCard(
 }
 
 @Composable
-private fun BondsEmptyCircleCard(onClick: () -> Unit) {
-    Card(
-        shape = BondsTheme.CardShapeLarge,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+private fun BondsEmptyStateView(onPairClick: () -> Unit) {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(
+        Card(
+            shape = BondsTheme.CardShapeLarge,
+            colors = CardDefaults.cardColors(containerColor = BondsTheme.WarmWhite),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .border(1.dp, BondsTheme.BorderSubtle, BondsTheme.CardShapeLarge)
         ) {
-            Box(
+            Column(
                 modifier = Modifier
-                    .size(54.dp)
-                    .clip(CircleShape)
-                    .background(BondsTheme.PeachLight),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(
-                    imageVector = Icons.Rounded.Add,
-                    contentDescription = null,
-                    tint = BondsTheme.DeepNavy,
-                    modifier = Modifier.size(28.dp)
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.linearGradient(
+                                listOf(
+                                    BondsTheme.Peach.copy(alpha = 0.6f),
+                                    BondsTheme.Blush.copy(alpha = 0.6f),
+                                    BondsTheme.Lavender.copy(alpha = 0.6f)
+                                )
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Favorite,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Text(
+                    text = stringResource(R.string.bonds_empty_state_title),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = BondsTheme.DeepNavy,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = stringResource(R.string.bonds_empty_state_desc),
+                    fontSize = 13.5.sp,
+                    lineHeight = 20.sp,
+                    color = BondsTheme.TextSecondary,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = onPairClick,
+                    shape = BondsTheme.PillShape,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = BondsTheme.SoftViolet,
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.QrCode,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Vincular con código o QR",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = "Tú decides exactamente qué datos compartir en todo momento.",
+                    fontSize = 11.5.sp,
+                    color = BondsTheme.TextTertiary,
+                    textAlign = TextAlign.Center
                 )
             }
-            Spacer(modifier = Modifier.height(14.dp))
-            Text(
-                text = stringResource(R.string.bonds_empty_state_title),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = BondsTheme.DeepNavy,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = stringResource(R.string.bonds_empty_state_desc),
-                fontSize = 13.sp,
-                color = BondsTheme.TextSecondary,
-                textAlign = TextAlign.Center,
-                lineHeight = 18.sp
-            )
+        }
+    }
+}
+
+@Composable
+private fun BondsSharedCalendarBanner(onOpenCalendar: () -> Unit) {
+    Card(
+        shape = BondsTheme.CardShapeMedium,
+        colors = CardDefaults.cardColors(containerColor = BondsTheme.WarmWhite),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .border(1.dp, BondsTheme.BorderSubtle, BondsTheme.CardShapeMedium)
+            .clickable { onOpenCalendar() }
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(BondsTheme.LavenderLight),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.CalendarMonth,
+                        contentDescription = null,
+                        tint = BondsTheme.SoftViolet,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(14.dp))
+                Column {
+                    Text(
+                        text = stringResource(R.string.bonds_shared_calendar_title),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = BondsTheme.DeepNavy
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = stringResource(R.string.bonds_shared_calendar_subtitle),
+                        fontSize = 12.sp,
+                        color = BondsTheme.TextSecondary
+                    )
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .clip(BondsTheme.PillShape)
+                    .background(BondsTheme.LavenderLight)
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = "Ver ↗",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = BondsTheme.SoftViolet
+                )
+            }
         }
     }
 }
@@ -715,15 +864,15 @@ private fun GestureButtonView(
                     } else {
                         Brush.linearGradient(
                             listOf(
-                                Color.White,
-                                Color(0xFFFCFAF8)
+                                BondsTheme.PureWhite,
+                                BondsTheme.WarmWhite
                             )
                         )
                     }
                 )
                 .border(
                     width = 1.dp,
-                    color = if (item.isHighlighted) Color.White.copy(alpha = 0.8f) else BondsTheme.BorderSubtle,
+                    color = if (item.isHighlighted) BondsTheme.PeachLight.copy(alpha = 0.8f) else BondsTheme.BorderSubtle,
                     shape = if (item.isHighlighted) RoundedCornerShape(22.dp) else CircleShape
                 ),
             contentAlignment = Alignment.Center
@@ -762,6 +911,7 @@ private fun GestureButtonView(
     }
 }
 
+@Composable
 private fun phaseDotColor(phase: CyclePhase?): Color = when (phase) {
     CyclePhase.MENSTRUAL -> BondsTheme.DotMenstrual
     CyclePhase.FOLLICULAR -> BondsTheme.DotFollicular

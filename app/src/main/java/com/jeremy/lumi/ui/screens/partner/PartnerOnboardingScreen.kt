@@ -592,7 +592,7 @@ private fun JoinCodeStep(viewModel: PartnerOnboardingViewModel, uiState: Partner
     uiState.errorRes?.let { ErrorText(it) }
     PrimaryButton(
         text = stringResource(R.string.pm_next),
-        enabled = uiState.code.length == 6,
+        enabled = uiState.code.length in 6..8,
         onClick = { viewModel.next() }
     )
 }

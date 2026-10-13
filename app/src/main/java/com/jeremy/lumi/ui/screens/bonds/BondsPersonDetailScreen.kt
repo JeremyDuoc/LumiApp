@@ -1,8 +1,10 @@
 package com.jeremy.lumi.ui.screens.bonds
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import com.jeremy.lumi.ui.theme.LumiThemeTokens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -146,7 +148,7 @@ fun BondsPersonDetailScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(CircleShape)
-                            .background(Color.White)
+                            .background(BondsTheme.WarmWhite)
                             .padding(2.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -208,7 +210,10 @@ fun BondsPersonDetailScreen(
                 Button(
                     onClick = { onSendGesture(CareAction.TEA) },
                     shape = BondsTheme.PillShape,
-                    colors = ButtonDefaults.buttonColors(containerColor = BondsTheme.DeepNavy),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = BondsTheme.DeepNavy,
+                        contentColor = if (LumiThemeTokens.current.isDark) Color(0xFF0B0B11) else Color.White
+                    ),
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp)
@@ -221,6 +226,10 @@ fun BondsPersonDetailScreen(
                 OutlinedButton(
                     onClick = onOpenCalendar,
                     shape = BondsTheme.PillShape,
+                    border = BorderStroke(1.dp, BondsTheme.BorderSubtle),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = BondsTheme.DeepNavy
+                    ),
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp)
@@ -244,7 +253,8 @@ fun BondsPersonDetailScreen(
 
             Surface(
                 shape = BondsTheme.CardShapeLarge,
-                color = Color.White,
+                color = BondsTheme.WarmWhite,
+                border = BorderStroke(1.dp, BondsTheme.BorderSubtle),
                 shadowElevation = 2.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -313,7 +323,8 @@ fun BondsPersonDetailScreen(
 
             Surface(
                 shape = BondsTheme.CardShapeLarge,
-                color = Color.White,
+                color = BondsTheme.WarmWhite,
+                border = BorderStroke(1.dp, BondsTheme.BorderSubtle),
                 shadowElevation = 2.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -388,6 +399,7 @@ fun BondsPersonDetailScreen(
     if (showUnlinkDialog) {
         AlertDialog(
             onDismissRequest = { showUnlinkDialog = false },
+            containerColor = BondsTheme.WarmWhite,
             title = {
                 Text(
                     text = "¿Desvincular a ${member.displayName}?",
@@ -473,19 +485,21 @@ private fun IndividualPrivacyToggle(
             )
         }
 
+        val isDark = LumiThemeTokens.current.isDark
         Switch(
             checked = checked,
             onCheckedChange = onChecked,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
+                checkedThumbColor = if (isDark) Color(0xFF0B0B11) else Color.White,
                 checkedTrackColor = BondsTheme.DeepNavy,
-                uncheckedThumbColor = Color.White,
+                uncheckedThumbColor = if (isDark) BondsTheme.TextTertiary else Color.White,
                 uncheckedTrackColor = BondsTheme.BorderSubtle
             )
         )
     }
 }
 
+@Composable
 private fun phaseColor(phase: CyclePhase): Color = when (phase) {
     CyclePhase.MENSTRUAL -> BondsTheme.DotMenstrual
     CyclePhase.FOLLICULAR -> BondsTheme.DotFollicular

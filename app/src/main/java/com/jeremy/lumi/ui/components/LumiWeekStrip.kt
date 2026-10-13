@@ -12,10 +12,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,17 +37,24 @@ import androidx.compose.ui.unit.sp
 import com.jeremy.lumi.domain.model.CyclePhase
 import com.jeremy.lumi.ui.screens.home.CycleDayUi
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
+import com.jeremy.lumi.utils.LumiClock
+import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.Locale
 
 /**
- * Tira semanal compacta de 7 días aprobada en el prototipo interactivo Lumi.
+ * Tira semanal continua de días aprobada en el prototipo interactivo Lumi.
  *
- * Incluye:
- * - Cabecera con "Tu semana" y enlace "Ver calendario ↗"
- * - Grid de 7 días (Lunes a Domingo)
- * - Indicador de hoy, indicador de selección con píldora suave
- * - Puntos de color semántico de fase menstrual
- * - Leyenda explicativa de las 4 fases
+ * Características:
+ * - Agrupada por semanas completas (Lunes a Domingo) con swipe horizontal natural.
+ * - Cabecera con "Tu semana", mes/año visible, selector rápido "Hoy ↺" y enlace a calendario completo.
+ * - Flechas sutiles ‹ y › para navegar de semana en semana.
+ * - Visualización semántica clara:
+ *     - "HOY": resalte distinguible para no perder el contexto temporal.
+ *     - Fecha seleccionada: píldora suave con borde de acento.
+ *     - Puntos indicadores por fase menstrual.
+ * - Leyenda compacta de las 4 fases al pie.
  */
 @Composable
 fun LumiWeekStrip(
@@ -44,9 +62,62 @@ fun LumiWeekStrip(
     weekDays: List<CycleDayUi>,
     selectedDate: LocalDate?,
     onSelectDate: (LocalDate) -> Unit,
-    onViewCalendarClick: () -> Unit
+    onViewCalendarClick: () -> Unit,
+    onResetToToday: (() -> Unit)? = null
 ) {
     val tokens = LumiThemeTokens.current
+    val coroutineScope = rememberCoroutineScope()
+    val today = LumiClock.today()
+
+    // Agrupamos en semanas de 7 días exactos
+    val weeks = remember(weekDays) {
+        if (weekDays.isEmpty()) emptyList()
+        else weekDays.chunked(7).filter { it.size == 7 }
+    }
+
+    if (weeks.isEmpty()) return
+
+    val todayWeekIndex = remember(weeks) {
+        val idx = weeks.indexOfFirst { week -> week.any { it.isToday || it.date == today } }
+        if (idx >= 0) idx else 0
+    }
+
+    val pagerState = rememberPagerState(
+        initialPage = todayWeekIndex,
+        pageCount = { weeks.size }
+    )
+
+    // Si la fecha seleccionada cambia hacia otra semana, animamos el scroll
+    LaunchedEffect(selectedDate) {
+        if (selectedDate != null) {
+            val targetWeek = weeks.indexOfFirst { week -> week.any { it.date == selectedDate } }
+            if (targetWeek >= 0 && targetWeek != pagerState.currentPage) {
+                pagerState.animateScrollToPage(targetWeek)
+            }
+        }
+    }
+
+    val currentWeek = weeks.getOrNull(pagerState.currentPage) ?: emptyList()
+    val isViewingCurrentWeek = pagerState.currentPage == todayWeekIndex
+    val isDateOtherThanTodaySelected = selectedDate != null && !selectedDate.isEqual(today)
+    val showReturnToToday = !isViewingCurrentWeek || isDateOtherThanTodaySelected
+
+    val weekMonthLabel = remember(currentWeek) {
+        if (currentWeek.isEmpty()) ""
+        else {
+            val firstDay = currentWeek.first().date
+            val lastDay = currentWeek.last().date
+            val locale = Locale("es")
+            if (firstDay.month == lastDay.month) {
+                val m = firstDay.month.getDisplayName(TextStyle.FULL, locale).replaceFirstChar { it.uppercase() }
+                "$m ${firstDay.year}"
+            } else {
+                val m1 = firstDay.month.getDisplayName(TextStyle.SHORT, locale).replaceFirstChar { it.uppercase() }
+                val m2 = lastDay.month.getDisplayName(TextStyle.SHORT, locale).replaceFirstChar { it.uppercase() }
+                "$m1 - $m2 ${lastDay.year}"
+            }
+        }
+    }
 
     Column(
         modifier = modifier
@@ -59,87 +130,179 @@ fun LumiWeekStrip(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Tu semana",
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = (-0.4).sp,
-                color = tokens.text
-            )
+            Column {
+                Text(
+                    text = "Tu semana",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = (-0.4).sp,
+                    color = tokens.text
+                )
+                if (weekMonthLabel.isNotBlank()) {
+                    Text(
+                        text = weekMonthLabel,
+                        fontSize = 11.sp,
+                        color = tokens.dim
+                    )
+                }
+            }
 
             Row(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable(onClick = onViewCalendarClick)
-                    .padding(vertical = 4.dp, horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text(
-                    text = "Ver calendario ↗",
-                    fontSize = 11.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = tokens.accent
-                )
+                if (showReturnToToday) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(tokens.accentSoft)
+                            .clickable {
+                                onResetToToday?.invoke()
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(todayWeekIndex)
+                                }
+                            }
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Hoy ↺",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = tokens.accent
+                        )
+                    }
+                }
+
+                // Flecha semana anterior
+                IconButton(
+                    onClick = {
+                        if (pagerState.currentPage > 0) {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                            }
+                        }
+                    },
+                    enabled = pagerState.currentPage > 0,
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.ChevronLeft,
+                        contentDescription = "Semana anterior",
+                        tint = if (pagerState.currentPage > 0) tokens.text else tokens.dim.copy(alpha = 0.3f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                // Flecha semana siguiente
+                IconButton(
+                    onClick = {
+                        if (pagerState.currentPage < weeks.size - 1) {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                            }
+                        }
+                    },
+                    enabled = pagerState.currentPage < weeks.size - 1,
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.ChevronRight,
+                        contentDescription = "Semana siguiente",
+                        tint = if (pagerState.currentPage < weeks.size - 1) tokens.text else tokens.dim.copy(alpha = 0.3f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                // Enlace al calendario completo
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(onClick = onViewCalendarClick)
+                        .padding(vertical = 4.dp, horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Ver calendario ↗",
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = tokens.accent
+                    )
+                }
             }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Fila de 7 días
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            weekDays.take(7).forEach { day ->
-                val isSelected = selectedDate?.isEqual(day.date) == true || (selectedDate == null && day.isToday)
-                val dotColor = when (day.phase) {
-                    CyclePhase.MENSTRUAL -> tokens.rose
-                    CyclePhase.FOLLICULAR -> tokens.gold
-                    CyclePhase.OVULATION -> tokens.mint
-                    CyclePhase.LUTEAL -> tokens.accent
-                    else -> tokens.accent.copy(alpha = 0.5f)
-                }
+        // Pager de semanas horizontales
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth()
+        ) { pageIndex ->
+            val pageWeek = weeks.getOrNull(pageIndex) ?: emptyList()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                pageWeek.forEach { day ->
+                    val isDaySelected = selectedDate?.isEqual(day.date) == true || (selectedDate == null && (day.isToday || day.date == today))
+                    val isDayToday = day.isToday || day.date == today
+                    val dotColor = when (day.phase) {
+                        CyclePhase.MENSTRUAL -> tokens.rose
+                        CyclePhase.FOLLICULAR -> tokens.gold
+                        CyclePhase.OVULATION -> tokens.mint
+                        CyclePhase.LUTEAL -> tokens.accent
+                        else -> tokens.accent.copy(alpha = 0.4f)
+                    }
 
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(if (isSelected) tokens.accentSoft else Color.Transparent)
-                        .border(
-                            width = 1.dp,
-                            color = if (isSelected) tokens.accent.copy(alpha = 0.55f) else Color.Transparent,
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .clickable { onSelectDate(day.date) }
-                        .padding(vertical = 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(7.dp)
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(if (isDaySelected) tokens.accentSoft else Color.Transparent)
+                            .border(
+                                width = 1.dp,
+                                color = when {
+                                    isDaySelected -> tokens.accent.copy(alpha = 0.65f)
+                                    isDayToday -> tokens.accent.copy(alpha = 0.35f)
+                                    else -> Color.Transparent
+                                },
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            .clickable { onSelectDate(day.date) }
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        // Nombre del día (Lun, Mar...)
-                        Text(
-                            text = day.weekdayLabel.take(3),
-                            fontSize = 10.sp,
-                            color = tokens.dim
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            // Nombre del día (Lun, Mar...)
+                            Text(
+                                text = day.weekdayLabel.take(3),
+                                fontSize = 10.sp,
+                                fontWeight = if (isDayToday) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isDayToday) tokens.accent else tokens.dim
+                            )
 
-                        // Número del día
-                        Text(
-                            text = "${day.dayOfMonth}",
-                            fontSize = 13.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (day.isToday) tokens.accent else tokens.text
-                        )
+                            // Número del día
+                            Text(
+                                text = "${day.dayOfMonth}",
+                                fontSize = 13.5.sp,
+                                fontWeight = if (isDayToday || isDaySelected) FontWeight.Bold else FontWeight.SemiBold,
+                                color = if (isDayToday) tokens.accent else tokens.text
+                            )
 
-                        // Punto indicador de fase
-                        Box(
-                            modifier = Modifier
-                                .size(4.dp)
-                                .clip(CircleShape)
-                                .background(dotColor)
-                        )
+                            // Punto indicador de fase menstrual
+                            Box(
+                                modifier = Modifier
+                                    .size(5.dp)
+                                    .clip(CircleShape)
+                                    .background(dotColor)
+                            )
+                        }
                     }
                 }
             }

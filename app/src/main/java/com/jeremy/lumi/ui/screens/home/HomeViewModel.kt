@@ -32,6 +32,9 @@ import kotlinx.coroutines.Job
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.DayOfWeek
+import java.time.temporal.TemporalAdjusters
+import java.time.temporal.ChronoUnit
 import java.time.format.TextStyle
 import com.jeremy.lumi.utils.LumiClock
 import java.util.Locale
@@ -363,9 +366,14 @@ class HomeViewModel @Inject constructor(
                 val today = LumiClock.today()
                 val currentSelected = _uiState.value.selectedDate
 
-                // Timeline continuo: 14 días pasados + 75 días futuros (~3 ciclos)
-                val weekDays = (-14..75).map { offset ->
-                    val date = today.plusDays(offset.toLong())
+                // Timeline continuo alineado por semanas completas (Lunes a Domingo):
+                // 4 semanas atrás (~28 días) + 12 semanas adelante (~84 días), total 16 semanas completas (112 días)
+                val startMonday = today.minusWeeks(4).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                val endSunday = today.plusWeeks(12).with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
+                val totalDays = ChronoUnit.DAYS.between(startMonday, endSunday) + 1
+
+                val weekDays = (0 until totalDays).map { offset ->
+                    val date = startMonday.plusDays(offset)
                     val (phase, isPrediction) = CyclePredictor.phaseForDateInActiveCycle(
                         startDate = startDate,
                         cycleLength = cycleLen,
@@ -375,7 +383,7 @@ class HomeViewModel @Inject constructor(
                         isPregnant = _uiState.value.isPregnant,
                         isOnContraceptive = isOnContraceptive
                     )
-                    val isToday = offset == 0
+                    val isToday = date == today
                     val isSelected = (currentSelected != null && date == currentSelected) || (currentSelected == null && isToday)
                     CycleDayUi(
                         date = date,

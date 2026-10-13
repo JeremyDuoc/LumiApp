@@ -93,7 +93,7 @@ class PartnerOnboardingViewModel @Inject constructor(
         it.copy(
             mode = OnboardingMode.JOIN,
             step = OnboardingStep.JOIN_CODE,
-            code = code.filter(Char::isDigit).take(6),
+            code = code.filter(Char::isDigit).take(8),
             errorRes = null
         )
     }
@@ -153,7 +153,7 @@ class PartnerOnboardingViewModel @Inject constructor(
     fun setAvatar(avatarId: String) = _uiState.update { it.copy(avatarId = avatarId) }
     fun setPrivacy(privacy: SharePreferences) = _uiState.update { it.copy(privacy = privacy) }
     fun setCode(code: String) = _uiState.update {
-        it.copy(code = code.filter(Char::isDigit).take(6), errorRes = null)
+        it.copy(code = code.filter(Char::isDigit).take(8), errorRes = null)
     }
 
     // ── Envío final ──────────────────────────────────────────────────────────

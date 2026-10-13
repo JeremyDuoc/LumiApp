@@ -132,7 +132,15 @@ class BondsViewModel @Inject constructor(
             partnerRepository.observeMyLinks().collect { links ->
                 val myUid = _uiState.value.myUid ?: partnerRepository.getCurrentUid()
                 val activeLinks = links.filter { it.status == LinkStatus.ACTIVE }
-                val pendingCode = links.firstOrNull { it.status == LinkStatus.PENDING && it.isOwner(myUid) }?.linkCode
+
+                // Solo reutilizar vínculos pendientes que tengan 8 dígitos y no hayan caducado (48 horas)
+                val now = System.currentTimeMillis()
+                val pendingCode = links.firstOrNull { link ->
+                    link.status == LinkStatus.PENDING &&
+                    link.isOwner(myUid) &&
+                    link.linkCode.length == 8 &&
+                    (link.createdAtMs == 0L || (now - link.createdAtMs) < 48 * 60 * 60 * 1000L)
+                }?.linkCode
 
                 val memberList = activeLinks.map { link ->
                     val otherPrefs = link.otherSharePreferences(myUid)
@@ -275,7 +283,20 @@ class BondsViewModel @Inject constructor(
     }
 
     /**
-     * Genera una nueva invitación temporal de 6 dígitos.
+     * Guarda las preferencias de compartición por defecto del usuario.
+     */
+    fun updateDefaultPrivacy(privacy: SharePreferences) {
+        viewModelScope.launch {
+            prefsManager.setSharePhase(privacy.phase)
+            prefsManager.setShareMood(privacy.mood)
+            prefsManager.setShareSymptoms(privacy.symptoms)
+            prefsManager.setSharePredictions(privacy.predictions)
+            _uiState.update { it.copy(myDefaultPrivacy = privacy) }
+        }
+    }
+
+    /**
+     * Genera una nueva invitación temporal de 8 dígitos.
      */
     suspend fun createInvitation(
         linkType: LinkType = LinkType.CYCLE_SYNC,
@@ -296,7 +317,7 @@ class BondsViewModel @Inject constructor(
     }
 
     /**
-     * Unirse a un vínculo usando un código de 6 dígitos.
+     * Unirse a un vínculo usando un código de invitación (8 dígitos, o 6 legacy en transición).
      */
     fun joinWithCode(
         code: String,

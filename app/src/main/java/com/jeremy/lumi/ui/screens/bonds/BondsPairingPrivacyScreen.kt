@@ -5,12 +5,16 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Bitmap
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,10 +45,13 @@ import androidx.compose.material.icons.rounded.FlashOn
 import androidx.compose.material.icons.rounded.Mood
 import androidx.compose.material.icons.rounded.Nightlight
 import androidx.compose.material.icons.rounded.QrCode
+import androidx.compose.material.icons.rounded.QrCodeScanner
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -83,6 +90,7 @@ import androidx.compose.ui.unit.sp
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import com.jeremy.lumi.R
+import com.jeremy.lumi.ui.theme.LumiThemeTokens
 import com.jeremy.lumi.domain.model.SharePreferences
 import kotlinx.coroutines.launch
 
@@ -98,6 +106,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun BondsPairingPrivacyScreen(
     currentInviteCode: String?,
+    initialJoinCode: String? = null,
     initialPrivacy: SharePreferences,
     isObserverOnly: Boolean,
     onGenerateCode: suspend () -> String,
@@ -119,26 +128,90 @@ fun BondsPairingPrivacyScreen(
     var shareSymptoms by remember { mutableStateOf(initialPrivacy.symptoms) }
     var sharePredictions by remember { mutableStateOf(initialPrivacy.predictions) }
 
+    // Sincronizar reactivamente con initialPrivacy si cambia desde DataStore o red
+    LaunchedEffect(initialPrivacy) {
+        sharePhase = initialPrivacy.phase
+        shareMood = initialPrivacy.mood
+        shareSymptoms = initialPrivacy.symptoms
+        sharePredictions = initialPrivacy.predictions
+    }
+
     // Diálogo o sección para unirse con código
-    var isJoinExpanded by remember { mutableStateOf(false) }
-    var inputJoinCode by remember { mutableStateOf("") }
+    var isJoinExpanded by remember { mutableStateOf(!initialJoinCode.isNullOrBlank()) }
+    var inputJoinCode by remember { mutableStateOf(initialJoinCode?.filter { it.isDigit() }?.take(8) ?: "") }
     var isJoining by remember { mutableStateOf(false) }
+
+    LaunchedEffect(initialJoinCode) {
+        if (!initialJoinCode.isNullOrBlank()) {
+            inputJoinCode = initialJoinCode.filter { it.isDigit() }.take(8)
+            isJoinExpanded = true
+        }
+    }
+
+    // Launcher del escáner de cámara para códigos QR
+    val qrScanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
+        val scanned = result.contents?.trim()
+        if (!scanned.isNullOrBlank()) {
+            val code = when {
+                scanned.contains("/bonds/pair/") -> scanned.substringAfterLast("/bonds/pair/").filter { it.isDigit() }
+                scanned.contains("/pair/") -> scanned.substringAfterLast("/pair/").filter { it.isDigit() }
+                scanned.contains("pair/") -> scanned.substringAfterLast("pair/").filter { it.isDigit() }
+                scanned.all { it.isDigit() } && scanned.length in 6..8 -> scanned
+                else -> ""
+            }
+            if (code.length in 6..8) {
+                inputJoinCode = code.take(8)
+                isJoinExpanded = true
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.bonds_scan_qr_success, formatPairingCode(inputJoinCode)),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.bonds_invalid_qr),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    fun buildQrContent(code: String): String = "https://lumi.app/pair/$code"
 
     // Generar o refrescar código al cargar
     LaunchedEffect(currentInviteCode) {
         if (!currentInviteCode.isNullOrBlank()) {
             activeCode = currentInviteCode
-            qrBitmap = generateQrCode("lumi://bonds/pair/$currentInviteCode", 320)
+            qrBitmap = generateQrCode(buildQrContent(currentInviteCode), 320)
         } else if (activeCode.isBlank()) {
             isGeneratingCode = true
             try {
                 val newCode = onGenerateCode()
                 activeCode = newCode
-                qrBitmap = generateQrCode("lumi://bonds/pair/$newCode", 320)
+                qrBitmap = generateQrCode(buildQrContent(newCode), 320)
             } catch (_: Exception) {
-                // Manejo de error si falla la conectividad
+                Toast.makeText(context, "No se pudo generar código. Comprueba la red.", Toast.LENGTH_SHORT).show()
             } finally {
                 isGeneratingCode = false
+            }
+        }
+    }
+
+    val onRegenerateCode: () -> Unit = {
+        if (!isGeneratingCode) {
+            isGeneratingCode = true
+            coroutineScope.launch {
+                try {
+                    val newCode = onGenerateCode()
+                    activeCode = newCode
+                    qrBitmap = generateQrCode(buildQrContent(newCode), 320)
+                    Toast.makeText(context, context.getString(R.string.bonds_code_regenerated), Toast.LENGTH_SHORT).show()
+                } catch (_: Exception) {
+                    Toast.makeText(context, "Error al generar nuevo código", Toast.LENGTH_SHORT).show()
+                } finally {
+                    isGeneratingCode = false
+                }
             }
         }
     }
@@ -267,7 +340,7 @@ fun BondsPairingPrivacyScreen(
                             // Tarjeta de código numérico
                             Surface(
                                 shape = BondsTheme.CardShapeMedium,
-                                color = Color.White,
+                                color = BondsTheme.WarmWhite,
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(96.dp)
@@ -298,22 +371,48 @@ fun BondsPairingPrivacyScreen(
                                             letterSpacing = 1.sp
                                         )
 
-                                        IconButton(
-                                            onClick = {
-                                                if (activeCode.isNotBlank()) {
-                                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                                    clipboard.setPrimaryClip(ClipData.newPlainText("Bonds Code", activeCode))
-                                                    Toast.makeText(context, context.getString(R.string.bonds_code_copied), Toast.LENGTH_SHORT).show()
-                                                }
-                                            },
-                                            modifier = Modifier.size(32.dp)
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.ContentCopy,
-                                                contentDescription = "Copiar",
-                                                tint = BondsTheme.DeepNavy,
-                                                modifier = Modifier.size(18.dp)
-                                            )
+                                            IconButton(
+                                                onClick = onRegenerateCode,
+                                                enabled = !isGeneratingCode,
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                if (isGeneratingCode) {
+                                                    CircularProgressIndicator(
+                                                        modifier = Modifier.size(16.dp),
+                                                        strokeWidth = 2.dp,
+                                                        color = BondsTheme.DeepNavy
+                                                    )
+                                                } else {
+                                                    Icon(
+                                                        imageVector = Icons.Rounded.Refresh,
+                                                        contentDescription = stringResource(R.string.bonds_regenerate_code),
+                                                        tint = BondsTheme.DeepNavy,
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                }
+                                            }
+
+                                            IconButton(
+                                                onClick = {
+                                                    if (activeCode.isNotBlank()) {
+                                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                                        clipboard.setPrimaryClip(ClipData.newPlainText("Bonds Code", activeCode))
+                                                        Toast.makeText(context, context.getString(R.string.bonds_code_copied), Toast.LENGTH_SHORT).show()
+                                                    }
+                                                },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.ContentCopy,
+                                                    contentDescription = "Copiar",
+                                                    tint = BondsTheme.DeepNavy,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -323,41 +422,83 @@ fun BondsPairingPrivacyScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // Botón para unirse a un vínculo con código
+            // ── Acciones para vincularse con otra persona ───────────────────────
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { isJoinExpanded = !isJoinExpanded }
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text(
-                    text = if (isJoinExpanded) "Ocultar ingreso de código" else "¿Tienes un código de invitación? Toca aquí",
-                    fontSize = 13.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = BondsTheme.SoftViolet
-                )
+                // Botón Escanear QR
+                Button(
+                    onClick = {
+                        val options = ScanOptions().apply {
+                            setPrompt(context.getString(R.string.bonds_scan_qr_prompt))
+                            setBeepEnabled(true)
+                            setOrientationLocked(false)
+                            setBarcodeImageEnabled(false)
+                        }
+                        qrScanLauncher.launch(options)
+                    },
+                    shape = BondsTheme.PillShape,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = BondsTheme.SoftViolet,
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.QrCodeScanner,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.bonds_scan_qr_button),
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                // Botón Ingresar código manual
+                OutlinedButton(
+                    onClick = { isJoinExpanded = !isJoinExpanded },
+                    shape = BondsTheme.PillShape,
+                    border = BorderStroke(1.dp, BondsTheme.BorderSubtle),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = BondsTheme.DeepNavy
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                ) {
+                    Text(
+                        text = if (isJoinExpanded) "Ocultar código" else "Ingresar código",
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
 
             AnimatedVisibility(visible = isJoinExpanded) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp, bottom = 12.dp)
+                        .padding(top = 12.dp, bottom = 8.dp)
                 ) {
                     OutlinedTextField(
                         value = inputJoinCode,
-                        onValueChange = { if (it.length <= 6 && it.all { c -> c.isDigit() }) inputJoinCode = it },
+                        onValueChange = { if (it.length <= 8 && it.all { c -> c.isDigit() }) inputJoinCode = it },
                         label = { Text(stringResource(R.string.bonds_enter_code_hint)) },
+                        placeholder = { Text("12345678") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                         shape = BondsTheme.CardShapeMedium,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White,
+                            focusedContainerColor = BondsTheme.WarmWhite,
+                            unfocusedContainerColor = BondsTheme.WarmWhite,
                             focusedBorderColor = BondsTheme.DeepNavy,
                             unfocusedBorderColor = BondsTheme.BorderSubtle
                         )
@@ -365,7 +506,7 @@ fun BondsPairingPrivacyScreen(
                     Spacer(modifier = Modifier.height(10.dp))
                     Button(
                         onClick = {
-                            if (inputJoinCode.length == 6 && !isJoining) {
+                            if (inputJoinCode.length in 6..8 && !isJoining) {
                                 isJoining = true
                                 val privacy = SharePreferences(sharePhase, shareMood, shareSymptoms, sharePredictions)
                                 onJoinWithCode(inputJoinCode, privacy) { success ->
@@ -373,19 +514,32 @@ fun BondsPairingPrivacyScreen(
                                     if (success) {
                                         Toast.makeText(context, "¡Vínculo conectado con éxito!", Toast.LENGTH_SHORT).show()
                                         onNavigateBack()
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            "No se pudo conectar. Verifica que el código sea correcto y que el servicio esté disponible.",
+                                            Toast.LENGTH_LONG
+                                        ).show()
                                     }
                                 }
                             }
                         },
-                        enabled = inputJoinCode.length == 6 && !isJoining,
+                        enabled = inputJoinCode.length in 6..8 && !isJoining,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),
                         shape = BondsTheme.PillShape,
-                        colors = ButtonDefaults.buttonColors(containerColor = BondsTheme.DeepNavy)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = BondsTheme.DeepNavy,
+                            contentColor = if (LumiThemeTokens.current.isDark) Color(0xFF0B0B11) else Color.White
+                        )
                     ) {
                         if (isJoining) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            CircularProgressIndicator(
+                                color = if (LumiThemeTokens.current.isDark) Color(0xFF0B0B11) else Color.White,
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp
+                            )
                         } else {
                             Text(stringResource(R.string.bonds_join_button), fontWeight = FontWeight.SemiBold)
                         }
@@ -467,9 +621,11 @@ fun BondsPairingPrivacyScreen(
             // ── Tarjeta "Your privacy matters" (Phone 3) ────────────────────────
             Surface(
                 shape = BondsTheme.CardShapeMedium,
-                color = Color.White,
-                shadowElevation = 2.dp,
-                modifier = Modifier.fillMaxWidth()
+                color = BondsTheme.WarmWhite,
+                shadowElevation = 0.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, BondsTheme.BorderSubtle, BondsTheme.CardShapeMedium)
             ) {
                 Row(
                     modifier = Modifier.padding(18.dp),
@@ -542,7 +698,7 @@ private fun PrivacyToggleRow(
             modifier = Modifier
                 .size(42.dp)
                 .clip(CircleShape)
-                .background(Color.White)
+                .background(BondsTheme.WarmWhite)
                 .border(1.dp, BondsTheme.BorderSubtle, CircleShape),
             contentAlignment = Alignment.Center
         ) {
@@ -571,13 +727,14 @@ private fun PrivacyToggleRow(
             )
         }
 
+        val isDark = LumiThemeTokens.current.isDark
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
+                checkedThumbColor = if (isDark) Color(0xFF0B0B11) else Color.White,
                 checkedTrackColor = BondsTheme.DeepNavy,
-                uncheckedThumbColor = Color.White,
+                uncheckedThumbColor = if (isDark) BondsTheme.TextTertiary else Color.White,
                 uncheckedTrackColor = BondsTheme.BorderSubtle
             )
         )
@@ -586,10 +743,10 @@ private fun PrivacyToggleRow(
 
 private fun formatPairingCode(code: String): String {
     val digits = code.filter { it.isDigit() }
-    return if (digits.length == 6) {
-        "${digits.substring(0, 3)} ${digits.substring(3, 6)}"
-    } else {
-        code.ifBlank { "••• •••" }
+    return when (digits.length) {
+        8 -> "${digits.substring(0, 4)} ${digits.substring(4, 8)}"
+        6 -> "${digits.substring(0, 3)} ${digits.substring(3, 6)}"
+        else -> code.ifBlank { "•••• ••••" }
     }
 }
 

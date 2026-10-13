@@ -1,89 +1,211 @@
 package com.jeremy.lumi.ui.screens.bonds
 
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.jeremy.lumi.ui.theme.LumiThemeTokens
 
 /**
  * Sistema de diseño y tokens visuales para BONDS.
  *
- * Reproduce fielmente la estética de la referencia:
- * - Deep Navy elegante (#193458)
- * - Warm White / Crema (#FFFCFA)
- * - Peach suave (#FFC9B5)
- * - Blush rosa empolvado (#F3B6CA)
- * - Lavender (#C8B5F1)
- * - Secondary Text neutral (#68758A)
- * - Tarjetas amplias con esquinas suaves de 28-32dp
- * - Gradientes de aura etéreos y superficies translúcidas
+ * Totalmente integrado con el motor de temas de Lumi (`LumiThemeTokens`):
+ * - Responde reactivamente a Noir (oscuro), Blush (claro cálido), Sage (verde/teal), Charcoal, etc.
+ * - Mantiene la identidad y composición de Bonds (tarjetas amplias, auras suaves, aros degradados).
+ * - En temas oscuros, las tarjetas y fondos adoptan superficies oscuras coherentes con alto contraste.
+ * - En temas claros, mantiene la calidez pastel y la tipografía Deep Navy refinada.
  */
 object BondsTheme {
 
-    // Paleta de colores base
-    val DeepNavy = Color(0xFF193458)
-    val DeepNavyDark = Color(0xFF11223A)
-    val WarmWhite = Color(0xFFFFFDFB)
-    val WarmBackground = Color(0xFFFAF7F5)
-    val PureWhite = Color(0xFFFFFFFF)
-    
-    // Tonos pasteles característicos
-    val Peach = Color(0xFFFFC9B5)
-    val PeachLight = Color(0xFFFFF1EB)
-    val Blush = Color(0xFFF3B6CA)
-    val BlushLight = Color(0xFFFDEBF1)
-    val Lavender = Color(0xFFC8B5F1)
-    val LavenderLight = Color(0xFFF4EFFD)
-    val SoftViolet = Color(0xFF9070D8)
+    // Paleta de colores base sincronizada con el tema activo
+    val DeepNavy: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = LumiThemeTokens.current.text
+
+    val DeepNavyDark: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = if (LumiThemeTokens.current.isDark) LumiThemeTokens.current.panel2 else Color(0xFF11223A)
+
+    val WarmWhite: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = LumiThemeTokens.current.panel
+
+    val WarmBackground: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = LumiThemeTokens.current.bg
+
+    val PureWhite: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = LumiThemeTokens.current.panel
+
+    // Tonos pasteles y semánticos característicos
+    val Peach: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = LumiThemeTokens.current.peach
+
+    val PeachLight: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = if (LumiThemeTokens.current.isDark) LumiThemeTokens.current.peach.copy(alpha = 0.20f) else Color(0xFFFFF1EB)
+
+    val Blush: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = LumiThemeTokens.current.rose
+
+    val BlushLight: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = if (LumiThemeTokens.current.isDark) LumiThemeTokens.current.rose.copy(alpha = 0.20f) else Color(0xFFFDEBF1)
+
+    val Lavender: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = LumiThemeTokens.current.accent
+
+    val LavenderLight: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = if (LumiThemeTokens.current.isDark) LumiThemeTokens.current.accentSoft else Color(0xFFF4EFFD)
+
+    val SoftViolet: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = LumiThemeTokens.current.accent
 
     // Textos y neutros
-    val TextPrimary = Color(0xFF192A3E)
-    val TextSecondary = Color(0xFF68758A)
-    val TextTertiary = Color(0xFF9EAAB9)
-    val BorderSubtle = Color(0xFFEDE8E3)
-    val DividerSubtle = Color(0xFFF0EBE6)
+    val TextPrimary: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = LumiThemeTokens.current.text
+
+    val TextSecondary: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = LumiThemeTokens.current.muted
+
+    val TextTertiary: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = LumiThemeTokens.current.dim
+
+    val BorderSubtle: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = LumiThemeTokens.current.line
+
+    val DividerSubtle: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = LumiThemeTokens.current.line
 
     // Colores de acento para avatares y fases en el círculo
-    val DotMenstrual = Color(0xFFE87A90)
-    val DotFollicular = Color(0xFFE5B54F)
-    val DotOvulation = Color(0xFF5ABEA0)
-    val DotLuteal = Color(0xFF8F80DE)
+    val DotMenstrual: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = LumiThemeTokens.current.rose
+
+    val DotFollicular: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = LumiThemeTokens.current.gold
+
+    val DotOvulation: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = LumiThemeTokens.current.mint
+
+    val DotLuteal: Color
+        @Composable
+        @ReadOnlyComposable
+        get() = LumiThemeTokens.current.accent
 
     // Gradiente del fondo pastel de la tarjeta contextual (Teléfono 1)
-    val FeelingCardGradient = Brush.linearGradient(
-        colors = listOf(
-            Color(0xFFFFF2EB),
-            Color(0xFFFDEAF0),
-            Color(0xFFF3EDFC)
-        )
-    )
+    val FeelingCardGradient: Brush
+        @Composable
+        @ReadOnlyComposable
+        get() {
+            val tokens = LumiThemeTokens.current
+            return if (tokens.isDark) {
+                Brush.linearGradient(
+                    colors = listOf(
+                        tokens.panel,
+                        tokens.panel2,
+                        tokens.panel
+                    )
+                )
+            } else {
+                Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFFFFF2EB),
+                        Color(0xFFFDEAF0),
+                        Color(0xFFF3EDFC)
+                    )
+                )
+            }
+        }
 
     // Gradiente de borde de avatar
-    val AvatarRingGradient = Brush.sweepGradient(
-        colors = listOf(
-            Peach,
-            Blush,
-            Lavender,
-            SoftViolet,
-            Peach
-        )
-    )
+    val AvatarRingGradient: Brush
+        @Composable
+        @ReadOnlyComposable
+        get() {
+            val tokens = LumiThemeTokens.current
+            return Brush.sweepGradient(
+                colors = listOf(
+                    tokens.peach,
+                    tokens.rose,
+                    tokens.accent,
+                    tokens.mint,
+                    tokens.peach
+                )
+            )
+        }
 
     // Gradiente de la tarjeta oscura "Link your circles" (Teléfono 3)
-    val DarkCardGradient = Brush.linearGradient(
-        colors = listOf(
-            Color(0xFF1E3557),
-            Color(0xFF14243C)
-        )
-    )
+    val DarkCardGradient: Brush
+        @Composable
+        @ReadOnlyComposable
+        get() {
+            val tokens = LumiThemeTokens.current
+            return if (tokens.isDark) {
+                Brush.linearGradient(
+                    colors = listOf(
+                        tokens.panel2,
+                        tokens.panel
+                    )
+                )
+            } else {
+                Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFF1E3557),
+                        Color(0xFF14243C)
+                    )
+                )
+            }
+        }
 
     // Aura etérea ascendente para el envío de detalles (Teléfono 2)
-    val AuraGradientColors = listOf(
-        Color(0xFFFFC9B5).copy(alpha = 0.65f),
-        Color(0xFFF3B6CA).copy(alpha = 0.45f),
-        Color(0xFFC8B5F1).copy(alpha = 0.30f),
-        Color.Transparent
-    )
+    val AuraGradientColors: List<Color>
+        @Composable
+        @ReadOnlyComposable
+        get() {
+            val tokens = LumiThemeTokens.current
+            return listOf(
+                tokens.peach.copy(alpha = if (tokens.isDark) 0.35f else 0.65f),
+                tokens.rose.copy(alpha = if (tokens.isDark) 0.25f else 0.45f),
+                tokens.accent.copy(alpha = if (tokens.isDark) 0.20f else 0.30f),
+                Color.Transparent
+            )
+        }
 
     // Formas
     val CardShape = RoundedCornerShape(28.dp)

@@ -1,5 +1,6 @@
 package com.jeremy.lumi.ui.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,8 +25,10 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.BlendMode
 import androidx.navigation.compose.*
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
@@ -115,6 +118,18 @@ fun AppNavGraph() {
                 },
                 onNavigateToBackup = {
                     rootNavController.navigate(AppRoutes.BACKUP)
+                },
+                onOpenBondsPairing = {
+                    rootNavController.navigate(AppRoutes.BONDS_PAIRING)
+                },
+                onOpenBondsSharedCalendar = {
+                    rootNavController.navigate(AppRoutes.BONDS_SHARED_CALENDAR)
+                },
+                onOpenBondsMemberDetail = { linkId ->
+                    rootNavController.navigate("bonds_member_detail/$linkId")
+                },
+                onOpenBondsSendGesture = { linkId, action ->
+                    rootNavController.navigate("bonds_send_gesture/$action?linkId=$linkId")
                 }
             )
         }
@@ -133,25 +148,33 @@ fun AppNavGraph() {
             )
         }
         
-        // ——— Onboarding del Modo Pareja (crear vínculo o unirse; deep links) ———
+        // ——— Onboarding del Modo Pareja (redirección automática hacia Bonds si viene con código) ———
         composable(
             route = AppRoutes.PARTNER,
             deepLinks = listOf(
-                androidx.navigation.navDeepLink { uriPattern = "https://lumi.app/pair/{code}" },
-                androidx.navigation.navDeepLink { uriPattern = "lumi://pair/{code}" }
+                navDeepLink { uriPattern = "https://lumi.app/legacy/pair/{code}" },
+                navDeepLink { uriPattern = "lumi://legacy/pair/{code}" }
             )
         ) { backStackEntry ->
             val initialCode = backStackEntry.arguments?.getString("code")
-            com.jeremy.lumi.ui.screens.partner.PartnerOnboardingScreen(
-                initialCode = initialCode?.takeIf { it.isNotBlank() },
-                onNavigateBack = { rootNavController.popBackStack() },
-                onFinished = {
-                    rootNavController.navigate(AppRoutes.PARTNER_HUB) {
+            if (!initialCode.isNullOrBlank()) {
+                LaunchedEffect(initialCode) {
+                    rootNavController.navigate("${AppRoutes.BONDS_PAIRING}?joinCode=$initialCode") {
                         popUpTo(AppRoutes.PARTNER) { inclusive = true }
-                        launchSingleTop = true
                     }
                 }
-            )
+            } else {
+                com.jeremy.lumi.ui.screens.partner.PartnerOnboardingScreen(
+                    initialCode = null,
+                    onNavigateBack = { rootNavController.popBackStack() },
+                    onFinished = {
+                        rootNavController.navigate(AppRoutes.BONDS_HOME) {
+                            popUpTo(AppRoutes.PARTNER) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
         }
         // ——— Diario Compartido —————————————————————————————————————————————————
         composable("shared_diary/{linkId}") { backStack ->
@@ -219,18 +242,26 @@ fun AppNavGraph() {
         }
 
         composable(
-            route = AppRoutes.BONDS_PAIRING,
+            route = "${AppRoutes.BONDS_PAIRING}?joinCode={joinCode}",
+            arguments = listOf(navArgument("joinCode") {
+                nullable = true
+                defaultValue = null
+                type = NavType.StringType
+            }),
             deepLinks = listOf(
-                androidx.navigation.navDeepLink { uriPattern = "https://lumi.app/bonds/pair/{code}" },
-                androidx.navigation.navDeepLink { uriPattern = "lumi://bonds/pair/{code}" }
+                navDeepLink { uriPattern = "https://lumi.app/pair/{joinCode}" },
+                navDeepLink { uriPattern = "lumi://pair/{joinCode}" },
+                navDeepLink { uriPattern = "https://lumi.app/bonds/pair/{joinCode}" },
+                navDeepLink { uriPattern = "lumi://bonds/pair/{joinCode}" }
             )
         ) { backStackEntry ->
-            val initialCode = backStackEntry.arguments?.getString("code")
+            val joinCode = backStackEntry.arguments?.getString("joinCode")
             val bondsViewModel: BondsViewModel = hiltViewModel()
             val uiState by bondsViewModel.uiState.collectAsStateWithLifecycle()
 
             BondsPairingPrivacyScreen(
-                currentInviteCode = initialCode ?: uiState.pendingInviteCode,
+                currentInviteCode = uiState.pendingInviteCode,
+                initialJoinCode = joinCode,
                 initialPrivacy = uiState.myDefaultPrivacy,
                 isObserverOnly = uiState.isObserverOnly,
                 onGenerateCode = { bondsViewModel.createInvitation() },
@@ -238,6 +269,7 @@ fun AppNavGraph() {
                     bondsViewModel.joinWithCode(code, privacy, onComplete)
                 },
                 onUpdatePrivacy = { privacy ->
+                    bondsViewModel.updateDefaultPrivacy(privacy)
                     uiState.selectedMember?.let {
                         bondsViewModel.updateLinkPrivacy(it.linkId, privacy)
                     }
@@ -346,7 +378,11 @@ fun AppNavGraph() {
 @Composable
 fun MainScreen(
     onNavigateToPartner: () -> Unit = {},
-    onNavigateToBackup: () -> Unit = {}
+    onNavigateToBackup: () -> Unit = {},
+    onOpenBondsPairing: () -> Unit = {},
+    onOpenBondsSharedCalendar: () -> Unit = {},
+    onOpenBondsMemberDetail: (String) -> Unit = {},
+    onOpenBondsSendGesture: (String, String) -> Unit = { _, _ -> }
 ) {
     val navController = rememberNavController()
     
@@ -386,6 +422,13 @@ fun MainScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute == "tabs"
+
+    // Retorno suave a la pestaña Inicio si se presiona el botón Back del sistema
+    BackHandler(enabled = showBottomBar && pagerState.currentPage != 0) {
+        coroutineScope.launch {
+            pagerState.animateScrollToPage(0)
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -460,21 +503,27 @@ fun MainScreen(
                             BondsHomeScreen(
                                 uiState = bondsUiState,
                                 onSelectMember = { member -> bondsViewModel.selectMember(member) },
-                                onOpenMemberDetail = { onNavigateToPartner() },
-                                onOpenSendGesture = { _, _ -> onNavigateToPartner() },
-                                onOpenPairingPrivacy = { onNavigateToPartner() },
-                                onOpenSharedCalendar = { onNavigateToPartner() },
+                                onOpenMemberDetail = { member -> onOpenBondsMemberDetail(member.linkId) },
+                                onOpenSendGesture = { member, action -> onOpenBondsSendGesture(member?.linkId ?: "", action.name) },
+                                onOpenPairingPrivacy = onOpenBondsPairing,
+                                onOpenSharedCalendar = onOpenBondsSharedCalendar,
                                 onNavigateBack = {
                                     coroutineScope.launch { pagerState.animateScrollToPage(0) }
                                 }
                             )
                         }
                         BottomNavItem.Chat -> ConversationsScreen(
+                            onNavigateBack = {
+                                coroutineScope.launch { pagerState.animateScrollToPage(0) }
+                            },
                             onNavigateToChat = { thread ->
                                 navController.navigate("chat/$thread")
                             }
                         )
                         BottomNavItem.Settings -> SettingsScreen(
+                            onNavigateBack = {
+                                coroutineScope.launch { pagerState.animateScrollToPage(0) }
+                            },
                             onNavigateToBackup = onNavigateToBackup,
                             onNavigateToPartner = onNavigateToPartner
                         )
@@ -484,12 +533,14 @@ fun MainScreen(
             }
             composable("settings") {
                 SettingsScreen(
+                    onNavigateBack = { navController.popBackStack() },
                     onNavigateToBackup = onNavigateToBackup,
                     onNavigateToPartner = onNavigateToPartner
                 )
             }
             composable("conversations") {
                 ConversationsScreen(
+                    onNavigateBack = { navController.popBackStack() },
                     onNavigateToChat = { thread ->
                         navController.navigate("chat/$thread")
                     }

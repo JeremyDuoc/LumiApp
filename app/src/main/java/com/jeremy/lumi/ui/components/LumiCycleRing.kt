@@ -108,24 +108,23 @@ fun LumiCycleRing(
             modifier = Modifier.size(ringSize),
             contentAlignment = Alignment.Center
         ) {
-            // Fondo de resplandor radial
-            Box(
-                modifier = Modifier
-                    .size(ringSize * 1.25f)
-                    .background(
-                        Brush.radialGradient(
-                            listOf(tokens.glow, Color.Transparent),
-                            radius = (ringSize.value * 1.8f)
-                        )
-                    )
-            )
-
             // Canvas del Aro
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val strokePx = strokeWidth.toPx()
                 val diameter = size.minDimension - strokePx
                 val topLeft = Offset(strokePx / 2f, strokePx / 2f)
                 val arcSize = Size(diameter, diameter)
+
+                // 0. Resplandor radial suave circular (elimina el artefacto cuadrado en GPUs físicas)
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(tokens.glow, tokens.glow.copy(alpha = 0f)),
+                        center = center,
+                        radius = (diameter / 2f) + (strokePx * 2f)
+                    ),
+                    radius = (diameter / 2f) + (strokePx * 2f),
+                    center = center
+                )
 
                 // 1. Pista circular de fondo
                 drawCircle(

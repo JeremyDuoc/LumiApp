@@ -101,6 +101,7 @@ fun HomeScreen(
     var showQuickLogSheet by remember { mutableStateOf(false) }
     var showThemeSheet    by remember { mutableStateOf(false) }
     var showPredictionInfoSheet by remember { mutableStateOf(false) }
+    var showNotificationsSheet by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope             = rememberCoroutineScope()
     val context           = androidx.compose.ui.platform.LocalContext.current
@@ -112,6 +113,8 @@ fun HomeScreen(
 
     val activeReminders by remindersViewModel.activeReminders.collectAsStateWithLifecycle()
     val quickLogViewModel: QuickLogViewModel = hiltViewModel()
+    val todayLog by quickLogViewModel.todayLog.collectAsStateWithLifecycle()
+    val hasEntry = todayLog != null
 
     var lastSyncedPrediction by remember { mutableStateOf<CyclePrediction?>(null) }
     var lastSyncedRemindersHash by remember { androidx.compose.runtime.mutableIntStateOf(0) }
@@ -209,14 +212,11 @@ fun HomeScreen(
 
         Scaffold(
             topBar = {
+                val hasNotificationAlert = !hasEntry || uiState.isLate || ((uiState.prediction?.daysUntilNextPeriod ?: 99) in 0..3) || activeReminders.isNotEmpty()
                 LumiTopBar(
-                    hasNotificationAlert = true,
+                    hasNotificationAlert = hasNotificationAlert,
                     onThemeClick = { showThemeSheet = true },
-                    onNotificationsClick = {
-                        scope.launch {
-                            snackbarHostState.showSnackbar("No hay nuevas notificaciones en este momento.")
-                        }
-                    },
+                    onNotificationsClick = { showNotificationsSheet = true },
                     onChatClick = onNavigateToChat,
                     onSettingsClick = onNavigateToSettings
                 )
@@ -318,15 +318,14 @@ fun HomeScreen(
                                 weekDays = uiState.weekDays,
                                 selectedDate = uiState.selectedDate,
                                 onSelectDate = { viewModel.selectDate(it) },
-                                onViewCalendarClick = onNavigateToCalendar
+                                onViewCalendarClick = onNavigateToCalendar,
+                                onResetToToday = { viewModel.resetToToday() }
                             )
                         }
                     }
 
                     // Tarjeta de Registro Diario ("Un momento para ti")
                     FadeSlideIn(screenReady, STAGGER_MS * 3) {
-                        val todayLog by quickLogViewModel.todayLog.collectAsStateWithLifecycle()
-                        val hasEntry = todayLog != null
                         val entrySubtitle = if (hasEntry && !todayLog?.dailyLog?.mood.isNullOrBlank()) {
                             "Hoy te sientes ${todayLog?.dailyLog?.mood?.lowercase()}."
                         } else if (hasEntry) {
@@ -458,7 +457,22 @@ fun HomeScreen(
 
         if (showPredictionInfoSheet) {
             LumiPredictionInfoSheet(
+                predictionFactors = uiState.predictionFactors,
+                prediction = uiState.prediction,
                 onDismiss = { showPredictionInfoSheet = false }
+            )
+        }
+
+        if (showNotificationsSheet) {
+            LumiNotificationsSheet(
+                isLate = uiState.isLate,
+                delayDays = uiState.delayDays,
+                prediction = uiState.prediction,
+                currentPhase = uiState.currentPhase ?: CyclePhase.UNKNOWN,
+                hasEntryToday = hasEntry,
+                activeReminders = activeReminders,
+                onQuickLogClick = { showQuickLogSheet = true },
+                onDismiss = { showNotificationsSheet = false }
             )
         }
 

@@ -102,6 +102,7 @@
     <string name="balloon_instruction">Tap the bubble until it pops</string>
     <string name="balloon_popped">Pop!</string>
     <string name="btn_close">Close</string>
+    <string name="btn_back">Back</string>
     <!-- Calendario -->
     <string name="cal_mon">M</string>
     <string name="cal_tue">T</string>

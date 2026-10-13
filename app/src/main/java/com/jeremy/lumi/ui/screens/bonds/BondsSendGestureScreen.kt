@@ -13,6 +13,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -72,6 +73,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jeremy.lumi.R
 import com.jeremy.lumi.domain.model.CareAction
+import com.jeremy.lumi.ui.theme.LumiThemeTokens
 import kotlinx.coroutines.delay
 import kotlin.math.sin
 
@@ -178,8 +180,8 @@ fun BondsSendGestureScreen(
                         ambientColor = BondsTheme.Lavender.copy(alpha = 0.3f)
                     )
                     .clip(BondsTheme.CardShapeLarge)
-                    .background(Color.White.copy(alpha = 0.94f))
-                    .border(1.5.dp, Color.White, BondsTheme.CardShapeLarge)
+                    .background(BondsTheme.WarmWhite.copy(alpha = 0.94f))
+                    .border(1.5.dp, BondsTheme.BorderSubtle, BondsTheme.CardShapeLarge)
                     .clickable {
                         val target = selectedRecipient ?: allMembers.firstOrNull()
                         if (target != null && !isSending) {
@@ -243,7 +245,8 @@ fun BondsSendGestureScreen(
                         val isChosen = (selectedRecipient?.linkId ?: allMembers.firstOrNull()?.linkId) == member.linkId
                         Surface(
                             shape = BondsTheme.PillShape,
-                            color = if (isChosen) BondsTheme.DeepNavy else Color.White,
+                            color = if (isChosen) BondsTheme.DeepNavy else BondsTheme.WarmWhite,
+                            border = if (!isChosen) BorderStroke(1.dp, BondsTheme.BorderSubtle) else null,
                             modifier = Modifier
                                 .padding(horizontal = 4.dp)
                                 .clickable { selectedRecipient = member }
@@ -252,7 +255,7 @@ fun BondsSendGestureScreen(
                                 text = member.displayName,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = if (isChosen) Color.White else BondsTheme.DeepNavy,
+                                color = if (isChosen) (if (LumiThemeTokens.current.isDark) Color(0xFF0B0B11) else Color.White) else BondsTheme.DeepNavy,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                             )
                         }
@@ -277,8 +280,8 @@ fun BondsSendGestureScreen(
                     .padding(horizontal = 8.dp),
                 shape = BondsTheme.CardShapeMedium,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White.copy(alpha = 0.9f),
-                    unfocusedContainerColor = Color.White.copy(alpha = 0.75f),
+                    focusedContainerColor = BondsTheme.WarmWhite.copy(alpha = 0.9f),
+                    unfocusedContainerColor = BondsTheme.WarmWhite.copy(alpha = 0.75f),
                     focusedBorderColor = BondsTheme.Lavender,
                     unfocusedBorderColor = BondsTheme.BorderSubtle,
                     focusedTextColor = BondsTheme.DeepNavy,
@@ -303,7 +306,7 @@ fun BondsSendGestureScreen(
                 shape = BondsTheme.PillShape,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = BondsTheme.DeepNavy,
-                    contentColor = Color.White,
+                    contentColor = if (LumiThemeTokens.current.isDark) Color(0xFF0B0B11) else Color.White,
                     disabledContainerColor = BondsTheme.TextTertiary
                 ),
                 modifier = Modifier
@@ -313,7 +316,7 @@ fun BondsSendGestureScreen(
                 if (isSending) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(22.dp),
-                        color = Color.White,
+                        color = if (LumiThemeTokens.current.isDark) Color(0xFF0B0B11) else Color.White,
                         strokeWidth = 2.5.dp
                     )
                     Spacer(modifier = Modifier.width(10.dp))
@@ -376,11 +379,11 @@ private fun SentNotificationPill(
 
     Surface(
         shape = BondsTheme.CardShapeMedium,
-        color = Color.White.copy(alpha = 0.96f),
+        color = BondsTheme.WarmWhite.copy(alpha = 0.96f),
         shadowElevation = 8.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, BondsTheme.Peach.copy(alpha = 0.6f), BondsTheme.CardShapeMedium)
+            .border(1.dp, BondsTheme.BorderSubtle, BondsTheme.CardShapeMedium)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
@@ -430,6 +433,7 @@ private fun BondsAuraBackground(
     modifier: Modifier = Modifier,
     pulseFactor: Float = 1f
 ) {
+    val isDark = LumiThemeTokens.current.isDark
     Canvas(modifier = modifier) {
         val w = size.width
         val h = size.height
@@ -437,14 +441,24 @@ private fun BondsAuraBackground(
         val cy = h * 0.42f
 
         // Capa 1: Gran resplandor etéreo lavanda y rosa envolvente
+        val layer1Colors = if (isDark) {
+            listOf(
+                Color(0xFF8A5CB8).copy(alpha = 0.35f),
+                Color(0xFFB04B76).copy(alpha = 0.25f),
+                Color(0xFF9E4834).copy(alpha = 0.15f),
+                Color.Transparent
+            )
+        } else {
+            listOf(
+                Color(0xFFE8D4F8).copy(alpha = 0.65f),
+                Color(0xFFFDE0EC).copy(alpha = 0.45f),
+                Color(0xFFFFECE5).copy(alpha = 0.25f),
+                Color.Transparent
+            )
+        }
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(
-                    Color(0xFFE8D4F8).copy(alpha = 0.65f),
-                    Color(0xFFFDE0EC).copy(alpha = 0.45f),
-                    Color(0xFFFFECE5).copy(alpha = 0.25f),
-                    Color.Transparent
-                ),
+                colors = layer1Colors,
                 center = Offset(cx + w * 0.08f, cy - h * 0.03f),
                 radius = (w * 0.72f) * pulseFactor
             ),
@@ -453,14 +467,24 @@ private fun BondsAuraBackground(
         )
 
         // Capa 2: Resplandor melocotón y coral cálido central
+        val layer2Colors = if (isDark) {
+            listOf(
+                Color(0xFFD97746).copy(alpha = 0.35f),
+                Color(0xFFB8593A).copy(alpha = 0.22f),
+                Color(0xFF7A3E2E).copy(alpha = 0.10f),
+                Color.Transparent
+            )
+        } else {
+            listOf(
+                Color(0xFFFFC0A8).copy(alpha = 0.75f),
+                Color(0xFFFFD4C4).copy(alpha = 0.50f),
+                Color(0xFFFBE4DC).copy(alpha = 0.20f),
+                Color.Transparent
+            )
+        }
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(
-                    Color(0xFFFFC0A8).copy(alpha = 0.75f),
-                    Color(0xFFFFD4C4).copy(alpha = 0.50f),
-                    Color(0xFFFBE4DC).copy(alpha = 0.20f),
-                    Color.Transparent
-                ),
+                colors = layer2Colors,
                 center = Offset(cx - w * 0.06f, cy + h * 0.02f),
                 radius = (w * 0.55f) * pulseFactor
             ),
@@ -475,7 +499,7 @@ private fun BondsAuraBackground(
         }
         drawPath(
             steamPath1,
-            color = Color(0xFFFFD5C6).copy(alpha = 0.5f),
+            color = if (isDark) Color(0xFFD97746).copy(alpha = 0.3f) else Color(0xFFFFD5C6).copy(alpha = 0.5f),
             style = Stroke(width = 24.dp.toPx(), cap = StrokeCap.Round)
         )
 
@@ -485,17 +509,18 @@ private fun BondsAuraBackground(
         }
         drawPath(
             steamPath2,
-            color = Color(0xFFE9D0F8).copy(alpha = 0.45f),
+            color = if (isDark) Color(0xFF8A5CB8).copy(alpha = 0.28f) else Color(0xFFE9D0F8).copy(alpha = 0.45f),
             style = Stroke(width = 28.dp.toPx(), cap = StrokeCap.Round)
         )
 
         // Corazones decorativos flotantes (fieles a Phone 2)
-        drawFloatingHeart(Offset(w * 0.30f, h * 0.26f), 14.dp.toPx(), Color(0xFFFF9E8D).copy(alpha = 0.8f))
-        drawFloatingHeart(Offset(w * 0.72f, h * 0.24f), 12.dp.toPx(), Color(0xFFF09AB8).copy(alpha = 0.75f))
-        drawFloatingHeart(Offset(w * 0.80f, h * 0.42f), 19.dp.toPx(), Color(0xFFE8758F).copy(alpha = 0.85f))
-        drawFloatingHeart(Offset(w * 0.22f, h * 0.50f), 15.dp.toPx(), Color(0xFFF394A8).copy(alpha = 0.8f))
-        drawFloatingHeart(Offset(w * 0.74f, h * 0.60f), 17.dp.toPx(), Color(0xFFE8758F).copy(alpha = 0.75f))
-        drawFloatingHeart(Offset(w * 0.38f, h * 0.64f), 11.dp.toPx(), Color(0xFFF5A3B5).copy(alpha = 0.65f))
+        val heartAlpha = if (isDark) 0.55f else 1f
+        drawFloatingHeart(Offset(w * 0.30f, h * 0.26f), 14.dp.toPx(), Color(0xFFFF9E8D).copy(alpha = 0.8f * heartAlpha))
+        drawFloatingHeart(Offset(w * 0.72f, h * 0.24f), 12.dp.toPx(), Color(0xFFF09AB8).copy(alpha = 0.75f * heartAlpha))
+        drawFloatingHeart(Offset(w * 0.80f, h * 0.42f), 19.dp.toPx(), Color(0xFFE8758F).copy(alpha = 0.85f * heartAlpha))
+        drawFloatingHeart(Offset(w * 0.22f, h * 0.50f), 15.dp.toPx(), Color(0xFFF394A8).copy(alpha = 0.8f * heartAlpha))
+        drawFloatingHeart(Offset(w * 0.74f, h * 0.60f), 17.dp.toPx(), Color(0xFFE8758F).copy(alpha = 0.75f * heartAlpha))
+        drawFloatingHeart(Offset(w * 0.38f, h * 0.64f), 11.dp.toPx(), Color(0xFFF5A3B5).copy(alpha = 0.65f * heartAlpha))
     }
 }
 

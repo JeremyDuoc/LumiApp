@@ -102,6 +102,7 @@
     <string name="balloon_instruction">Toca la burbuja hasta que reviente</string>
     <string name="balloon_popped">¡Pop!</string>
     <string name="btn_close">Cerrar</string>
+    <string name="btn_back">Volver</string>
     <!-- Calendario -->
     <string name="cal_mon">L</string>
     <string name="cal_tue">M</string>

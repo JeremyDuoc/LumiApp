@@ -45,8 +45,14 @@
     <string name="bonds_link_circles_title">Link your circles</string>
     <string name="bonds_link_circles_desc">Scan the QR code or enter the code to connect with your circle.</string>
     <string name="bonds_pairing_code_label">Pairing code</string>
-    <string name="bonds_enter_code_hint">Enter 6-digit code</string>
+    <string name="bonds_enter_code_hint">Enter 8-digit code</string>
     <string name="bonds_join_button">Link with code</string>
+    <string name="bonds_scan_qr_button">Scan QR code</string>
+    <string name="bonds_scan_qr_prompt">Point your camera at the Lumi QR code</string>
+    <string name="bonds_scan_qr_success">Code detected: %1$s</string>
+    <string name="bonds_regenerate_code">Regenerate code</string>
+    <string name="bonds_code_regenerated">New 8-digit code generated</string>
+    <string name="bonds_invalid_qr">QR code not recognized as a Lumi invitation</string>
     <string name="bonds_what_you_share_title">What you share</string>
     <string name="bonds_what_you_share_desc">Choose what you\'re comfortable sharing. You can change this anytime.</string>
     
@@ -60,7 +66,7 @@
     <string name="bonds_toggle_predictions_desc">Likely phase, fertile window, reminders</string>
     
     <string name="bonds_privacy_matters_title">Your privacy matters</string>
-    <string name="bonds_privacy_matters_desc">This data is shared only with your circle and is never used for other purposes.</string>
+    <string name="bonds_privacy_matters_desc">Your data is never shared without authorization. These options set your defaults. Each connection requires explicit mutual consent.</string>
 
     <!-- Shared Calendar Screen -->
     <string name="bonds_shared_calendar_title">Shared Calendar</string>
