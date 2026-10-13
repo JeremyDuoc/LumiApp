@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // periodos para la colección partner_links
+    // Colección partner_links (Vínculos de confianza de Lumi Bonds)
     match /partner_links/{linkId} {
 
       function changedOnly(fields) {
@@ -13,31 +13,36 @@ service cloud.firestore {
         let data = request.resource.data;
         let snapshot = data.get(prefix + 'Snapshot', null);
         return snapshot == null || (snapshot is map
-          && (data.get(prefix + 'SharePhase', true) || snapshot.get('currentPhase', 'UNKNOWN') == 'UNKNOWN')
-          && (data.get(prefix + 'ShareMood', true) || snapshot.get('currentMood', null) == null)
+          && (data.get(prefix + 'SharePhase', false) || snapshot.get('currentPhase', 'UNKNOWN') == 'UNKNOWN')
+          && (data.get(prefix + 'ShareMood', false) || snapshot.get('currentMood', null) == null)
           && (data.get(prefix + 'ShareSymptoms', false) || snapshot.get('topSymptoms', []) == [])
-          && (data.get(prefix + 'SharePredictions', true) || (
+          && (data.get(prefix + 'SharePredictions', false) || (
             snapshot.get('daysUntilNextPhase', 0) == 0 && snapshot.get('late', false) == false
             && snapshot.get('delayDays', 0) == 0 && snapshot.get('cycleStartDateMs', null) == null
             && snapshot.get('cycleLengthDays', 0) == 0 && snapshot.get('periodLengthDays', 0) == 0
           )));
       }
       
-      // Permitir lectura get/list exclusivamente a participantes legítimos (owner o partner)
-      // LUM-01 corregido: eliminada excepción pública de PENDING para prevenir descubrimiento no autorizado.
+      // P0-2 CORREGIDO: Lectura permitida EXCLUSIVAMENTE si el vínculo está ACTIVE.
+      // Si está REVOKED, el acceso de lectura está bloqueado para ambos usuarios.
+      // Los vínculos PENDING solo los puede leer el titular (owner).
       allow get: if request.auth != null && (
-        resource.data.ownerUid == request.auth.uid ||
-        resource.data.partnerUid == request.auth.uid
+        (resource.data.status == 'ACTIVE' && (
+          resource.data.ownerUid == request.auth.uid ||
+          resource.data.partnerUid == request.auth.uid
+        )) ||
+        (resource.data.status == 'PENDING' && resource.data.ownerUid == request.auth.uid)
       );
 
       allow list: if request.auth != null && (
-        resource.data.ownerUid == request.auth.uid ||
-        resource.data.partnerUid == request.auth.uid
+        (resource.data.status == 'ACTIVE' && (
+          resource.data.ownerUid == request.auth.uid ||
+          resource.data.partnerUid == request.auth.uid
+        )) ||
+        (resource.data.status == 'PENDING' && resource.data.ownerUid == request.auth.uid)
       );
       
-      // Permitir creación si:
-      // 1. Estás autenticado
-      // 2. Te pones a ti mismo como owner
+      // Creación: Solo el titular, en estado PENDING, sin snapshots y con privacidad por defecto apagada (Opt-in)
       allow create: if request.auth != null
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.linkId == linkId
@@ -45,94 +50,93 @@ service cloud.firestore {
         && request.resource.data.partnerUid == null
         && request.resource.data.get('ownerSnapshot', null) == null
         && request.resource.data.get('partnerSnapshot', null) == null
-        && request.resource.data.get('partnerFcmToken', null) == null;
+        && request.resource.data.get('partnerFcmToken', null) == null
+        && request.resource.data.get('ownerSharePhase', false) == false
+        && request.resource.data.get('ownerShareMood', false) == false
+        && request.resource.data.get('ownerShareSymptoms', false) == false
+        && request.resource.data.get('ownerSharePredictions', false) == false;
       
-      // Permitir actualización si:
-      // 1. Eres el dueño o la pareja y mantienes esa posición
-      // 2. O eres un usuario nuevo uniéndote a un link PENDING (tu UID se vuelve partnerUid)
+      // Actualización de cliente:
+      // 1. Participantes de un vínculo ACTIVE solo pueden modificar sus propios campos.
+      // 2. Revocación autorizada: Titular o pareja pueden revocar, vaciando snapshots y tokens.
+      // SEC-NEW-01 RESUELTO: Ningún cliente puede activar un vínculo PENDING directamente.
+      // La activación la realiza exclusivamente la Cloud Function 'redeemBondsInvitation' (Admin SDK).
       allow update: if request.auth != null && (
-        // Cada participante solo modifica sus propios campos; las identidades son inmutables.
-        (resource.data.status in ['PENDING', 'ACTIVE']
-          && request.resource.data.status == resource.data.status
+        // Participante activo actualiza sus propios campos
+        (resource.data.status == 'ACTIVE'
+          && request.resource.data.status == 'ACTIVE'
           && ((resource.data.ownerUid == request.auth.uid
             && changedOnly(['ownerDisplayName', 'ownerAvatarId', 'ownerFcmToken',
               'ownerSharePhase', 'ownerShareMood', 'ownerShareSymptoms', 'ownerSharePredictions',
-              'ownerSnapshot', 'lastOwnerCareAction']) && validSnapshot('owner'))
+              'ownerConsentExplicitlyGranted', 'ownerSnapshot', 'lastOwnerCareAction', 'updatedAtMs'])
+            && validSnapshot('owner'))
           || (resource.data.partnerUid == request.auth.uid
             && changedOnly(['partnerDisplayName', 'partnerAvatarId', 'partnerFcmToken',
               'partnerSharePhase', 'partnerShareMood', 'partnerShareSymptoms', 'partnerSharePredictions',
-              'partnerSnapshot', 'lastPartnerCareAction']) && validSnapshot('partner'))))
-        || (resource.data.status in ['PENDING', 'ACTIVE']
+              'partnerConsentExplicitlyGranted', 'partnerSnapshot', 'lastPartnerCareAction', 'updatedAtMs'])
+            && validSnapshot('partner'))))
+        ||
+        // Revocación desde cliente: debe vaciar snapshots y tokens inmediatamente
+        (resource.data.status in ['PENDING', 'ACTIVE']
           && (resource.data.ownerUid == request.auth.uid || resource.data.partnerUid == request.auth.uid)
-          && request.resource.data.status == 'REVOKED' && changedOnly(['status']))
-        || (resource.data.status == 'PENDING' && resource.data.partnerUid == null
-          && resource.data.ownerUid != request.auth.uid
-          && request.resource.data.partnerUid == request.auth.uid
-          && request.resource.data.status == 'ACTIVE'
-          && changedOnly(['partnerUid', 'partnerDisplayName', 'partnerAvatarId', 'partnerFcmToken',
-            'partnerSharePhase', 'partnerShareMood', 'partnerShareSymptoms', 'partnerSharePredictions', 'status']))
+          && request.resource.data.status == 'REVOKED'
+          && request.resource.data.get('ownerSnapshot', null) == null
+          && request.resource.data.get('partnerSnapshot', null) == null
+          && request.resource.data.get('ownerFcmToken', null) == null
+          && request.resource.data.get('partnerFcmToken', null) == null
+          && changedOnly(['status', 'ownerSnapshot', 'partnerSnapshot', 'ownerFcmToken', 'partnerFcmToken', 'revokedAtMs', 'revokedByUid', 'updatedAtMs']))
       );
       
-      // Permitir borrado si:
-      // 1. Eres el dueño o la pareja
+      // Borrado: solo si el vínculo ya no está activo
       allow delete: if request.auth != null && (
-        resource.data.ownerUid == request.auth.uid || 
-        resource.data.partnerUid == request.auth.uid
+        (resource.data.status == 'PENDING' && resource.data.ownerUid == request.auth.uid) ||
+        (resource.data.status == 'REVOKED' && (resource.data.ownerUid == request.auth.uid || resource.data.partnerUid == request.auth.uid))
       );
     }
 
-    // Invitaciones de pareja: desacopladas de partner_links (LUM-01)
+    // Invitaciones de pareja / Bonds:
+    // P1-5 RESUELTO: Ningún extraño puede enumerar ni hacer get de invitaciones.
+    // Solo el titular puede ver su propia invitación. El canje lo ejecuta la Cloud Function.
     match /partner_invitations/{code} {
-      // Listado estrictamente denegado: nadie puede enumerar o descubrir invitaciones a ciegas
       allow list: if false;
 
-      // Lectura puntual por código: permitida solo conociendo el código exacto
-      allow get: if request.auth != null && (
-        resource.data.ownerUid == request.auth.uid ||
-        (resource.data.status == 'PENDING' && resource.data.expiresAtMs > request.time.toMillis())
-      );
+      allow get: if request.auth != null && resource.data.ownerUid == request.auth.uid;
 
-      // Creación: solo el titular puede emitir la invitación con caducidad válida
       allow create: if request.auth != null
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.code == code
         && request.resource.data.status == 'PENDING'
         && request.resource.data.expiresAtMs > request.time.toMillis();
 
-      // Reclamo / revocación de invitación
-      allow update: if request.auth != null && (
-        (resource.data.status == 'PENDING'
-          && resource.data.expiresAtMs > request.time.toMillis()
-          && request.resource.data.status == 'CLAIMED'
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'claimedByUid', 'claimedAtMs']))
-        ||
-        (resource.data.ownerUid == request.auth.uid
-          && request.resource.data.status == 'REVOKED'
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
-      );
+      allow update: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.status == 'REVOKED'
+        && changedOnly(['status', 'revokedAtMs']);
 
       allow delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
     }
     
-    // Si tienes una colección "users" (opcional, asegúrala también)
+    // Tablas de uso interno del backend (Rate limiting)
+    match /_rate_limits/{uid} {
+      allow read, write: if false;
+    }
+
+    // Perfiles de usuario
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
+    // Diario compartido entre miembros de un vínculo ACTIVE
     match /diaries/{linkId}/entries/{entryId} {
-      // Solo los dos participantes de un vínculo ACTIVO pueden leer
       allow read: if request.auth != null
         && exists(/databases/$(database)/documents/partner_links/$(linkId))
         && get(/databases/$(database)/documents/partner_links/$(linkId)).data.status == 'ACTIVE'
         && (
-          get(/databases/$(database)/documents/partner_links/$(linkId)).data.ownerUid
-            == request.auth.uid
+          get(/databases/$(database)/documents/partner_links/$(linkId)).data.ownerUid == request.auth.uid
           ||
-          get(/databases/$(database)/documents/partner_links/$(linkId)).data.partnerUid
-            == request.auth.uid
+          get(/databases/$(database)/documents/partner_links/$(linkId)).data.partnerUid == request.auth.uid
         );
 
-      // Solo pueden escribir si el vínculo está ACTIVO Y el authorUid coincide con quien escribe
       allow create: if request.auth != null
         && request.resource.data.authorUid == request.auth.uid
         && request.resource.data.text is string
@@ -141,26 +145,20 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/partner_links/$(linkId))
         && get(/databases/$(database)/documents/partner_links/$(linkId)).data.status == 'ACTIVE'
         && (
-          get(/databases/$(database)/documents/partner_links/$(linkId)).data.ownerUid
-            == request.auth.uid
+          get(/databases/$(database)/documents/partner_links/$(linkId)).data.ownerUid == request.auth.uid
           ||
-          get(/databases/$(database)/documents/partner_links/$(linkId)).data.partnerUid
-            == request.auth.uid
+          get(/databases/$(database)/documents/partner_links/$(linkId)).data.partnerUid == request.auth.uid
         );
 
-      // Inmutable: nadie puede editar el texto de una entrada existente
       allow update: if false;
 
-      // Poda autorizada: los participantes de un vínculo activo pueden borrar entradas antiguas
       allow delete: if request.auth != null
         && exists(/databases/$(database)/documents/partner_links/$(linkId))
         && get(/databases/$(database)/documents/partner_links/$(linkId)).data.status == 'ACTIVE'
         && (
-          get(/databases/$(database)/documents/partner_links/$(linkId)).data.ownerUid
-            == request.auth.uid
+          get(/databases/$(database)/documents/partner_links/$(linkId)).data.ownerUid == request.auth.uid
           ||
-          get(/databases/$(database)/documents/partner_links/$(linkId)).data.partnerUid
-            == request.auth.uid
+          get(/databases/$(database)/documents/partner_links/$(linkId)).data.partnerUid == request.auth.uid
         );
     }
   }
