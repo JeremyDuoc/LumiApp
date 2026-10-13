@@ -247,3 +247,115 @@ test('[AISLAMIENTO TRIPLE NEGATIVO] Bob no puede leer el vínculo entre Alice y 
 test('[AISLAMIENTO TRIPLE NEGATIVO] Charlie no puede leer el vínculo entre Alice y Bob', async () => {
   await assertFails(getDoc(linkDocRef('partner_charlie', 'link_active')));
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 9. SEC-P0-A: Bloqueo de inferencia indirecta de ciclo en servidor (validSnapshot)
+// ─────────────────────────────────────────────────────────────────────────────
+test('[SEC-P0-A NEGATIVO] Prohibir transmisión de cycleStartDateMs cuando ownerSharePhase es false, incluso si ownerSharePredictions es true', async () => {
+  await assertFails(
+    updateDoc(linkDocRef('owner_alice', 'link_active'), {
+      ownerSharePhase: false,
+      ownerSharePredictions: true,
+      ownerSnapshot: {
+        currentPhase: 'UNKNOWN',
+        currentMood: null,
+        topSymptoms: [],
+        daysUntilNextPhase: 0,
+        late: false,
+        delayDays: 0,
+        cycleStartDateMs: 1700000000000, // VIOLACIÓN: intento de inferir ciclo indirectamente
+        cycleLengthDays: 0,
+        periodLengthDays: 0
+      },
+      updatedAtMs: Date.now()
+    })
+  );
+});
+
+test('[SEC-P0-A NEGATIVO] Prohibir transmisión de cycleLengthDays cuando ownerSharePhase es false', async () => {
+  await assertFails(
+    updateDoc(linkDocRef('owner_alice', 'link_active'), {
+      ownerSharePhase: false,
+      ownerSharePredictions: true,
+      ownerSnapshot: {
+        currentPhase: 'UNKNOWN',
+        currentMood: null,
+        topSymptoms: [],
+        daysUntilNextPhase: 0,
+        late: false,
+        delayDays: 0,
+        cycleStartDateMs: null,
+        cycleLengthDays: 28, // VIOLACIÓN
+        periodLengthDays: 0
+      },
+      updatedAtMs: Date.now()
+    })
+  );
+});
+
+test('[SEC-P0-A NEGATIVO] Prohibir transmisión de periodLengthDays cuando ownerSharePhase es false', async () => {
+  await assertFails(
+    updateDoc(linkDocRef('owner_alice', 'link_active'), {
+      ownerSharePhase: false,
+      ownerSharePredictions: true,
+      ownerSnapshot: {
+        currentPhase: 'UNKNOWN',
+        currentMood: null,
+        topSymptoms: [],
+        daysUntilNextPhase: 0,
+        late: false,
+        delayDays: 0,
+        cycleStartDateMs: null,
+        cycleLengthDays: 0,
+        periodLengthDays: 5 // VIOLACIÓN
+      },
+      updatedAtMs: Date.now()
+    })
+  );
+});
+
+test('[SEC-P0-B NEGATIVO] Prohibir transmisión de datos de salud si ownerConsentExplicitlyGranted es false', async () => {
+  await assertFails(
+    updateDoc(linkDocRef('owner_alice', 'link_active'), {
+      ownerConsentExplicitlyGranted: false,
+      ownerSharePhase: true,
+      ownerSnapshot: {
+        currentPhase: 'FOLLICULAR', // VIOLACIÓN: sin consentimiento explícito
+        currentMood: null,
+        topSymptoms: [],
+        daysUntilNextPhase: 0,
+        late: false,
+        delayDays: 0,
+        cycleStartDateMs: null,
+        cycleLengthDays: 0,
+        periodLengthDays: 0
+      },
+      updatedAtMs: Date.now()
+    })
+  );
+});
+
+test('[SEC-P0-A POSITIVO] Transmisión autorizada con consentimiento explícito y permisos alineados', async () => {
+  await assertSucceeds(
+    updateDoc(linkDocRef('owner_alice', 'link_active'), {
+      ownerConsentExplicitlyGranted: true,
+      ownerSharePhase: true,
+      ownerShareMood: true,
+      ownerShareSymptoms: false,
+      ownerSharePredictions: false,
+      ownerSnapshot: {
+        currentPhase: 'FOLLICULAR',
+        currentMood: 'HAPPY',
+        topSymptoms: [],
+        daysUntilNextPhase: 0,
+        late: false,
+        delayDays: 0,
+        cycleStartDateMs: null,
+        cycleLengthDays: 0,
+        periodLengthDays: 0
+      },
+      updatedAtMs: Date.now()
+    })
+  );
+});
+

@@ -12,15 +12,44 @@ service cloud.firestore {
       function validSnapshot(prefix) {
         let data = request.resource.data;
         let snapshot = data.get(prefix + 'Snapshot', null);
+        let sharePhase = data.get(prefix + 'SharePhase', false);
+        let shareMood = data.get(prefix + 'ShareMood', false);
+        let shareSymptoms = data.get(prefix + 'ShareSymptoms', false);
+        let sharePredictions = data.get(prefix + 'SharePredictions', false);
+        let consent = data.get(prefix + 'ConsentExplicitlyGranted', false);
+
         return snapshot == null || (snapshot is map
-          && (data.get(prefix + 'SharePhase', false) || snapshot.get('currentPhase', 'UNKNOWN') == 'UNKNOWN')
-          && (data.get(prefix + 'ShareMood', false) || snapshot.get('currentMood', null) == null)
-          && (data.get(prefix + 'ShareSymptoms', false) || snapshot.get('topSymptoms', []) == [])
-          && (data.get(prefix + 'SharePredictions', false) || (
-            snapshot.get('daysUntilNextPhase', 0) == 0 && snapshot.get('late', false) == false
-            && snapshot.get('delayDays', 0) == 0 && snapshot.get('cycleStartDateMs', null) == null
-            && snapshot.get('cycleLengthDays', 0) == 0 && snapshot.get('periodLengthDays', 0) == 0
-          )));
+          // 1. Consentimiento explícito: sin él, no se puede enviar ningún dato de salud
+          && (consent || (
+            snapshot.get('currentPhase', 'UNKNOWN') == 'UNKNOWN'
+            && snapshot.get('currentMood', null) == null
+            && snapshot.get('topSymptoms', []) == []
+            && snapshot.get('daysUntilNextPhase', 0) == 0
+            && snapshot.get('late', false) == false
+            && snapshot.get('delayDays', 0) == 0
+            && snapshot.get('cycleStartDateMs', null) == null
+            && snapshot.get('cycleLengthDays', 0) == 0
+            && snapshot.get('periodLengthDays', 0) == 0
+          ))
+          // 2. SEC-P0-A: Si sharePhase es false, PROHIBIDO phase, cycleStartDateMs, cycleLengthDays y periodLengthDays
+          && (sharePhase || (
+            snapshot.get('currentPhase', 'UNKNOWN') == 'UNKNOWN'
+            && snapshot.get('cycleStartDateMs', null) == null
+            && snapshot.get('cycleLengthDays', 0) == 0
+            && snapshot.get('periodLengthDays', 0) == 0
+          ))
+          // 3. Estado de ánimo: si shareMood es false, currentMood debe ser null
+          && (shareMood || snapshot.get('currentMood', null) == null)
+          // 4. Síntomas: si shareSymptoms es false, topSymptoms debe ser lista vacía
+          && (shareSymptoms || snapshot.get('topSymptoms', []) == [])
+          // 5. Predicciones: si sharePredictions es false, prohíbe métricas de retraso y fecha de inicio de ciclo
+          && (sharePredictions || (
+            snapshot.get('daysUntilNextPhase', 0) == 0
+            && snapshot.get('late', false) == false
+            && snapshot.get('delayDays', 0) == 0
+            && snapshot.get('cycleStartDateMs', null) == null
+          ))
+        );
       }
       
       // P0-2 CORREGIDO: Lectura permitida EXCLUSIVAMENTE si el vínculo está ACTIVE.
@@ -106,7 +135,9 @@ service cloud.firestore {
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.code == code
         && request.resource.data.status == 'PENDING'
-        && request.resource.data.expiresAtMs > request.time.toMillis();
+        && request.resource.data.expiresAtMs is int
+        && request.resource.data.expiresAtMs > request.time.toMillis()
+        && request.resource.data.expiresAtMs <= request.time.toMillis() + 7 * 24 * 60 * 60 * 1000;
 
       allow update: if request.auth != null
         && resource.data.ownerUid == request.auth.uid

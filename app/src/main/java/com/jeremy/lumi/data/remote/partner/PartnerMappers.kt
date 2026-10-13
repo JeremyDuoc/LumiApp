@@ -31,6 +31,9 @@ private fun Any?.asIntOr(default: Int): Int = (this as? Number)?.toInt() ?: defa
 fun DocumentSnapshot.toPartnerLink(): PartnerLink? {
     if (!exists()) return null
     return try {
+        val ownerConsent = getBoolean("ownerConsentExplicitlyGranted") == true
+        val partnerConsent = getBoolean("partnerConsentExplicitlyGranted") == true
+
         PartnerLink(
             linkId = id,
             ownerUid = getString("ownerUid") ?: return null,
@@ -45,18 +48,20 @@ fun DocumentSnapshot.toPartnerLink(): PartnerLink? {
             relationLabel = getString("relationLabel") ?: "",
             ownerFcmToken = getString("ownerFcmToken"),
             partnerFcmToken = getString("partnerFcmToken"),
-            ownerSharePhase = getBoolean("ownerSharePhase") ?: false,
-            ownerShareMood = getBoolean("ownerShareMood") ?: false,
-            ownerShareSymptoms = getBoolean("ownerShareSymptoms") ?: false,
-            ownerSharePredictions = getBoolean("ownerSharePredictions") ?: false,
-            ownerConsentExplicitlyGranted = getBoolean("ownerConsentExplicitlyGranted") ?: false,
-            partnerSharePhase = getBoolean("partnerSharePhase") ?: false,
-            partnerShareMood = getBoolean("partnerShareMood") ?: false,
-            partnerShareSymptoms = getBoolean("partnerShareSymptoms") ?: false,
-            partnerSharePredictions = getBoolean("partnerSharePredictions") ?: false,
-            partnerConsentExplicitlyGranted = getBoolean("partnerConsentExplicitlyGranted") ?: false,
-            ownerSnapshot = (get("ownerSnapshot") as? Map<*, *>)?.toCycleSnapshot(),
-            partnerSnapshot = (get("partnerSnapshot") as? Map<*, *>)?.toCycleSnapshot(),
+            // SEC-P0-B: Si no hay consentimiento explícito comprobado, los permisos se neutralizan
+            ownerSharePhase = if (ownerConsent) (getBoolean("ownerSharePhase") ?: false) else false,
+            ownerShareMood = if (ownerConsent) (getBoolean("ownerShareMood") ?: false) else false,
+            ownerShareSymptoms = if (ownerConsent) (getBoolean("ownerShareSymptoms") ?: false) else false,
+            ownerSharePredictions = if (ownerConsent) (getBoolean("ownerSharePredictions") ?: false) else false,
+            ownerConsentExplicitlyGranted = ownerConsent,
+            partnerSharePhase = if (partnerConsent) (getBoolean("partnerSharePhase") ?: false) else false,
+            partnerShareMood = if (partnerConsent) (getBoolean("partnerShareMood") ?: false) else false,
+            partnerShareSymptoms = if (partnerConsent) (getBoolean("partnerShareSymptoms") ?: false) else false,
+            partnerSharePredictions = if (partnerConsent) (getBoolean("partnerSharePredictions") ?: false) else false,
+            partnerConsentExplicitlyGranted = partnerConsent,
+            // Bloquear entrega de datos legacy sin consentimiento demostrable
+            ownerSnapshot = if (ownerConsent) (get("ownerSnapshot") as? Map<*, *>)?.toCycleSnapshot() else null,
+            partnerSnapshot = if (partnerConsent) (get("partnerSnapshot") as? Map<*, *>)?.toCycleSnapshot() else null,
             lastOwnerCareAction = (get("lastOwnerCareAction") as? Map<*, *>)?.toCareActionStatus(),
             lastPartnerCareAction = (get("lastPartnerCareAction") as? Map<*, *>)?.toCareActionStatus(),
             createdAtMs = getLong("createdAtMs") ?: 0L

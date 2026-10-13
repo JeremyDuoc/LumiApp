@@ -1,162 +1,30 @@
 const { before, after, beforeEach, test } = require('node:test');
 const assert = require('node:assert/strict');
-const admin = require('../../functions/node_modules/firebase-admin');
 
 // Configuración de Admin SDK contra el Firestore Emulator local
 process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8180';
-let app;
-let db;
+process.env.GCLOUD_PROJECT = 'demo-lumi-cf-test';
+
+// Importar DIRECTAMENTE el módulo real de producción de Cloud Functions
+const functionsModule = require('../../functions/index.js');
+const {
+  redeemBondsInvitationCore,
+  revokeBondsLinkCore,
+  migrateLegacyConsentCore,
+  verifyRateLimit,
+  checkAndRecordFailedAttempt
+} = functionsModule._core;
+
+const admin = require('../../functions/node_modules/firebase-admin');
+const db = admin.firestore();
 
 before(() => {
-  app = admin.initializeApp({ projectId: 'demo-lumi-cf-test' }, 'cf-test-app');
-  db = admin.firestore(app);
+  // Inicializado por functions/index.js
 });
 
 after(async () => {
-  await app.delete();
+  // Limpieza final
 });
-
-// Importar las funciones lógicas de backend
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-const MAX_FAILED_ATTEMPTS = 5;
-
-async function checkAndRecordFailedAttempt(uid) {
-  const rateLimitRef = db.collection('_rate_limits').doc(`redeem_${uid}`);
-  const now = Date.now();
-  await db.runTransaction(async (t) => {
-    const doc = await t.get(rateLimitRef);
-    let attempts = [];
-    if (doc.exists) {
-      attempts = (doc.data().attempts || []).filter((ts) => now - ts < RATE_LIMIT_WINDOW_MS);
-    }
-    attempts.push(now);
-    t.set(rateLimitRef, { attempts, updatedAtMs: now });
-  });
-}
-
-async function verifyRateLimit(uid) {
-  const rateLimitRef = db.collection('_rate_limits').doc(`redeem_${uid}`);
-  const doc = await rateLimitRef.get();
-  if (doc.exists) {
-    const now = Date.now();
-    const attempts = (doc.data().attempts || []).filter((ts) => now - ts < RATE_LIMIT_WINDOW_MS);
-    if (attempts.length >= MAX_FAILED_ATTEMPTS) {
-      const err = new Error('Demasiados intentos fallidos.');
-      err.code = 'resource-exhausted';
-      throw err;
-    }
-  }
-}
-
-async function redeemInvitationLogic({ callerUid, code, partnerDisplayName, partnerAvatarId, partnerFcmToken }) {
-  if (!callerUid) throw new Error('Unauthenticated');
-  if (!code) throw new Error('Invalid code');
-
-  await verifyRateLimit(callerUid);
-
-  try {
-    return await db.runTransaction(async (transaction) => {
-      const invRef = db.collection('partner_invitations').doc(code);
-      const invDoc = await transaction.get(invRef);
-      if (!invDoc.exists) {
-        const err = new Error('Invitation not found');
-        err.code = 'not-found';
-        throw err;
-      }
-      const invData = invDoc.data();
-      if (invData.status !== 'PENDING') {
-        const err = new Error('Invitation already claimed/revoked');
-        err.code = 'failed-precondition';
-        throw err;
-      }
-      const now = Date.now();
-      if (invData.expiresAtMs && invData.expiresAtMs < now) {
-        const err = new Error('Invitation expired');
-        err.code = 'deadline-exceeded';
-        throw err;
-      }
-      if (invData.ownerUid === callerUid) {
-        const err = new Error('Owner cannot join own link');
-        err.code = 'invalid-argument';
-        throw err;
-      }
-
-      const linkRef = db.collection('partner_links').doc(invData.linkId);
-      const linkDoc = await transaction.get(linkRef);
-      if (!linkDoc.exists) {
-        const err = new Error('Link not found');
-        err.code = 'not-found';
-        throw err;
-      }
-      const linkData = linkDoc.data();
-      if (linkData.status !== 'PENDING' || linkData.partnerUid != null) {
-        const err = new Error('Link not pending');
-        err.code = 'failed-precondition';
-        throw err;
-      }
-
-      transaction.update(invRef, {
-        status: 'CLAIMED',
-        claimedByUid: callerUid,
-        claimedAtMs: now
-      });
-
-      transaction.update(linkRef, {
-        partnerUid: callerUid,
-        partnerDisplayName: partnerDisplayName || null,
-        partnerAvatarId: partnerAvatarId || null,
-        partnerFcmToken: partnerFcmToken || null,
-        partnerSharePhase: false,
-        partnerShareMood: false,
-        partnerShareSymptoms: false,
-        partnerSharePredictions: false,
-        partnerConsentExplicitlyGranted: true,
-        status: 'ACTIVE',
-        activatedAtMs: now,
-        updatedAtMs: now
-      });
-
-      return { success: true, linkId: invData.linkId, ownerDisplayName: linkData.ownerDisplayName };
-    });
-  } catch (err) {
-    if (err.code === 'not-found' || err.code === 'deadline-exceeded' || err.code === 'failed-precondition') {
-      await checkAndRecordFailedAttempt(callerUid);
-    }
-    throw err;
-  }
-}
-
-async function revokeBondsLinkLogic({ callerUid, linkId }) {
-  return await db.runTransaction(async (t) => {
-    const linkRef = db.collection('partner_links').doc(linkId);
-    const linkDoc = await t.get(linkRef);
-    if (!linkDoc.exists) {
-      const err = new Error('Not found');
-      err.code = 'not-found';
-      throw err;
-    }
-    const data = linkDoc.data();
-    if (data.ownerUid !== callerUid && data.partnerUid !== callerUid) {
-      const err = new Error('Permission denied');
-      err.code = 'permission-denied';
-      throw err;
-    }
-    if (data.status === 'REVOKED') return { success: true, alreadyRevoked: true };
-
-    const now = Date.now();
-    t.update(linkRef, {
-      status: 'REVOKED',
-      revokedByUid: callerUid,
-      revokedAtMs: now,
-      ownerSnapshot: null,
-      partnerSnapshot: null,
-      ownerFcmToken: null,
-      partnerFcmToken: null,
-      updatedAtMs: now
-    });
-    return { success: true };
-  });
-}
 
 beforeEach(async () => {
   // Resetear colecciones de prueba
@@ -178,7 +46,8 @@ beforeEach(async () => {
     ownerSharePhase: false,
     ownerShareMood: false,
     ownerShareSymptoms: false,
-    ownerSharePredictions: false
+    ownerSharePredictions: false,
+    ownerConsentExplicitlyGranted: false
   });
 
   await db.collection('partner_invitations').doc('CODE1234').set({
@@ -191,12 +60,15 @@ beforeEach(async () => {
   });
 });
 
-test('[BACKEND POSITIVO] Canje exitoso activa vínculo y fija consentimientos en false (Opt-in)', async () => {
-  const res = await redeemInvitationLogic({
+test('[BACKEND REAL POSITIVO] Canje exitoso activa vínculo y mantiene partnerConsentExplicitlyGranted en false (Opt-in)', async () => {
+  const res = await redeemBondsInvitationCore({
+    db,
     callerUid: 'joiner_bob',
-    code: 'CODE1234',
-    partnerDisplayName: 'Bob',
-    partnerAvatarId: 'avatar_2'
+    data: {
+      code: 'CODE1234',
+      partnerDisplayName: 'Bob',
+      partnerAvatarId: 'avatar_2'
+    }
   });
 
   assert.equal(res.success, true);
@@ -212,7 +84,8 @@ test('[BACKEND POSITIVO] Canje exitoso activa vínculo y fija consentimientos en
   assert.equal(linkData.partnerShareMood, false);
   assert.equal(linkData.partnerShareSymptoms, false);
   assert.equal(linkData.partnerSharePredictions, false);
-  assert.equal(linkData.partnerConsentExplicitlyGranted, true);
+  // SEC-P0-B: Unirse no equivale a consentir compartir datos de salud
+  assert.equal(linkData.partnerConsentExplicitlyGranted, false);
 
   // Verificar invitación marcada como CLAIMED
   const invDoc = await db.collection('partner_invitations').doc('CODE1234').get();
@@ -220,16 +93,20 @@ test('[BACKEND POSITIVO] Canje exitoso activa vínculo y fija consentimientos en
   assert.equal(invDoc.data().claimedByUid, 'joiner_bob');
 });
 
-test('[BACKEND NEGATIVO] Canje de código inexistente falla con not-found', async () => {
+test('[BACKEND REAL SEC-P1-D] Canje de código inexistente devuelve error uniforme failed-precondition (Anti-enumeración)', async () => {
   await assert.rejects(
     async () => {
-      await redeemInvitationLogic({ callerUid: 'joiner_bob', code: 'INVALID_999' });
+      await redeemBondsInvitationCore({
+        db,
+        callerUid: 'joiner_bob',
+        data: { code: 'INVALID_999' }
+      });
     },
-    (err) => err.code === 'not-found'
+    (err) => err.code === 'failed-precondition'
   );
 });
 
-test('[BACKEND NEGATIVO] Canje de invitación expirada falla con deadline-exceeded', async () => {
+test('[BACKEND REAL SEC-P1-D] Canje de invitación expirada devuelve error uniforme failed-precondition', async () => {
   await db.collection('partner_invitations').doc('EXPIRED_CODE').set({
     code: 'EXPIRED_CODE',
     linkId: 'link_123',
@@ -240,24 +117,40 @@ test('[BACKEND NEGATIVO] Canje de invitación expirada falla con deadline-exceed
 
   await assert.rejects(
     async () => {
-      await redeemInvitationLogic({ callerUid: 'joiner_bob', code: 'EXPIRED_CODE' });
+      await redeemBondsInvitationCore({
+        db,
+        callerUid: 'joiner_bob',
+        data: { code: 'EXPIRED_CODE' }
+      });
     },
-    (err) => err.code === 'deadline-exceeded'
+    (err) => err.code === 'failed-precondition'
   );
 });
 
-test('[BACKEND NEGATIVO] Dueño intentando unirse a su propia invitación falla con invalid-argument', async () => {
+test('[BACKEND REAL NEGATIVO] Dueño intentando unirse a su propia invitación falla con invalid-argument', async () => {
   await assert.rejects(
     async () => {
-      await redeemInvitationLogic({ callerUid: 'owner_user', code: 'CODE1234' });
+      await redeemBondsInvitationCore({
+        db,
+        callerUid: 'owner_user',
+        data: { code: 'CODE1234' }
+      });
     },
     (err) => err.code === 'invalid-argument'
   );
 });
 
-test('[BACKEND CONCURRENCIA] Dos usuarios canjeando simultáneamente el mismo código: solo uno triunfa', async () => {
-  const p1 = redeemInvitationLogic({ callerUid: 'joiner_1', code: 'CODE1234' });
-  const p2 = redeemInvitationLogic({ callerUid: 'joiner_2', code: 'CODE1234' });
+test('[BACKEND REAL CONCURRENCIA] Dos llamadas concurrentes al mismo código: solo una triunfa y la otra falla', async () => {
+  const p1 = redeemBondsInvitationCore({
+    db,
+    callerUid: 'joiner_1',
+    data: { code: 'CODE1234' }
+  });
+  const p2 = redeemBondsInvitationCore({
+    db,
+    callerUid: 'joiner_2',
+    data: { code: 'CODE1234' }
+  });
 
   const results = await Promise.allSettled([p1, p2]);
   const fulfilled = results.filter((r) => r.status === 'fulfilled');
@@ -268,39 +161,56 @@ test('[BACKEND CONCURRENCIA] Dos usuarios canjeando simultáneamente el mismo c�
   assert.equal(rejected[0].reason.code, 'failed-precondition');
 });
 
-test('[BACKEND RATE LIMITING] 5 intentos fallidos consecutivos bloquean futuros intentos', async () => {
+test('[BACKEND REAL RATE LIMITING] 5 intentos fallidos consecutivos bloquean futuros intentos con resource-exhausted', async () => {
   const attacker = 'attacker_bad_user';
   for (let i = 0; i < 5; i++) {
     await assert.rejects(
       async () => {
-        await redeemInvitationLogic({ callerUid: attacker, code: `FAIL_${i}` });
+        await redeemBondsInvitationCore({
+          db,
+          callerUid: attacker,
+          data: { code: `FAIL_${i}` }
+        });
       },
-      (err) => err.code === 'not-found'
+      (err) => err.code === 'failed-precondition'
     );
   }
 
-  // El 6to intento debe ser bloqueado por resource-exhausted antes de tocar la DB
+  // El 6to intento debe ser bloqueado por resource-exhausted inmediatamente
   await assert.rejects(
     async () => {
-      await redeemInvitationLogic({ callerUid: attacker, code: 'CODE1234' });
+      await redeemBondsInvitationCore({
+        db,
+        callerUid: attacker,
+        data: { code: 'CODE1234' }
+      });
     },
     (err) => err.code === 'resource-exhausted'
   );
 });
 
-test('[BACKEND REVOCACIÓN POSITIVO] Revocación atómica vacía snapshots y tokens', async () => {
+test('[BACKEND REAL REVOCACIÓN POSITIVO] Revocación atómica vacía snapshots y tokens', async () => {
   // Primero activar
-  await redeemInvitationLogic({ callerUid: 'joiner_bob', code: 'CODE1234' });
+  await redeemBondsInvitationCore({
+    db,
+    callerUid: 'joiner_bob',
+    data: { code: 'CODE1234' }
+  });
+
   // Simular snapshots
   await db.collection('partner_links').doc('link_123').update({
-    ownerSnapshot: { phase: 'FOLLICULAR' },
-    partnerSnapshot: { phase: 'LUTEAL' },
+    ownerSnapshot: { currentPhase: 'FOLLICULAR' },
+    partnerSnapshot: { currentPhase: 'LUTEAL' },
     ownerFcmToken: 'token_a',
     partnerFcmToken: 'token_b'
   });
 
   // Revocar por parte de Bob
-  const res = await revokeBondsLinkLogic({ callerUid: 'joiner_bob', linkId: 'link_123' });
+  const res = await revokeBondsLinkCore({
+    db,
+    callerUid: 'joiner_bob',
+    data: { linkId: 'link_123' }
+  });
   assert.equal(res.success, true);
 
   const doc = await db.collection('partner_links').doc('link_123').get();
@@ -313,11 +223,118 @@ test('[BACKEND REVOCACIÓN POSITIVO] Revocación atómica vacía snapshots y tok
   assert.equal(data.revokedByUid, 'joiner_bob');
 });
 
-test('[BACKEND REVOCACIÓN NEGATIVO] Extraño intentando revocar vínculo ajeno falla con permission-denied', async () => {
+test('[BACKEND REAL REVOCACIÓN NEGATIVO] Extraño intentando revocar vínculo ajeno falla con permission-denied', async () => {
   await assert.rejects(
     async () => {
-      await revokeBondsLinkLogic({ callerUid: 'stranger_charlie', linkId: 'link_123' });
+      await revokeBondsLinkCore({
+        db,
+        callerUid: 'stranger_charlie',
+        data: { linkId: 'link_123' }
+      });
     },
     (err) => err.code === 'permission-denied'
   );
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SEC-P0-B: Migración idempotente de vínculos heredados y reconfirmación
+// ─────────────────────────────────────────────────────────────────────────────
+test('[SEC-P0-B MIGRACIÓN IDEMPOTENTE] Vínculo heredado con permisos true sin consentimiento explícito es neutralizado', async () => {
+  // 1. Simular documento heredado en Firestore con permisos en true antiguos y snapshots
+  const legacyLinkId = 'link_legacy_unsafe';
+  await db.collection('partner_links').doc(legacyLinkId).set({
+    linkId: legacyLinkId,
+    ownerUid: 'owner_legacy',
+    partnerUid: 'partner_legacy',
+    status: 'ACTIVE',
+    ownerDisplayName: 'Owner',
+    partnerDisplayName: 'Partner',
+    ownerSharePhase: true, // Heredado peligroso
+    ownerShareMood: true,
+    ownerShareSymptoms: true,
+    ownerSharePredictions: true,
+    partnerSharePhase: true,
+    partnerShareMood: true,
+    partnerShareSymptoms: true,
+    partnerSharePredictions: true,
+    // Consentimiento explícito ausente
+    ownerSnapshot: { currentPhase: 'LUTEAL', cycleStartDateMs: 1700000000000 },
+    partnerSnapshot: { currentPhase: 'OVULATORY', currentMood: 'TIRED' },
+    createdAtMs: Date.now() - 1000000
+  });
+
+  // 2. Ejecutar migración idempotente
+  const migResult = await migrateLegacyConsentCore({
+    db,
+    callerUid: 'owner_legacy',
+    data: { linkId: legacyLinkId }
+  });
+  assert.equal(migResult.success, true);
+  assert.equal(migResult.sanitized, true);
+
+  // 3. Verificar que los permisos fueron neutralizados y snapshots eliminados
+  const docAfter = await db.collection('partner_links').doc(legacyLinkId).get();
+  const dataAfter = docAfter.data();
+  assert.equal(dataAfter.ownerSharePhase, false);
+  assert.equal(dataAfter.ownerShareMood, false);
+  assert.equal(dataAfter.ownerShareSymptoms, false);
+  assert.equal(dataAfter.ownerSharePredictions, false);
+  assert.equal(dataAfter.ownerConsentExplicitlyGranted, false);
+  assert.equal(dataAfter.ownerSnapshot, null);
+
+  assert.equal(dataAfter.partnerSharePhase, false);
+  assert.equal(dataAfter.partnerShareMood, false);
+  assert.equal(dataAfter.partnerShareSymptoms, false);
+  assert.equal(dataAfter.partnerSharePredictions, false);
+  assert.equal(dataAfter.partnerConsentExplicitlyGranted, false);
+  assert.equal(dataAfter.partnerSnapshot, null);
+
+  // 4. Probar idempotencia: ejecutar migración una segunda vez
+  const migResult2 = await migrateLegacyConsentCore({
+    db,
+    callerUid: 'owner_legacy',
+    data: { linkId: legacyLinkId }
+  });
+  assert.equal(migResult2.success, true);
+  assert.equal(migResult2.sanitized, false); // Ya estaba limpio, ningún cambio adicional
+});
+
+test('[SEC-P0-B RECONFIRMACIÓN] Tras neutralización, reconfirmación explícita permite reactivar compartir', async () => {
+  const linkId = 'link_reconfirm';
+  await db.collection('partner_links').doc(linkId).set({
+    linkId,
+    ownerUid: 'owner_alice',
+    partnerUid: 'partner_bob',
+    status: 'ACTIVE',
+    ownerSharePhase: false,
+    ownerShareMood: false,
+    ownerShareSymptoms: false,
+    ownerSharePredictions: false,
+    ownerConsentExplicitlyGranted: false,
+    ownerSnapshot: null
+  });
+
+  // Reconfirmar consentimiento explícito y activar compartir fase y ánimo
+  await db.collection('partner_links').doc(linkId).update({
+    ownerConsentExplicitlyGranted: true,
+    ownerSharePhase: true,
+    ownerShareMood: true,
+    ownerSnapshot: {
+      currentPhase: 'FOLLICULAR',
+      currentMood: 'HAPPY',
+      topSymptoms: [],
+      daysUntilNextPhase: 0,
+      late: false,
+      delayDays: 0,
+      cycleStartDateMs: null,
+      cycleLengthDays: 0,
+      periodLengthDays: 0
+    },
+    updatedAtMs: Date.now()
+  });
+
+  const doc = await db.collection('partner_links').doc(linkId).get();
+  assert.equal(doc.data().ownerConsentExplicitlyGranted, true);
+  assert.equal(doc.data().ownerSharePhase, true);
+  assert.equal(doc.data().ownerSnapshot.currentPhase, 'FOLLICULAR');
 });

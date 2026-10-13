@@ -169,12 +169,17 @@ fun PartnerLink.otherAvatarId(myUid: String?): String? =
     if (isOwner(myUid)) partnerAvatarId else ownerAvatarId
 
 /** Snapshot del ciclo de la OTRA persona (lo que me corresponde ver). */
-fun PartnerLink.otherSnapshot(myUid: String?): CycleSnapshot? =
-    if (isOwner(myUid)) partnerSnapshot else ownerSnapshot
+fun PartnerLink.otherSnapshot(myUid: String?): CycleSnapshot? {
+    val otherConsent = if (isOwner(myUid)) partnerConsentExplicitlyGranted else ownerConsentExplicitlyGranted
+    if (!otherConsent) return null
+    return if (isOwner(myUid)) partnerSnapshot else ownerSnapshot
+}
 
 /** Privacidad declarada por la OTRA persona (qué me deja ver). */
-fun PartnerLink.otherSharePreferences(myUid: String?): SharePreferences =
-    if (isOwner(myUid)) SharePreferences(
+fun PartnerLink.otherSharePreferences(myUid: String?): SharePreferences {
+    val otherConsent = if (isOwner(myUid)) partnerConsentExplicitlyGranted else ownerConsentExplicitlyGranted
+    if (!otherConsent) return SharePreferences() // Si no hay consentimiento explícito comprobado, todo en false
+    return if (isOwner(myUid)) SharePreferences(
         phase = partnerSharePhase,
         mood = partnerShareMood,
         symptoms = partnerShareSymptoms,
@@ -187,6 +192,7 @@ fun PartnerLink.otherSharePreferences(myUid: String?): SharePreferences =
         predictions = ownerSharePredictions,
         consentExplicitlyGranted = ownerConsentExplicitlyGranted
     )
+}
 
 /** Mi propia privacidad dentro de este vínculo. */
 fun PartnerLink.mySharePreferences(myUid: String?): SharePreferences =
