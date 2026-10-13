@@ -5,41 +5,46 @@ import com.jeremy.lumi.domain.model.CycleSnapshot
 import com.jeremy.lumi.domain.model.SharePreferences
 import com.jeremy.lumi.domain.model.filteredBy
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.time.LocalDate
 
 /**
- * Pruebas automatizadas de auditoría para verificar:
- * 1. P0-4: Valores por defecto de privacidad.
- * 2. P1-6: Inferencia indirecta de fases a través del permiso de predicciones.
+ * Pruebas automatizadas de validación de remediación de privacidad:
+ * 1. P0-4 SOLUCIONADO: Principio de Privacidad por Defecto (Privacy by Default).
+ * 2. P1-6 SOLUCIONADO: Imposibilidad de inferencia matemática indirecta de fases menstruales.
  * 3. Filtrado completo cuando todos los consentimientos están desactivados.
  */
 class BondsPrivacyInferenceTest {
 
     @Test
-    fun testP04_defaultPrivacyFlagsAreTrueByDefault() {
+    fun testP04_defaultPrivacyFlagsAreStrictlyFalseByDefault() {
         val defaultPrefs = SharePreferences()
-        // P0-4 comprobado: en el código actual, phase, mood y predictions vienen true por defecto
-        assertTrue("phase debería ser true por defecto en código actual", defaultPrefs.phase)
-        assertTrue("mood debería ser true por defecto en código actual", defaultPrefs.mood)
-        assertTrue("predictions debería ser true por defecto en código actual", defaultPrefs.predictions)
+        // P0-4 remediado: Principio de Privacidad por Defecto (Privacy by Default)
+        assertFalse("phase debe ser false por defecto (Opt-in estricto)", defaultPrefs.phase)
+        assertFalse("mood debe ser false por defecto (Opt-in estricto)", defaultPrefs.mood)
+        assertFalse("symptoms debe ser false por defecto (Opt-in estricto)", defaultPrefs.symptoms)
+        assertFalse("predictions debe ser false por defecto (Opt-in estricto)", defaultPrefs.predictions)
+        assertFalse("consentExplicitlyGranted debe ser false inicialmente", defaultPrefs.consentExplicitlyGranted)
     }
 
     @Test
-    fun testP16_predictionsExposeCycleStartAndAllowPhaseReconstructionWhenPhaseIsFalse() {
+    fun testP16_predictionsNeverExposeCycleStartWhenPhaseIsFalse() {
         val originalSnapshot = CycleSnapshot(
             currentPhase = CyclePhase.MENSTRUAL,
             currentMood = "Sensitive",
             topSymptoms = listOf("Cramps"),
+            daysUntilNextPhase = 3,
+            isLate = false,
+            delayDays = 0,
             cycleStartDateMs = System.currentTimeMillis() - (2L * 86400000L), // hace 2 días
             cycleLengthDays = 28,
             periodLengthDays = 5
         )
 
-        // Usuaria explícitamente apaga "phase", pero deja "predictions" activado
+        // Usuaria apaga explícitamente "phase", pero deja "predictions" activado
         val restrictedPrivacy = SharePreferences(
             phase = false,
             mood = false,
@@ -49,25 +54,50 @@ class BondsPrivacyInferenceTest {
 
         val filtered = originalSnapshot.filteredBy(restrictedPrivacy)
 
-        // La fase directa está censurada (UNKNOWN)
+        // 1. La fase directa está censurada (UNKNOWN)
         assertEquals(CyclePhase.UNKNOWN, filtered.currentPhase)
         assertNull(filtered.currentMood)
         assertTrue(filtered.topSymptoms.isEmpty())
 
-        // VULNERABILIDAD P1-6 DEMOSTRADA:
-        // Los parámetros matemáticos del ciclo NO están censurados
-        assertNotNull("cycleStartDateMs sigue expuesto", filtered.cycleStartDateMs)
+        // 2. VULNERABILIDAD P1-6 REMEDIADA:
+        // Los parámetros matemáticos del ciclo están completamente eliminados
+        assertNull("cycleStartDateMs DEBE ser nulo cuando phase=false para imposibilitar inferencia", filtered.cycleStartDateMs)
+        assertEquals(0, filtered.cycleLengthDays)
+        assertEquals(0, filtered.periodLengthDays)
+
+        // 3. Las métricas relativas de predicción se mantienen seguras
+        assertEquals(3, filtered.daysUntilNextPhase)
+        assertFalse(filtered.isLate)
+        assertEquals(0, filtered.delayDays)
+    }
+
+    @Test
+    fun testFullOptInAllowsCycleStartDateOnlyWhenBothPhaseAndPredictionsAreTrue() {
+        val now = System.currentTimeMillis()
+        val originalSnapshot = CycleSnapshot(
+            currentPhase = CyclePhase.FOLLICULAR,
+            currentMood = "Happy",
+            topSymptoms = emptyList(),
+            cycleStartDateMs = now - (10L * 86400000L),
+            cycleLengthDays = 28,
+            periodLengthDays = 5
+        )
+
+        val fullOptIn = SharePreferences(
+            phase = true,
+            mood = true,
+            symptoms = true,
+            predictions = true,
+            consentExplicitlyGranted = true
+        )
+
+        val filtered = originalSnapshot.filteredBy(fullOptIn)
+
+        assertEquals(CyclePhase.FOLLICULAR, filtered.currentPhase)
+        assertEquals("Happy", filtered.currentMood)
+        assertNotNull(filtered.cycleStartDateMs)
         assertEquals(28, filtered.cycleLengthDays)
         assertEquals(5, filtered.periodLengthDays)
-
-        // Tercero puede reconstruir que hoy es el día 3 del ciclo (Fase Menstrual)
-        val start = java.time.Instant.ofEpochMilli(filtered.cycleStartDateMs!!).atZone(java.time.ZoneOffset.UTC).toLocalDate()
-        val today = LocalDate.now(java.time.ZoneOffset.UTC)
-        val dayInCycle = CyclePredictor.dayInCycleWrapped(start, filtered.cycleLengthDays, today)
-        val reconstructedPhase = CyclePredictor.phaseForDay(dayInCycle, filtered.cycleLengthDays, filtered.periodLengthDays)
-
-        // Se infiere que la persona está menstruando pese a tener sharePhase = false
-        assertEquals(CyclePhase.MENSTRUAL, reconstructedPhase)
     }
 
     @Test

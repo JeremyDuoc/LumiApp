@@ -60,17 +60,19 @@ data class PartnerLink(
     val ownerFcmToken: String? = null,
     val partnerFcmToken: String? = null,
 
-    // Privacidad granular de la titular (owner)
-    val ownerSharePhase: Boolean = true,
-    val ownerShareMood: Boolean = true,
+    // Privacidad granular de la titular (owner) - Defaults estrictos en false (Opt-in)
+    val ownerSharePhase: Boolean = false,
+    val ownerShareMood: Boolean = false,
     val ownerShareSymptoms: Boolean = false,
-    val ownerSharePredictions: Boolean = true,
+    val ownerSharePredictions: Boolean = false,
+    val ownerConsentExplicitlyGranted: Boolean = false,
 
-    // Privacidad granular de la pareja (solo relevante en CYCLE_SYNC)
-    val partnerSharePhase: Boolean = true,
-    val partnerShareMood: Boolean = true,
+    // Privacidad granular de la pareja (solo relevante en CYCLE_SYNC) - Defaults estrictos en false
+    val partnerSharePhase: Boolean = false,
+    val partnerShareMood: Boolean = false,
     val partnerShareSymptoms: Boolean = false,
-    val partnerSharePredictions: Boolean = true,
+    val partnerSharePredictions: Boolean = false,
+    val partnerConsentExplicitlyGranted: Boolean = false,
 
     // Snapshots del ciclo (doble vía cuando el vínculo es CYCLE_SYNC)
     val ownerSnapshot: CycleSnapshot? = null,
@@ -140,12 +142,13 @@ data class DiaryEntry(
     val timestampMs: Long = 0L
 )
 
-/** Toggles de privacidad granular de UN lado del vínculo. */
+/** Toggles de privacidad granular de UN lado del vínculo (Opt-in estricto). */
 data class SharePreferences(
-    val phase: Boolean = true,
-    val mood: Boolean = true,
+    val phase: Boolean = false,
+    val mood: Boolean = false,
     val symptoms: Boolean = false,
-    val predictions: Boolean = true
+    val predictions: Boolean = false,
+    val consentExplicitlyGranted: Boolean = false
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -175,12 +178,14 @@ fun PartnerLink.otherSharePreferences(myUid: String?): SharePreferences =
         phase = partnerSharePhase,
         mood = partnerShareMood,
         symptoms = partnerShareSymptoms,
-        predictions = partnerSharePredictions
+        predictions = partnerSharePredictions,
+        consentExplicitlyGranted = partnerConsentExplicitlyGranted
     ) else SharePreferences(
         phase = ownerSharePhase,
         mood = ownerShareMood,
         symptoms = ownerShareSymptoms,
-        predictions = ownerSharePredictions
+        predictions = ownerSharePredictions,
+        consentExplicitlyGranted = ownerConsentExplicitlyGranted
     )
 
 /** Mi propia privacidad dentro de este vínculo. */
@@ -189,12 +194,14 @@ fun PartnerLink.mySharePreferences(myUid: String?): SharePreferences =
         phase = ownerSharePhase,
         mood = ownerShareMood,
         symptoms = ownerShareSymptoms,
-        predictions = ownerSharePredictions
+        predictions = ownerSharePredictions,
+        consentExplicitlyGranted = ownerConsentExplicitlyGranted
     ) else SharePreferences(
         phase = partnerSharePhase,
         mood = partnerShareMood,
         symptoms = partnerShareSymptoms,
-        predictions = partnerSharePredictions
+        predictions = partnerSharePredictions,
+        consentExplicitlyGranted = partnerConsentExplicitlyGranted
     )
 
 /** Último detalle que ME enviaron (lo mandó la otra persona). */
