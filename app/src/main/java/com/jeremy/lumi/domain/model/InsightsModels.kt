@@ -140,3 +140,14 @@ data class SymptomPhaseRisk(
     val occurrencesInPhase: Int,
     val totalOccurrences: Int
 )
+
+data class LumiObservation(
+    val id: String,
+    val tag: String,
+    val title: String,
+    val description: String,
+    val sampleText: String,
+    val limitsText: String,
+    val recommendationText: String,
+    val severity: AlertSeverity = AlertSeverity.WARNING
+)

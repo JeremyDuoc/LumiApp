@@ -46,7 +46,7 @@ class InsightsRepositoryImpl @Inject constructor(
             symptomCorrelations = computeSymptomCorrelations(allLogs, allCycles, minOccurrences = 2),
             bivariableInsights  = bivariableEngine.computeInsights(allLogs),
             moodDistribution    = computeMoodDistribution(allLogs),
-            recentCycleStats    = computeRecentCycleStats(closedCycles.take(6), allLogs)
+            recentCycleStats    = computeRecentCycleStats(closedCycles.take(cyclesLimit), allLogs)
         )
     }
 

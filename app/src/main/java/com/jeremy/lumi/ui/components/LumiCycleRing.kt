@@ -78,30 +78,6 @@ fun LumiCycleRing(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Topline: "TU CICLO" / "Vista general"
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 28.dp),
-            horizontalArrangement = Arrangement.Start
-        ) {
-            Column {
-                Text(
-                    text = "TU CICLO",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp,
-                    color = tokens.muted
-                )
-                Text(
-                    text = "Vista general",
-                    fontSize = 11.sp,
-                    color = tokens.muted
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
 
         // Contenedor del Aro con resplandor suave
         Box(
