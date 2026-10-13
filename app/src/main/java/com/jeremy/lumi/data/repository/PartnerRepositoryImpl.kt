@@ -137,7 +137,11 @@ class PartnerRepositoryImpl @Inject constructor(
 
     // ── Crear / unirse ───────────────────────────────────────────────────────
 
-    private fun generateLinkCode(): String = (100000..999999).random().toString()
+    private fun generateLinkCode(): String {
+        val secureRandom = java.security.SecureRandom()
+        val code = 10000000 + secureRandom.nextInt(90000000)
+        return code.toString()
+    }
 
     override suspend fun createPartnerLink(
         linkType: LinkType,
@@ -169,14 +173,16 @@ class PartnerRepositoryImpl @Inject constructor(
             "relationLabel" to relationLabel,
             "ownerFcmToken" to fcmToken,
             "partnerFcmToken" to null,
-            "ownerSharePhase" to privacy.phase,
-            "ownerShareMood" to privacy.mood,
-            "ownerShareSymptoms" to privacy.symptoms,
-            "ownerSharePredictions" to privacy.predictions,
-            "partnerSharePhase" to true,
-            "partnerShareMood" to true,
+            "ownerSharePhase" to false,
+            "ownerShareMood" to false,
+            "ownerShareSymptoms" to false,
+            "ownerSharePredictions" to false,
+            "ownerConsentExplicitlyGranted" to false,
+            "partnerSharePhase" to false,
+            "partnerShareMood" to false,
             "partnerShareSymptoms" to false,
-            "partnerSharePredictions" to true,
+            "partnerSharePredictions" to false,
+            "partnerConsentExplicitlyGranted" to false,
             "ownerSnapshot" to null,
             "partnerSnapshot" to null,
             "lastOwnerCareAction" to null,
@@ -212,78 +218,33 @@ class PartnerRepositoryImpl @Inject constructor(
         val fcmToken = fetchFcmTokenOrNull()
         val cleanCode = code.trim()
 
-        // 1. Obtener la invitación directamente por código único (lectura puntual get)
-        val invitationDoc = try {
-            firestore.collection(INVITATIONS).document(cleanCode).get().await()
+        // 1. Canje atómico en servidor mediante Cloud Function (P0-3 y SEC-NEW-01)
+        val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+        val payload = hashMapOf(
+            "code" to cleanCode,
+            "partnerDisplayName" to displayName,
+            "partnerAvatarId" to avatarId,
+            "partnerFcmToken" to fcmToken
+        )
+
+        val linkId: String = try {
+            val response = functions.getHttpsCallable("redeemBondsInvitation")
+                .call(payload)
+                .await()
+            val data = response.data as? Map<*, *>
+            data?.get("linkId") as? String ?: return null
         } catch (e: Exception) {
-            Log.w(TAG, "Error consultando invitación por código: ${e.message}")
+            Log.e(TAG, "Error canjeando invitación via Cloud Function: ${e.message}", e)
+            return null
+        }
+
+        // 2. Con el vínculo en estado ACTIVE y partnerUid asignado, recuperar el modelo
+        return try {
+            firestore.collection(LINKS).document(linkId).get().await().toPartnerLink()
+        } catch (e: Exception) {
+            Log.w(TAG, "Vínculo activado pero fallo al obtener documento local: ${e.message}")
             null
         }
-
-        val linkId: String
-        val invitationRef = invitationDoc?.takeIf { it.exists() }?.reference
-
-        if (invitationDoc != null && invitationDoc.exists()) {
-            val status = invitationDoc.getString("status")
-            val expiresAt = invitationDoc.getLong("expiresAtMs") ?: 0L
-            val ownerUid = invitationDoc.getString("ownerUid")
-            val resolvedLinkId = invitationDoc.getString("linkId")
-
-            if (status != LinkStatus.PENDING.name || expiresAt <= System.currentTimeMillis() || resolvedLinkId == null) {
-                return null
-            }
-            if (ownerUid == uid) return null // Nadie puede unirse a su propio vínculo
-            linkId = resolvedLinkId
-        } else {
-            // Fallback con consulta directa para instalaciones previas a la migración
-            val snapshot = try {
-                firestore.collection(LINKS)
-                    .whereEqualTo("linkCode", cleanCode)
-                    .whereEqualTo("status", LinkStatus.PENDING.name)
-                    .limit(1)
-                    .get().await()
-            } catch (_: Exception) { null }
-
-            val doc = snapshot?.documents?.firstOrNull() ?: return null
-            if (doc.getString("ownerUid") == uid) return null
-            linkId = doc.id
-        }
-
-        val linkRef = firestore.collection(LINKS).document(linkId)
-
-        // 2. Transacción atómica: canjear invitación y activar el vínculo
-        firestore.runTransaction { transaction ->
-            if (invitationRef != null) {
-                val currentInv = transaction.get(invitationRef)
-                if (currentInv.getString("status") != LinkStatus.PENDING.name) {
-                    throw IllegalStateException("La invitación ya fue canjeada o revocada")
-                }
-                transaction.update(invitationRef, mapOf(
-                    "status" to "CLAIMED",
-                    "claimedByUid" to uid,
-                    "claimedAtMs" to System.currentTimeMillis()
-                ))
-            }
-
-            val currentLink = transaction.get(linkRef)
-            if (currentLink.getString("status") != LinkStatus.PENDING.name) {
-                throw IllegalStateException("El vínculo ya no está pendiente")
-            }
-
-            transaction.update(linkRef, mapOf(
-                "partnerUid" to uid,
-                "partnerDisplayName" to displayName,
-                "partnerAvatarId" to avatarId,
-                "partnerFcmToken" to fcmToken,
-                "partnerSharePhase" to privacy.phase,
-                "partnerShareMood" to privacy.mood,
-                "partnerShareSymptoms" to privacy.symptoms,
-                "partnerSharePredictions" to privacy.predictions,
-                "status" to LinkStatus.ACTIVE.name
-            ))
-        }.await()
-
-        return linkRef.get().await().toPartnerLink()
     }
 
     // ── Privacidad e identidad por vínculo ───────────────────────────────────
@@ -301,7 +262,9 @@ class PartnerRepositoryImpl @Inject constructor(
                 "${prefix}ShareMood" to privacy.mood,
                 "${prefix}ShareSymptoms" to privacy.symptoms,
                 "${prefix}SharePredictions" to privacy.predictions,
-                "${prefix}Snapshot" to previous?.filteredBy(privacy)?.toFirestoreMap()
+                "${prefix}ConsentExplicitlyGranted" to true,
+                "${prefix}Snapshot" to previous?.filteredBy(privacy)?.toFirestoreMap(),
+                "updatedAtMs" to System.currentTimeMillis()
             ))
         }.await()
     }
@@ -367,11 +330,27 @@ class PartnerRepositoryImpl @Inject constructor(
 
     override suspend fun unlink(linkId: String) {
         val uid = getCurrentUid() ?: return
-        val link = fetchLink(linkId) ?: return
-        if (link.ownerUid == uid || link.partnerUid == uid) {
-            firestore.collection(LINKS).document(linkId)
-                .update("status", LinkStatus.REVOKED.name)
+        try {
+            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
+            functions.getHttpsCallable("revokeBondsLink")
+                .call(mapOf("linkId" to linkId))
                 .await()
+        } catch (e: Exception) {
+            Log.w(TAG, "Fallo Cloud Function revokeBondsLink, ejecutando revocación cliente autorizada: ${e.message}")
+            val linkRef = firestore.collection(LINKS).document(linkId)
+            val now = System.currentTimeMillis()
+            linkRef.update(
+                mapOf(
+                    "status" to LinkStatus.REVOKED.name,
+                    "ownerSnapshot" to null,
+                    "partnerSnapshot" to null,
+                    "ownerFcmToken" to null,
+                    "partnerFcmToken" to null,
+                    "revokedByUid" to uid,
+                    "revokedAtMs" to now,
+                    "updatedAtMs" to now
+                )
+            ).await()
         }
     }
 

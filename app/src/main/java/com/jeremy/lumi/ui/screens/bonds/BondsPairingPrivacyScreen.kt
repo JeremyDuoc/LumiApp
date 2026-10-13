@@ -131,10 +131,15 @@ fun BondsPairingPrivacyScreen(
             qrBitmap = generateQrCode("lumi://bonds/pair/$currentInviteCode", 320)
         } else if (activeCode.isBlank()) {
             isGeneratingCode = true
-            val newCode = onGenerateCode()
-            activeCode = newCode
-            qrBitmap = generateQrCode("lumi://bonds/pair/$newCode", 320)
-            isGeneratingCode = false
+            try {
+                val newCode = onGenerateCode()
+                activeCode = newCode
+                qrBitmap = generateQrCode("lumi://bonds/pair/$newCode", 320)
+            } catch (_: Exception) {
+                // Manejo de error si falla la conectividad
+            } finally {
+                isGeneratingCode = false
+            }
         }
     }
 

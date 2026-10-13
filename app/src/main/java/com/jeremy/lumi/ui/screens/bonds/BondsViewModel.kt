@@ -57,7 +57,8 @@ data class BondMember(
     val mySharePrefs: SharePreferences,
     val isOwner: Boolean,
     val lastReceivedGesture: CareActionStatus?,
-    val rawLink: PartnerLink
+    val rawLink: PartnerLink,
+    val requiresConsentReconfirmation: Boolean = false
 )
 
 data class BondsUiState(
@@ -74,10 +75,11 @@ data class BondsUiState(
     val lastGestureSent: CareAction? = null,
     val errorMessage: String? = null,
     val myDefaultPrivacy: SharePreferences = SharePreferences(
-        phase = true,
-        mood = true,
+        phase = false,
+        mood = false,
         symptoms = false,
-        predictions = true
+        predictions = false,
+        consentExplicitlyGranted = false
     )
 ) {
     val isCooldownActive: Boolean
@@ -97,91 +99,6 @@ class BondsViewModel @Inject constructor(
     companion object {
         private const val TAG = "BondsViewModel"
         private const val COOLDOWN_DURATION_MS = 5 * 60 * 1000L
-
-        /**
-         * Círculo de referencia inicial (Camila, Sofia, Valentina, Anto) con fidelidad absoluta
-         * a la imagen de referencia para asegurar que la experiencia visual y funcional
-         * sea completa desde el primer segundo.
-         */
-        val SAMPLE_MEMBERS: List<BondMember> by lazy {
-            val now = System.currentTimeMillis()
-            val dayMs = 24L * 3600 * 1000
-            val dummyLink = PartnerLink(
-                linkId = "demo_placeholder",
-                ownerUid = "self",
-                status = LinkStatus.ACTIVE
-            )
-            listOf(
-                BondMember(
-                    linkId = "sample_camila",
-                    displayName = "Camila",
-                    avatarId = "flor",
-                    phase = CyclePhase.FOLLICULAR,
-                    cycleDay = 12,
-                    mood = "A bit sensitive, but still in good spirits. 💜",
-                    symptoms = listOf("Calambres suaves"),
-                    cycleStartDateMs = now - (11L * dayMs),
-                    cycleLengthDays = 28,
-                    periodLengthDays = 5,
-                    otherSharePrefs = SharePreferences(phase = true, mood = true, symptoms = false, predictions = true),
-                    mySharePrefs = SharePreferences(phase = true, mood = true, symptoms = true, predictions = true),
-                    isOwner = true,
-                    lastReceivedGesture = null,
-                    rawLink = dummyLink.copy(linkId = "sample_camila")
-                ),
-                BondMember(
-                    linkId = "sample_sofia",
-                    displayName = "Sofia",
-                    avatarId = "sol",
-                    phase = CyclePhase.OVULATION,
-                    cycleDay = 18,
-                    mood = "Con mucha energía y entusiasmo ✨",
-                    symptoms = emptyList(),
-                    cycleStartDateMs = now - (17L * dayMs),
-                    cycleLengthDays = 30,
-                    periodLengthDays = 4,
-                    otherSharePrefs = SharePreferences(phase = true, mood = true, symptoms = false, predictions = true),
-                    mySharePrefs = SharePreferences(phase = true, mood = true, symptoms = false, predictions = true),
-                    isOwner = true,
-                    lastReceivedGesture = null,
-                    rawLink = dummyLink.copy(linkId = "sample_sofia")
-                ),
-                BondMember(
-                    linkId = "sample_valentina",
-                    displayName = "Valentina",
-                    avatarId = "brisa",
-                    phase = CyclePhase.MENSTRUAL,
-                    cycleDay = 6,
-                    mood = "Día tranquilo de descanso ☕",
-                    symptoms = listOf("Fatiga leve"),
-                    cycleStartDateMs = now - (5L * dayMs),
-                    cycleLengthDays = 27,
-                    periodLengthDays = 5,
-                    otherSharePrefs = SharePreferences(phase = true, mood = true, symptoms = true, predictions = true),
-                    mySharePrefs = SharePreferences(phase = true, mood = true, symptoms = true, predictions = true),
-                    isOwner = true,
-                    lastReceivedGesture = null,
-                    rawLink = dummyLink.copy(linkId = "sample_valentina")
-                ),
-                BondMember(
-                    linkId = "sample_anto",
-                    displayName = "Anto",
-                    avatarId = "corazon",
-                    phase = CyclePhase.LUTEAL,
-                    cycleDay = 22,
-                    mood = "Necesitando desconexión y tiempo para mí 🌸",
-                    symptoms = emptyList(),
-                    cycleStartDateMs = now - (21L * dayMs),
-                    cycleLengthDays = 29,
-                    periodLengthDays = 5,
-                    otherSharePrefs = SharePreferences(phase = true, mood = true, symptoms = false, predictions = true),
-                    mySharePrefs = SharePreferences(phase = true, mood = true, symptoms = true, predictions = true),
-                    isOwner = true,
-                    lastReceivedGesture = null,
-                    rawLink = dummyLink.copy(linkId = "sample_anto")
-                )
-            )
-        }
     }
 
     private val _uiState = MutableStateFlow(BondsUiState())
@@ -236,6 +153,8 @@ class BondsViewModel @Inject constructor(
                     val allowedMood = if (otherPrefs.mood) snapshot?.currentMood else null
                     val allowedSymptoms = if (otherPrefs.symptoms) snapshot?.topSymptoms ?: emptyList() else emptyList()
 
+                    val consentGranted = if (link.isOwner(myUid)) link.ownerConsentExplicitlyGranted else link.partnerConsentExplicitlyGranted
+
                     BondMember(
                         linkId = link.linkId,
                         displayName = otherName,
@@ -251,11 +170,12 @@ class BondsViewModel @Inject constructor(
                         mySharePrefs = myPrefs,
                         isOwner = link.isOwner(myUid),
                         lastReceivedGesture = receivedGesture,
-                        rawLink = link
+                        rawLink = link,
+                        requiresConsentReconfirmation = !consentGranted
                     )
                 }
 
-                val resolvedMembers = if (memberList.isNotEmpty()) memberList else SAMPLE_MEMBERS
+                val resolvedMembers = memberList
 
                 _uiState.update { current ->
                     val prevSelectedId = current.selectedMember?.linkId
@@ -315,21 +235,6 @@ class BondsViewModel @Inject constructor(
         message: String? = null,
         onSuccess: () -> Unit = {}
     ) {
-        if (linkId.startsWith("sample_")) {
-            viewModelScope.launch {
-                _uiState.update { it.copy(isSendingGesture = true, errorMessage = null) }
-                kotlinx.coroutines.delay(250)
-                _uiState.update {
-                    it.copy(
-                        isSendingGesture = false,
-                        lastGestureSent = action
-                    )
-                }
-                onSuccess()
-            }
-            return
-        }
-
         if (_uiState.value.isCooldownActive) {
             _uiState.update { it.copy(errorMessage = "Debes esperar a que termine el tiempo de enfriamiento.") }
             return
@@ -427,19 +332,6 @@ class BondsViewModel @Inject constructor(
      * Actualiza la privacidad específica para un vínculo determinado.
      */
     fun updateLinkPrivacy(linkId: String, privacy: SharePreferences) {
-        if (linkId.startsWith("sample_")) {
-            _uiState.update { current ->
-                val updated = current.members.map { m ->
-                    if (m.linkId == linkId) m.copy(mySharePrefs = privacy) else m
-                }
-                val updatedSelected = if (current.selectedMember?.linkId == linkId) {
-                    current.selectedMember.copy(mySharePrefs = privacy)
-                } else current.selectedMember
-                current.copy(members = updated, selectedMember = updatedSelected)
-            }
-            return
-        }
-
         viewModelScope.launch {
             try {
                 partnerRepository.updateMyPrivacy(linkId, privacy)
@@ -463,18 +355,6 @@ class BondsViewModel @Inject constructor(
      * Desvincula una persona específica sin alterar los demás vínculos.
      */
     fun unlinkMember(linkId: String, onFinished: () -> Unit = {}) {
-        if (linkId.startsWith("sample_")) {
-            _uiState.update { current ->
-                val remaining = current.members.filter { it.linkId != linkId }
-                current.copy(
-                    members = remaining,
-                    selectedMember = remaining.firstOrNull()
-                )
-            }
-            onFinished()
-            return
-        }
-
         viewModelScope.launch {
             try {
                 partnerRepository.unlink(linkId)
