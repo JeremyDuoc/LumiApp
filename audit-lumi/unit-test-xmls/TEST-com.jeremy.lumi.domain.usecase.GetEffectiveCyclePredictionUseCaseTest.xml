@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.jeremy.lumi.domain.usecase.GetEffectiveCyclePredictionUseCaseTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-13T01:47:03.857Z" hostname="JEREMY" time="0.014">
+<testsuite name="com.jeremy.lumi.domain.usecase.GetEffectiveCyclePredictionUseCaseTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-13T02:35:24.610Z" hostname="JEREMY" time="0.011">
   <properties/>
-  <testcase name="testWhenThreeOrMoreClosedCyclesWithoutAIUsesHistoricalMath" classname="com.jeremy.lumi.domain.usecase.GetEffectiveCyclePredictionUseCaseTest" time="0.003"/>
+  <testcase name="testWhenThreeOrMoreClosedCyclesWithoutAIUsesHistoricalMath" classname="com.jeremy.lumi.domain.usecase.GetEffectiveCyclePredictionUseCaseTest" time="0.002"/>
   <testcase name="testCalendarAndHomeParityOnIdenticalInputs" classname="com.jeremy.lumi.domain.usecase.GetEffectiveCyclePredictionUseCaseTest" time="0.001"/>
-  <testcase name="testWhenNoActiveCycleReturnsDefaultResult" classname="com.jeremy.lumi.domain.usecase.GetEffectiveCyclePredictionUseCaseTest" time="0.009"/>
+  <testcase name="testWhenNoActiveCycleReturnsDefaultResult" classname="com.jeremy.lumi.domain.usecase.GetEffectiveCyclePredictionUseCaseTest" time="0.007"/>
   <testcase name="testWhenOnContraceptiveForces28Days" classname="com.jeremy.lumi.domain.usecase.GetEffectiveCyclePredictionUseCaseTest" time="0.0"/>
   <testcase name="testWhenAIPredictorReturnsBlendedResultUsesAIBlended" classname="com.jeremy.lumi.domain.usecase.GetEffectiveCyclePredictionUseCaseTest" time="0.001"/>
   <testcase name="testWhenUnderThreeClosedCyclesUsesActiveCycleLength" classname="com.jeremy.lumi.domain.usecase.GetEffectiveCyclePredictionUseCaseTest" time="0.0"/>

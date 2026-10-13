@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.jeremy.lumi.domain.usecase.AuditRegressionTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-13T01:47:03.796Z" hostname="JEREMY" time="0.021">
+<testsuite name="com.jeremy.lumi.domain.usecase.AuditRegressionTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-13T02:35:24.560Z" hostname="JEREMY" time="0.018">
   <properties/>
-  <testcase name="link consent removes all health fields in a snapshot" classname="com.jeremy.lumi.domain.usecase.AuditRegressionTest" time="0.017"/>
-  <testcase name="closed cycle includes its last day" classname="com.jeremy.lumi.domain.usecase.AuditRegressionTest" time="0.004"/>
-  <testcase name="a delayed projection does not double the number of menstrual days" classname="com.jeremy.lumi.domain.usecase.AuditRegressionTest" time="0.0"/>
+  <testcase name="link consent removes all health fields in a snapshot" classname="com.jeremy.lumi.domain.usecase.AuditRegressionTest" time="0.014"/>
+  <testcase name="closed cycle includes its last day" classname="com.jeremy.lumi.domain.usecase.AuditRegressionTest" time="0.003"/>
+  <testcase name="a delayed projection does not double the number of menstrual days" classname="com.jeremy.lumi.domain.usecase.AuditRegressionTest" time="0.001"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

@@ -1,0 +1,26 @@
+﻿[36m[1mi  emulators:[22m[39m Starting emulators: firestore
+[36m[1mi  firestore:[22m[39m Firestore Emulator logging to [1mfirestore-debug.log[22m
+[32m[1m+  firestore:[22m[39m Firestore Emulator UI websocket is running on 9150.
+[36m[1mi [22m[39m Running script: [1mnode --test tools/firestore-tests/cloud_functions_remediation.test.cjs[22m
+Ô£ö [BACKEND POSITIVO] Canje exitoso activa v├¡nculo y fija consentimientos en false (Opt-in) (7607.4753ms)
+Ô£ö [BACKEND NEGATIVO] Canje de c├│digo inexistente falla con not-found (123.1971ms)
+Ô£ö [BACKEND NEGATIVO] Canje de invitaci├│n expirada falla con deadline-exceeded (105.3972ms)
+Ô£ö [BACKEND NEGATIVO] Due├▒o intentando unirse a su propia invitaci├│n falla con invalid-argument (103.5717ms)
+Ô£ö [BACKEND CONCURRENCIA] Dos usuarios canjeando simult├íneamente el mismo c├│digo: solo uno triunfa (3126.1164ms)
+Ô£ö [BACKEND RATE LIMITING] 5 intentos fallidos consecutivos bloquean futuros intentos (387.3372ms)
+Ô£ö [BACKEND REVOCACI├ôN POSITIVO] Revocaci├│n at├│mica vac├¡a snapshots y tokens (187.6599ms)
+Ô£ö [BACKEND REVOCACI├ôN NEGATIVO] Extra├▒o intentando revocar v├¡nculo ajeno falla con permission-denied (93.1407ms)
+Ôä╣ tests 8
+Ôä╣ suites 0
+Ôä╣ pass 8
+Ôä╣ fail 0
+Ôä╣ cancelled 0
+Ôä╣ skipped 0
+Ôä╣ todo 0
+Ôä╣ duration_ms 13861.9042
+[32m[1m+ [22m[39m Script exited successfully (code 0)
+[36m[1mi  emulators:[22m[39m Shutting down emulators.
+[36m[1mi  firestore:[22m[39m Stopping Firestore Emulator
+[33m[1m! [22m[39m Firestore Emulator has exited upon receiving signal: SIGINT
+[36m[1mi  hub:[22m[39m Stopping emulator hub
+[36m[1mi  logging:[22m[39m Stopping Logging Emulator
