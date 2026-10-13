@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-13T02:35:24.635Z" hostname="JEREMY" time="0.192">
+<testsuite name="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-13T03:04:47.710Z" hostname="JEREMY" time="0.4">
   <properties/>
-  <testcase name="test phase specific exercise recommendation" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.084"/>
-  <testcase name="test unprotected sex response provides emergency contraception and test guidance" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.012"/>
-  <testcase name="test contextual fallback handles miscellaneous queries gracefully" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.011"/>
-  <testcase name="test fertility query respects contraceptive mode" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.009"/>
-  <testcase name="test sleep response explains luteal body temperature connection" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.009"/>
-  <testcase name="test late period query analyzes delay reasons and pregnancy test guidance" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.01"/>
-  <testcase name="test fertility query identifies peak ovulation in natural cycle" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.01"/>
-  <testcase name="test structured question answering for ChatQuestion enum" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.012"/>
-  <testcase name="test phase specific nutrition advice" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.008"/>
-  <testcase name="test menstrual cramps advice includes evidence based recommendations" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.008"/>
-  <testcase name="test headache and migraine response explains estrogen drop" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.009"/>
-  <testcase name="test mood response explains neurotransmitters and PMDD" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.008"/>
+  <testcase name="test phase specific exercise recommendation" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.153"/>
+  <testcase name="test unprotected sex response provides emergency contraception and test guidance" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.026"/>
+  <testcase name="test contextual fallback handles miscellaneous queries gracefully" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.026"/>
+  <testcase name="test fertility query respects contraceptive mode" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.022"/>
+  <testcase name="test sleep response explains luteal body temperature connection" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.011"/>
+  <testcase name="test late period query analyzes delay reasons and pregnancy test guidance" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.024"/>
+  <testcase name="test fertility query identifies peak ovulation in natural cycle" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.043"/>
+  <testcase name="test structured question answering for ChatQuestion enum" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.026"/>
+  <testcase name="test phase specific nutrition advice" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.017"/>
+  <testcase name="test menstrual cramps advice includes evidence based recommendations" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.018"/>
+  <testcase name="test headache and migraine response explains estrogen drop" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.017"/>
+  <testcase name="test mood response explains neurotransmitters and PMDD" classname="com.jeremy.lumi.domain.usecase.LumiSmartChatEngineTest" time="0.013"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
