@@ -82,7 +82,8 @@ fun Map<*, *>.toCycleSnapshot(): CycleSnapshot = CycleSnapshot(
 fun Map<*, *>.toCareActionStatus(): CareActionStatus? {
     val action = enumOrDefault(this["action"] as? String, CareAction.HUG)
     val timestamp = this["timestamp"].asLongOrNull() ?: return null
-    return CareActionStatus(action, timestamp)
+    val message = this["message"] as? String
+    return CareActionStatus(action, timestamp, message)
 }
 
 fun CycleSnapshot.toFirestoreMap(): Map<String, Any?> = mapOf(
@@ -98,10 +99,13 @@ fun CycleSnapshot.toFirestoreMap(): Map<String, Any?> = mapOf(
     "lastUpdatedAt" to lastUpdatedAt
 )
 
-fun CareActionStatus.toFirestoreMap(): Map<String, Any?> = mapOf(
-    "action" to action.name,
-    "timestamp" to timestamp
-)
+fun CareActionStatus.toFirestoreMap(): Map<String, Any?> = buildMap {
+    put("action", action.name)
+    put("timestamp", timestamp)
+    if (!message.isNullOrBlank()) {
+        put("message", message)
+    }
+}
 
 fun DocumentSnapshot.toDiaryEntry(): DiaryEntry? {
     return try {

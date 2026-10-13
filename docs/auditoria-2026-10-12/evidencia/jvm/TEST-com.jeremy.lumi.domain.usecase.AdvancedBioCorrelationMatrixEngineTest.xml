@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jeremy.lumi.domain.usecase.AdvancedBioCorrelationMatrixEngineTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-12T17:59:43.691Z" hostname="JEREMY" time="0.414">
+  <properties/>
+  <testcase name="test returns empty list when insufficient data" classname="com.jeremy.lumi.domain.usecase.AdvancedBioCorrelationMatrixEngineTest" time="0.284"/>
+  <testcase name="test handles null values gracefully without crashing" classname="com.jeremy.lumi.domain.usecase.AdvancedBioCorrelationMatrixEngineTest" time="0.006"/>
+  <testcase name="test all insights have non-empty clinical interpretation key" classname="com.jeremy.lumi.domain.usecase.AdvancedBioCorrelationMatrixEngineTest" time="0.03"/>
+  <testcase name="test detects lag-1 cross correlation stress predicts pain next day" classname="com.jeremy.lumi.domain.usecase.AdvancedBioCorrelationMatrixEngineTest" time="0.044"/>
+  <testcase name="test handles empty log list" classname="com.jeremy.lumi.domain.usecase.AdvancedBioCorrelationMatrixEngineTest" time="0.005"/>
+  <testcase name="test detects strong negative Spearman correlation sleep vs pain" classname="com.jeremy.lumi.domain.usecase.AdvancedBioCorrelationMatrixEngineTest" time="0.012"/>
+  <testcase name="test zero variance series does not emit insight" classname="com.jeremy.lumi.domain.usecase.AdvancedBioCorrelationMatrixEngineTest" time="0.009"/>
+  <testcase name="test detects strong positive Spearman correlation sleep vs energy" classname="com.jeremy.lumi.domain.usecase.AdvancedBioCorrelationMatrixEngineTest" time="0.01"/>
+  <testcase name="test filters spurious uncorrelated pairs" classname="com.jeremy.lumi.domain.usecase.AdvancedBioCorrelationMatrixEngineTest" time="0.007"/>
+  <testcase name="test results are sorted by absolute correlation score descending" classname="com.jeremy.lumi.domain.usecase.AdvancedBioCorrelationMatrixEngineTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

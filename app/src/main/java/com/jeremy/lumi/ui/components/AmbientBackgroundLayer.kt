@@ -30,10 +30,11 @@ import com.jeremy.lumi.ui.theme.BackgroundAmbient
 import com.jeremy.lumi.ui.theme.LocalBackgroundAmbient
 import com.jeremy.lumi.ui.theme.LocalBrandBackgroundGradient
 import com.jeremy.lumi.ui.theme.LocalIsDarkTheme
-import com.jeremy.lumi.ui.theme.LocalSemanticPhaseColors
+import com.jeremy.lumi.ui.theme.LocalPhaseColors
 import com.jeremy.lumi.ui.theme.PhaseColors
 import java.time.LocalDate
 import kotlin.math.floor
+import kotlin.math.sin
 import kotlin.random.Random
 
 /**
@@ -55,7 +56,7 @@ fun AmbientBackgroundLayer(
 ) {
     val ambient          = LocalBackgroundAmbient.current
     val isDark           = LocalIsDarkTheme.current
-    val semanticColors   = LocalSemanticPhaseColors.current
+    val phaseColors      = LocalPhaseColors.current
     val brandBgGradient  = LocalBrandBackgroundGradient.current
 
     when (ambient) {
@@ -94,7 +95,52 @@ fun AmbientBackgroundLayer(
         BackgroundAmbient.ORGANIC -> {
             if (screenType != AmbientScreen.CHAT) {
                 OrganicLayer(
-                    phaseColors          = semanticColors,
+                    phaseColors          = phaseColors,
+                    isDark               = isDark,
+                    screenType           = screenType,
+                    scrollOffsetProvider = scrollOffsetProvider,
+                    modifier             = modifier
+                )
+            }
+        }
+
+        BackgroundAmbient.AURORA -> {
+            if (screenType != AmbientScreen.CHAT) {
+                AuroraLayer(
+                    isDark               = isDark,
+                    screenType           = screenType,
+                    scrollOffsetProvider = scrollOffsetProvider,
+                    modifier             = modifier
+                )
+            }
+        }
+
+        BackgroundAmbient.PETALS -> {
+            if (screenType != AmbientScreen.CHAT) {
+                PetalsLayer(
+                    isDark               = isDark,
+                    screenType           = screenType,
+                    scrollOffsetProvider = scrollOffsetProvider,
+                    modifier             = modifier
+                )
+            }
+        }
+
+        BackgroundAmbient.NEBULA -> {
+            if (screenType != AmbientScreen.CHAT) {
+                NebulaLayer(
+                    isDark               = isDark,
+                    screenType           = screenType,
+                    scrollOffsetProvider = scrollOffsetProvider,
+                    modifier             = modifier
+                )
+            }
+        }
+
+        BackgroundAmbient.BREATH -> {
+            if (screenType != AmbientScreen.CHAT) {
+                BreathLayer(
+                    accentColor          = accentColor ?: MaterialTheme.colorScheme.primary,
                     isDark               = isDark,
                     screenType           = screenType,
                     scrollOffsetProvider = scrollOffsetProvider,
@@ -555,5 +601,539 @@ private fun OrganicLayer(
                 center = centerC
             )
         }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+//  AURORA — Ondas Horizontales Estilo Aurora Boreal + Parallax
+// ──────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun AuroraLayer(
+    isDark: Boolean,
+    screenType: AmbientScreen,
+    scrollOffsetProvider: () -> Float,
+    modifier: Modifier
+) {
+    val baseAlpha = when (screenType) {
+        AmbientScreen.HOME    -> if (isDark) 0.32f else 0.18f
+        AmbientScreen.CONTENT -> if (isDark) 0.16f else 0.09f
+        AmbientScreen.CHAT    -> return
+    }
+
+    // Colores de aurora — vibrantes en oscuro, pastel en claro
+    val colorA = if (isDark) Color(0xFF00E5A0) else Color(0xFF80D4B8) // Verde teal
+    val colorB = if (isDark) Color(0xFF00B0FF) else Color(0xFFAAD8F0) // Cian
+    val colorC = if (isDark) Color(0xFFB07CF0) else Color(0xFFD0B4E8) // Violeta
+
+    val transition = rememberInfiniteTransition(label = "aurora_motion")
+
+    // Ondulación horizontal lenta — las tres capas a distintas velocidades para efecto layering
+    val wavePhaseA by transition.animateFloat(
+        initialValue  = 0f,
+        targetValue   = 1f,
+        animationSpec = infiniteRepeatable(
+            animation  = tween(13000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "aurora_wave_a"
+    )
+    val wavePhaseB by transition.animateFloat(
+        initialValue  = 0.33f,
+        targetValue   = 1f,
+        animationSpec = infiniteRepeatable(
+            animation  = tween(16500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "aurora_wave_b"
+    )
+    val wavePhaseC by transition.animateFloat(
+        initialValue  = 0.66f,
+        targetValue   = 0f,
+        animationSpec = infiniteRepeatable(
+            animation  = tween(11800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "aurora_wave_c"
+    )
+
+    // Respiración global muy suave
+    val breathe by transition.animateFloat(
+        initialValue  = 0.90f,
+        targetValue   = 1.10f,
+        animationSpec = infiniteRepeatable(
+            animation  = tween(8200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "aurora_breathe"
+    )
+
+    Canvas(modifier = modifier) {
+        val parallaxY   = scrollOffsetProvider() * 0.12f
+        val screenH     = size.height
+        val screenW     = size.width
+        val bandHeight  = screenH * 0.30f * breathe
+
+        // Posición vertical de cada banda — en el tercio superior de la pantalla
+        val baseY = when (screenType) {
+            AmbientScreen.HOME    -> screenH * 0.18f
+            AmbientScreen.CONTENT -> screenH * 0.08f
+            else                   -> screenH * 0.18f
+        }
+
+        // Ondulación vertical de cada capa (simula la curvatura de la aurora)
+        val offsetA = (sin(wavePhaseA * Math.PI * 2).toFloat()) * screenH * 0.04f
+        val offsetB = (sin(wavePhaseB * Math.PI * 2 + 1.2f).toFloat()) * screenH * 0.05f
+        val offsetC = (sin(wavePhaseC * Math.PI * 2 + 2.4f).toFloat()) * screenH * 0.03f
+
+        // Capa A — teal (banda inferior de las tres)
+        val centerA = Offset(screenW * 0.5f, baseY + bandHeight * 0.50f + offsetA - parallaxY)
+        drawOvalGradient(
+            center     = centerA,
+            radiusX    = screenW * 0.75f,
+            radiusY    = bandHeight * 0.52f,
+            color      = colorA,
+            baseAlpha  = baseAlpha * 0.85f
+        )
+
+        // Capa B — cian (banda media)
+        val centerB = Offset(screenW * 0.45f, baseY + bandHeight * 0.25f + offsetB - parallaxY)
+        drawOvalGradient(
+            center     = centerB,
+            radiusX    = screenW * 0.65f,
+            radiusY    = bandHeight * 0.42f,
+            color      = colorB,
+            baseAlpha  = baseAlpha * 0.70f
+        )
+
+        // Capa C — violeta (banda superior, más tenue)
+        val centerC = Offset(screenW * 0.55f, baseY - bandHeight * 0.05f + offsetC - parallaxY)
+        drawOvalGradient(
+            center     = centerC,
+            radiusX    = screenW * 0.80f,
+            radiusY    = bandHeight * 0.35f,
+            color      = colorC,
+            baseAlpha  = baseAlpha * 0.55f
+        )
+    }
+}
+
+/** Dibuja una elipse con gradiente radial suave — helper para AuroraLayer. */
+private fun DrawScope.drawOvalGradient(
+    center: Offset,
+    radiusX: Float,
+    radiusY: Float,
+    color: Color,
+    baseAlpha: Float
+) {
+    val radius = maxOf(radiusX, radiusY)
+    drawCircle(
+        brush = Brush.radialGradient(
+            colorStops = arrayOf(
+                0.00f to color.copy(alpha = baseAlpha),
+                0.50f to color.copy(alpha = baseAlpha * 0.45f),
+                1.00f to Color.Transparent
+            ),
+            center = center,
+            radius = radius
+        ),
+        radius   = radiusX, // Stretch horizontal usando solo radiusX como radio de dibujo
+        center   = center
+    )
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+//  PETALS — Partículas Circulares Flotantes con Deriva Ascendente
+// ──────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun PetalsLayer(
+    isDark: Boolean,
+    screenType: AmbientScreen,
+    scrollOffsetProvider: () -> Float,
+    modifier: Modifier
+) {
+    val baseAlpha = when (screenType) {
+        AmbientScreen.HOME    -> if (isDark) 0.38f else 0.30f
+        AmbientScreen.CONTENT -> if (isDark) 0.18f else 0.14f
+        AmbientScreen.CHAT    -> return
+    }
+
+    // Colores de pétalos — rosa/melocotón en claro, lavanda/magenta en oscuro
+    val petalColors = if (isDark) {
+        listOf(
+            Color(0xFFC890E8), // Lavanda
+            Color(0xFFE880B0), // Rosa magenta
+            Color(0xFF90A8E0), // Azul lavanda
+            Color(0xFFE8A0C8), // Rosa suave
+            Color(0xFFB0A0F0), // Violeta
+            Color(0xFFD8809A)  // Rosa frambuesa
+        )
+    } else {
+        listOf(
+            Color(0xFFE8A0B8), // Rosa pétalo
+            Color(0xFFF0B890), // Melocotón
+            Color(0xFFD8B0D8), // Malva claro
+            Color(0xFFF0C8A8), // Albaricoque
+            Color(0xFFD0A8C8), // Rosa lila
+            Color(0xFFE8B8A0)  // Salmón suave
+        )
+    }
+
+    // 6 pétalos con fases de animación desincronizadas para movimiento natural
+    val transition = rememberInfiniteTransition(label = "petals_motion")
+
+    // Deriva vertical — cada pétalo flota a su propio ritmo
+    val driftY0 by transition.animateFloat(
+        initialValue = 0f, targetValue = -1f,
+        animationSpec = infiniteRepeatable(tween(12000, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "petal_y0"
+    )
+    val driftY1 by transition.animateFloat(
+        initialValue = -0.15f, targetValue = -1f,
+        animationSpec = infiniteRepeatable(tween(14500, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "petal_y1"
+    )
+    val driftY2 by transition.animateFloat(
+        initialValue = -0.30f, targetValue = -1f,
+        animationSpec = infiniteRepeatable(tween(11200, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "petal_y2"
+    )
+    val driftY3 by transition.animateFloat(
+        initialValue = -0.45f, targetValue = -1f,
+        animationSpec = infiniteRepeatable(tween(13800, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "petal_y3"
+    )
+    val driftY4 by transition.animateFloat(
+        initialValue = -0.60f, targetValue = -1f,
+        animationSpec = infiniteRepeatable(tween(10600, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "petal_y4"
+    )
+    val driftY5 by transition.animateFloat(
+        initialValue = -0.75f, targetValue = -1f,
+        animationSpec = infiniteRepeatable(tween(15200, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "petal_y5"
+    )
+
+    // Oscilación horizontal suave (movimiento de vaivén)
+    val swayX0 by transition.animateFloat(
+        initialValue = -8f, targetValue = 8f,
+        animationSpec = infiniteRepeatable(tween(9400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "petal_sway_x0"
+    )
+    val swayX1 by transition.animateFloat(
+        initialValue = 6f, targetValue = -6f,
+        animationSpec = infiniteRepeatable(tween(11000, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "petal_sway_x1"
+    )
+    val swayX2 by transition.animateFloat(
+        initialValue = -5f, targetValue = 9f,
+        animationSpec = infiniteRepeatable(tween(8600, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "petal_sway_x2"
+    )
+
+    // Respiración de tamaño
+    val petalScale by transition.animateFloat(
+        initialValue = 0.88f, targetValue = 1.12f,
+        animationSpec = infiniteRepeatable(tween(7800, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "petal_scale"
+    )
+
+    // Posiciones base distribuidas en la pantalla — fijas, elegantes
+    val petalBasePositions = remember {
+        listOf(
+            Pair(0.15f, 0.75f),  // inferior izquierda
+            Pair(0.82f, 0.68f),  // inferior derecha
+            Pair(0.35f, 0.52f),  // centro izquierda
+            Pair(0.68f, 0.40f),  // centro derecha
+            Pair(0.22f, 0.28f),  // superior izquierda
+            Pair(0.75f, 0.18f)   // superior derecha
+        )
+    }
+
+    Canvas(modifier = modifier) {
+        val parallaxY = scrollOffsetProvider() * 0.15f
+        val driftYList = listOf(driftY0, driftY1, driftY2, driftY3, driftY4, driftY5)
+        val swayXList  = listOf(swayX0, swayX0, swayX1, swayX1, swayX2, swayX2)
+
+        petalBasePositions.forEachIndexed { i, (fx, fy) ->
+            val color  = petalColors[i % petalColors.size]
+            // Reutilizar el radio de tamaño variado por índice
+            val radius = size.width * (0.12f + (i % 3) * 0.04f) * petalScale
+
+            // Posición con deriva ascendente continua — cuando llega a -1 la transición la reinicia
+            val rawY = fy + driftYList[i] * 0.40f
+            val posY = (rawY.mod(1.2f) - 0.10f) * size.height - parallaxY
+            val posX = size.width * fx + swayXList[i].dp.toPx()
+
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colorStops = arrayOf(
+                        0.00f to color.copy(alpha = baseAlpha),
+                        0.55f to color.copy(alpha = baseAlpha * 0.38f),
+                        1.00f to Color.Transparent
+                    ),
+                    center = Offset(posX, posY),
+                    radius = radius
+                ),
+                radius = radius,
+                center = Offset(posX, posY)
+            )
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+//  NEBULA — Nubes de Polvo Cósmico con Color Profundo
+// ──────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun NebulaLayer(
+    isDark: Boolean,
+    screenType: AmbientScreen,
+    scrollOffsetProvider: () -> Float,
+    modifier: Modifier
+) {
+    val baseAlpha = when (screenType) {
+        AmbientScreen.HOME    -> if (isDark) 0.22f else 0.18f
+        AmbientScreen.CONTENT -> if (isDark) 0.14f else 0.09f
+        AmbientScreen.CHAT    -> return
+    }
+
+    // Colores nebulosa — profundos en oscuro, muy suaves en claro
+    val nebulaColors = if (isDark) {
+        listOf(
+            Color(0xFF1A3A8A), // Azul profundo
+            Color(0xFF601878), // Magenta oscuro
+            Color(0xFF0A5060), // Cian profundo
+            Color(0xFF3A1060)  // Violeta profundo
+        )
+    } else {
+        listOf(
+            Color(0xFFB8C8E8), // Azul lavanda muy suave
+            Color(0xFFD8B8D8), // Malva suave
+            Color(0xFFB0D0D8), // Cian suave
+            Color(0xFFC8B0D8)  // Violeta suave
+        )
+    }
+
+    val transition = rememberInfiniteTransition(label = "nebula_motion")
+
+    // Deriva muy lenta — la nebulosa se mueve casi imperceptiblemente
+    val driftA by transition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(18000, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "nebula_drift_a"
+    )
+    val driftB by transition.animateFloat(
+        initialValue = 0.5f, targetValue = 0f,
+        animationSpec = infiniteRepeatable(tween(14000, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "nebula_drift_b"
+    )
+    val driftC by transition.animateFloat(
+        initialValue = 0.25f, targetValue = 0.75f,
+        animationSpec = infiniteRepeatable(tween(22000, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "nebula_drift_c"
+    )
+
+    // Pulso de opacidad muy gradual
+    val nebulaPulse by transition.animateFloat(
+        initialValue = 0.85f, targetValue = 1.15f,
+        animationSpec = infiniteRepeatable(tween(9600, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "nebula_pulse"
+    )
+
+    Canvas(modifier = modifier) {
+        val parallaxY = scrollOffsetProvider() * 0.08f
+        val w = size.width
+        val h = size.height
+
+        // Nube A — grande, centro-izquierda
+        val centerAx = w * (0.20f + driftA * 0.12f)
+        val centerAy = h * (0.25f + driftA * 0.08f) - parallaxY
+        val radiusA  = w * 0.70f
+        drawCircle(
+            brush = Brush.radialGradient(
+                colorStops = arrayOf(
+                    0.00f to nebulaColors[0].copy(alpha = baseAlpha * nebulaPulse),
+                    0.55f to nebulaColors[0].copy(alpha = baseAlpha * nebulaPulse * 0.40f),
+                    1.00f to Color.Transparent
+                ),
+                center = Offset(centerAx, centerAy),
+                radius = radiusA
+            ),
+            radius = radiusA,
+            center = Offset(centerAx, centerAy)
+        )
+
+        // Nube B — magenta, esquina superior derecha
+        val centerBx = w * (0.88f - driftB * 0.10f)
+        val centerBy = h * (0.12f + driftB * 0.06f) - parallaxY
+        val radiusB  = w * 0.58f
+        drawCircle(
+            brush = Brush.radialGradient(
+                colorStops = arrayOf(
+                    0.00f to nebulaColors[1].copy(alpha = baseAlpha * 0.80f * nebulaPulse),
+                    0.60f to nebulaColors[1].copy(alpha = baseAlpha * 0.28f),
+                    1.00f to Color.Transparent
+                ),
+                center = Offset(centerBx, centerBy),
+                radius = radiusB
+            ),
+            radius = radiusB,
+            center = Offset(centerBx, centerBy)
+        )
+
+        // Nube C — cian, zona inferior
+        val centerCx = w * (0.55f + driftC * 0.10f - 0.05f)
+        val centerCy = h * (0.75f - driftC * 0.08f) - parallaxY
+        val radiusC  = w * 0.55f
+        drawCircle(
+            brush = Brush.radialGradient(
+                colorStops = arrayOf(
+                    0.00f to nebulaColors[2].copy(alpha = baseAlpha * 0.72f * nebulaPulse),
+                    0.55f to nebulaColors[2].copy(alpha = baseAlpha * 0.22f),
+                    1.00f to Color.Transparent
+                ),
+                center = Offset(centerCx, centerCy),
+                radius = radiusC
+            ),
+            radius = radiusC,
+            center = Offset(centerCx, centerCy)
+        )
+
+        // Nube D — violeta, esquina inferior izquierda (solo HOME)
+        if (screenType == AmbientScreen.HOME) {
+            val centerDx = w * (0.08f + driftA * 0.08f)
+            val centerDy = h * (0.80f - driftB * 0.05f) - parallaxY
+            val radiusD  = w * 0.48f
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colorStops = arrayOf(
+                        0.00f to nebulaColors[3].copy(alpha = baseAlpha * 0.65f),
+                        0.60f to nebulaColors[3].copy(alpha = baseAlpha * 0.18f),
+                        1.00f to Color.Transparent
+                    ),
+                    center = Offset(centerDx, centerDy),
+                    radius = radiusD
+                ),
+                radius = radiusD,
+                center = Offset(centerDx, centerDy)
+            )
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+//  BREATH — Pulso Radial Ultra-Minimal con Ciclo de ~4 s
+// ──────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun BreathLayer(
+    accentColor: Color,
+    isDark: Boolean,
+    screenType: AmbientScreen,
+    scrollOffsetProvider: () -> Float,
+    modifier: Modifier
+) {
+    val baseAlpha = when (screenType) {
+        AmbientScreen.HOME    -> if (isDark) 0.30f else 0.22f
+        AmbientScreen.CONTENT -> if (isDark) 0.14f else 0.10f
+        AmbientScreen.CHAT    -> return
+    }
+
+    // Transición de color suave cuando cambia la fase
+    val animatedColor by animateColorAsState(
+        targetValue   = accentColor,
+        animationSpec = tween(1200, easing = FastOutSlowInEasing),
+        label         = "breath_color"
+    )
+
+    val transition = rememberInfiniteTransition(label = "breath_motion")
+
+    // Ciclo de respiración principal — inhala 4 s, exhala 4 s
+    val breathScale by transition.animateFloat(
+        initialValue  = 0.62f,
+        targetValue   = 1.00f,
+        animationSpec = infiniteRepeatable(
+            animation  = tween(4000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "breath_scale"
+    )
+
+    // Opacidad sincronizada con la escala — más brillante al exhalar
+    val breathAlpha by transition.animateFloat(
+        initialValue  = 0.70f,
+        targetValue   = 1.00f,
+        animationSpec = infiniteRepeatable(
+            animation  = tween(4000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "breath_alpha"
+    )
+
+    // Halo exterior muy sutil — "aura de la respiración"
+    val haloScale by transition.animateFloat(
+        initialValue  = 0.80f,
+        targetValue   = 1.20f,
+        animationSpec = infiniteRepeatable(
+            animation  = tween(4000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "breath_halo"
+    )
+    val haloAlpha by transition.animateFloat(
+        initialValue  = 0.35f,
+        targetValue   = 0f,
+        animationSpec = infiniteRepeatable(
+            animation  = tween(4000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "breath_halo_alpha"
+    )
+
+    Canvas(modifier = modifier) {
+        val parallaxY = scrollOffsetProvider() * 0.10f
+        val center = Offset(
+            size.width * 0.50f,
+            size.height * 0.44f - parallaxY
+        )
+        val maxRadius   = size.width * 0.60f
+        val pulseRadius = maxRadius * breathScale
+        val haloRadius  = maxRadius * haloScale * 1.35f
+        val finalAlpha  = (baseAlpha * breathAlpha).coerceIn(0f, 1f)
+        val finalHalo   = (baseAlpha * haloAlpha * 0.5f).coerceIn(0f, 1f)
+
+        // Halo exterior difuso — desaparece al inhalar
+        drawCircle(
+            brush = Brush.radialGradient(
+                colorStops = arrayOf(
+                    0.00f to animatedColor.copy(alpha = finalHalo),
+                    0.60f to animatedColor.copy(alpha = finalHalo * 0.30f),
+                    1.00f to Color.Transparent
+                ),
+                center = center,
+                radius = haloRadius
+            ),
+            radius = haloRadius,
+            center = center
+        )
+
+        // Pulso central principal
+        drawCircle(
+            brush = Brush.radialGradient(
+                colorStops = arrayOf(
+                    0.00f to animatedColor.copy(alpha = finalAlpha),
+                    0.40f to animatedColor.copy(alpha = finalAlpha * 0.60f),
+                    0.75f to animatedColor.copy(alpha = finalAlpha * 0.18f),
+                    1.00f to Color.Transparent
+                ),
+                center = center,
+                radius = pulseRadius
+            ),
+            radius = pulseRadius,
+            center = center
+        )
     }
 }

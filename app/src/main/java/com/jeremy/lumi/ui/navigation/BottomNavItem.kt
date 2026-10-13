@@ -19,6 +19,7 @@ sealed class BottomNavItem(
     object Home     : BottomNavItem("home",     Icons.Default.Home,              R.string.nav_home)
     object Calendar : BottomNavItem("calendar", Icons.Default.CalendarMonth,     R.string.nav_calendar)
     object Insights : BottomNavItem("insights", Icons.Default.Insights,           R.string.nav_insights)
+    object Bonds    : BottomNavItem("bonds",    Icons.Default.Favorite,           R.string.nav_bonds)
     object Chat     : BottomNavItem("chat",     Icons.Default.ChatBubbleOutline,  R.string.nav_chat)
     object Settings : BottomNavItem("settings", Icons.Default.Settings,           R.string.nav_settings)
     // Forum sigue siendo accesible pero ya no ocupa espacio en la barra principal

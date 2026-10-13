@@ -302,7 +302,7 @@ fun LumiWheelDatePickerDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "Seleccionar Fecha",
+                    stringResource(R.string.reminder_select_date),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -325,9 +325,9 @@ fun LumiWheelDatePickerDialog(
                 
                 Spacer(Modifier.height(28.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismissRequest) { Text("Cancelar") }
+                    TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.btn_cancel)) }
                     Spacer(Modifier.width(8.dp))
-                    Button(onClick = { onConfirm(snappedDate) }) { Text("Aceptar") }
+                    Button(onClick = { onConfirm(snappedDate) }) { Text(stringResource(R.string.btn_accept)) }
                 }
             }
         }
@@ -353,7 +353,7 @@ fun LumiWheelTimePickerDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "Seleccionar Hora",
+                    stringResource(R.string.reminder_select_time),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -377,9 +377,9 @@ fun LumiWheelTimePickerDialog(
                 
                 Spacer(Modifier.height(28.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismissRequest) { Text("Cancelar") }
+                    TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.btn_cancel)) }
                     Spacer(Modifier.width(8.dp))
-                    Button(onClick = { onConfirm(snappedTime) }) { Text("Aceptar") }
+                    Button(onClick = { onConfirm(snappedTime) }) { Text(stringResource(R.string.btn_accept)) }
                 }
             }
         }

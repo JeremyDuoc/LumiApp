@@ -61,20 +61,74 @@ enum class PhaseColorPalette {
 
     fun toPhaseColors(isDark: Boolean, currentTheme: AppThemePalette = AppThemePalette.LUMI_SPARK): PhaseColors = when (this) {
         AUTO_HARMONY -> when (currentTheme) {
-            AppThemePalette.LUMI_OCEAN, AppThemePalette.LUMI_OCEAN_DARK ->
-                if (isDark) PhaseOceanoGradientDark else PhaseOceanoGradientLight
-            AppThemePalette.LUMI_FOREST, AppThemePalette.LUMI_FOREST_DARK ->
-                if (isDark) PhaseBosqueGradientDark else PhaseBosqueGradientLight
-            AppThemePalette.LUMI_SUNSET, AppThemePalette.LUMI_SUNSET_DARK ->
-                if (isDark) PhaseOcasoGradientDark else PhaseOcasoGradientLight
-            AppThemePalette.LUMI_DUNE, AppThemePalette.LUMI_DUNE_DARK ->
-                if (isDark) PhaseDunaGradientDark else PhaseDunaGradientLight
+
+            // ── Familia Violeta / Rosa — MONOCROMO ─────────────────────────────
+            // Lumi Spark (el morado/rosa de marca armoniza con paleta violeta)
+            AppThemePalette.LUMI_SPARK      -> PhaseMonocromoLight
+            AppThemePalette.LUMI_SPARK_DARK -> PhaseMonocromoDark
+            // Lavanda y sus variantes
             AppThemePalette.LUMI_LAVENDER, AppThemePalette.LUMI_LAVENDER_DARK ->
                 if (isDark) PhaseMonocromoDark else PhaseMonocromoLight
-            AppThemePalette.TIERRA, AppThemePalette.AMBAR ->
+            AppThemePalette.LAVANDA -> PhaseMonocromoLight
+            // Oscuros violeta/rosa
+            AppThemePalette.MEDIANOCHE -> PhaseMonocromoDark
+            AppThemePalette.NOCHE_ROSA -> PhaseMonocromoDark
+            AppThemePalette.VINO       -> PhaseMonocromoDark
+            // Pastel rosa
+            AppThemePalette.PETALO -> PhasePastelLight
+            AppThemePalette.SAL    -> PhasePastelLight
+            // Ciclo menstrual (rosa fuerte → colores de fase más cálidos)
+            AppThemePalette.CYCLE_MENSTRUAL      -> PhaseDefaultLight
+            AppThemePalette.CYCLE_MENSTRUAL_DARK -> PhaseDefaultDark
+
+            // ── Familia Océano / Azul / Frío — OCEANO ─────────────────────────
+            AppThemePalette.LUMI_OCEAN, AppThemePalette.LUMI_OCEAN_DARK ->
+                if (isDark) PhaseOceanoGradientDark else PhaseOceanoGradientLight
+            AppThemePalette.LUMI_SLATE, AppThemePalette.LUMI_SLATE_DARK ->
+                if (isDark) PhaseOceanoDark else PhaseOceanoLight
+            AppThemePalette.COSMOS -> PhaseOceanoGradientDark
+            AppThemePalette.FORJA  -> PhaseOceanoDark
+            AppThemePalette.NIEBLA -> PhaseOceanoLight
+            // Ciclo ovulación (azul/teal → familia océano)
+            AppThemePalette.CYCLE_OVULATION      -> PhaseOceanoGradientLight
+            AppThemePalette.CYCLE_OVULATION_DARK -> PhaseOceanoGradientDark
+
+            // ── Familia Verde / Naturaleza — BOSQUE ───────────────────────────
+            AppThemePalette.LUMI_FOREST, AppThemePalette.LUMI_FOREST_DARK ->
+                if (isDark) PhaseBosqueGradientDark else PhaseBosqueGradientLight
+            AppThemePalette.LUMI_SAGE, AppThemePalette.LUMI_SAGE_DARK ->
+                if (isDark) PhaseBosqueGradientDark else PhaseBosqueGradientLight
+            AppThemePalette.CACTUS    -> PhaseBosqueGradientLight
+            AppThemePalette.OBSIDIANA -> PhaseBosqueGradientDark  // Teal profundo
+
+            // ── Familia Cálida / Atardecer — OCASO ────────────────────────────
+            AppThemePalette.LUMI_SUNSET, AppThemePalette.LUMI_SUNSET_DARK ->
+                if (isDark) PhaseOcasoGradientDark else PhaseOcasoGradientLight
+            AppThemePalette.HORTENSIA -> PhaseOcasoGradientLight  // Rosa vibrante / rojo
+            AppThemePalette.ECLIPSE   -> PhaseOcasoGradientDark   // Burdeos oscuro
+            AppThemePalette.CARBONO   -> PhaseOcasoGradientDark   // Acento rojo sobre negro
+
+            // ── Familia Tierra / Cálida — TIERRA ──────────────────────────────
+            AppThemePalette.LUMI_DUNE, AppThemePalette.LUMI_DUNE_DARK ->
+                if (isDark) PhaseDunaGradientDark else PhaseDunaGradientLight
+            AppThemePalette.LUMI_EARTH, AppThemePalette.LUMI_EARTH_DARK ->
                 if (isDark) PhaseTierraDark else PhaseTierraLight
-            else ->
-                if (isDark) PhaseDefaultDark else PhaseDefaultLight
+            AppThemePalette.TIERRA -> PhaseTierraLight
+            AppThemePalette.LUXE   -> PhaseTierraLight  // Burdeos + beige cálido
+            AppThemePalette.LIENZO -> PhaseTierraLight  // Beige artístico
+            AppThemePalette.ARENA  -> PhaseTierraLight  // Arena neutra cálida
+            AppThemePalette.AMBAR  -> PhaseTierraDark   // Ámbar oscuro
+            AppThemePalette.HUMO   -> PhaseTierraLight  // Gris cálido
+
+            // ── Familia Neutra / Minimalista — MINIMALISTA ────────────────────
+            AppThemePalette.PAPEL   -> PhaseMinimalistaLight
+            AppThemePalette.PIZARRA -> PhaseMinimalistaLight
+            AppThemePalette.PIEDRA  -> PhaseMinimalistaLight
+            AppThemePalette.CENIZA  -> PhaseMinimalistaLight
+            AppThemePalette.NOIR    -> PhaseMinimalistaDark
+
+            // Fallback: cualquier tema sin asignación explícita
+            else -> if (isDark) PhaseDefaultDark else PhaseDefaultLight
         }
         DEFAULT     -> if (isDark) PhaseDefaultDark     else PhaseDefaultLight
         PASTEL      -> if (isDark) PhasePastelDark      else PhasePastelLight

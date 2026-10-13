@@ -99,7 +99,8 @@ enum class CareAction { HUG, TEA, COFFEE, CHOCOLATE, HEATING_PAD, PHARMACY }
 
 data class CareActionStatus(
     val action: CareAction = CareAction.HUG,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val message: String? = null
 )
 
 /**

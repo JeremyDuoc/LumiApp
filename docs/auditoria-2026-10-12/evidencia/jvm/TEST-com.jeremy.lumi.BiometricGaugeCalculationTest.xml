@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jeremy.lumi.BiometricGaugeCalculationTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-12T17:59:42.386Z" hostname="JEREMY" time="0.012">
+  <properties/>
+  <testcase name="testLutealPhase_optimalClassification" classname="com.jeremy.lumi.BiometricGaugeCalculationTest" time="0.007"/>
+  <testcase name="testRegularityScore_variableCycle" classname="com.jeremy.lumi.BiometricGaugeCalculationTest" time="0.004"/>
+  <testcase name="testRegularityScore_highlyRegularCycle" classname="com.jeremy.lumi.BiometricGaugeCalculationTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

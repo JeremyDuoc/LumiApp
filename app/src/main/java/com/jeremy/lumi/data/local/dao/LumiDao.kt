@@ -24,7 +24,7 @@ interface LumiDao {
     @Query("SELECT * FROM cycles ORDER BY startDate DESC")
     fun getAllCycles(): Flow<List<CycleEntity>>
 
-    @Query("SELECT * FROM cycles WHERE endDate IS NULL LIMIT 1")
+    @Query("SELECT * FROM cycles WHERE endDate IS NULL ORDER BY startDate DESC LIMIT 1")
     suspend fun getCurrentActiveCycle(): CycleEntity?
 
     @androidx.room.Update
@@ -41,6 +41,36 @@ interface LumiDao {
 
     @Query("UPDATE daily_logs SET cycleId = :targetCycleId WHERE cycleId = :sourceCycleId")
     suspend fun reassignDailyLogs(sourceCycleId: Int, targetCycleId: Int)
+
+    @Query("UPDATE daily_logs SET cycleId = :targetCycleId WHERE date >= :startDate AND (cycleId = :sourceCycleId OR cycleId = 0)")
+    suspend fun reassignLogsFromDate(sourceCycleId: Int, targetCycleId: Int, startDate: Long)
+
+    /** Close and replace the active cycle atomically; repeated taps are idempotent. */
+    @Transaction
+    suspend fun startCycleReplacingActive(cycle: CycleEntity) {
+        val current = getCurrentActiveCycle()
+        if (current != null) {
+            if (cycle.startDate <= current.startDate) return
+            val start = java.time.Instant.ofEpochMilli(current.startDate).atZone(java.time.ZoneOffset.UTC).toLocalDate()
+            val next = java.time.Instant.ofEpochMilli(cycle.startDate).atZone(java.time.ZoneOffset.UTC).toLocalDate()
+            updateCycle(current.copy(
+                endDate = next.minusDays(1).atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli(),
+                cycleLength = java.time.temporal.ChronoUnit.DAYS.between(start, next).toInt()
+            ))
+        }
+        val id = insertCycle(cycle).toInt()
+        reassignLogsFromDate(current?.id ?: 0, id, cycle.startDate)
+    }
+
+    @Transaction
+    suspend fun undoLastPeriodStart(): Boolean {
+        val active = getCurrentActiveCycle() ?: return false
+        val previous = getClosedCycles().firstOrNull() ?: return false
+        reassignDailyLogs(active.id, previous.id)
+        deleteCycleById(active.id)
+        updateCycle(previous.copy(endDate = null))
+        return true
+    }
 
     // --- REGISTROS DIARIOS Y SÍNTOMAS ---
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -60,8 +90,9 @@ interface LumiDao {
      */
     @Transaction
     suspend fun upsertDailyLogWithSymptoms(dailyLog: DailyLogEntity, symptoms: List<SymptomEntity>) {
-        val dailyLogId = insertDailyLog(dailyLog)
-        val resolvedLogId = if (dailyLog.id != 0) dailyLog.id else dailyLogId.toInt()
+        // Resolve by date inside the transaction, not from a possibly stale UI cache.
+        val existing = getDailyLogWithSymptoms(dailyLog.date)
+        val resolvedLogId = insertDailyLog(dailyLog.copy(id = existing?.dailyLog?.id ?: 0)).toInt()
         deleteSymptomsForLog(resolvedLogId)
         if (symptoms.isNotEmpty()) {
             insertSymptoms(symptoms.map { it.copy(dailyLogId = resolvedLogId) })
@@ -70,7 +101,7 @@ interface LumiDao {
 
     // Trae el registro de un día específico con todos sus síntomas
     @Transaction
-    @Query("SELECT * FROM daily_logs WHERE date = :targetDate")
+    @Query("SELECT * FROM daily_logs WHERE date = :targetDate ORDER BY id DESC LIMIT 1")
     suspend fun getDailyLogWithSymptoms(targetDate: Long): DailyLogWithSymptoms?
 
     // Historial completo, ordenado por fecha. El ViewModel decide asc/desc en memoria,

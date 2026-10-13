@@ -90,6 +90,7 @@
 
     <string name="nav_home">Inicio</string>
     <string name="nav_calendar">Calendario</string>
+    <string name="nav_bonds">Bonds</string>
     <string name="nav_forum">Comunidad</string>
     <string name="forum_report_title">Reportar publicación</string>
     <string name="forum_report_desc">¿Estás segura de que quieres reportar esta publicación por contenido inapropiado o falta de respeto?</string>
@@ -297,8 +298,8 @@
     </string-array>
 
     <string name="settings_personalization">Personalización visual</string>
-    <string name="settings_partner">Sincronización con pareja</string>
-    <string name="settings_partner_desc">Genera un código para que tu pareja pueda ver tu fase actual, de forma segura y anónima.</string>
+    <string name="settings_partner">Bonds — Vínculos de confianza</string>
+    <string name="settings_partner_desc">Conecta con tus personas de confianza para compartir bienestar y pequeños gestos.</string>
     <string name="btn_generate_code">Generar código (Próximamente)</string>
     <string name="settings_privacy">Privacidad garantizada</string>
     <string name="settings_privacy_desc">Tus datos menstruales se guardan exclusivamente en la memoria interna de tu teléfono. Lumi no recopila, lee ni vende tu información.</string>
@@ -631,8 +632,8 @@
         <item>Tus días más estresantes están robando un %1$d%% de tu vitalidad. Recuerda priorizar tu bienestar mental antes que nada. Respira profundo, tú puedes con esto. 💜</item>
     </string-array>
 
-    <string name="home_link_partner">Vincular a tu pareja</string>
-    <string name="home_link_desc">Comparte tu ciclo de forma segura y en tiempo real.</string>
+    <string name="home_link_partner">Bonds — Conectar con tu círculo</string>
+    <string name="home_link_desc">Comparte tu bienestar y pequeños gestos con personas de confianza.</string>
     <string name="home_your_links">Tus vínculos</string>
     <string name="home_create_link">Crear un vínculo</string>
     <string name="home_link_to_start">Vincúlate para comenzar</string>
@@ -889,6 +890,7 @@
     <string name="empty_insights_desc">Registra tu ciclo y tus días durante un par de semanas: aquí aparecerán tus patrones de sueño, dolor, energía y mucho más.</string>
     <!-- HomeScreen Hardcoded Strings -->
     <string name="home_greeting_hello">Hola</string>
+    <string name="home_greeting_named">Hola, %1$s</string>
     <string name="home_greeting_day">Día %1$d</string>
     
     <string name="home_phase_menstrual">Fase Menstrual</string>
@@ -915,6 +917,8 @@
     <string name="home_ring_should_have_arrived">Tu periodo debería haber llegado</string>
     <string name="home_ring_next_period">para el próximo periodo</string>
     
+    <string name="home_today_log_title">Registro de hoy</string>
+    <string name="home_today_log_hint">Toca para registrar</string>
     <string name="home_metric_water">Agua</string>
     <string name="home_metric_sleep">Sueño</string>
     <string name="home_metric_water_empty">-- L</string>
@@ -926,7 +930,7 @@
     <string name="home_insight_title">Lumi Insight</string>
     <string name="home_insight_discreet">Modo oculto activado. Tus datos están protegidos.</string>
     
-    <string name="home_insight_menstrual_1">Tu cuerpo está trabajando duro. Es normal sentir poca energía y más necesidad de descanso hoy.</string>
+    <string name="home_insight_menstrual_1">Hoy es un buen día para ir con calma y descansar lo que necesites.</string>
     <string name="home_insight_menstrual_2">El flujo empezará a disminuir pronto. Recuerda mantenerte hidratada y ser amable contigo misma.</string>
     <string name="home_insight_follicular">Tus niveles de estrógeno están subiendo. Notarás más energía, mejor humor y mayor creatividad. ¡Aprovecha el impulso!</string>
     <string name="home_insight_ovulation">Estás en tu pico de energía y magnetismo. Excelente momento para conectar con otros y abordar retos importantes.</string>
@@ -1083,4 +1087,241 @@
     <string name="prediction_confidence_low">Poca certeza aún (registro más días para afinar)</string>
     <string name="prediction_std_dev_note">Tu ciclo varía ±%1$d días, lo que define este intervalo</string>
 
+    <!-- ── Arcos Biométricos Oura & Tarjeta Aura Calm ─────────────────────── -->
+    <string name="insights_regularity_title">Regularidad</string>
+    <string name="insights_regularity_high">Alta</string>
+    <string name="insights_regularity_moderate">Moderada</string>
+    <string name="insights_regularity_variable">Variable</string>
+    <string name="insights_regularity_range">Ciclo de %1$d ± %2$d d</string>
+    <string name="insights_gauge_days_suffix">días</string>
+    <string name="insights_luteal_title">Fase Lútea</string>
+    <string name="insights_luteal_optimal">Óptima</string>
+    <string name="insights_luteal_sufficient">Normal</string>
+    <string name="insights_luteal_short">Corta</string>
+    <string name="insights_cycle_stability">Estabilidad</string>
+    <string name="insights_cycle_average">Promedio</string>
+    <string name="insights_cycle_window_desc">%1$d d (ventana 28d)</string>
+    <string name="home_insight_badge">Insight del Día</string>
+
+    <!-- ── Factores de Predicción "Basado en:" ───────────────────────────── -->
+    <string name="home_factors_title">Basado en tus datos</string>
+    <string name="home_factors_subtitle">FACTORES DE PREDICCIÓN</string>
+    <string name="home_factors_regularity">Regularidad</string>
+    <string name="home_factors_history">Días registrados</string>
+    <string name="home_factors_symptoms">Síntomas</string>
+    <string name="home_factors_confidence_high">Certeza alta</string>
+    <string name="home_factors_confidence_medium">Certeza moderada</string>
+    <string name="home_factors_confidence_low">En calibración</string>
+    <string name="home_factors_margin_note">Margen estimado: %1$s</string>
+    <string name="home_factors_cycles_count">%1$d ciclos cerrados</string>
+    <string name="home_factors_trigger_title">¿Cómo calculamos tu próximo periodo?</string>
+    <string name="home_factors_trigger_subtitle">Toca para ver el análisis de certeza</string>
+    <string name="home_factors_calculating_title">Calculando predicción…</string>
+    <string name="home_factors_calculating_subtitle">Analizando historial biológico y síntomas…</string>
+    <string name="home_factors_collapse">Ocultar análisis</string>
+    <string name="home_factors_model_certainty">Certeza del modelo:</string>
+
+    <!-- ── Idioma de la aplicación ──────────────────────────────────────── -->
+    <string name="settings_language_title">Idioma de la app</string>
+    <string name="settings_language_desc">Elige entre español, inglés o el idioma del sistema</string>
+    <string name="settings_language_system">Predeterminado del sistema</string>
+    <string name="settings_language_es">Español</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_danger_zone">Zona de peligro</string>
+    <string name="settings_dev_tools">Herramientas de Desarrollo</string>
+    <string name="settings_dev_generate_mock">Generar Datos de Prueba (Dev)</string>
+    <string name="settings_section_advanced">Avanzado</string>
+    <string name="settings_add_widget">Añadir Widget</string>
+    <string name="settings_add_widget_desc">Coloca a Lumi en tu pantalla de inicio</string>
+    <string name="settings_chat_reminders_section">Chat y Recordatorios</string>
+    <string name="settings_chat_reminders_title">Recordatorios en Chat</string>
+    <string name="settings_chat_reminders_desc">Guardar un historial en la pestaña de chat</string>
+    <string name="settings_data_backup_section">Datos y Respaldo</string>
+    <string name="settings_backup_zip_create">Crear Copia de Seguridad</string>
+    <string name="settings_backup_zip_create_desc">Exportar tus datos a un archivo ZIP</string>
+    <string name="settings_backup_zip_restore">Restaurar Copia</string>
+    <string name="settings_backup_zip_restore_desc">Importar datos desde un ZIP</string>
+    <string name="settings_section_appearance">Apariencia</string>
+    <string name="settings_theme_general">Tema General</string>
+    <string name="settings_cycle_colors_custom">Personalizado</string>
+    <string name="settings_cycle_colors_original">Original</string>
+    <string name="settings_health_connect_title">Sincronizar con Health Connect</string>
+    <string name="settings_health_connect_desc">Importa temperatura, sueño, pasos y ritmo cardíaco</string>
+    <string name="settings_health_connect_denied">Permisos denegados</string>
+    <string name="settings_health_connect_unavailable">Health Connect no disponible en este dispositivo</string>
+    <string name="settings_widget_unsupported">Tu dispositivo no soporta esto. Añádelo manualmente desde tu pantalla de inicio.</string>
+    <string name="settings_dev_generate_mock_desc">Inyecta 6 meses de historial clínico irregular (ciclos variables y síntomas densos) para probar la IA, predicciones y alertas médicas.</string>
+
+
+    <!-- Generic buttons -->
+    <string name="btn_save">Guardar</string>
+    <string name="btn_delete">Eliminar</string>
+    <string name="btn_accept">Aceptar</string>
+    <string name="cd_info">Información</string>
+
+    <!-- Splash Screen -->
+    <string name="splash_tagline">Tu ciclo, tu bienestar</string>
+
+    <!-- Cycle History Sheet -->
+    <string name="cycle_history_title">Historial de Ciclos</string>
+    <string name="cycle_history_count_one">%1$d ciclo</string>
+    <string name="cycle_history_count_other">%1$d ciclos</string>
+    <string name="cycle_history_empty">No hay ciclos registrados aún</string>
+    <string name="cycle_delete_title">¿Eliminar este ciclo?</string>
+    <string name="cycle_delete_desc">Esta acción eliminará el registro del ciclo del historial. Sus notas y síntomas diarios se conservarán.</string>
+    <string name="cycle_edit_title">Editar Ciclo</string>
+    <string name="cycle_edit_cycle_length">Duración del ciclo (días)</string>
+    <string name="cycle_edit_period_length">Duración del sangrado (días)</string>
+    <string name="cycle_history_active_today">Activo hoy</string>
+    <string name="cycle_history_in_progress">En curso (%1$d días)</string>
+    <string name="cycle_history_days">%1$d días</string>
+    <string name="cycle_history_bleeding_days">Sangrado: %1$dd</string>
+    <string name="cycle_edit_cd">Editar ciclo</string>
+    <string name="cycle_delete_cd">Eliminar ciclo</string>
+
+    <!-- Daily Log Sheet -->
+    <string name="log_mucus_info_desc">Seco: Generalmente después del periodo.\nPegajoso: Grueso y opaco.\nCremoso: Parecido a loción, indica fertilidad acercándose.\nClara de huevo: Transparente y elástico. Es el pico de máxima fertilidad.\nAcuoso: Muy líquido y claro.</string>
+    <string name="log_section_bleeding_pain">Sangrado y Dolor</string>
+    <string name="log_spotting">Manchado fuera del periodo (Spotting)</string>
+    <string name="log_section_mood_symptoms">Estado y Síntomas</string>
+    <string name="log_section_wellbeing_intimacy">Bienestar e Intimidad</string>
+    <string name="log_sleep_hours">Horas de sueño</string>
+    <string name="log_water_liters">Agua (Litros)</string>
+    <string name="log_energy_level">Nivel de energía</string>
+    <string name="log_stress_level">Nivel de estrés</string>
+    <string name="log_bbt_label">Temperatura Basal (°C)</string>
+    <string name="log_had_intercourse_question">¿Hubo relaciones sexuales?</string>
+
+    <!-- Onboarding Screen -->
+    <string name="onboarding_skip">Saltar</string>
+    <string name="onboarding_track_my_cycle">Seguimiento de mi ciclo</string>
+    <string name="onboarding_track_my_cycle_desc">Aprende más sobre tu cuerpo.</string>
+    <string name="onboarding_partner_mode">Acompañar a alguien</string>
+    <string name="onboarding_partner_mode_desc">Ingresar código de vínculo.</string>
+    <string name="onboarding_privacy_consent">He leído y acepto la Política de Privacidad, y consiento de forma explícita y voluntaria que LumiApp procese mis datos sensibles de salud para brindarme el servicio.</string>
+    <string name="onboarding_name_private_note">Este dato nunca sale de tu dispositivo.</string>
+    <string name="onboarding_local_storage_note">Todo guardado solo en tu teléfono.</string>
+    <string name="onboarding_regular_yes">Sí, son regulares</string>
+    <string name="onboarding_regular_no">No, son irregulares</string>
+    <string name="onboarding_regular_unsure">No estoy segura</string>
+    <string name="onboarding_last_period_unknown_desc">No te preocupes. Lumi esperará a que registres tu próximo periodo para comenzar las predicciones.</string>
+    <string name="onboarding_enter_date">Ingresar una fecha</string>
+    <string name="onboarding_dont_remember">No lo recuerdo</string>
+    <string name="onboarding_cycle_length_title">¿Cuánto dura tu ciclo?</string>
+    <string name="onboarding_cycle_irregular_subtitle">Ya que eres irregular, usaremos un promedio inicial para aprender.</string>
+    <string name="onboarding_cycle_regular_subtitle">Desde el primer día de tu periodo hasta el día antes de la siguiente.</string>
+    <string name="onboarding_cycle_short">Ciclo corto</string>
+    <string name="onboarding_cycle_long">Ciclo largo</string>
+    <string name="onboarding_cycle_typical">Ciclo típico ✓</string>
+    <string name="onboarding_cycle_default_button">No lo sé — usar 28 días</string>
+    <string name="onboarding_final_details_title">Últimos detalles</string>
+    <string name="onboarding_final_details_subtitle">Casi lista. Solo dos cosas más.</string>
+    <string name="onboarding_period_length_label">Duración de tu periodo</string>
+    <string name="onboarding_all_ready_named">¡Todo listo, %1$s!</string>
+    <string name="onboarding_all_ready">¡Todo listo!</string>
+    <string name="onboarding_complete_subtitle">Lumi ya conoce tu ciclo.\nTe acompañará cada día. 🌸</string>
+    <string name="onboarding_start_button">Empezar con Lumi 🌙</string>
+    <string name="onboarding_physical_title">Tu perfil físico</string>
+    <string name="onboarding_physical_subtitle">Completamente opcional. Mejora las predicciones de la IA localmente — nunca se comparte.</string>
+    <string name="onboarding_physical_disclaimer">Estos datos nunca salen de tu teléfono. Los usa solo el modelo de IA local para personalizar tus predicciones.</string>
+    <string name="onboarding_field_age">Edad</string>
+    <string name="onboarding_unit_years">años</string>
+    <string name="onboarding_hint_age">Ej: 24</string>
+    <string name="onboarding_field_height">Talla</string>
+    <string name="onboarding_unit_cm">cm</string>
+    <string name="onboarding_hint_height">Ej: 165</string>
+    <string name="onboarding_field_weight">Peso</string>
+    <string name="onboarding_unit_kg">kg</string>
+    <string name="onboarding_hint_weight">Ej: 58.5</string>
+    <string name="onboarding_physical_complete_later">Puedes completar esto más tarde desde Configuración.</string>
+    <string name="onboarding_goals_title">¿Qué quieres lograr?</string>
+    <string name="onboarding_goals_subtitle">Elige todo lo que resuene contigo. Lumi personalizará sus consejos para ti.</string>
+    <string name="onboarding_goal_know_body">Conocer mi cuerpo</string>
+    <string name="onboarding_goal_track_emotions">Seguir mis emociones</string>
+    <string name="onboarding_goal_plan_pregnancy">Planificar embarazo</string>
+    <string name="onboarding_goal_avoid_surprises">Evitar imprevistos</string>
+    <string name="onboarding_goal_reduce_stress">Reducir el estrés</string>
+    <string name="onboarding_goal_partner_mode">Modo pareja</string>
+    <string name="onboarding_goals_skip_note">Puedes saltarte este paso — no es obligatorio.</string>
+    <string name="onboarding_goals_count_one">%1$d objetivo seleccionado.</string>
+    <string name="onboarding_goals_count_other">%1$d objetivos seleccionados.</string>
+    <string name="onboarding_disclaimer_title">Tu salud es lo primero</string>
+    <string name="onboarding_disclaimer_not_doctor">⚕️ LumiApp NO es un médico</string>
+    <string name="onboarding_disclaimer_bullets">• Las predicciones e insights mostrados en la app son estimaciones estadísticas.\n• LumiApp NO debe utilizarse como método anticonceptivo.\n• LumiApp NO diagnostica condiciones médicas como el Síndrome de Ovario Poliquístico (SOP) ni la endometriosis.\n• Si experimentas dolores extremos, sangrados anormales o cualquier preocupación sobre tu salud, consulta inmediatamente a un profesional médico.</string>
+    <string name="onboarding_disclaimer_checkbox">He leído el aviso médico y entiendo las limitaciones de LumiApp.</string>
+
+    <!-- Insights & Graficas -->
+    <string name="insights_personal_luteal_phase">Fase lútea personal</string>
+    <string name="insights_recent_cycles_header">Últimos %1$d ciclos</string>
+    <string name="insights_cycle_normal">Normal</string>
+    <string name="insights_cycle_short">Corto</string>
+    <string name="insights_cycle_long">Largo</string>
+    <string name="insights_symptom_heatmap">Heatmap de Síntomas</string>
+    <string name="insights_avg_distribution">Distribución Promedio</string>
+    <string name="insights_days_unit">días</string>
+    <string name="insights_phase_abbr_menstrual">Mens.</string>
+    <string name="insights_phase_abbr_follicular">Folíc.</string>
+    <string name="insights_phase_abbr_ovulation">Ovul.</string>
+    <string name="insights_phase_abbr_luteal">Lútea</string>
+    <string name="graficas_cycle_detail_header">Ciclo %1$d • %2$s</string>
+    <string name="graficas_bbt_subtitle">°C por día del ciclo</string>
+    <string name="graficas_label_pain">Dolor</string>
+    <string name="graficas_label_stress">Estrés</string>
+
+    <!-- Home & Reminders -->
+    <string name="home_snackbar_period_logged">Período registrado correctamente</string>
+    <string name="home_snackbar_undo">Deshacer</string>
+    <string name="home_snackbar_cycle_restored">Ciclo anterior restaurado</string>
+    <string name="home_cd_link">Vincular</string>
+    <string name="home_cd_connections">Vínculos</string>
+    <string name="home_cd_sync_error">Error de sincronización</string>
+    <string name="reminder_select_date">Seleccionar Fecha</string>
+    <string name="reminder_select_time">Seleccionar Hora</string>
+
+    <!-- Settings & Background Ambient -->
+    <string name="settings_ambient_title">Ambiente de fondo</string>
+    <string name="ambient_flat_label">Plano</string>
+    <string name="ambient_aura_label">Aura</string>
+    <string name="ambient_celestial_label">Celeste</string>
+    <string name="ambient_organic_label">Orgánico</string>
+    <string name="ambient_flat_desc">Sin decoración de fondo</string>
+    <string name="ambient_aura_desc">Halo de luz con tu color de fase</string>
+    <string name="ambient_celestial_desc">Estrellas y luna de hoy</string>
+    <string name="ambient_organic_desc">Formas orgánicas suaves</string>
+    <string name="ambient_aurora_label">Aurora</string>
+    <string name="ambient_aurora_desc">Ondas de aurora boreal</string>
+    <string name="ambient_petals_label">Pétalos</string>
+    <string name="ambient_petals_desc">Pétalos flotando suavemente</string>
+    <string name="ambient_nebula_label">Nebulosa</string>
+    <string name="ambient_nebula_desc">Niebla cósmica profunda</string>
+    <string name="ambient_breath_label">Aliento</string>
+    <string name="ambient_breath_desc">Un pulso suave, ultra-minimal</string>
+
+    <!-- Onboarding Extra Strings -->
+    <string name="onboarding_continue">Continuar</string>
+    <string name="onboarding_start_cycle_btn">Comenzar mi ciclo ✨</string>
+    <string name="onboarding_primary_goal_title">¿Para qué usarás Lumi?</string>
+    <string name="onboarding_use_contraceptives_question">¿Usas anticonceptivos hormonales?</string>
+    <string name="onboarding_contraceptives_subtitle">Pastillas, parche, anillo o inyección de hormonas</string>
+    <string name="onboarding_contraceptive_yes">Sí, uso anticonceptivos</string>
+    <string name="onboarding_contraceptive_no">No uso anticonceptivos</string>
+    <string name="onboarding_goal_cramps">Manejar mis cólicos</string>
+    <string name="onboarding_goal_sleep">Mejorar mi sueño</string>
+    <string name="onboarding_goal_mood">Entender mis cambios de humor</string>
+    <string name="onboarding_goal_fertility">Seguimiento de fertilidad</string>
+    <!-- Home Screen Extra Strings -->
+    <string name="home_confirm_period_when">¿Cuándo comenzó tu sangrado?</string>
+    <string name="home_offset_today">Hoy</string>
+    <string name="home_offset_yesterday">Ayer</string>
+    <string name="home_offset_2d">Hace 2d</string>
+    <string name="home_offset_3d">Hace 3d</string>
+    <string name="home_delay_late_one">Tu periodo lleva %1$d día de retraso. Es normal que ocurra.</string>
+    <string name="home_delay_late_other">Tu periodo lleva %1$d días de retraso. Es normal que ocurra.</string>
+    <string name="home_delay_very_late">%1$d días de retraso. El estrés, cambios de peso o ejercicio intenso pueden causarlo.</string>
+    <string name="home_delay_extremely_late">%1$d días de retraso. Si descartaste un embarazo, consulta a tu ginecóloga.</string>
+    <!-- Settings Backup Export/Import -->
+    <string name="settings_backup_export_success">Copia de seguridad guardada con éxito.</string>
+    <string name="settings_backup_export_error">Error al guardar.</string>
+    <string name="settings_backup_import_success">Datos restaurados. Por favor, reinicia la app.</string>
+    <string name="settings_backup_import_error">Error al restaurar.</string>
 </resources>

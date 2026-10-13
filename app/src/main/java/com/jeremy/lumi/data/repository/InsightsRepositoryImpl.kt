@@ -2,6 +2,7 @@ package com.jeremy.lumi.data.repository
 
 import com.jeremy.lumi.data.local.dao.LumiDao
 import com.jeremy.lumi.data.local.entity.CycleEntity
+import com.jeremy.lumi.data.local.entity.closedLengthDays
 import com.jeremy.lumi.data.local.entity.DailyLogWithSymptoms
 import com.jeremy.lumi.domain.model.*
 import com.jeremy.lumi.domain.repository.InsightsRepository
@@ -66,11 +67,7 @@ class InsightsRepositoryImpl @Inject constructor(
         if (closedCycles.isEmpty()) return null
 
         val durations = closedCycles.mapNotNull { cycle ->
-            if (cycle.endDate == null) null
-            else ChronoUnit.DAYS.between(
-                cycle.startDate.toLocalDate(),
-                cycle.endDate.toLocalDate()
-            ).toInt().takeIf { it in 15..90 }
+            cycle.closedLengthDays()?.takeIf { it in 15..90 }
         }
         if (durations.isEmpty()) return null
 
@@ -205,7 +202,7 @@ class InsightsRepositoryImpl @Inject constructor(
             if (cycle.endDate == null) return@mapNotNull null
             val start    = cycle.startDate.toLocalDate()
             val end      = cycle.endDate.toLocalDate()
-            val duration = ChronoUnit.DAYS.between(start, end).toInt().takeIf { it in 15..90 }
+            val duration = cycle.closedLengthDays()?.takeIf { it in 15..90 }
                 ?: return@mapNotNull null
 
             // Días con registro de flujo durante este ciclo

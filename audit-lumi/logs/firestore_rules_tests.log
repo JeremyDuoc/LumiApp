@@ -1,0 +1,48 @@
+﻿[36m[1mi  emulators:[22m[39m Starting emulators: firestore
+[36m[1mi  firestore:[22m[39m Firestore Emulator logging to [1mfirestore-debug.log[22m
+[32m[1m+  firestore:[22m[39m Firestore Emulator UI websocket is running on 9150.
+[36m[1mi [22m[39m Running script: [1mnode --test tools/firestore-tests/rules.test.cjs[22m
+Ô£ö owner can create a pending invitation (1915.1031ms)
+[2026-10-13T01:50:36.201Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x8969ef1f error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L41, evaluation error at L53:24 for 'update' @ L53, false for 'create' @ L41
+Ô£ö cannot create an active link impersonating a partner (121.3879ms)
+[2026-10-13T01:50:36.289Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x8969ef21 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L53:24 for 'update' @ L53, false for 'update' @ L53
+Ô£ö joining cannot replace the owner (86.0846ms)
+[2026-10-13T01:50:36.367Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x8969ef23 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L53:24 for 'update' @ L53, false for 'update' @ L53
+Ô£ö owner cannot join their own link (77.785ms)
+[2026-10-13T01:50:36.584Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x8969ef29 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L53:24 for 'update' @ L53, false for 'update' @ L53
+Ô£ö join, edit own privacy and revoke remain available (217.0835ms)
+[2026-10-13T01:50:36.698Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x8969ef2c error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L53:24 for 'update' @ L53, false for 'update' @ L53
+[2026-10-13T01:50:36.743Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x8969ef2d error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L53:24 for 'update' @ L53, false for 'update' @ L53
+Ô£ö a participant cannot edit the other participants privacy or identity (158.7842ms)
+[2026-10-13T01:50:36.859Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x8969ef30 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L53:24 for 'update' @ L53, false for 'update' @ L53
+Ô£ö a second joiner cannot take over an active invitation (195.3373ms)
+[2026-10-13T01:50:37.097Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x8969ef35 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L53:24 for 'update' @ L53, false for 'update' @ L53
+[2026-10-13T01:50:37.189Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x8969ef37 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L53:24 for 'update' @ L53, false for 'update' @ L53
+[2026-10-13T01:50:37.226Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x8969ef38 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L53:24 for 'update' @ L53, false for 'update' @ L53
+Ô£ö snapshot fields must be cleared when consent is withdrawn (287.7441ms)
+Ô£ö LUM-01 RESOLVED: stranger CANNOT discover or list pending links without code (197.8726ms)
+Ô£ö LUM-01 RESOLVED: joining requires the explicit invitation code and can claim atomically (127.3672ms)
+Ôä╣ tests 10
+Ôä╣ suites 0
+Ôä╣ pass 10
+Ôä╣ fail 0
+Ôä╣ cancelled 0
+Ôä╣ skipped 0
+Ôä╣ todo 0
+Ôä╣ duration_ms 3783.5519
+[32m[1m+ [22m[39m Script exited successfully (code 0)
+[36m[1mi  emulators:[22m[39m Shutting down emulators.
+[36m[1mi  firestore:[22m[39m Stopping Firestore Emulator
+[33m[1m! [22m[39m Firestore Emulator has exited upon receiving signal: SIGINT
+[36m[1mi  hub:[22m[39m Stopping emulator hub
+[36m[1mi  logging:[22m[39m Stopping Logging Emulator

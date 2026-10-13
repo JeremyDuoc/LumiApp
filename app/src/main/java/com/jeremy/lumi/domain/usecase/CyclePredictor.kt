@@ -1,6 +1,7 @@
 package com.jeremy.lumi.domain.usecase
 
 import com.jeremy.lumi.data.local.entity.CycleEntity
+import com.jeremy.lumi.data.local.entity.closedLengthDays
 import com.jeremy.lumi.domain.model.CyclePhase
 import java.time.Instant
 import java.time.LocalDate
@@ -154,7 +155,7 @@ object CyclePredictor {
                 if (daysAheadFromToday in 1..pLen) {
                     CyclePhase.MENSTRUAL
                 } else {
-                    val dayWrapped = ((daysAheadFromToday - pLen - 1) % c + c) % c + 1
+                    val dayWrapped = (daysAheadFromToday - 1) % c + 1
                     phaseForDay(dayWrapped, c, pLen, isPregnant = false, isOnContraceptive = isOnContraceptive)
                 }
             } else {
@@ -185,9 +186,7 @@ object CyclePredictor {
         // 1. Extraer duraciones válidas
         val durations = closedCycles.mapNotNull { cycle ->
             if (cycle.endDate != null) {
-                val startLocal = cycle.startDate.toLocalDate()
-                val endLocal   = cycle.endDate.toLocalDate()
-                val duration   = ChronoUnit.DAYS.between(startLocal, endLocal).toInt()
+                val duration = cycle.closedLengthDays() ?: return@mapNotNull null
                 if (duration in 15..60) duration else null
             } else null
         }
@@ -223,9 +222,7 @@ object CyclePredictor {
         
         closedCycles.forEachIndexed { index, cycle ->
             if (cycle.endDate != null) {
-                val startLocal = cycle.startDate.toLocalDate()
-                val endLocal   = cycle.endDate.toLocalDate()
-                val duration   = ChronoUnit.DAYS.between(startLocal, endLocal).toInt()
+                val duration = cycle.closedLengthDays() ?: return@forEachIndexed
                 
                 if (duration in 15..60) {
                     val baseWeight = Math.exp(-DECAY_LAMBDA * index)
@@ -248,9 +245,7 @@ object CyclePredictor {
         
         val durations = closedCycles.mapNotNull { cycle ->
             if (cycle.endDate != null) {
-                val startLocal = cycle.startDate.toLocalDate()
-                val endLocal   = cycle.endDate.toLocalDate()
-                val duration   = ChronoUnit.DAYS.between(startLocal, endLocal).toInt()
+                val duration = cycle.closedLengthDays() ?: return@mapNotNull null
                 if (duration in 15..60) duration else null
             } else null
         }
@@ -279,9 +274,7 @@ object CyclePredictor {
         
         closedCycles.forEachIndexed { index, cycle ->
             if (cycle.endDate != null) {
-                val startLocal = cycle.startDate.toLocalDate()
-                val endLocal   = cycle.endDate.toLocalDate()
-                val duration   = ChronoUnit.DAYS.between(startLocal, endLocal).toInt()
+                val duration = cycle.closedLengthDays() ?: return@forEachIndexed
                 
                 if (duration in 15..60) {
                     val baseWeight = Math.exp(-DECAY_LAMBDA * index)
@@ -361,10 +354,7 @@ object CyclePredictor {
         if (closedCycles.isEmpty()) return 0
         return closedCycles.mapNotNull { cycle ->
             if (cycle.endDate == null) return@mapNotNull null
-            val actualLength = ChronoUnit.DAYS.between(
-                cycle.startDate.toLocalDate(),
-                cycle.endDate.toLocalDate()
-            ).toInt()
+            val actualLength = cycle.closedLengthDays() ?: return@mapNotNull null
             (actualLength - cycle.cycleLength).coerceAtLeast(0)
         }.maxOrNull() ?: 0
     }
@@ -391,18 +381,20 @@ object CyclePredictor {
         today        : LocalDate       = com.jeremy.lumi.utils.LumiClock.today(),
         closedCycles : List<CycleEntity> = emptyList(),
         isPregnant   : Boolean         = false,
-        isOnContraceptive: Boolean     = false
+        isOnContraceptive: Boolean     = false,
+        effectiveCycleLength: Int?     = null,
+        predictionConfidence: Float?   = null
     ): CyclePrediction {
 
         if (isPregnant) {
             return CyclePrediction(
-                currentDayOfCycle   = dayInCycle(startDate, cycleLength.coerceAtLeast(15), today),
+                currentDayOfCycle   = dayInCycle(startDate, (effectiveCycleLength ?: cycleLength).coerceAtLeast(15), today),
                 currentPhase        = CyclePhase.PREGNANCY,
                 nextPeriodDate      = LocalDate.MAX, 
                 daysUntilNextPeriod = -1,
                 nextOvulationDate   = LocalDate.MAX,
                 daysUntilOvulation  = -1,
-                cycleLength         = cycleLength,
+                cycleLength         = effectiveCycleLength ?: cycleLength,
                 periodLength        = periodLength,
                 delayState          = DelayState.ON_TIME,
                 delayDays           = 0,
@@ -420,12 +412,11 @@ object CyclePredictor {
         }
 
         // ── Elegir la mejor estimación de cycleLength ────────────────────────
-        val effectiveCycleLen = if (isOnContraceptive) {
-            28 // El ciclo de la píldora suele ser de 28 días
-        } else if (closedCycles.size >= MIN_CYCLES_FOR_HISTORY) {
-            weightedAverageCycleLength(closedCycles).roundToInt().coerceAtLeast(15)
-        } else {
-            cycleLength.coerceAtLeast(15)
+        val effectiveCycleLen = when {
+            isOnContraceptive -> 28 // El ciclo de la píldora suele ser de 28 días
+            effectiveCycleLength != null -> effectiveCycleLength.coerceIn(15, 60)
+            closedCycles.size >= MIN_CYCLES_FOR_HISTORY -> weightedAverageCycleLength(closedCycles).roundToInt().coerceIn(15, 60)
+            else -> cycleLength.coerceAtLeast(15)
         }
 
         // ── Fase lútea personal ──────────────────────────────────────────────
@@ -496,7 +487,7 @@ object CyclePredictor {
 
         val cycleCountBonus = (closedCycles.size.coerceAtMost(12) / 12f) * 0.50f
         val regularityBonus = if (stdDev < 2f) 0.20f else if (stdDev < 4f) 0.10f else 0f
-        val confidenceIndex = (0.30f + cycleCountBonus + regularityBonus).coerceIn(0f, 1f)
+        val confidenceIndex = (predictionConfidence ?: (0.30f + cycleCountBonus + regularityBonus)).coerceIn(0f, 1f)
 
         return CyclePrediction(
             currentDayOfCycle   = realDay,

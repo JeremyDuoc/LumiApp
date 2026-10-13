@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jeremy.lumi.data.backup.BackupSerializerTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-13T01:47:03.450Z" hostname="JEREMY" time="0.134">
+  <properties/>
+  <testcase name="full snapshot survives round trip" classname="com.jeremy.lumi.data.backup.BackupSerializerTest" time="0.115"/>
+  <testcase name="duplicate days cannot silently overwrite history" classname="com.jeremy.lumi.data.backup.BackupSerializerTest" time="0.006"/>
+  <testcase name="incomplete row is not silently discarded" classname="com.jeremy.lumi.data.backup.BackupSerializerTest" time="0.009"/>
+  <testcase name="missing table is rejected before any restore" classname="com.jeremy.lumi.data.backup.BackupSerializerTest" time="0.001"/>
+  <testcase name="explicitly empty backup remains valid" classname="com.jeremy.lumi.data.backup.BackupSerializerTest" time="0.0"/>
+  <testcase name="null row and orphan symptoms are rejected" classname="com.jeremy.lumi.data.backup.BackupSerializerTest" time="0.001"/>
+  <testcase name="future schema is not imported by an older app" classname="com.jeremy.lumi.data.backup.BackupSerializerTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

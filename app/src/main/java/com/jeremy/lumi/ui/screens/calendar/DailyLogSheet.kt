@@ -58,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jeremy.lumi.R
+import com.jeremy.lumi.domain.util.ClinicalLabels
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -76,6 +77,7 @@ fun DailyLogSheet(
     activeCategories: Set<String>,
     onActiveCategoriesChange: (Set<String>) -> Unit,
     onDismiss: () -> Unit,
+    isSaving: Boolean = false,
     onSave: (
         flow: String?,
         pain: Int,
@@ -151,29 +153,43 @@ fun DailyLogSheet(
     val symptomStrings = symptomOptions.map { stringResource(id = it) }
     val methodStrings  = methodOptions.map  { stringResource(id = it) }
 
+    var unrecognizedSymptoms by remember { mutableStateOf<List<com.jeremy.lumi.data.local.entity.SymptomEntity>>(emptyList()) }
+
     LaunchedEffect(savedLog) {
         savedLog?.let { log ->
-            log.dailyLog.flowIntensity?.let { saved ->
-                val i = flowStrings.indexOf(saved); if (i >= 0) selectedFlow = flowOptions[i]
-            }
+            selectedFlow = ClinicalLabels.findFlowResId(log.dailyLog.flowIntensity)
+                ?: log.dailyLog.flowIntensity?.let { saved ->
+                    val i = flowStrings.indexOf(saved); if (i >= 0) flowOptions[i] else null
+                }
             painLevel = log.dailyLog.painLevel.toFloat().coerceIn(0f, 10f)
-            log.dailyLog.mood?.let { saved ->
-                val i = moodStrings.indexOf(saved); if (i >= 0) selectedMood = moodOptions[i]
-            }
-            log.dailyLog.cervicalMucus?.let { saved ->
-                val i = mucusStrings.indexOf(saved); if (i >= 0) selectedMucus = mucusOptions[i]
-            }
+            selectedMood = ClinicalLabels.findMoodResId(log.dailyLog.mood)
+                ?: log.dailyLog.mood?.let { saved ->
+                    val i = moodStrings.indexOf(saved); if (i >= 0) moodOptions[i] else null
+                }
+            selectedMucus = ClinicalLabels.findMucusResId(log.dailyLog.cervicalMucus)
+                ?: log.dailyLog.cervicalMucus?.let { saved ->
+                    val i = mucusStrings.indexOf(saved); if (i >= 0) mucusOptions[i] else null
+                }
             val sel = mutableSetOf<Int>()
+            val unrec = mutableListOf<com.jeremy.lumi.data.local.entity.SymptomEntity>()
             log.symptoms.forEach { s ->
-                val i = symptomStrings.indexOf(s.name); if (i >= 0) sel.add(symptomOptions[i])
+                val resId = ClinicalLabels.findSymptomResId(s.name)
+                    ?: symptomStrings.indexOf(s.name).takeIf { it >= 0 }?.let { symptomOptions[it] }
+                if (resId != null) {
+                    sel.add(resId)
+                } else {
+                    unrec.add(s)
+                }
             }
             selectedSymptoms = sel
+            unrecognizedSymptoms = unrec
             notes            = log.dailyLog.notes ?: ""
             hadIntercourse   = log.dailyLog.hadIntercourse
             protectionUsed   = log.dailyLog.protectionUsed
-            log.dailyLog.contraceptionMethod?.let { saved ->
-                val i = methodStrings.indexOf(saved); if (i >= 0) selectedMethod = methodOptions[i]
-            }
+            selectedMethod   = ClinicalLabels.findMethodResId(log.dailyLog.contraceptionMethod)
+                ?: log.dailyLog.contraceptionMethod?.let { saved ->
+                    val i = methodStrings.indexOf(saved); if (i >= 0) methodOptions[i] else null
+                }
             intercourseNotes = log.dailyLog.intercourseNotes ?: ""
             showOnCalendar   = log.dailyLog.showIntercourseOnCalendar
             
@@ -237,10 +253,10 @@ fun DailyLogSheet(
                     AlertDialog(
                         onDismissRequest = { showMucusInfo = false },
                         title = { Text(stringResource(R.string.log_cervical_mucus)) },
-                        text = { Text("Seco: Generalmente después del periodo.\nPegajoso: Grueso y opaco.\nCremoso: Parecido a loción, indica fertilidad acercándose.\nClara de huevo: Transparente y elástico. Es el pico de máxima fertilidad.\nAcuoso: Muy líquido y claro.") },
+                        text = { Text(stringResource(R.string.log_mucus_info_desc)) },
                         confirmButton = {
                             TextButton(onClick = { showMucusInfo = false }) {
-                                Text("Entendido")
+                                Text(stringResource(R.string.btn_understood))
                             }
                         }
                     )
@@ -259,7 +275,7 @@ fun DailyLogSheet(
                 }
 
                 // ── GRUPO 1: Sangrado y Dolor ────────────────────────────────────────
-                Text("Sangrado y Dolor", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 4.dp))
+                Text(stringResource(R.string.log_section_bleeding_pain), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 4.dp))
 
                 CollapsibleLogCard(
                     titleRes  = R.string.log_flow,
@@ -286,7 +302,7 @@ fun DailyLogSheet(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Manchado fuera del periodo (Spotting)", fontSize = 14.sp)
+                        Text(stringResource(R.string.log_spotting), fontSize = 14.sp)
                         Switch(checked = spotting, onCheckedChange = { spotting = it })
                     }
                 }
@@ -306,7 +322,7 @@ fun DailyLogSheet(
 
                 // ── GRUPO 2: Estado y Síntomas ───────────────────────────────────────
                 Spacer(Modifier.height(8.dp))
-                Text("Estado y Síntomas", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 4.dp))
+                Text(stringResource(R.string.log_section_mood_symptoms), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 4.dp))
 
                 CollapsibleLogCard(
                     titleRes = R.string.log_mood,
@@ -396,7 +412,7 @@ fun DailyLogSheet(
 
                 // ── GRUPO 3: Bienestar e Intimidad ───────────────────────────────────
                 Spacer(Modifier.height(8.dp))
-                Text("Bienestar e Intimidad", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 4.dp))
+                Text(stringResource(R.string.log_section_wellbeing_intimacy), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 4.dp))
 
                 if (activeCategories.contains("intercourse")) {
                     CollapsibleLogCard(
@@ -436,7 +452,7 @@ fun DailyLogSheet(
                         val haptic = LocalHapticFeedback.current
                         
                         WellbeingSliderRow(
-                            label = "Horas de sueño",
+                            label = stringResource(R.string.log_sleep_hours),
                             value = sleepHours,
                             valueDisplay = sleepHours?.let { String.format(Locale.US, "%.1f", it) } ?: "—",
                             range = 0f..14f,
@@ -449,7 +465,7 @@ fun DailyLogSheet(
                         Spacer(Modifier.height(16.dp))
                         
                         WellbeingSliderRow(
-                            label = "Agua (Litros)",
+                            label = stringResource(R.string.log_water_liters),
                             value = waterIntake,
                             valueDisplay = waterIntake?.let { String.format(Locale.US, "%.1f", it) } ?: "—",
                             range = 0f..5f,
@@ -462,7 +478,7 @@ fun DailyLogSheet(
                         Spacer(Modifier.height(16.dp))
                         
                         WellbeingSliderRow(
-                            label = "Nivel de energía",
+                            label = stringResource(R.string.log_energy_level),
                             value = energyLevel?.toFloat(),
                             valueDisplay = energyLevel?.toString() ?: "—",
                             range = 0f..10f,
@@ -475,7 +491,7 @@ fun DailyLogSheet(
                         Spacer(Modifier.height(16.dp))
 
                         WellbeingSliderRow(
-                            label = "Nivel de estrés",
+                            label = stringResource(R.string.log_stress_level),
                             value = stressLevel?.toFloat(),
                             valueDisplay = stressLevel?.toString() ?: "—",
                             range = 0f..10f,
@@ -499,7 +515,7 @@ fun DailyLogSheet(
                         OutlinedTextField(
                             value = basalBodyTemp,
                             onValueChange = { basalBodyTemp = it },
-                            label = { Text("Temperatura Basal (°C)") },
+                            label = { Text(stringResource(R.string.log_bbt_label)) },
                             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -562,13 +578,14 @@ fun DailyLogSheet(
             // ── Botón guardar / actualizar ───────────────────────────────────
             Spacer(Modifier.height(12.dp))
             SaveButton(
+                enabled = !isSaving,
                 isEditing = isEditing,
                 onClick = {
-                    val finalFlow     = selectedFlow?.let    { flowStrings[flowOptions.indexOf(it)] }
-                    val finalMood     = selectedMood?.let    { moodStrings[moodOptions.indexOf(it)] }
-                    val finalSymptoms = selectedSymptoms.map { symptomStrings[symptomOptions.indexOf(it)] }
-                    val finalMucus    = selectedMucus?.let   { mucusStrings[mucusOptions.indexOf(it)] }
-                    val finalMethod   = selectedMethod?.let  { methodStrings[methodOptions.indexOf(it)] }
+                    val finalFlow     = selectedFlow?.let    { ClinicalLabels.getCanonicalFlow(it) ?: flowStrings[flowOptions.indexOf(it)] }
+                    val finalMood     = selectedMood?.let    { ClinicalLabels.getCanonicalMood(it) ?: moodStrings[moodOptions.indexOf(it)] }
+                    val finalSymptoms = selectedSymptoms.mapNotNull { ClinicalLabels.getCanonicalSymptom(it) ?: symptomStrings.getOrNull(symptomOptions.indexOf(it)) } + unrecognizedSymptoms.map { it.name }
+                    val finalMucus    = selectedMucus?.let   { ClinicalLabels.getCanonicalMucus(it) ?: mucusStrings[mucusOptions.indexOf(it)] }
+                    val finalMethod   = selectedMethod?.let  { ClinicalLabels.getCanonicalMethod(it) ?: methodStrings[methodOptions.indexOf(it)] }
                     val bbtParsed = basalBodyTemp.replace(",", ".").toFloatOrNull()
                     onSave(
                         finalFlow, painLevel.toInt(), finalMood, finalSymptoms, finalMucus, notes,
@@ -584,7 +601,6 @@ fun DailyLogSheet(
                         bbtParsed,
                         spotting
                     )
-                    onDismiss()
                 }
             )
             Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
@@ -818,7 +834,7 @@ private fun CollapsibleLogCard(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Info,
-                        contentDescription = "Información",
+                        contentDescription = stringResource(R.string.cd_info),
                         tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
                         modifier = Modifier.size(18.dp)
                     )
@@ -1137,7 +1153,7 @@ private fun IntercourseCard(
             verticalAlignment     = Alignment.CenterVertically
         ) {
             Text(
-                text       = "¿Hubo relaciones sexuales?",
+                text       = stringResource(R.string.log_had_intercourse_question),
                 fontSize   = 14.sp,
                 color      = MaterialTheme.colorScheme.onBackground
             )
@@ -1316,7 +1332,7 @@ fun PillChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun SaveButton(isEditing: Boolean = false, onClick: () -> Unit) {
+private fun SaveButton(isEditing: Boolean = false, enabled: Boolean = true, onClick: () -> Unit) {
     val haptic = LocalHapticFeedback.current
     val gradientBrush = Brush.horizontalGradient(
         colors = listOf(
@@ -1331,7 +1347,7 @@ private fun SaveButton(isEditing: Boolean = false, onClick: () -> Unit) {
             .height(56.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(gradientBrush)
-            .clickable {
+            .clickable(enabled = enabled, role = androidx.compose.ui.semantics.Role.Button) {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onClick()
             },

@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -83,7 +84,7 @@ fun ChatScreen(
     val questions   by viewModel.availableQuestions.collectAsStateWithLifecycle()
     val isTyping    by viewModel.isTyping.collectAsStateWithLifecycle()
 
-    var searchQuery by remember { mutableStateOf("") }
+    var searchQuery by rememberSaveable(thread) { mutableStateOf("") }
 
     val messages = remember(allMessages, thread, searchQuery) {
         val filteredByThread = if (thread == "lumi") {
@@ -122,6 +123,7 @@ fun ChatScreen(
     ) { paddingValues ->
         Column(modifier = containerModifier
             .padding(paddingValues)
+            .consumeWindowInsets(paddingValues)
             .imePadding() // Manejo del teclado
         ) {
 
@@ -132,7 +134,7 @@ fun ChatScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 6.dp)
-                    .height(48.dp),
+                    .heightIn(min = 56.dp),
                 placeholder = { Text(stringResource(R.string.chat_search_placeholder), fontSize = 13.sp) },
                 leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = stringResource(R.string.chat_search_cd), modifier = Modifier.size(18.dp)) },
                 shape = RoundedCornerShape(24.dp),
@@ -147,7 +149,7 @@ fun ChatScreen(
 
             if (messages.isEmpty()) {
                 if (searchQuery.isNotBlank()) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                         Text(stringResource(R.string.chat_search_empty), color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
                     }
                 } else {
@@ -195,8 +197,8 @@ fun ChatScreen(
 
             // ── SECCIÓN INFERIOR: SELECTOR GUIADO DE PREGUNTAS Y CAMPO DE TEXTO (Thread Lumi) ──
             if (thread == "lumi") {
-                var selectedCategory by remember { mutableStateOf<QuestionCategory?>(null) }
-                var userMessageText by remember { mutableStateOf("") }
+                var selectedCategory by rememberSaveable { mutableStateOf<QuestionCategory?>(null) }
+                var userMessageText by rememberSaveable { mutableStateOf("") }
 
                 Column(
                     modifier = Modifier
@@ -302,7 +304,7 @@ fun ChatScreen(
                             },
                             enabled = canSend,
                             modifier = Modifier
-                                .size(44.dp)
+                                .size(48.dp)
                                 .background(
                                     if (canSend) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                                     CircleShape

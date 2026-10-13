@@ -24,6 +24,19 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var themePreferenceManager: ThemePreferenceManager
 
+    @Inject
+    lateinit var languagePreferenceManager: com.jeremy.lumi.data.preferences.LanguagePreferenceManager
+
+    override fun attachBaseContext(newBase: android.content.Context) {
+        val lang = kotlinx.coroutines.runBlocking {
+            kotlinx.coroutines.withTimeoutOrNull(400) {
+                com.jeremy.lumi.data.preferences.LanguagePreferenceManager(newBase).getSelectedLanguage()
+            } ?: com.jeremy.lumi.data.preferences.LanguagePreferenceManager.SYSTEM_DEFAULT
+        }
+        val localizedContext = com.jeremy.lumi.utils.LocaleHelper.wrapContext(newBase, lang)
+        super.attachBaseContext(localizedContext)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)

@@ -26,6 +26,9 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.BlendMode
 import androidx.navigation.compose.*
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.jeremy.lumi.ui.theme.LumiThemeTokens
 import com.jeremy.lumi.ui.theme.LocalBrandGradient
 import com.jeremy.lumi.ui.screens.home.HomeScreen
 import com.jeremy.lumi.ui.screens.settings.SettingsScreen
@@ -36,6 +39,7 @@ import com.jeremy.lumi.ui.screens.chat.ConversationsScreen
 import com.jeremy.lumi.ui.screens.insights.InsightsScreen
 import com.jeremy.lumi.ui.screens.onboarding.OnboardingScreen
 import com.jeremy.lumi.ui.screens.splash.SplashScreen
+import com.jeremy.lumi.ui.screens.bonds.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.foundation.pager.HorizontalPager
@@ -107,7 +111,7 @@ fun AppNavGraph() {
         composable(route = AppRoutes.MAIN) {
             MainScreen(
                 onNavigateToPartner = {
-                    rootNavController.navigate(AppRoutes.PARTNER_HUB)
+                    rootNavController.navigate(AppRoutes.BONDS_HOME)
                 },
                 onNavigateToBackup = {
                     rootNavController.navigate(AppRoutes.BACKUP)
@@ -172,31 +176,132 @@ fun AppNavGraph() {
             )
         }
 
-        // ——— Hub del Modo Pareja ———————————————————————————————————————————————
+        // ── BONDS MODULE ROUTES ──────────────────────────────────────────────
+        composable(route = AppRoutes.BONDS_HOME) {
+            val bondsViewModel: BondsViewModel = hiltViewModel()
+            val uiState by bondsViewModel.uiState.collectAsStateWithLifecycle()
+
+            BondsHomeScreen(
+                uiState = uiState,
+                onSelectMember = { member -> bondsViewModel.selectMember(member) },
+                onOpenMemberDetail = { member ->
+                    rootNavController.navigate("bonds_member_detail/${member.linkId}")
+                },
+                onOpenSendGesture = { member, action ->
+                    val linkId = member?.linkId ?: ""
+                    rootNavController.navigate("bonds_send_gesture/${action.name}?linkId=$linkId")
+                },
+                onOpenPairingPrivacy = { rootNavController.navigate(AppRoutes.BONDS_PAIRING) },
+                onOpenSharedCalendar = { rootNavController.navigate(AppRoutes.BONDS_SHARED_CALENDAR) },
+                onNavigateBack = { rootNavController.popBackStack() }
+            )
+        }
+
+        // Alias retrocompatible para PARTNER_HUB que renderiza BondsHomeScreen
         composable(route = AppRoutes.PARTNER_HUB) {
-            val viewModel: com.jeremy.lumi.ui.screens.partner.PartnerViewModel = hiltViewModel()
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val bondsViewModel: BondsViewModel = hiltViewModel()
+            val uiState by bondsViewModel.uiState.collectAsStateWithLifecycle()
 
-            // Disparador de las animaciones de Detalles
-            val careReactionState = com.jeremy.lumi.ui.screens.partner.rememberCareReactionState()
+            BondsHomeScreen(
+                uiState = uiState,
+                onSelectMember = { member -> bondsViewModel.selectMember(member) },
+                onOpenMemberDetail = { member ->
+                    rootNavController.navigate("bonds_member_detail/${member.linkId}")
+                },
+                onOpenSendGesture = { member, action ->
+                    val linkId = member?.linkId ?: ""
+                    rootNavController.navigate("bonds_send_gesture/${action.name}?linkId=$linkId")
+                },
+                onOpenPairingPrivacy = { rootNavController.navigate(AppRoutes.BONDS_PAIRING) },
+                onOpenSharedCalendar = { rootNavController.navigate(AppRoutes.BONDS_SHARED_CALENDAR) },
+                onNavigateBack = { rootNavController.popBackStack() }
+            )
+        }
 
-            Box(modifier = Modifier.fillMaxSize()) {
-                com.jeremy.lumi.ui.screens.partner.PartnerHubScreen(
-                    uiState = uiState,
-                    onOpenStory = { link -> rootNavController.navigate("story_detail/${link.linkId}") },
-                    onSendCareAction = { linkId, action ->
-                        viewModel.sendCareAction(linkId, action)
-                        careReactionState.fire(action)
+        composable(
+            route = AppRoutes.BONDS_PAIRING,
+            deepLinks = listOf(
+                androidx.navigation.navDeepLink { uriPattern = "https://lumi.app/bonds/pair/{code}" },
+                androidx.navigation.navDeepLink { uriPattern = "lumi://bonds/pair/{code}" }
+            )
+        ) { backStackEntry ->
+            val initialCode = backStackEntry.arguments?.getString("code")
+            val bondsViewModel: BondsViewModel = hiltViewModel()
+            val uiState by bondsViewModel.uiState.collectAsStateWithLifecycle()
+
+            BondsPairingPrivacyScreen(
+                currentInviteCode = initialCode ?: uiState.pendingInviteCode,
+                initialPrivacy = uiState.myDefaultPrivacy,
+                isObserverOnly = uiState.isObserverOnly,
+                onGenerateCode = { bondsViewModel.createInvitation() },
+                onJoinWithCode = { code, privacy, onComplete ->
+                    bondsViewModel.joinWithCode(code, privacy, onComplete)
+                },
+                onUpdatePrivacy = { privacy ->
+                    uiState.selectedMember?.let {
+                        bondsViewModel.updateLinkPrivacy(it.linkId, privacy)
+                    }
+                },
+                onNavigateBack = { rootNavController.popBackStack() }
+            )
+        }
+
+        composable(route = AppRoutes.BONDS_SEND_GESTURE) { backStackEntry ->
+            val actionName = backStackEntry.arguments?.getString("action")
+            val linkIdParam = backStackEntry.arguments?.getString("linkId")
+            val action = actionName?.let {
+                runCatching { com.jeremy.lumi.domain.model.CareAction.valueOf(it) }.getOrNull()
+            } ?: com.jeremy.lumi.domain.model.CareAction.TEA
+
+            val bondsViewModel: BondsViewModel = hiltViewModel()
+            val uiState by bondsViewModel.uiState.collectAsStateWithLifecycle()
+            val recipient = uiState.members.find { it.linkId == linkIdParam } ?: uiState.selectedMember
+
+            BondsSendGestureScreen(
+                initialAction = action,
+                recipient = recipient,
+                allMembers = uiState.members,
+                isSending = uiState.isSendingGesture,
+                onSend = { linkId, careAction, message, onComplete ->
+                    bondsViewModel.sendGesture(linkId, careAction, message, onComplete)
+                },
+                onNavigateBack = { rootNavController.popBackStack() }
+            )
+        }
+
+        composable(route = AppRoutes.BONDS_SHARED_CALENDAR) {
+            val bondsViewModel: BondsViewModel = hiltViewModel()
+            val uiState by bondsViewModel.uiState.collectAsStateWithLifecycle()
+
+            BondsSharedCalendarScreen(
+                members = uiState.members,
+                onNavigateBack = { rootNavController.popBackStack() }
+            )
+        }
+
+        composable(route = AppRoutes.BONDS_MEMBER_DETAIL) { backStackEntry ->
+            val linkId = backStackEntry.arguments?.getString("linkId") ?: return@composable
+            val bondsViewModel: BondsViewModel = hiltViewModel()
+            val uiState by bondsViewModel.uiState.collectAsStateWithLifecycle()
+            val member = uiState.members.find { it.linkId == linkId }
+
+            if (member != null) {
+                BondsPersonDetailScreen(
+                    member = member,
+                    onSendGesture = { action ->
+                        rootNavController.navigate("bonds_send_gesture/${action.name}?linkId=${member.linkId}")
                     },
-                    onOpenAddPartner = { rootNavController.navigate(AppRoutes.PARTNER.replace("?code={code}", "")) },
-                    onOpenDiary = { link -> rootNavController.navigate("shared_diary/${link.linkId}") },
-                    onOpenDualCalendar = { link -> rootNavController.navigate("dual_calendar/${link.linkId}") },
-                    onUnlink = { link -> viewModel.unlink(link.linkId) },
+                    onOpenCalendar = { rootNavController.navigate(AppRoutes.BONDS_SHARED_CALENDAR) },
+                    onUpdatePrivacy = { privacy ->
+                        bondsViewModel.updateLinkPrivacy(member.linkId, privacy)
+                    },
+                    onUnlink = {
+                        bondsViewModel.unlinkMember(member.linkId) {
+                            rootNavController.popBackStack()
+                        }
+                    },
                     onNavigateBack = { rootNavController.popBackStack() }
                 )
-
-                // Capa superior para las animaciones
-                com.jeremy.lumi.ui.screens.partner.CareReactionOverlay(state = careReactionState)
             }
         }
 
@@ -254,6 +359,7 @@ fun MainScreen(
         if (isObserver) {
             listOf(
                 BottomNavItem.Home,
+                BottomNavItem.Bonds,
                 BottomNavItem.Chat,
                 BottomNavItem.Settings
             )
@@ -262,8 +368,7 @@ fun MainScreen(
                 BottomNavItem.Home,
                 BottomNavItem.Calendar,
                 BottomNavItem.Insights,
-                BottomNavItem.Chat,
-                BottomNavItem.Settings
+                BottomNavItem.Bonds
             )
         }
     }
@@ -322,8 +427,25 @@ fun MainScreen(
                                     coroutineScope.launch { pagerState.animateScrollToPage(insightsIndex) }
                                 }
                             },
+                            onNavigateToCalendar = {
+                                val calIndex = tabs.indexOf(BottomNavItem.Calendar)
+                                if (calIndex >= 0) {
+                                    coroutineScope.launch { pagerState.animateScrollToPage(calIndex) }
+                                }
+                            },
                             onNavigateToPartner = {
-                                onNavigateToPartner()
+                                val bondsIndex = tabs.indexOf(BottomNavItem.Bonds)
+                                if (bondsIndex >= 0) {
+                                    coroutineScope.launch { pagerState.animateScrollToPage(bondsIndex) }
+                                } else {
+                                    onNavigateToPartner()
+                                }
+                            },
+                            onNavigateToSettings = {
+                                navController.navigate("settings")
+                            },
+                            onNavigateToChat = {
+                                navController.navigate("conversations")
                             }
                         )
                         BottomNavItem.Calendar -> CalendarScreen()
@@ -332,6 +454,21 @@ fun MainScreen(
                                 coroutineScope.launch { pagerState.animateScrollToPage(0) }
                             }
                         )
+                        BottomNavItem.Bonds -> {
+                            val bondsViewModel: BondsViewModel = hiltViewModel()
+                            val bondsUiState by bondsViewModel.uiState.collectAsStateWithLifecycle()
+                            BondsHomeScreen(
+                                uiState = bondsUiState,
+                                onSelectMember = { member -> bondsViewModel.selectMember(member) },
+                                onOpenMemberDetail = { onNavigateToPartner() },
+                                onOpenSendGesture = { _, _ -> onNavigateToPartner() },
+                                onOpenPairingPrivacy = { onNavigateToPartner() },
+                                onOpenSharedCalendar = { onNavigateToPartner() },
+                                onNavigateBack = {
+                                    coroutineScope.launch { pagerState.animateScrollToPage(0) }
+                                }
+                            )
+                        }
                         BottomNavItem.Chat -> ConversationsScreen(
                             onNavigateToChat = { thread ->
                                 navController.navigate("chat/$thread")
@@ -344,6 +481,19 @@ fun MainScreen(
                         else -> {}
                     }
                 }
+            }
+            composable("settings") {
+                SettingsScreen(
+                    onNavigateToBackup = onNavigateToBackup,
+                    onNavigateToPartner = onNavigateToPartner
+                )
+            }
+            composable("conversations") {
+                ConversationsScreen(
+                    onNavigateToChat = { thread ->
+                        navController.navigate("chat/$thread")
+                    }
+                )
             }
             // Ruta partner eliminada y movida a AppNavGraph para arperiodor Deep Links
             composable("chat/{thread}") { backStackEntry ->
@@ -371,32 +521,35 @@ fun AnimatedLumiBottomBar(
     onTabSelected: (Int) -> Unit,
     chatViewModel: com.jeremy.lumi.ui.screens.chat.ChatViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 ) {
+    val tokens = LumiThemeTokens.current
     val unreadCount by chatViewModel.unreadCount.collectAsStateWithLifecycle()
 
     Surface(
-        color = MaterialTheme.colorScheme.background,
+        color = tokens.nav,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
-        modifier = Modifier.fillMaxWidth().drawBehind {
-            drawLine(
-                color = androidx.compose.ui.graphics.Color.Gray.copy(alpha = 0.15f),
-                start = androidx.compose.ui.geometry.Offset(0f, 0f),
-                end = androidx.compose.ui.geometry.Offset(size.width, 0f),
-                strokeWidth = 1.dp.toPx()
-            )
-        }
+        modifier = Modifier
+            .fillMaxWidth()
+            .drawBehind {
+                drawLine(
+                    color = tokens.line,
+                    start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                    end = androidx.compose.ui.geometry.Offset(size.width, 0f),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding() // Respeta los gestos del sistema (pantalla completa)
-                .padding(horizontal = 12.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .padding(horizontal = 14.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
             tabs.forEachIndexed { index, item ->
                 val selected = pagerState.currentPage == index
-                
+
                 AnimatedBottomNavItem(
                     item = item,
                     selected = selected,
@@ -405,7 +558,8 @@ fun AnimatedLumiBottomBar(
                         if (!selected) {
                             onTabSelected(index)
                         }
-                    }
+                    },
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
@@ -417,121 +571,70 @@ private fun AnimatedBottomNavItem(
     item: BottomNavItem,
     selected: Boolean,
     unreadCount: Int,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val backgroundColor = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent
-    val contentColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-    
-    val brandGradient = LocalBrandGradient.current
-    val isBrandActive = selected && brandGradient != null
+    val tokens = LumiThemeTokens.current
+    val targetColor = if (selected) tokens.accent else tokens.dim
+    val animatedColor by animateColorAsState(
+        targetValue = targetColor,
+        animationSpec = tween(durationMillis = 200),
+        label = "bottom_nav_color"
+    )
 
     val interactionSource = remember { MutableInteractionSource() }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
+        verticalArrangement = Arrangement.Center,
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick
             )
+            .padding(vertical = 5.dp)
     ) {
-        // Píldora seleccionada con ícono (+ label expandido inline)
+        // Ícono con badge
         Box(
-            modifier = Modifier
-                .clip(CircleShape)
-                .background(backgroundColor)
-                .padding(horizontal = if (selected) 16.dp else 12.dp, vertical = 8.dp),
+            modifier = Modifier.size(24.dp),
             contentAlignment = Alignment.Center
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                // Ícono con badge
-                if (unreadCount > 0) {
-                    BadgedBox(
-                        badge = { Badge(containerColor = MaterialTheme.colorScheme.error) { Text(unreadCount.toString()) } }
-                    ) {
-                        if (isBrandActive) {
-                            Icon(
-                                imageVector = item.icon,
-                                contentDescription = stringResource(id = item.titleRes),
-                                tint = Color.White,
-                                modifier = Modifier.size(24.dp).graphicsLayer(alpha = 0.99f).drawWithCache {
-                                    onDrawWithContent {
-                                        drawContent()
-                                        drawRect(brandGradient!!, blendMode = androidx.compose.ui.graphics.BlendMode.SrcAtop)
-                                    }
-                                }
-                            )
-                        } else {
-                            Icon(
-                                imageVector = item.icon,
-                                contentDescription = stringResource(id = item.titleRes),
-                                tint = contentColor,
-                                modifier = Modifier.size(24.dp)
-                            )
+            if (unreadCount > 0) {
+                BadgedBox(
+                    badge = {
+                        Badge(containerColor = tokens.rose) {
+                            Text(unreadCount.toString(), color = Color.White, fontSize = 9.sp)
                         }
                     }
-                } else {
-                    if (isBrandActive) {
-                        Icon(
-                            imageVector = item.icon,
-                            contentDescription = stringResource(id = item.titleRes),
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp).graphicsLayer(alpha = 0.99f).drawWithCache {
-                                onDrawWithContent {
-                                    drawContent()
-                                    drawRect(brandGradient!!, blendMode = androidx.compose.ui.graphics.BlendMode.SrcAtop)
-                                }
-                            }
-                        )
-                    } else {
-                        Icon(
-                            imageVector = item.icon,
-                            contentDescription = stringResource(id = item.titleRes),
-                            tint = contentColor,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                ) {
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = stringResource(id = item.titleRes),
+                        tint = animatedColor,
+                        modifier = Modifier.size(22.dp)
+                    )
                 }
-
-                // Texto expandido inline — solo visible cuando está seleccionado
-                AnimatedVisibility(visible = selected) {
-                    if (isBrandActive) {
-                        Text(
-                            text = stringResource(id = item.titleRes),
-                            style = TextStyle(
-                                brush = brandGradient,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp
-                            ),
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
-                    } else {
-                        Text(
-                            text = stringResource(id = item.titleRes),
-                            color = contentColor,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp,
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
-                    }
-                }
+            } else {
+                Icon(
+                    imageVector = item.icon,
+                    contentDescription = stringResource(id = item.titleRes),
+                    tint = animatedColor,
+                    modifier = Modifier.size(22.dp)
+                )
             }
         }
 
-        // Etiqueta pequeña siempre visible — solo cuando NO está seleccionado
-        // (cuando está seleccionado, el texto inline de la píldora ya lo muestra)
-        AnimatedVisibility(visible = !selected) {
-            Text(
-                text = stringResource(id = item.titleRes),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f),
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Normal,
-                modifier = Modifier.padding(top = 2.dp)
-            )
-        }
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // Etiqueta de texto debajo del ícono
+        Text(
+            text = stringResource(id = item.titleRes),
+            color = animatedColor,
+            fontSize = 10.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            letterSpacing = (-0.2).sp
+        )
     }
 }

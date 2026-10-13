@@ -62,6 +62,7 @@ class OnboardingPreferenceManager @Inject constructor(
         private val USER_WEIGHT_KEY         = floatPreferencesKey("user_weight_kg")
         private val SECONDARY_GOALS_KEY     = stringSetPreferencesKey("secondary_goals")
         private val MEDICAL_DISCLAIMER_KEY  = booleanPreferencesKey("medical_disclaimer_accepted")
+        private val USER_AVATAR_KEY         = stringPreferencesKey("user_avatar_id")
     }
 
     // ── Onboarding completado ─────────────────────────────────────────────────
@@ -86,6 +87,17 @@ class OnboardingPreferenceManager @Inject constructor(
     /** Nombre de la usuaria. Null si lo saltó. */
     val userNameFlow: Flow<String?> = dataStore.data
         .map { prefs -> prefs[USER_NAME_KEY]?.takeIf { it.isNotBlank() } }
+
+    /** Avatar de la usuaria para Bonds y perfil. */
+    val avatarIdFlow: Flow<String?> = dataStore.data
+        .map { prefs -> prefs[USER_AVATAR_KEY]?.takeIf { it.isNotBlank() } }
+
+    suspend fun setUserAvatar(avatarId: String?) {
+        dataStore.edit { prefs ->
+            if (avatarId != null) prefs[USER_AVATAR_KEY] = avatarId
+            else prefs.remove(USER_AVATAR_KEY)
+        }
+    }
 
     /** Si el ciclo es regular. Null si no lo sabe. */
     val isRegularFlow: Flow<Boolean?> = dataStore.data
@@ -146,6 +158,13 @@ class OnboardingPreferenceManager @Inject constructor(
 
     suspend fun setActiveLogCategories(categories: Set<String>) {
         dataStore.edit { prefs -> prefs[LOG_CATEGORIES_KEY] = categories }
+    }
+
+    suspend fun setIsRegular(isRegular: Boolean?) {
+        dataStore.edit { prefs ->
+            if (isRegular != null) prefs[IS_REGULAR_KEY] = isRegular
+            else prefs.remove(IS_REGULAR_KEY)
+        }
     }
 
     // --- Partner Privacy Flows & Setters ---

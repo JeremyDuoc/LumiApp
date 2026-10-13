@@ -28,11 +28,11 @@ class LumiRepositoryImpl(
 
         // La ovulación se predice como: fin_esperado - fase_lútea_estándar (14 días)
         val expectedEnd = startLocalDate.plusDays(cycleLength.toLong())
-        val ovulationLocalDate = expectedEnd.minusDays(14)
+        val ovulationLocalDate = expectedEnd.minusDays(15)
         
         val ovulationDate = ovulationLocalDate.atStartOfDay(zone).toInstant().toEpochMilli()
 
-        dao.insertCycle(
+        dao.startCycleReplacingActive(
             CycleEntity(
                 startDate              = startDate,
                 endDate                = null,       // ciclo activo
@@ -75,19 +75,7 @@ class LumiRepositoryImpl(
     }
 
     override suspend fun undoLastPeriodStart(): Boolean {
-        val activeCycle = dao.getCurrentActiveCycle() ?: return false
-        val closedCycles = dao.getClosedCycles()
-        val previousCycle = closedCycles.firstOrNull() ?: return false
-
-        // 1. Reasignar cualquier log asociado al ciclo cancelado hacia el ciclo reabierto
-        dao.reassignDailyLogs(sourceCycleId = activeCycle.id, targetCycleId = previousCycle.id)
-
-        // 2. Eliminar el ciclo activo erróneo
-        dao.deleteCycleById(activeCycle.id)
-
-        // 3. Reabrir el ciclo previo (limpiando endDate)
-        dao.updateCycle(previousCycle.copy(endDate = null))
-        return true
+        return dao.undoLastPeriodStart()
     }
 
     override suspend fun saveDailyLogWithSymptoms(dailyLog: DailyLogEntity, symptoms: List<SymptomEntity>) {
@@ -128,10 +116,6 @@ class LumiRepositoryImpl(
     }
 
     override suspend fun deleteAllData() {
-        dao.deleteAllCycles()
-        dao.deleteAllLogs()
-        dao.deleteAllSymptoms()
-        dao.deleteAllReminders()
-        dao.deleteAllChatMessages()
+        dao.clearAllDataForDev()
     }
 }

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="log_save_error">No se pudo guardar el registro. Tus cambios siguen aquí; inténtalo de nuevo.</string>
+    <string name="log_load_error">No se pudo cargar el registro. Inténtalo de nuevo.</string>
+    <string name="cal_day_logged">Con registro</string>
+</resources>

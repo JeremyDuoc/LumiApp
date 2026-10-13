@@ -27,4 +27,20 @@ object AppRoutes {
 
     /** Respaldo privado cifrado en el Google Drive de la usuaria. */
     const val BACKUP = "backup_settings"
+
+    // ── Módulo BONDS ──────────────────────────────────────────────────────────
+    /** Pantalla principal de Bonds (Home). */
+    const val BONDS_HOME = "bonds_home"
+
+    /** Vinculación y Privacidad (QR, código y toggles de consentimiento). */
+    const val BONDS_PAIRING = "bonds_pairing"
+
+    /** Experiencia inmersiva de envío de detalles/gestos afectivos. */
+    const val BONDS_SEND_GESTURE = "bonds_send_gesture/{action}?linkId={linkId}"
+
+    /** Calendario Compartido de Bonds con vista multivínculo. */
+    const val BONDS_SHARED_CALENDAR = "bonds_shared_calendar"
+
+    /** Detalle individual de una persona conectada en el círculo. */
+    const val BONDS_MEMBER_DETAIL = "bonds_member_detail/{linkId}"
 }

@@ -55,14 +55,15 @@ import com.jeremy.lumi.ui.screens.calendar.DailyLogSheet
 import com.jeremy.lumi.ui.screens.partner.ObserverScreen
 import com.jeremy.lumi.ui.screens.partner.PartnerViewModel
 import com.jeremy.lumi.ui.theme.LocalPhaseColors
-import com.jeremy.lumi.ui.theme.LocalSemanticPhaseColors
 import com.jeremy.lumi.ui.theme.LocalIsDarkTheme
 import com.jeremy.lumi.ui.theme.LocalDialStyle
 import com.jeremy.lumi.ui.theme.DialStyle
 import com.jeremy.lumi.ui.theme.LocalBrandGradient
 import com.jeremy.lumi.ui.theme.LocalBrandBackgroundGradient
-import com.jeremy.lumi.ui.components.AmbientBackgroundLayer
+import com.jeremy.lumi.ui.components.*
+import com.jeremy.lumi.ui.theme.LumiThemeTokens
 import com.jeremy.lumi.ui.theme.AmbientScreen
+import com.jeremy.lumi.ui.screens.settings.SettingsViewModel
 import com.jeremy.lumi.data.preferences.OnboardingPreferenceManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -89,14 +90,20 @@ fun HomeScreen(
     onNavigateToChat: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
     onNavigateToPartner: () -> Unit = {},
+    onNavigateToCalendar: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
-    remindersViewModel: RemindersViewModel = hiltViewModel()
+    remindersViewModel: RemindersViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState           by viewModel.uiState.collectAsStateWithLifecycle()
     var showBalloonGame   by remember { mutableStateOf(false) }
     var showQuickLogSheet by remember { mutableStateOf(false) }
+    var showThemeSheet    by remember { mutableStateOf(false) }
+    var showPredictionInfoSheet by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope             = rememberCoroutineScope()
+    val context           = androidx.compose.ui.platform.LocalContext.current
 
     var screenReady by remember { mutableStateOf(false) }
     LaunchedEffect(uiState.isLoading) {
@@ -125,7 +132,7 @@ fun HomeScreen(
             when (event) {
                 is QuickLogViewModel.UiEvent.LogSaved -> {
                     showQuickLogSheet = false
-                    snackbarHostState.showSnackbar("✓ Registro guardado")
+                    snackbarHostState.showSnackbar(context.getString(R.string.log_saved_confirmation))
                 }
                 is QuickLogViewModel.UiEvent.ShowSnackbar -> {
                     snackbarHostState.showSnackbar(event.message)
@@ -139,8 +146,8 @@ fun HomeScreen(
             when (event) {
                 is HomeViewModel.HomeEvent.CycleStarted -> {
                     val result = snackbarHostState.showSnackbar(
-                        message = "Período registrado correctamente",
-                        actionLabel = "Deshacer",
+                        message = context.getString(R.string.home_snackbar_period_logged),
+                        actionLabel = context.getString(R.string.home_snackbar_undo),
                         duration = SnackbarDuration.Long
                     )
                     if (result == SnackbarResult.ActionPerformed) {
@@ -149,7 +156,7 @@ fun HomeScreen(
                 }
                 is HomeViewModel.HomeEvent.CycleRestored -> {
                     snackbarHostState.showSnackbar(
-                        message = "Ciclo anterior restaurado",
+                        message = context.getString(R.string.home_snackbar_cycle_restored),
                         duration = SnackbarDuration.Short
                     )
                 }
@@ -184,15 +191,10 @@ fun HomeScreen(
         }
     }
 
-    // Color de acento para AURA: usa el color semántico de la fase actual
-    val _semanticForAura = LocalSemanticPhaseColors.current
-    val currentAuraColor: Color? = when (uiState.currentPhase) {
-        CyclePhase.MENSTRUAL  -> _semanticForAura.menstrual
-        CyclePhase.FOLLICULAR -> _semanticForAura.follicular
-        CyclePhase.OVULATION  -> _semanticForAura.ovulation
-        CyclePhase.LUTEAL     -> _semanticForAura.luteal
-        else                  -> null
-    }
+    // Color de acento para AURA: usa el color armónico de la fase actual
+    val currentAuraColor: Color? = if (uiState.currentPhase != CyclePhase.UNKNOWN && uiState.currentPhase != null) {
+        homePhaseColor(uiState.currentPhase)
+    } else null
 
     val homeScrollState = rememberScrollState()
 
@@ -202,89 +204,22 @@ fun HomeScreen(
             accentColor          = currentAuraColor,
             scrollOffsetProvider = { homeScrollState.value.toFloat() }
         )
+        var showConfirmPeriod by remember { mutableStateOf(false) }
+        var showSuccessLottie by remember { mutableStateOf(false) }
+
         Scaffold(
             topBar = {
-                CenterAlignedTopAppBar(
-                    title = {
-                        val brandGradient = LocalBrandGradient.current
-                        if (brandGradient != null) {
-                            Text(
-                                stringResource(R.string.app_name),
-                                style = androidx.compose.ui.text.TextStyle(
-                                    brush = brandGradient,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize   = 20.sp
-                                )
-                            )
-                        } else {
-                            Text(
-                                stringResource(R.string.app_name),
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontSize = 20.sp
-                            )
+                LumiTopBar(
+                    hasNotificationAlert = true,
+                    onThemeClick = { showThemeSheet = true },
+                    onNotificationsClick = {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("No hay nuevas notificaciones en este momento.")
                         }
                     },
-                    actions = {
-                        // Indicador de error de sincronización
-                        if (uiState.syncError) {
-                            Icon(
-                                Icons.Rounded.CloudOff,
-                                contentDescription = "Sync Error",
-                                modifier = Modifier.padding(end = 8.dp).size(20.dp),
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-
-                        // ConnectionsIndicator
-                        ConnectionsIndicator(
-                            links = uiState.linkedCycles,
-                            onClick = onNavigateToPartner
-                        )
-                        IconButton(onClick = { viewModel.toggleDiscreetMode() }) {
-                            val icon = if (uiState.isDiscreetMode) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility
-                            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f))
-                        }
-                    },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = Color.Transparent
-                    )
+                    onChatClick = onNavigateToChat,
+                    onSettingsClick = onNavigateToSettings
                 )
-            },
-            floatingActionButton = {
-                Column(horizontalAlignment = Alignment.End) {
-                    AnimatedVisibility(
-                        visible = uiState.currentPhase == CyclePhase.MENSTRUAL ||
-                                uiState.currentPhase == CyclePhase.UNKNOWN,
-                        enter = fadeIn(tween(300)) + scaleIn(
-                            spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium), 0.7f),
-                        exit  = fadeOut(tween(200)) + scaleOut(targetScale = 0.7f)
-                    ) {
-                        SmallFloatingActionButton(
-                            onClick        = { showBalloonGame = true },
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor   = MaterialTheme.colorScheme.onSecondaryContainer
-                        ) { Icon(Icons.Rounded.FavoriteBorder, stringResource(R.string.fab_cramps)) }
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    val brandGradient = LocalBrandGradient.current
-                    if (brandGradient != null) {
-                        FloatingActionButton(
-                            onClick = { showQuickLogSheet = true },
-                            containerColor = Color.Transparent,
-                            elevation = FloatingActionButtonDefaults.elevation(0.dp),
-                            modifier = Modifier.background(brandGradient, shape = RoundedCornerShape(16.dp))
-                        ) {
-                            Icon(Icons.Rounded.Add, stringResource(R.string.log_title), tint = Color.White)
-                        }
-                    } else {
-                        FloatingActionButton(
-                            onClick        = { showQuickLogSheet = true },
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor   = MaterialTheme.colorScheme.onPrimary
-                        ) { Icon(Icons.Rounded.Add, stringResource(R.string.log_title)) }
-                    }
-                }
             },
             snackbarHost = { SnackbarHost(snackbarHostState) },
             containerColor = Color.Transparent
@@ -298,20 +233,46 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
-                        .verticalScroll(homeScrollState)
-                        .padding(horizontal = 24.dp),
+                        .verticalScroll(homeScrollState),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(22.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    FadeSlideIn(screenReady, 0) { 
-                        HeaderSection(
-                            currentDay = uiState.currentDayOfCycle,
-                            phase = uiState.currentPhase,
-                            isDiscreetMode = uiState.isDiscreetMode
+                    // Encabezado Editorial Aprobado
+                    FadeSlideIn(screenReady, 0) {
+                        val todayDate = com.jeremy.lumi.utils.LumiClock.today()
+                        val dateFmt = remember {
+                            DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Locale("es"))
+                        }
+                        val dateEyebrow = remember(todayDate) { todayDate.format(dateFmt) }
+                        val displayUserName = uiState.userName?.takeIf { it.isNotBlank() } ?: "kiwi"
+
+                        LumiEditorialHeading(
+                            eyebrow = dateEyebrow,
+                            titleNormal = "Hola, ",
+                            titleSerifItalic = "$displayUserName.",
+                            subtitle = "Un día a tu ritmo.",
+                            description = "Tu cuerpo cambia, y está bien. Aquí tienes lo importante de hoy.",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp)
                         )
                     }
 
-                    // â”€â”€ Cycle Stories â€” visible si hay vínculos activos â”€â”€â”€â”€â”€â”€â”€
+                    // Banner de retraso si aplica
+                    AnimatedVisibility(
+                        visible = uiState.isLate,
+                        enter   = fadeIn(tween(400)) + expandVertically(),
+                        exit    = fadeOut(tween(300)) + shrinkVertically()
+                    ) {
+                        DelayBanner(
+                            delayDays       = uiState.delayDays,
+                            delayState      = uiState.delayState,
+                            onPeriodArrived = { showConfirmPeriod = true },
+                            onDismiss       = { viewModel.dismissDelayBanner() }
+                        )
+                    }
+
+                    // Vínculos activos (Bonds) en Stories row si existen
                     if (uiState.linkedCycles.isNotEmpty()) {
                         FadeSlideIn(screenReady, STAGGER_MS / 2) {
                             CycleStoriesRow(
@@ -319,208 +280,186 @@ fun HomeScreen(
                                 onLinkClick = { linkedSheetLink = it }
                             )
                         }
-                    }else {
-                        FadeSlideIn(screenReady, STAGGER_MS / 2) {
-                            EmptyLinksCard(onClick = onNavigateToPartner)
-                        }
                     }
 
-                    var showConfirmPeriod by remember { mutableStateOf(false) }
-                    var showSuccessLottie by remember { mutableStateOf(false) }
+                    // Aro de Visualización del Ciclo Aprobado
+                    FadeSlideIn(screenReady, STAGGER_MS) {
+                        val phaseName = when (uiState.currentPhase) {
+                            CyclePhase.MENSTRUAL -> "Fase menstrual"
+                            CyclePhase.FOLLICULAR -> "Fase folicular"
+                            CyclePhase.OVULATION -> "Ovulación"
+                            CyclePhase.LUTEAL -> "Fase lútea"
+                            else -> "Fase activa"
+                        }
 
-                    //  Banner de retraso
-                    AnimatedVisibility(
-                        visible = uiState.isLate,
-                        enter   = fadeIn(tween(400)) + expandVertically(),
-                        exit    = fadeOut(tween(300)) + shrinkVertically()
-                    ) {
-                        DelayBanner(
-                            delayDays    = uiState.delayDays,
-                            delayState   = uiState.delayState,
-                            onPeriodArrived = { showConfirmPeriod = true },
-                            onDismiss       = { viewModel.dismissDelayBanner() }
+                        val estimatedDaysText = if (uiState.prediction != null) {
+                            val daysUntil = uiState.prediction!!.daysUntilNextPeriod
+                            if (daysUntil > 0) "Periodo estimado en ~$daysUntil días"
+                            else if (daysUntil == 0) "Periodo estimado hoy"
+                            else "Periodo en retraso de ${-daysUntil} días"
+                        } else "Periodo estimado en ~12 días"
+
+                        val confidenceLabel = uiState.predictionFactors?.confidenceLabel
+                            ?: "Fase estimada · certeza moderada"
+
+                        LumiCycleRing(
+                            currentDay = uiState.currentDayOfCycle,
+                            cycleLength = uiState.prediction?.cycleLength ?: 28,
+                            phaseName = phaseName,
+                            estimatedDaysText = estimatedDaysText,
+                            confidenceLabel = confidenceLabel
                         )
                     }
 
+                    // Tira Semanal de 7 Días Aprobada
                     if (uiState.weekDays.isNotEmpty()) {
-                        FadeSlideIn(screenReady, STAGGER_MS) {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                CycleWeekStrip(
-                                    days = uiState.weekDays,
-                                    isDiscreetMode = uiState.isDiscreetMode,
-                                    onDayClick = { day -> viewModel.selectDate(day.date) }
-                                )
-                                // Mini-leyenda debajo del strip: explica el significado de los dots
-                                if (!uiState.isDiscreetMode) {
-                                    PhaseLegend(isDiscreetMode = false)
-                                }
-
-                                AnimatedVisibility(
-                                    visible = uiState.selectedDate != null && uiState.selectedDate != com.jeremy.lumi.utils.LumiClock.today(),
-                                    enter = fadeIn(tween(250)) + expandVertically(),
-                                    exit = fadeOut(tween(200)) + shrinkVertically()
-                                ) {
-                                    Surface(
-                                        shape = RoundedCornerShape(14.dp),
-                                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f),
-                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                                modifier = Modifier.weight(1f)
-                                            ) {
-                                                Icon(
-                                                    Icons.Rounded.DateRange,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(18.dp),
-                                                    tint = MaterialTheme.colorScheme.secondary
-                                                )
-                                                val dateFmt = remember {
-                                                    DateTimeFormatter.ofPattern("d 'de' MMMM", Locale("es"))
-                                                }
-                                                val formatted = uiState.selectedDate?.format(dateFmt) ?: ""
-                                                Text(
-                                                    text = stringResource(R.string.home_timeline_viewing_date, formatted),
-                                                    fontSize = 13.sp,
-                                                    fontWeight = FontWeight.Medium,
-                                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                                )
-                                            }
-                                            TextButton(
-                                                onClick = { viewModel.resetToToday() },
-                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
-                                            ) {
-                                                Text(
-                                                    text = stringResource(R.string.home_timeline_back_to_today),
-                                                    fontSize = 13.sp,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                    color = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                        FadeSlideIn(screenReady, STAGGER_MS * 2) {
+                            LumiWeekStrip(
+                                weekDays = uiState.weekDays,
+                                selectedDate = uiState.selectedDate,
+                                onSelectDate = { viewModel.selectDate(it) },
+                                onViewCalendarClick = onNavigateToCalendar
+                            )
                         }
                     }
 
+                    // Tarjeta de Registro Diario ("Un momento para ti")
                     FadeSlideIn(screenReady, STAGGER_MS * 3) {
                         val todayLog by quickLogViewModel.todayLog.collectAsStateWithLifecycle()
-                        CycleRingCard(
-                            currentDay     = uiState.currentDayOfCycle,
-                            phase          = uiState.currentPhase,
-                            prediction     = uiState.prediction,
-                            isDiscreetMode = uiState.isDiscreetMode,
-                            streakDays     = uiState.logStreakDays,
-                            isLate         = uiState.isLate,
-                            todayLog       = todayLog?.dailyLog,
-                            onMetricClick  = { showQuickLogSheet = true },
-                            onLogPeriod    = { showConfirmPeriod = true }
+                        val hasEntry = todayLog != null
+                        val entrySubtitle = if (hasEntry && !todayLog?.dailyLog?.mood.isNullOrBlank()) {
+                            "Hoy te sientes ${todayLog?.dailyLog?.mood?.lowercase()}."
+                        } else if (hasEntry) {
+                            "Tu registro del día está guardado."
+                        } else {
+                            "Todavía no has registrado cómo te sientes."
+                        }
+
+                        LumiTodayCard(
+                            hasEntry = hasEntry,
+                            entrySubtitle = entrySubtitle,
+                            onLogClick = { showQuickLogSheet = true }
                         )
                     }
 
-                    var selectedPeriodOffset by remember { mutableIntStateOf(0) }
+                    // Nota Explicativa al pie con modal "Cómo lo calcula Lumi"
+                    LumiPredictionFootnote(
+                        onLearnMoreClick = { showPredictionInfoSheet = true }
+                    )
 
-                    if (showConfirmPeriod) {
-                        val offsetLabels = listOf("Hoy", "Ayer", "Hace 2d", "Hace 3d")
-                        AlertDialog(
-                            onDismissRequest = { 
-                                showConfirmPeriod = false 
-                                selectedPeriodOffset = 0
-                            },
-                            title = { Text(stringResource(R.string.confirm_period_title), fontWeight = FontWeight.Bold) },
-                            text = {
-                                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Text(stringResource(R.string.confirm_period_desc))
-                                    Text(
-                                        "¿Cuándo comenzó tu sangrado?",
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        offsetLabels.forEachIndexed { index, label ->
-                                            FilterChip(
-                                                selected = selectedPeriodOffset == index,
-                                                onClick = { selectedPeriodOffset = index },
-                                                label = { Text(label, fontSize = 11.sp) },
-                                                modifier = Modifier.weight(1f)
-                                            )
-                                        }
-                                    }
-                                }
-                            },
-                            confirmButton = {
-                                Button(
-                                    onClick = {
-                                        showConfirmPeriod = false
-                                        val selectedDate = com.jeremy.lumi.utils.LumiClock.today().minusDays(selectedPeriodOffset.toLong())
-                                        viewModel.startNewPeriod(selectedDate)
-                                        selectedPeriodOffset = 0
-                                        showSuccessLottie = true
-                                    }
-                                ) { Text(stringResource(R.string.confirm_period_yes)) }
-                            },
-                            dismissButton = {
-                                TextButton(onClick = { 
-                                    showConfirmPeriod = false
-                                    selectedPeriodOffset = 0
-                                }) { Text(stringResource(R.string.confirm_period_cancel)) }
-                            }
-                        )
+                    // Recordatorios activos (si los hay)
+                    FadeSlideIn(screenReady, STAGGER_MS * 4) {
+                        RemindersSection()
                     }
 
-                    if (showSuccessLottie) {
-                        androidx.compose.ui.window.Dialog(onDismissRequest = { showSuccessLottie = false }) {
-                            val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.lottie_checkmark))
-                            val progress by animateLottieCompositionAsState(
-                                composition = composition,
-                                iterations = 1
-                            )
-                            LaunchedEffect(progress) {
-                                if (progress == 1f) {
-                                    delay(200)
-                                    showSuccessLottie = false
-                                }
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .size(180.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (composition != null) {
-                                    LottieAnimation(
-                                        composition = composition,
-                                        progress = { progress },
-                                        modifier = Modifier.fillMaxSize().padding(16.dp)
-                                    )
-                                }
+                    Spacer(Modifier.height(80.dp))
+                }
+            }
+        }
+
+        var selectedPeriodOffset by remember { mutableIntStateOf(0) }
+
+        if (showConfirmPeriod) {
+            val offsetLabels = listOf(
+                stringResource(R.string.home_offset_today),
+                stringResource(R.string.home_offset_yesterday),
+                stringResource(R.string.home_offset_2d),
+                stringResource(R.string.home_offset_3d)
+            )
+            AlertDialog(
+                onDismissRequest = { 
+                    showConfirmPeriod = false 
+                    selectedPeriodOffset = 0
+                },
+                title = { Text(stringResource(R.string.confirm_period_title), fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(stringResource(R.string.confirm_period_desc))
+                        Text(
+                            stringResource(R.string.home_confirm_period_when),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            offsetLabels.forEachIndexed { index, label ->
+                                FilterChip(
+                                    selected = selectedPeriodOffset == index,
+                                    onClick = { selectedPeriodOffset = index },
+                                    label = { Text(label, fontSize = 11.sp) },
+                                    modifier = Modifier.weight(1f)
+                                )
                             }
                         }
                     }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showConfirmPeriod = false
+                            val selectedDate = com.jeremy.lumi.utils.LumiClock.today().minusDays(selectedPeriodOffset.toLong())
+                            viewModel.startNewPeriod(selectedDate)
+                            selectedPeriodOffset = 0
+                            showSuccessLottie = true
+                        }
+                    ) { Text(stringResource(R.string.confirm_period_yes)) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { 
+                        showConfirmPeriod = false
+                        selectedPeriodOffset = 0
+                    }) { Text(stringResource(R.string.confirm_period_cancel)) }
+                }
+            )
+        }
 
-                    
-
-                    FadeSlideIn(screenReady, STAGGER_MS * 5) { RemindersSection() }
-
-
-                    Spacer(Modifier.height(96.dp))
+        if (showSuccessLottie) {
+            androidx.compose.ui.window.Dialog(onDismissRequest = { showSuccessLottie = false }) {
+                val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.lottie_checkmark))
+                val progress by animateLottieCompositionAsState(
+                    composition = composition,
+                    iterations = 1
+                )
+                LaunchedEffect(progress) {
+                    if (progress == 1f) {
+                        delay(200)
+                        showSuccessLottie = false
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .size(180.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (composition != null) {
+                        LottieAnimation(
+                            composition = composition,
+                            progress = { progress },
+                            modifier = Modifier.fillMaxSize().padding(16.dp)
+                        )
+                    }
                 }
             }
+        }
+
+        if (showThemeSheet) {
+            val currentTheme by settingsViewModel.currentTheme.collectAsStateWithLifecycle()
+            LumiThemeSheet(
+                selectedTheme = currentTheme,
+                onSelectTheme = { settingsViewModel.changeTheme(it) },
+                onDismiss = { showThemeSheet = false }
+            )
+        }
+
+        if (showPredictionInfoSheet) {
+            LumiPredictionInfoSheet(
+                onDismiss = { showPredictionInfoSheet = false }
+            )
         }
 
         if (showBalloonGame) BalloonGameSheet { showBalloonGame = false }
@@ -613,7 +552,7 @@ fun ConnectionsIndicator(links: List<PartnerLink>, onClick: () -> Unit) {
                 ) {
                     Icon(
                         Icons.Rounded.PeopleAlt,
-                        contentDescription = "Vincular",
+                        contentDescription = stringResource(R.string.home_cd_link),
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
                     )
@@ -645,7 +584,7 @@ fun ConnectionsIndicator(links: List<PartnerLink>, onClick: () -> Unit) {
                 ) {
                     Icon(
                         Icons.Rounded.PeopleAlt,
-                        contentDescription = "Vínculos",
+                        contentDescription = stringResource(R.string.home_cd_connections),
                         modifier = Modifier.size(15.dp),
                         tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                     )
@@ -1089,9 +1028,7 @@ fun HugAnimationOverlay(visible: Boolean) {
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  DELAY BANNER
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun DelayBanner(
@@ -1108,9 +1045,9 @@ private fun DelayBanner(
     }
 
     val message = when (delayState) {
-        DelayState.LATE           -> "Tu periodo lleva $delayDays ${if (delayDays == 1) "día" else "días"} de retraso. Es normal que ocurra."
-        DelayState.VERY_LATE      -> "$delayDays días de retraso. El estrés, cambios de peso o ejercicio intenso pueden causarlo."
-        DelayState.EXTREMELY_LATE -> "$delayDays días de retraso. Si descartaste un embarazo, consulta a tu ginecóloga."
+        DelayState.LATE           -> if (delayDays == 1) stringResource(R.string.home_delay_late_one, delayDays) else stringResource(R.string.home_delay_late_other, delayDays)
+        DelayState.VERY_LATE      -> stringResource(R.string.home_delay_very_late, delayDays)
+        DelayState.EXTREMELY_LATE -> stringResource(R.string.home_delay_extremely_late, delayDays)
         DelayState.ON_TIME        -> ""
     }
 
@@ -1165,41 +1102,58 @@ private fun FadeSlideIn(visible: Boolean, delayMs: Int, content: @Composable () 
 }
 
 @Composable
-private fun HeaderSection(currentDay: Int, phase: CyclePhase, isDiscreetMode: Boolean) {
+private fun HeaderSection(
+    userName: String?,
+    phase: CyclePhase,
+    insightText: String,
+    isDiscreetMode: Boolean
+) {
+    val phaseColor = if (isDiscreetMode) Color.Gray else homePhaseColor(phase)
     val phaseName = if (isDiscreetMode) stringResource(R.string.home_phase_hidden) else when (phase) {
-        CyclePhase.MENSTRUAL -> stringResource(R.string.home_phase_menstrual)
+        CyclePhase.MENSTRUAL  -> stringResource(R.string.home_phase_menstrual)
         CyclePhase.FOLLICULAR -> stringResource(R.string.home_phase_follicular)
-        CyclePhase.OVULATION -> stringResource(R.string.home_phase_ovulation)
-        CyclePhase.LUTEAL -> stringResource(R.string.home_phase_luteal)
-        else -> stringResource(R.string.home_phase_unknown)
+        CyclePhase.OVULATION  -> stringResource(R.string.home_phase_ovulation)
+        CyclePhase.LUTEAL     -> stringResource(R.string.home_phase_luteal)
+        else                  -> stringResource(R.string.home_phase_unknown)
+    }
+
+    val greetingText = when {
+        !userName.isNullOrBlank() -> stringResource(R.string.home_greeting_named, userName.split(" ").first())
+        else -> stringResource(R.string.home_greeting_hello)
     }
 
     Column(
         modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp),
         horizontalAlignment = Alignment.Start
     ) {
+        // Saludo personalizado — siempre aquí, nunca "Día N"
         Text(
-            text = if (isDiscreetMode || currentDay <= 0) stringResource(R.string.home_greeting_hello) else stringResource(R.string.home_greeting_day, currentDay),
+            text = greetingText,
             color = MaterialTheme.colorScheme.onBackground,
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold
         )
-        val semanticPhaseColors = LocalSemanticPhaseColors.current
-        val semanticPhaseColor = when (phase) {
-            CyclePhase.MENSTRUAL  -> semanticPhaseColors.menstrual
-            CyclePhase.FOLLICULAR -> semanticPhaseColors.follicular
-            CyclePhase.OVULATION  -> semanticPhaseColors.ovulation
-            CyclePhase.LUTEAL     -> semanticPhaseColors.luteal
-            else                  -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f)
-        }
+        // Nombre de fase — color de fase
         Text(
             text = phaseName,
-            color = if (isDiscreetMode) Color.Gray else semanticPhaseColor,
+            color = phaseColor,
             fontSize = 18.sp,
             fontWeight = FontWeight.Medium
         )
+        // Insight diario — una línea, tipografía secundaria, tono neutro
+        if (insightText.isNotBlank()) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = insightText,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.78f),
+                fontSize = 13.sp,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
     }
 }
+
 
 @Composable
 fun CycleWeekStrip(
@@ -1367,6 +1321,7 @@ private fun LegendItem(color: Color, label: String) {
 @Composable
 fun CycleRingCard(
     currentDay: Int, phase: CyclePhase, prediction: CyclePrediction?, isDiscreetMode: Boolean, 
+    predictionFactors: PredictionFactorsUi? = null,
     streakDays: Int = 0, isLate: Boolean = false, 
     todayLog: DailyLogEntity? = null, onMetricClick: () -> Unit = {},
     onLogPeriod: () -> Unit = {}
@@ -1627,66 +1582,120 @@ fun CycleRingCard(
                     lineHeight = 16.sp
                 )
             }
+
+            // ── Badge de certeza integrado al borde del aro (Fix 4) ──────────
+            // Posicionado en borde superior-derecho (~45deg). Aro de 280dp.
+            if (predictionFactors != null && !isDiscreetMode) {
+                val badgeColor = animatedPhaseColor
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .offset(x = 86.dp, y = 14.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(badgeColor.copy(alpha = if (isDark) 0.22f else 0.15f))
+                        .border(1.dp, badgeColor.copy(alpha = 0.55f), RoundedCornerShape(50))
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(5.dp)
+                                .clip(CircleShape)
+                                .background(badgeColor)
+                        )
+                        Text(
+                            text = predictionFactors.confidenceLabel,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = badgeColor,
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
         }
         
         Spacer(Modifier.height(32.dp))
         
-        DailyMetricsRow(waterIntake = todayLog?.waterIntake, sleepHours = todayLog?.sleepHours, onClick = onMetricClick)
+        // Fix 6: mostrar tarjeta consolidada si ambos datos están vacíos
+        if (todayLog?.waterIntake == null && todayLog?.sleepHours == null) {
+            TodayLogCard(onClick = onMetricClick)
+        } else {
+            DailyMetricsRow(waterIntake = todayLog?.waterIntake, sleepHours = todayLog?.sleepHours, onClick = onMetricClick)
+        }
         
-        Spacer(Modifier.height(16.dp))
-        
-        DailyInsightCard(phase = phase, currentDay = currentDay, cycleLen = cycleLen, isDiscreetMode = isDiscreetMode)
+        if (predictionFactors != null && !isDiscreetMode) {
+            Spacer(Modifier.height(16.dp))
+            PredictionFactorsCard(
+                factors = predictionFactors,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
+            )
+        }
     }
 }
 
 @Composable
 fun DailyInsightCard(phase: CyclePhase, currentDay: Int, cycleLen: Int, isDiscreetMode: Boolean) {
-    val semanticPhaseColors = LocalSemanticPhaseColors.current
-    val color = if (isDiscreetMode) Color.Gray else when (phase) {
-        CyclePhase.MENSTRUAL  -> semanticPhaseColors.menstrual
-        CyclePhase.FOLLICULAR -> semanticPhaseColors.follicular
-        CyclePhase.OVULATION  -> semanticPhaseColors.ovulation
-        CyclePhase.LUTEAL     -> semanticPhaseColors.luteal
-        else                  -> MaterialTheme.colorScheme.primary
-    }
-    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
-    val GlassSurface = if (isDark) Color(0x1AFFFFFF) else Color(0x0A000000)
-    val GlassBorder = if (isDark) Color(0x33FFFFFF) else Color(0x1A000000)
-    
+    val color = if (isDiscreetMode) Color.Gray else homePhaseColor(phase)
+    val secondaryAura = MaterialTheme.colorScheme.secondary
     val message = if (isDiscreetMode) stringResource(R.string.home_insight_discreet) else getDynamicPhaseMessage(phase, currentDay, cycleLen)
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(Brush.radialGradient(listOf(GlassSurface, Color.Transparent)))
-            .border(1.dp, GlassBorder, RoundedCornerShape(24.dp))
-            .padding(24.dp)
+    AuraCard(
+        primaryAuraColor = color,
+        secondaryAuraColor = secondaryAura,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
     ) {
-        Row(verticalAlignment = Alignment.Top) {
-            Icon(
-                imageVector = Icons.Rounded.AutoAwesome,
-                contentDescription = stringResource(R.string.home_insight_cd),
-                tint = color,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column {
-                Text(
-                    text = stringResource(R.string.home_insight_title),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = message,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp
-                )
+        // Tag / Badge superior de fase
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(color.copy(alpha = 0.12f))
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Rounded.AutoAwesome,
+                        contentDescription = null,
+                        tint = color,
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (isDiscreetMode) stringResource(R.string.home_insight_badge) 
+                               else "${stringResource(phase.phaseNameRes)} · ${stringResource(R.string.home_greeting_day, currentDay)}",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = color
+                    )
+                }
             }
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            text = stringResource(R.string.home_insight_title),
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp,
+            letterSpacing = (-0.2).sp
+        )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = message,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f),
+            fontSize = 14.sp,
+            lineHeight = 21.sp
+        )
     }
 }
 
@@ -1836,14 +1845,52 @@ fun EmptyLinksCard(onClick: () -> Unit) {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  Tarjeta consolidada de estado vacío — Fix 6
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun TodayLogCard(onClick: () -> Unit) {
+    val isDark = LocalIsDarkTheme.current
+    val surfaceColor = if (isDark) Color(0x1AFFFFFF) else Color(0x0A000000)
+    val borderColor  = if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.45f)
+                       else Color(0x14000000)
+    val shape        = RoundedCornerShape(20.dp)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(surfaceColor)
+            .border(1.dp, borderColor, shape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 18.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = stringResource(R.string.home_today_log_title),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.home_today_log_hint),
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.70f)
+            )
+        }
+    }
+}
+
 @Composable
 fun DailyMetricsRow(waterIntake: Float?, sleepHours: Float?, onClick: () -> Unit) {
     val isDark = LocalIsDarkTheme.current
-    // Colores semánticos fijos: no dependen del tema activo
-    val waterColor = if (isDark) Color(0xFF56B4E8) else Color(0xFF2D9CDB)
-    val sleepColor = if (isDark) Color(0xFF9E86FF) else Color(0xFF7B61FF)
-    val waterBg    = if (isDark) Color(0xFF1A2A38) else waterColor.copy(alpha = 0.12f)
-    val sleepBg    = if (isDark) Color(0xFF221A36) else sleepColor.copy(alpha = 0.12f)
+    val waterColor = if (isDark) Color(0xFF64B5F6) else Color(0xFF1976D2)
+    val sleepColor = if (isDark) Color(0xFFB39DDB) else Color(0xFF6750A4)
+    val waterBg    = waterColor.copy(alpha = if (isDark) 0.18f else 0.12f)
+    val sleepBg    = sleepColor.copy(alpha = if (isDark) 0.18f else 0.12f)
 
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),

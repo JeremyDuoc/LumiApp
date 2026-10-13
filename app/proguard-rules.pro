@@ -29,6 +29,8 @@
 -keep class com.jeremy.lumi.data.local.entity.** { *; }
 -keep class com.jeremy.lumi.domain.model.** { *; }
 
-# TensorFlow Lite
+# TensorFlow Lite / LiteRT (16 KB compatible)
 -keep class org.tensorflow.lite.** { *; }
 -keepclassmembers class org.tensorflow.lite.** { *; }
+-keep class com.google.ai.edge.litert.** { *; }
+-keepclassmembers class com.google.ai.edge.litert.** { *; }

@@ -4,6 +4,7 @@ import com.jeremy.lumi.data.local.dao.LumiDao
 import com.jeremy.lumi.data.local.entity.CycleEntity
 import com.jeremy.lumi.data.local.entity.DailyLogEntity
 import com.jeremy.lumi.data.local.entity.SymptomEntity
+import com.jeremy.lumi.data.preferences.OnboardingPreferenceManager
 import com.jeremy.lumi.utils.LumiClock
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -12,68 +13,94 @@ import kotlin.math.roundToInt
 import kotlin.random.Random
 
 /**
- * Inyecta 4 meses de historial clínico y bioestadístico de alta precisión para probar:
- *   1. Motor de Correlaciones Multivariable de Spearman (Sueño vs Dolor, Sueño vs Energía, Agua vs Dolor).
+ * Inyecta 6 meses de historial clínico con alta irregularidad biológica y registro denso de síntomas.
+ *
+ * Diseñado para validar exhaustivamente:
+ *   1. Motor de Correlaciones de Spearman (Sueño vs Dolor, Sueño vs Energía, Agua vs Dolor con N > 190).
  *   2. Efectos Cruzados con Rezago Temporal (Lag-1: Estrés en T-1 dispara Dolor en T).
- *   3. Minería de Clústeres de Síntomas con Índice de Jaccard (J > 0.60) y Riesgo Relativo por Fase.
- *   4. Curva de Temperatura Basal (BBT) Sintotérmica con periodo 3-sobre-6 de la OMS / Criterios de Roetzer.
- *   5. Detección de Patrones Clínicos (PMDD según DSM-5, Tests de Ovulación LH (+)).
- *   6. Intervalos de Confianza Probabilísticos de Ciclo (80% y 95%).
+ *   3. Minería de Clústeres de Síntomas con Índice de Jaccard (J >= 0.60) y Riesgo Relativo por Fase.
+ *   4. Curva de Temperatura Basal (BBT) Sintotérmica (caída ovulatoria + salto térmico de progesterona).
+ *   5. Detección de Patrones Clínicos y Alertas Médicas (SOP / Irregularidad por alta varianza sigma >= 8.0,
+ *      PMDD según DSM-5, Endometriosis por dolor recurrente EVA >= 7, STRAW+10 por saltos > 7d).
+ *   6. Intervalos de Confianza y Factores de Certeza en Home ("Certeza moderada / En calibración",
+ *      barra de Regularidad baja ~15-25%, Historial 98%, Síntomas densos 85%+).
  */
 class MockDataGeneratorUseCase @Inject constructor(
-    private val dao: LumiDao
+    private val dao: LumiDao,
+    private val onboardingPreferenceManager: OnboardingPreferenceManager
 ) {
     suspend operator fun invoke() {
-        // 1. Limpiamos la BD para evitar datos residuales o inconsistentes
+        // 1. Limpiamos la BD para asegurar un entorno de pruebas limpio
         dao.clearAllDataForDev()
+
+        // 2. Ajustamos preferencias: Onboarding listo, ciclo reportado irregular, todas las categorías activas
+        onboardingPreferenceManager.markOnboardingCompleted(isObserver = false)
+        onboardingPreferenceManager.setIsRegular(false)
+        onboardingPreferenceManager.setActiveLogCategories(
+            setOf("physical", "digestive", "mucus", "intercourse", "wellbeing", "vitals")
+        )
 
         val today = LumiClock.today()
 
-        // 4 ciclos cerrados previos de alta fidelidad biológica (28, 29, 28, 28)
-        val closedCycleLengths = listOf(28, 29, 28, 28)
-        val currentCycleLength = 28
-        val periodLength = 5
+        // 6 ciclos cerrados históricos de duraciones marcadamente irregulares:
+        // [38d, 22d, 42d, 24d, 44d, 26d] -> Amplitud: 22 a 44 días (22 días de variación).
+        // Diferencias consecutivas: 16d, 20d, 18d, 20d, 18d (todas >= 7d, activando STRAW+10 / Perimenopausia / SOP).
+        // Desviación típica sigma ≈ 8.9 días (activando alerta médica de varianza alta PCOS_HIGH_VARIANCE_THRESHOLD = 8.0).
+        // Suma de días cerrados: 38 + 22 + 42 + 24 + 44 + 26 = 196 días (~6.5 meses).
+        val closedCycleLengths = listOf(38, 22, 42, 24, 44, 26)
+        val periodLengths      = listOf(6,  4,  6,  4,  7,  5)
 
-        // El ciclo actual lleva 14 días (hoy es el día 15, fase ovulatoria / lútea temprana)
+        // El ciclo activo actual empezó hace 14 días (hoy es el día 15, fase folicular tardía / pre-ovulatoria)
         val currentCycleDaysPassed = 14
+        val currentEstimatedLength = 33
+        val currentPeriodLength    = 5
+
         val totalHistoricalDays = closedCycleLengths.sum() + currentCycleDaysPassed
         var cycleStartDate = today.minusDays(totalHistoricalDays.toLong())
 
         var previousDayStress = 3
 
-        // 2. Generar los 4 ciclos pasados cerrados
-        for (cycleLen in closedCycleLengths) {
+        // 3. Generar los 6 ciclos pasados cerrados
+        for (i in closedCycleLengths.indices) {
+            val cycleLen = closedCycleLengths[i]
+            val periodLen = periodLengths[i]
             val cycleEndDate = cycleStartDate.plusDays(cycleLen.toLong() - 1)
+
+            // Luteal phase fisiológica promedio de 14 días
+            val ovDayIndex = (cycleLen - 14 - 1).coerceAtLeast(periodLen + 1)
+            val predictedOvulationDate = cycleStartDate.plusDays(ovDayIndex.toLong())
+                .atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
 
             val cycle = CycleEntity(
                 startDate = cycleStartDate.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli(),
                 endDate = cycleEndDate.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli(),
-                predictedOvulationDate = cycleStartDate.plusDays((cycleLen - 14 - 1).toLong())
-                    .atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli(),
+                predictedOvulationDate = predictedOvulationDate,
                 cycleLength = cycleLen,
-                periodLength = periodLength
+                periodLength = periodLen
             )
             val cycleId = dao.insertCycle(cycle).toInt()
 
             previousDayStress = generateLogsForCycle(
                 startDate = cycleStartDate,
                 daysCount = cycleLen,
-                periodLength = periodLength,
+                periodLength = periodLen,
                 cycleId = cycleId,
-                initialStress = previousDayStress
+                initialStress = previousDayStress,
+                isClosedCycle = true
             )
 
             cycleStartDate = cycleEndDate.plusDays(1)
         }
 
-        // 3. Generar el ciclo actual activo (abierto, hasta el día de hoy)
+        // 4. Generar el ciclo actual activo (abierto, hasta el día de hoy)
+        val activeOvDayIndex = (currentEstimatedLength - 14 - 1).coerceAtLeast(currentPeriodLength + 1)
         val activeCycle = CycleEntity(
             startDate = cycleStartDate.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli(),
             endDate = null,
-            predictedOvulationDate = cycleStartDate.plusDays((currentCycleLength - 14 - 1).toLong())
+            predictedOvulationDate = cycleStartDate.plusDays(activeOvDayIndex.toLong())
                 .atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli(),
-            cycleLength = currentCycleLength,
-            periodLength = periodLength
+            cycleLength = currentEstimatedLength,
+            periodLength = currentPeriodLength
         )
         val activeCycleId = dao.insertCycle(activeCycle).toInt()
 
@@ -83,9 +110,10 @@ class MockDataGeneratorUseCase @Inject constructor(
         generateLogsForCycle(
             startDate = cycleStartDate,
             daysCount = daysToInject,
-            periodLength = periodLength,
+            periodLength = currentPeriodLength,
             cycleId = activeCycleId,
-            initialStress = previousDayStress
+            initialStress = previousDayStress,
+            isClosedCycle = false
         )
     }
 
@@ -94,112 +122,145 @@ class MockDataGeneratorUseCase @Inject constructor(
         daysCount: Int,
         periodLength: Int,
         cycleId: Int,
-        initialStress: Int
+        initialStress: Int,
+        isClosedCycle: Boolean
     ): Int {
         var prevStress = initialStress
-        val ovulationDayIndex = 13 // Día 14 del ciclo (0-indexed 13)
+        // En ciclos irregulares la ovulación se desplaza según la duración total del ciclo
+        val ovulationDayIndex = (daysCount - 14 - 1).coerceAtLeast(periodLength + 2)
 
         for (dayIndex in 0 until daysCount) {
             val date = startDate.plusDays(dayIndex.toLong())
             val dateMillis = date.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
 
-            val isMenstrual = dayIndex < periodLength
+            val isMenstrual  = dayIndex < periodLength
             val isFollicular = dayIndex in periodLength until (ovulationDayIndex - 2)
-            val isOvulation = dayIndex in (ovulationDayIndex - 2)..(ovulationDayIndex + 1)
-            val isLutealMid = dayIndex in (ovulationDayIndex + 2)..(daysCount - 5)
-            val isPms = dayIndex >= (daysCount - 4) // Últimos 4 días premenstruales
+            val isOvulation  = dayIndex in (ovulationDayIndex - 2)..(ovulationDayIndex + 1)
+            val isLutealMid  = dayIndex in (ovulationDayIndex + 2)..(daysCount - 5)
+            val isPms        = dayIndex >= (daysCount - 4) && isClosedCycle
 
-            // ── 1. Sueño vs Dolor y Energía (Fuerte correlación de Spearman) ──
-            val isShortSleepDay = (dayIndex % 7 == 1) || (isPms && dayIndex % 2 == 0)
+            // ── 1. Sueño vs Dolor y Energía (Fuerte correlación de Spearman rs < -0.55) ──
+            val isShortSleepDay = (dayIndex % 7 == 2) || (isPms && dayIndex % 2 == 0)
             val sleepHours = if (isShortSleepDay) {
-                4.5f + Random.nextFloat() * 1.0f // 4.5 - 5.5h (sueño insuficiente)
+                4.2f + Random.nextFloat() * 1.2f // 4.2h - 5.4h (insuficiente)
             } else {
-                7.5f + Random.nextFloat() * 1.2f // 7.5 - 8.7h (buen descanso)
+                7.4f + Random.nextFloat() * 1.3f // 7.4h - 8.7h (descanso óptimo)
             }
 
-            // Energía directamente proporcional al sueño
-            val energyLevel = if (sleepHours < 6.0f) {
-                Random.nextInt(2, 5)
-            } else {
-                Random.nextInt(7, 10)
+            // Energía directamente proporcional al sueño y a la fase biológica
+            val energyLevel = when {
+                sleepHours < 5.8f -> Random.nextInt(2, 5)
+                isOvulation       -> Random.nextInt(8, 11)
+                isFollicular      -> Random.nextInt(7, 10)
+                isMenstrual       -> Random.nextInt(3, 6)
+                else              -> Random.nextInt(4, 7)
             }
 
-            // ── 2. Estrés y Efecto Cruzado con Rezago Temporal (Lag-1) ───────
-            val isStressSpike = (dayIndex % 6 == 3) || isPms
+            // ── 2. Estrés y Efecto Cruzado con Rezago Temporal (Lag-1) ──────────
+            val isStressSpike = (dayIndex % 6 == 3) || (isPms && dayIndex % 3 == 1)
             val stressLevel = if (isStressSpike) {
                 Random.nextInt(7, 10)
             } else {
                 Random.nextInt(2, 5)
             }
 
-            // Dolor basal + impacto del sueño + impacto de menstruación + rezago temporal (Lag-1 de estrés ayer)
+            // ── 3. Dolor (Escala EVA 0-10) ──────────────────────────────────────
             var pain = 0
             if (isMenstrual) {
-                pain = if (dayIndex < 2) Random.nextInt(6, 9) else Random.nextInt(3, 6)
+                pain = when (dayIndex) {
+                    0 -> Random.nextInt(7, 10) // Dolor menstrual severo día 1 (Endo check)
+                    1 -> Random.nextInt(6, 9)  // Día 2
+                    2 -> Random.nextInt(4, 6)
+                    else -> Random.nextInt(1, 4)
+                }
+            } else if (isOvulation) {
+                // Dolor intermenstrual pélvico (Mittelschmerz)
+                if (dayIndex == ovulationDayIndex || dayIndex == ovulationDayIndex - 1) {
+                    pain = Random.nextInt(2, 5)
+                }
             } else if (isPms) {
-                pain = Random.nextInt(2, 5)
+                pain = Random.nextInt(3, 6) // Cefalea o dolor lumbar premenstrual
             }
 
-            // Si ayer hubo estrés alto (Lag-1), hoy detona +2 a +3 de dolor pélvico o cefalea
-            if (prevStress >= 7) {
+            // Efecto Rezago Temporal (Lag-1): estrés alto ayer detona dolor pélvico/cefalea hoy
+            if (prevStress >= 7 && dayIndex > 0) {
                 pain = (pain + Random.nextInt(2, 4)).coerceAtMost(10)
             }
 
-            // Si durmió poco, el dolor se amplifica
-            if (sleepHours < 6.0f && pain > 0) {
+            // Falta de sueño amplifica el dolor percibido
+            if (sleepHours < 5.8f && pain > 0) {
                 pain = (pain + 2).coerceAtMost(10)
             }
 
-            // ── 3. Hidratación (Agua) ─────────────────────────────────────────
+            // ── 4. Hidratación (Agua) ───────────────────────────────────────────
             val waterIntake = if (sleepHours > 7.0f && stressLevel < 6) {
-                2.2f + Random.nextFloat() * 0.6f // 2.2 - 2.8 L
+                2.2f + Random.nextFloat() * 0.6f // 2.2L - 2.8L
             } else {
-                1.0f + Random.nextFloat() * 0.5f // 1.0 - 1.5 L
+                1.0f + Random.nextFloat() * 0.5f // 1.0L - 1.5L
             }
 
-            // ── 4. Temperatura Basal Sintotérmica (OMS periodo 3-sobre-6) ───────
+            // ── 5. Curva de Temperatura Basal (BBT) Sintotérmica ────────────────
             val bbt = when {
                 dayIndex < ovulationDayIndex -> {
-                    36.18f + (Random.nextFloat() * 0.14f) // 36.18 - 36.32
+                    36.18f + (Random.nextFloat() * 0.14f) // Fase folicular baja: 36.18 - 36.32
                 }
                 dayIndex == ovulationDayIndex -> {
-                    36.15f + (Random.nextFloat() * 0.08f) // Bajada ovulatoria
+                    36.10f + (Random.nextFloat() * 0.08f) // Bajada ovulatoria
                 }
                 else -> {
-                    36.65f + (Random.nextFloat() * 0.18f) // 36.65 - 36.83 (salto térmico)
+                    36.66f + (Random.nextFloat() * 0.19f) // Salto térmico lúteo: 36.66 - 36.85
                 }
             }
 
-            // ── 5. Moco Cervical y Relaciones Sexuales ────────────────────────
+            // ── 6. Flujo Menstrual y Manchado (Spotting) ─────────────────────────
+            val flowIntensity = when {
+                isMenstrual && dayIndex in 0..1 -> "Abundante"
+                isMenstrual && dayIndex == 2    -> "Medio"
+                isMenstrual                     -> "Ligero"
+                else                            -> null
+            }
+
+            // En ciclos anovulatorios / largos (>= 38d), spotting intermenstrual frecuente
+            val isSpottingDay = (daysCount >= 38 && dayIndex in listOf(16, 17)) ||
+                                (isMenstrual && dayIndex == periodLength - 1)
+
+            // ── 7. Moco Cervical ─────────────────────────────────────────────────
             val cervicalMucus = when {
                 isMenstrual -> null
-                isFollicular -> "Cremoso"
                 dayIndex in (ovulationDayIndex - 2)..ovulationDayIndex -> "Clara de Huevo"
-                else -> "Seco"
+                dayIndex in (ovulationDayIndex - 4)..(ovulationDayIndex - 3) -> "Acuoso"
+                isFollicular -> "Cremoso"
+                isLutealMid  -> "Pegajoso"
+                else         -> "Seco"
             }
 
-            val hadSex = dayIndex in listOf(11, 13, 20)
-            val protection = if (hadSex) true else null
-            val method = if (hadSex) "Preservativo" else null
+            // ── 8. Actividad Sexual ──────────────────────────────────────────────
+            val hadSex = dayIndex in listOf(ovulationDayIndex - 2, ovulationDayIndex, ovulationDayIndex + 4)
+            val protection = if (hadSex) (dayIndex % 2 == 0) else null
+            val method = if (hadSex && protection == true) "Condón" else null
 
-            // ── 6. Flujo Menstrual ───────────────────────────────────────────
-            val flowIntensity = when (dayIndex) {
-                0, 1 -> "Abundante"
-                2 -> "Medio"
-                3, 4 -> "Ligero"
-                else -> null
-            }
-
-            // ── 7. Estados de Ánimo (Patrón Clínico PMDD de DSM-5) ────────────
+            // ── 9. Estados de Ánimo (Patrón Clínico PMDD de DSM-5) ───────────────
             val mood = when {
                 isPms -> when (dayIndex % 3) {
                     0 -> "Irritable"
                     1 -> "Ansiosa"
                     else -> "Abrumada"
                 }
-                isMenstrual -> if (dayIndex < 2) "En calma" else "Cansada"
-                isOvulation -> "Energética"
-                else -> "Feliz"
+                isMenstrual -> if (dayIndex < 2) "Cansada" else "En calma"
+                isOvulation -> "Enérgica"
+                isFollicular -> if (dayIndex % 2 == 0) "Feliz" else "Enérgica"
+                else -> "Calmada"
+            }
+
+            // ── 10. Notas Contextuales Clínicas ──────────────────────────────────
+            val note = when {
+                isMenstrual && dayIndex == 0 -> "Inicio de periodo con cólicos fuertes y dolor lumbar. Guatero caliente."
+                isMenstrual && dayIndex == 1 -> "Flujo abundante, reposo en cama."
+                dayIndex == ovulationDayIndex -> "Test LH positivo marcado y moco elástico. Puntada en ovario."
+                isSpottingDay && !isMenstrual -> "Leve manchado intermenstrual rosado."
+                isPms && dayIndex == daysCount - 2 -> "Cefalea intensa, hinchazón y bastante irritabilidad hoy."
+                !isClosedCycle && dayIndex == daysCount - 1 -> "Día 15 del ciclo: energía alta y piel radiante."
+                else -> null
             }
 
             // Guardar DailyLogEntity
@@ -208,7 +269,7 @@ class MockDataGeneratorUseCase @Inject constructor(
                 date = dateMillis,
                 flowIntensity = flowIntensity,
                 painLevel = pain,
-                spotting = false,
+                spotting = isSpottingDay,
                 mood = mood,
                 energyLevel = energyLevel,
                 sleepHours = (sleepHours * 10).roundToInt() / 10f,
@@ -219,40 +280,75 @@ class MockDataGeneratorUseCase @Inject constructor(
                 hadIntercourse = hadSex,
                 protectionUsed = protection,
                 contraceptionMethod = method,
-                notes = if (isOvulation) "Pico de energía y moco clara de huevo fértil" else null
+                notes = note
             )
             val logId = dao.insertDailyLog(logEntity).toInt()
 
-            // ── 8. Inyección de Clústeres de Síntomas con Alto Jaccard (J >= 0.60) ──
+            // ── 11. Inyección Densa de Síntomas con Alto Jaccard (J >= 0.60) ─────
             val symptomsToInsert = mutableListOf<String>()
 
-            // Clúster 1: Menstrual ("Cólicos" + "Dolor lumbar" + "Fatiga") -> J > 0.80 en Menstruación
-            if (isMenstrual && dayIndex in 0..2) {
+            // Clúster 1: Menstrual ("Cólicos" + "Dolor lumbar" + "Fatiga" + "Dolor de cabeza")
+            if (isMenstrual) {
                 symptomsToInsert.add("Cólicos")
                 symptomsToInsert.add("Dolor lumbar")
                 symptomsToInsert.add("Fatiga")
+                if (dayIndex <= 1) {
+                    symptomsToInsert.add("Dolor de cabeza")
+                    symptomsToInsert.add("Prob. Digestivos")
+                }
             }
 
-            // Clúster 2: Premenstrual / Lúteo ("Migraña" + "Náuseas" + "Hinchazón" + "Sensibilidad Senos") -> J > 0.70 en Fase Lútea
+            // Clúster 2: Folicular ("Acné" + "Deseo sexual alto")
+            if (isFollicular) {
+                if (dayIndex in periodLength..(periodLength + 2)) {
+                    symptomsToInsert.add("Acné")
+                }
+                if (dayIndex >= ovulationDayIndex - 4) {
+                    symptomsToInsert.add("Deseo sexual alto")
+                }
+            }
+
+            // Clúster 3: Ovulatorio ("Test ovulación LH (+)" + "Deseo sexual alto" + "Dolor Pélvico")
+            if (isOvulation) {
+                if (dayIndex == ovulationDayIndex || dayIndex == ovulationDayIndex - 1) {
+                    symptomsToInsert.add("Test ovulación LH (+)")
+                    symptomsToInsert.add("Dolor Pélvico")
+                }
+                symptomsToInsert.add("Deseo sexual alto")
+                symptomsToInsert.add("Sensibilidad Senos")
+            }
+
+            // Clúster 4: Lúteo Medio ("Sensibilidad Senos" + "Hinchazón" + "Estreñimiento")
+            if (isLutealMid) {
+                symptomsToInsert.add("Sensibilidad Senos")
+                symptomsToInsert.add("Hinchazón")
+                if (dayIndex % 2 == 0) {
+                    symptomsToInsert.add("Estreñimiento")
+                    symptomsToInsert.add("Fatiga")
+                }
+            }
+
+            // Clúster 5: Premenstrual / SPM ("Migraña" + "Náuseas" + "Hinchazón" + "Sensibilidad Senos" + "Insomnio")
             if (isPms) {
                 symptomsToInsert.add("Migraña")
                 symptomsToInsert.add("Náuseas")
                 symptomsToInsert.add("Hinchazón")
                 symptomsToInsert.add("Sensibilidad Senos")
+                symptomsToInsert.add("Insomnio")
+                symptomsToInsert.add("Dolor lumbar")
+                if (daysCount >= 38) {
+                    // Síntoma de transición perimenopáusica en ciclos largos
+                    symptomsToInsert.add("Sofocos / Bochornos")
+                }
             }
 
-            // Clúster 3: Ovulatorio ("Test ovulación LH (+)" + "Deseo sexual alto")
-            if (dayIndex == ovulationDayIndex || dayIndex == (ovulationDayIndex - 1)) {
-                symptomsToInsert.add("Test ovulación LH (+)")
-                symptomsToInsert.add("Deseo sexual alto")
-            }
-
+            // Insertar todos los síntomas generados para este día
             if (symptomsToInsert.isNotEmpty()) {
                 val entities = symptomsToInsert.map { name ->
                     SymptomEntity(
                         dailyLogId = logId,
                         name = name,
-                        intensity = 5
+                        intensity = if (isMenstrual || isPms) 7 else 5
                     )
                 }
                 dao.insertSymptoms(entities)

@@ -234,7 +234,7 @@ private fun BottomNavButtons(
                 )
             } else {
                 Text(
-                    text       = if (currentPage < 8) "Continuar" else "Comenzar mi ciclo ✨",
+                    text       = if (currentPage < 8) stringResource(R.string.onboarding_continue) else stringResource(R.string.onboarding_start_cycle_btn),
                     fontWeight = FontWeight.SemiBold,
                     fontSize   = 16.sp
                 )
@@ -251,7 +251,7 @@ private fun BottomNavButtons(
                 TextButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Rounded.ArrowBack, null, Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("Atrás", fontSize = 14.sp)
+                    Text(stringResource(R.string.onboarding_back), fontSize = 14.sp)
                 }
             } else {
                 Spacer(Modifier.width(1.dp))
@@ -261,7 +261,7 @@ private fun BottomNavButtons(
             if (currentPage in listOf(2, 6, 7)) {
                 TextButton(onClick = onSkip) {
                     Text(
-                        "Saltar",
+                        stringResource(R.string.onboarding_skip),
                         fontSize = 14.sp,
                         color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
                     )
@@ -388,13 +388,13 @@ private fun PageWelcome(
                     Spacer(Modifier.width(16.dp))
                     Column {
                         Text(
-                            text = "Seguimiento de mi ciclo",
+                            text = stringResource(R.string.onboarding_track_my_cycle),
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 16.sp,
                             color = Color.White
                         )
                         Text(
-                            text = "Aprende más sobre tu cuerpo.",
+                            text = stringResource(R.string.onboarding_track_my_cycle_desc),
                             fontSize = 13.sp,
                             color = Color.White.copy(alpha = 0.8f)
                         )
@@ -426,13 +426,13 @@ private fun PageWelcome(
                     Spacer(Modifier.width(16.dp))
                     Column {
                         Text(
-                            text = "Acompañar a alguien",
+                            text = stringResource(R.string.onboarding_partner_mode),
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 16.sp,
                             color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
-                            text = "Ingresar código de vínculo.",
+                            text = stringResource(R.string.onboarding_partner_mode_desc),
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                         )
@@ -457,7 +457,7 @@ private fun PageWelcome(
                 colors = CheckboxDefaults.colors(checkedColor = primary)
             )
             Text(
-                text = "He leído y acepto la Política de Privacidad, y consiento de forma explícita y voluntaria que LumiApp procese mis datos sensibles de salud para brindarme el servicio.",
+                text = stringResource(R.string.onboarding_privacy_consent),
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                 lineHeight = 16.sp,
@@ -494,16 +494,16 @@ private fun PageName(name: String, onChange: (String) -> Unit) {
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text     = "Este dato nunca sale de tu dispositivo.",
+            text     = stringResource(R.string.onboarding_name_private_note),
             fontSize = 11.sp,
             color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f)
         )
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  PÁGINA 2 â€” REGULARIDAD
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ────────────────────────────────────────────────────────────────────────────────────────────────
+//  PÁGINA 2 — REGULARIDAD
+// ────────────────────────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun PageRegularity(isRegular: Boolean?, onChange: (Boolean?) -> Unit) {
@@ -513,9 +513,9 @@ private fun PageRegularity(isRegular: Boolean?, onChange: (Boolean?) -> Unit) {
         subtitle = stringResource(R.string.onboarding_regular_subtitle)
     ) {
         val options = listOf(
-            Pair(true, "Sí, son regulares"),
-            Pair(false, "No, son irregulares"),
-            Pair(null, "No estoy segura")
+            Pair(true, stringResource(R.string.onboarding_regular_yes)),
+            Pair(false, stringResource(R.string.onboarding_regular_no)),
+            Pair(null, stringResource(R.string.onboarding_regular_unsure))
         )
 
         options.forEach { (value, label) ->
@@ -566,7 +566,7 @@ private fun PageLastPeriod(selectedDate: Long, lastPeriodKnown: Boolean, onDateP
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "No te preocupes. Lumi esperará a que registres tu próximo periodo para comenzar las predicciones.",
+                    stringResource(R.string.onboarding_last_period_unknown_desc),
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center
@@ -577,7 +577,7 @@ private fun PageLastPeriod(selectedDate: Long, lastPeriodKnown: Boolean, onDateP
                 onClick = { onDatePicked(true, today.atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()) },
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
-                Text("Ingresar una fecha")
+                Text(stringResource(R.string.onboarding_enter_date))
             }
         } else {
             DateWheelPicker(
@@ -598,7 +598,7 @@ private fun PageLastPeriod(selectedDate: Long, lastPeriodKnown: Boolean, onDateP
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 Text(
-                    text     = "No lo recuerdo",
+                    text     = stringResource(R.string.onboarding_dont_remember),
                     fontSize = 13.sp,
                     color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
                 )
@@ -607,9 +607,9 @@ private fun PageLastPeriod(selectedDate: Long, lastPeriodKnown: Boolean, onDateP
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  WHEEL DATE PICKER â€” LazyColumn con snap y efecto de escala central
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ────────────────────────────────────────────────────────────────────────────────────────────────
+//  WHEEL DATE PICKER
+// ────────────────────────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun DateWheelPicker(
@@ -623,7 +623,9 @@ private fun DateWheelPicker(
     val itemHeightPx    = with(density) { itemHeightDp.toPx() }
     val listState       = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
     val flingBehavior   = rememberSnapFlingBehavior(listState)
-    val formatter       = remember { DateTimeFormatter.ofPattern("d 'de' MMMM · yyyy", Locale("es")) }
+    val locale          = Locale.getDefault()
+    val pattern         = if (locale.language == "en") "MMMM d · yyyy" else "d 'de' MMMM · yyyy"
+    val formatter       = remember(locale) { DateTimeFormatter.ofPattern(pattern, locale) }
 
     // Emitir la fecha central cada vez que el scroll se detiene
     val centerIndex by remember {
@@ -704,13 +706,13 @@ private fun DateWheelPicker(
 private fun PageCycleLength(days: Int, isRegular: Boolean?, onChange: (Int) -> Unit) {
     PageShell(
         icon     = Icons.Rounded.Loop,
-        title    = "¿Cuánto dura tu ciclo?",
-        subtitle = if (isRegular == false) "Ya que eres irregular, usaremos un promedio inicial para aprender."
-                   else "Desde el primer día de tu periodo hasta el día antes de la siguiente."
+        title    = stringResource(R.string.onboarding_cycle_length_title),
+        subtitle = if (isRegular == false) stringResource(R.string.onboarding_cycle_irregular_subtitle)
+                   else stringResource(R.string.onboarding_cycle_regular_subtitle)
     ) {
         // Valor grande central
         Text(
-            text       = "$days días",
+            text       = stringResource(R.string.cycle_history_days, days),
             fontSize   = 48.sp,
             fontWeight = FontWeight.Bold,
             color      = MaterialTheme.colorScheme.primary,
@@ -721,9 +723,9 @@ private fun PageCycleLength(days: Int, isRegular: Boolean?, onChange: (Int) -> U
 
         // Etiqueta contextual
         val label = when {
-            days < 24 -> "Ciclo corto"
-            days > 35 -> "Ciclo largo"
-            else      -> "Ciclo típico âœ“"
+            days < 24 -> stringResource(R.string.onboarding_cycle_short)
+            days > 35 -> stringResource(R.string.onboarding_cycle_long)
+            else      -> stringResource(R.string.onboarding_cycle_typical)
         }
         Text(
             text     = label,
@@ -758,7 +760,7 @@ private fun PageCycleLength(days: Int, isRegular: Boolean?, onChange: (Int) -> U
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             Text(
-                "No lo sé â€” usar 28 días",
+                stringResource(R.string.onboarding_cycle_default_button),
                 fontSize = 13.sp,
                 color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
             )
@@ -782,12 +784,12 @@ private fun PagePeriodAndGoal(
 ) {
     PageShell(
         icon     = Icons.Rounded.WaterDrop,
-        title    = "Últimos detalles",
-        subtitle = "Casi lista. Solo dos cosas más."
+        title    = stringResource(R.string.onboarding_final_details_title),
+        subtitle = stringResource(R.string.onboarding_final_details_subtitle)
     ) {
-        // â”€â”€ Duración del periodo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Duración del periodo ─────────────────────────────────────────────
         Text(
-            "Duración de tu periodo",
+            stringResource(R.string.onboarding_period_length_label),
             fontSize   = 14.sp,
             fontWeight = FontWeight.SemiBold,
             color      = MaterialTheme.colorScheme.onBackground
@@ -795,7 +797,7 @@ private fun PagePeriodAndGoal(
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text       = "$periodLength días",
+            text       = stringResource(R.string.cycle_history_days, periodLength),
             fontSize   = 36.sp,
             fontWeight = FontWeight.Bold,
             color      = MaterialTheme.colorScheme.primary,
@@ -818,9 +820,9 @@ private fun PagePeriodAndGoal(
         HorizontalDivider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f))
         Spacer(Modifier.height(20.dp))
 
-        // â”€â”€ Objetivo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Objetivo ─────────────────────────────────────────────────────────
         Text(
-            "¿Para qué usarás Lumi?",
+            stringResource(R.string.onboarding_primary_goal_title),
             fontSize   = 14.sp,
             fontWeight = FontWeight.SemiBold,
             color      = MaterialTheme.colorScheme.onBackground
@@ -828,10 +830,10 @@ private fun PagePeriodAndGoal(
         Spacer(Modifier.height(12.dp))
 
         val goals = listOf(
-            Triple(UserGoal.TRACK_CYCLE,       Icons.Rounded.Loop,         "Control de ciclo"),
-            Triple(UserGoal.AVOID_PREGNANCY,   Icons.Rounded.Shield,       "Evitar embarazo"),
-            Triple(UserGoal.SEEK_PREGNANCY,    Icons.Rounded.ChildCare,    "Buscar embarazo"),
-            Triple(UserGoal.HEALTH_MONITORING, Icons.Rounded.MonitorHeart, "Salud general")
+            Triple(UserGoal.TRACK_CYCLE,       Icons.Rounded.Loop,         stringResource(R.string.settings_goal_track)),
+            Triple(UserGoal.AVOID_PREGNANCY,   Icons.Rounded.Shield,       stringResource(R.string.settings_goal_avoid)),
+            Triple(UserGoal.SEEK_PREGNANCY,    Icons.Rounded.ChildCare,    stringResource(R.string.settings_goal_seek)),
+            Triple(UserGoal.HEALTH_MONITORING, Icons.Rounded.MonitorHeart, stringResource(R.string.settings_goal_health))
         )
 
         goals.chunked(2).forEach { row ->
@@ -861,14 +863,14 @@ private fun PagePeriodAndGoal(
         // FIX P3-3: Toggle de modo anticonceptivo hormonal en el onboarding.
         // Permite a usuarias declarar el uso de pastilla desde el primer arranque.
         Text(
-            "¿Usas anticonceptivos hormonales?",
+            stringResource(R.string.onboarding_use_contraceptives_question),
             fontSize   = 14.sp,
             fontWeight = FontWeight.SemiBold,
             color      = MaterialTheme.colorScheme.onBackground
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "Pastillas, parche, anillo o inyección de hormonas",
+            stringResource(R.string.onboarding_contraceptives_subtitle),
             fontSize = 12.sp,
             color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f)
         )
@@ -896,7 +898,7 @@ private fun PagePeriodAndGoal(
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
-                    text = if (isOnContraceptive) "Sí, uso anticonceptivos" else "No uso anticonceptivos",
+                    text = if (isOnContraceptive) stringResource(R.string.onboarding_contraceptive_yes) else stringResource(R.string.onboarding_contraceptive_no),
                     fontSize   = 14.sp,
                     fontWeight = FontWeight.Medium,
                     color = if (isOnContraceptive) MaterialTheme.colorScheme.primary
@@ -1105,7 +1107,7 @@ private fun PageCelebration(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text       = if (!userName.isNullOrBlank()) "¡Todo listo, $userName!" else "¡Todo listo!",
+                text       = if (!userName.isNullOrBlank()) stringResource(R.string.onboarding_all_ready_named, userName) else stringResource(R.string.onboarding_all_ready),
                 fontSize   = 28.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign  = TextAlign.Center,
@@ -1113,7 +1115,7 @@ private fun PageCelebration(
             )
             Spacer(Modifier.height(12.dp))
             Text(
-                text      = "Lumi ya conoce tu ciclo.\nTe acompañará cada día. 🌸",
+                text      = stringResource(R.string.onboarding_complete_subtitle),
                 fontSize  = 16.sp,
                 textAlign = TextAlign.Center,
                 color      = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
@@ -1131,7 +1133,7 @@ private fun PageCelebration(
                     Icon(Icons.Rounded.Security, null, Modifier.size(14.dp), primary)
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        "Todo guardado solo en tu teléfono.",
+                        stringResource(R.string.onboarding_local_storage_note),
                         fontSize  = 11.sp,
                         color     = primary
                     )
@@ -1152,7 +1154,7 @@ private fun PageCelebration(
             colors = ButtonDefaults.buttonColors(containerColor = primary)
         ) {
             Text(
-                text       = "Empezar con Lumi 🌙",
+                text       = stringResource(R.string.onboarding_start_button),
                 fontWeight = FontWeight.SemiBold,
                 fontSize   = 16.sp
             )
@@ -1179,8 +1181,8 @@ private fun PagePhysicalProfile(
 
     PageShell(
         icon     = Icons.Rounded.MonitorHeart,
-        title    = "Tu perfil físico",
-        subtitle = "Completamente opcional. Mejora las predicciones de la IA localmente — nunca se comparte."
+        title    = stringResource(R.string.onboarding_physical_title),
+        subtitle = stringResource(R.string.onboarding_physical_subtitle)
     ) {
         // ── Disclaimer de privacidad ────────────────────────────────────────
         Box(
@@ -1200,7 +1202,7 @@ private fun PagePhysicalProfile(
                 )
                 Spacer(Modifier.width(10.dp))
                 Text(
-                    text      = "Estos datos nunca salen de tu teléfono. Los usa solo el modelo de IA local para personalizar tus predicciones.",
+                    text      = stringResource(R.string.onboarding_physical_disclaimer),
                     fontSize  = 12.sp,
                     color     = MaterialTheme.colorScheme.primary,
                     lineHeight = 17.sp
@@ -1212,30 +1214,30 @@ private fun PagePhysicalProfile(
 
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             ProfileNumberField(
-                label         = "Edad",
+                label         = stringResource(R.string.onboarding_field_age),
                 value         = ageText,
-                unit          = "años",
-                placeholder   = "Ej: 24",
+                unit          = stringResource(R.string.onboarding_unit_years),
+                placeholder   = stringResource(R.string.onboarding_hint_age),
                 onValueChange = { raw ->
                     ageText = raw.filter { it.isDigit() }.take(3)
                     onAge(ageText.toIntOrNull()?.takeIf { it in 10..99 })
                 }
             )
             ProfileNumberField(
-                label         = "Talla",
+                label         = stringResource(R.string.onboarding_field_height),
                 value         = heightText,
-                unit          = "cm",
-                placeholder   = "Ej: 165",
+                unit          = stringResource(R.string.onboarding_unit_cm),
+                placeholder   = stringResource(R.string.onboarding_hint_height),
                 onValueChange = { raw ->
                     heightText = raw.filter { it.isDigit() }.take(3)
                     onHeight(heightText.toFloatOrNull()?.takeIf { it in 100f..220f })
                 }
             )
             ProfileNumberField(
-                label         = "Peso",
+                label         = stringResource(R.string.onboarding_field_weight),
                 value         = weightText,
-                unit          = "kg",
-                placeholder   = "Ej: 58.5",
+                unit          = stringResource(R.string.onboarding_unit_kg),
+                placeholder   = stringResource(R.string.onboarding_hint_weight),
                 onValueChange = { raw ->
                     val filtered = raw.filter { it.isDigit() || it == '.' }
                         .let { s -> if (s.count { it == '.' } > 1) weightText else s }
@@ -1249,7 +1251,7 @@ private fun PagePhysicalProfile(
         Spacer(Modifier.height(16.dp))
 
         Text(
-            text      = "Puedes completar esto más tarde desde Configuración.",
+            text      = stringResource(R.string.onboarding_physical_complete_later),
             fontSize  = 11.sp,
             color     = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
             textAlign = TextAlign.Center,
@@ -1313,18 +1315,18 @@ private fun PageSecondaryGoals(
     onToggle : (SecondaryGoal) -> Unit
 ) {
     val goals = listOf(
-        Triple(SecondaryGoal.MANAGE_CRAMPS,   Icons.Rounded.Favorite,           "Manejar mis cólicos"),
-        Triple(SecondaryGoal.IMPROVE_SLEEP,   Icons.Rounded.Bedtime,            "Mejorar mi sueño"),
-        Triple(SecondaryGoal.UNDERSTAND_MOOD, Icons.Rounded.SentimentSatisfied, "Entender mis cambios de humor"),
-        Triple(SecondaryGoal.TRACK_FERTILITY, Icons.Rounded.Spa,                "Seguimiento de fertilidad"),
-        Triple(SecondaryGoal.REDUCE_STRESS,   Icons.Rounded.SelfImprovement,    "Reducir el estrés"),
-        Triple(SecondaryGoal.PARTNER_MODE,    Icons.Rounded.People,             "Modo pareja")
+        Triple(SecondaryGoal.MANAGE_CRAMPS,   Icons.Rounded.Favorite,           stringResource(R.string.onboarding_goal_cramps)),
+        Triple(SecondaryGoal.IMPROVE_SLEEP,   Icons.Rounded.Bedtime,            stringResource(R.string.onboarding_goal_sleep)),
+        Triple(SecondaryGoal.UNDERSTAND_MOOD, Icons.Rounded.SentimentSatisfied, stringResource(R.string.onboarding_goal_mood)),
+        Triple(SecondaryGoal.TRACK_FERTILITY, Icons.Rounded.Spa,                stringResource(R.string.onboarding_goal_fertility)),
+        Triple(SecondaryGoal.REDUCE_STRESS,   Icons.Rounded.SelfImprovement,    stringResource(R.string.onboarding_goal_reduce_stress)),
+        Triple(SecondaryGoal.PARTNER_MODE,    Icons.Rounded.People,             stringResource(R.string.onboarding_goal_partner_mode))
     )
 
     PageShell(
         icon     = Icons.Rounded.Stars,
-        title    = "¿Qué quieres lograr?",
-        subtitle = "Elige todo lo que resuene contigo. Lumi personalizará sus consejos para ti."
+        title    = stringResource(R.string.onboarding_goals_title),
+        subtitle = stringResource(R.string.onboarding_goals_subtitle)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             goals.chunked(2).forEach { row ->
@@ -1350,7 +1352,7 @@ private fun PageSecondaryGoals(
 
         if (selected.isEmpty()) {
             Text(
-                text      = "Puedes saltarte este paso — no es obligatorio.",
+                text      = stringResource(R.string.onboarding_goals_skip_note),
                 fontSize  = 11.sp,
                 color     = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
                 textAlign = TextAlign.Center,
@@ -1370,7 +1372,7 @@ private fun PageSecondaryGoals(
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    text       = "${selected.size} objetivo${if (selected.size > 1) "s" else ""} seleccionado${if (selected.size > 1) "s" else ""}.",
+                    text       = if (selected.size == 1) stringResource(R.string.onboarding_goals_count_one, selected.size) else stringResource(R.string.onboarding_goals_count_other, selected.size),
                     fontSize   = 12.sp,
                     color      = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Medium
@@ -1471,7 +1473,7 @@ fun PageDisclaimer(
         )
         Spacer(Modifier.height(24.dp))
         Text(
-            text = "Tu salud es lo primero",
+            text = stringResource(R.string.onboarding_disclaimer_title),
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground,
@@ -1486,17 +1488,14 @@ fun PageDisclaimer(
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
-                    text = "⚕️ LumiApp NO es un médico",
+                    text = stringResource(R.string.onboarding_disclaimer_not_doctor),
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    text = "• Las predicciones e insights mostrados en la app son estimaciones estadísticas.\n" +
-                           "• LumiApp NO debe utilizarse como método anticonceptivo.\n" +
-                           "• LumiApp NO diagnostica condiciones médicas como el Síndrome de Ovario Poliquístico (SOP) ni la endometriosis.\n" +
-                           "• Si experimentas dolores extremos, sangrados anormales o cualquier preocupación sobre tu salud, consulta inmediatamente a un profesional médico.",
+                    text = stringResource(R.string.onboarding_disclaimer_bullets),
                     fontSize = 14.sp,
                     lineHeight = 22.sp,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
@@ -1516,7 +1515,7 @@ fun PageDisclaimer(
                 colors = androidx.compose.material3.CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary)
             )
             Text(
-                text = "He leído el aviso médico y entiendo las limitaciones de LumiApp.",
+                text = stringResource(R.string.onboarding_disclaimer_checkbox),
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f),
                 fontWeight = FontWeight.Medium

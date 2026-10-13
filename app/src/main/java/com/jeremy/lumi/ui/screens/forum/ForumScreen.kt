@@ -1,4 +1,4 @@
-﻿package com.jeremy.lumi.ui.screens.forum
+package com.jeremy.lumi.ui.screens.forum
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -214,7 +214,7 @@ fun ForumPostCard(post: ForumPost, onUpvoteClick: () -> Unit) {
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Warning,
-                        contentDescription = "Reportar publicación",
+                        contentDescription = stringResource(R.string.forum_report_title),
                         tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                         modifier = Modifier.size(20.dp)
                     )

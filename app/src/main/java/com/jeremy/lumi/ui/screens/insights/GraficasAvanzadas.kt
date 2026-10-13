@@ -195,7 +195,7 @@ private fun HistorialCiclosGrafica(
                         overflow   = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                     Text(
-                        text     = stringResource(R.string.graficas_promedio) + ": ${promedio.toInt()} días",
+                        text     = stringResource(R.string.graficas_promedio) + ": " + stringResource(R.string.cycle_history_days, promedio.toInt()),
                         fontSize = 12.sp,
                         color    = colorOnBackground.copy(alpha = 0.5f)
                     )
@@ -203,9 +203,9 @@ private fun HistorialCiclosGrafica(
                 Spacer(Modifier.width(8.dp))
                 // Chip de leyenda
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MiniChipLeyenda(color = colorPrimary,   texto = "Normal")
-                    MiniChipLeyenda(color = colorSecondary, texto = "Corto")
-                    MiniChipLeyenda(color = colorTertiary,  texto = "Largo")
+                    MiniChipLeyenda(color = colorPrimary,   texto = stringResource(R.string.insights_cycle_normal))
+                    MiniChipLeyenda(color = colorSecondary, texto = stringResource(R.string.insights_cycle_short))
+                    MiniChipLeyenda(color = colorTertiary,  texto = stringResource(R.string.insights_cycle_long))
                 }
             }
 
@@ -224,12 +224,12 @@ private fun HistorialCiclosGrafica(
                     verticalAlignment     = Alignment.CenterVertically
                 ) {
                     Text(
-                        text       = "Ciclo ${idx + 1}  •  ${punto.fechaInicio}",
+                        text       = stringResource(R.string.graficas_cycle_detail_header, idx + 1, punto.fechaInicio),
                         fontSize   = 12.sp,
                         color      = colorOnBackground.copy(alpha = 0.7f)
                     )
                     Text(
-                        text       = "${punto.duracionDias} días",
+                        text       = stringResource(R.string.cycle_history_days, punto.duracionDias),
                         fontSize   = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color      = colorBarra
@@ -393,8 +393,8 @@ private fun DolorYEstresGrafica(
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    MiniChipLeyenda(color = colorDolor,  texto = "Dolor")
-                    MiniChipLeyenda(color = colorEstres, texto = "Estrés")
+                    MiniChipLeyenda(color = colorDolor,  texto = stringResource(R.string.graficas_label_pain))
+                    MiniChipLeyenda(color = colorEstres, texto = stringResource(R.string.graficas_label_stress))
                 }
             }
 
@@ -577,7 +577,7 @@ private fun TemperaturaBasalGrafica(
                         color      = colorOnBg
                     )
                     Text(
-                        text     = "°C por día del ciclo",
+                        text     = stringResource(R.string.graficas_bbt_subtitle),
                         fontSize = 12.sp,
                         color    = colorOnBg.copy(alpha = 0.5f)
                     )

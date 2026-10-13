@@ -13,4 +13,6 @@
     <exclude domain="database" path="lumi_database.db-wal"/>
     <exclude domain="database" path="lumi_database.db-shm"/>
     <exclude domain="sharedpref" path="."/>
+    <!-- DataStore contains the health profile and wrapped backup key material. -->
+    <exclude domain="file" path="datastore/"/>
 </full-backup-content>

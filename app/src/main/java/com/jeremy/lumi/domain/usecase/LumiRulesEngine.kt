@@ -3,6 +3,7 @@ package com.jeremy.lumi.domain.usecase
 import android.content.Context
 import com.jeremy.lumi.R
 import com.jeremy.lumi.domain.model.CyclePhase
+import com.jeremy.lumi.domain.util.ClinicalLabels
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -95,12 +96,12 @@ class LumiRulesEngine @Inject constructor(
         
         val isPmsWindow = ctx.phase == CyclePhase.LUTEAL && ctx.daysUntilPeriod in 0..6
         val hasPmsSymptoms = ctx.todayPainLevel > 0 || 
-                             ctx.todayMood in listOf("Triste", "Irritado", "Sensible") || 
-                             ctx.todaySymptoms.intersect(listOf("Dolor de cabeza", "Hinchazón", "Sensibilidad en los senos", "Cansancio", "Acné")).isNotEmpty() ||
+                             ClinicalLabels.matchesMood(ctx.todayMood, R.string.mood_sad, R.string.mood_irritated, R.string.mood_sensitive) || 
+                             ClinicalLabels.hasAnySymptom(ctx.todaySymptoms, R.string.symp_headache, R.string.symp_bloating, R.string.symp_breast_tenderness, R.string.symp_fatigue, R.string.symp_acne) ||
                              (ctx.todayStressLevel != null && ctx.todayStressLevel >= 6)
         
-        val isTiredOrSad = ctx.todayMood in listOf("Triste", "Cansado", "Agotado") || ctx.todaySymptoms.contains("Cansancio")
-        val isHappyOrEnergetic = ctx.todayMood in listOf("Feliz", "Enérgico", "Calmado")
+        val isTiredOrSad = ClinicalLabels.matchesMood(ctx.todayMood, R.string.mood_sad) || ClinicalLabels.hasAnySymptom(ctx.todaySymptoms, R.string.symp_fatigue)
+        val isHappyOrEnergetic = ClinicalLabels.matchesMood(ctx.todayMood, R.string.mood_happy, R.string.mood_energetic, R.string.mood_calm)
 
         if (isPmsWindow && hasPmsSymptoms) {
             val moodMsg = ctx.todayMood?.let { "te sientas ${it.lowercase()}" } ?: "tengas estos síntomas"

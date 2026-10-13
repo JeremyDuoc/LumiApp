@@ -23,14 +23,14 @@ object DatabaseModule {
             LumiDatabase::class.java,
             "lumi_db"
         )
-            // Estamos en desarrollo: sin usuarias reales todavía, así que
-            // priorizamos simplicidad sobre preservar datos de prueba.
-            // fallbackToDestructiveMigration() borra y recrea la base cada
-            // vez que sube la versión del esquema — no se necesitan
-            // Migration objects mientras estemos en esta etapa.
-            // ANTES DE PRODUCCIÓN: reemplazar esto por migraciones reales
-            // (.addMigrations(...)) para no perder los datos de las usuarias.
-            .fallbackToDestructiveMigration()
+            // Migraciones explícitas para preservar los datos de salud de las usuarias
+            // entre las versiones documentadas (7 → 8 → 9).
+            .addMigrations(*LumiDatabase.ALL_MIGRATIONS)
+            // Versiones pre-alfa / desarrollo iniciales (1..6) anteriores al historial de Git
+            // se descartan destructivamente si se encontrasen, pero las versiones 7+
+            // requieren migración explícita para evitar pérdida de datos accidental.
+            .fallbackToDestructiveMigrationFrom(1, 2, 3, 4, 5, 6)
+            .fallbackToDestructiveMigrationOnDowngrade()
             .build()
     }
 

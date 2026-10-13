@@ -21,6 +21,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -45,7 +49,8 @@ data class CalendarUiState(
 class CalendarViewModel @Inject constructor(
     private val repository: LumiRepository,
     private val prefsManager: OnboardingPreferenceManager,
-    private val aiPredictor: LumiAIPredictor
+    private val aiPredictor: LumiAIPredictor,
+    private val getEffectiveCyclePredictionUseCase: com.jeremy.lumi.domain.usecase.GetEffectiveCyclePredictionUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CalendarUiState())
@@ -53,6 +58,15 @@ class CalendarViewModel @Inject constructor(
 
     private val _selectedLog = MutableStateFlow<DailyLogWithSymptoms?>(null)
     val selectedLog: StateFlow<DailyLogWithSymptoms?> = _selectedLog.asStateFlow()
+    private val _isLoadingLog = MutableStateFlow(false)
+    val isLoadingLog = _isLoadingLog.asStateFlow()
+    private val _isSaving = MutableStateFlow(false)
+    val isSaving = _isSaving.asStateFlow()
+    enum class LogEvent { SAVED, SAVE_FAILED, LOAD_FAILED }
+    private val events = Channel<LogEvent>(Channel.BUFFERED)
+    val logEvents = events.receiveAsFlow()
+    private var logLoadJob: Job? = null
+    private var logLoadVersion = 0L
 
     val activeCategories: StateFlow<Set<String>> = prefsManager.activeLogCategoriesFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), setOf("physical", "digestive", "mucus", "intercourse"))
@@ -169,28 +183,9 @@ class CalendarViewModel @Inject constructor(
     ) {
         val (title, days, prediction) = generateMonthData(displayYear, displayMonth, activeCycle, closedCycles, logsMap)
             
-            // FASE ACTUAL
-            val cycleLength = activeCycle?.cycleLength ?: 28
-            val periodLength = activeCycle?.periodLength ?: 5
-            val cycleStartLocal: LocalDate? = activeCycle?.let {
-                LocalDate.ofInstant(java.time.Instant.ofEpochMilli(it.startDate), ZoneId.of("UTC"))
-            }
-
-            val todayLocal = com.jeremy.lumi.utils.LumiClock.today()
-            val currentDayOfCycle = cycleStartLocal?.let {
-                CyclePredictor.dayInCycle(it, cycleLength, todayLocal)
-            } ?: 0
-            val currentPhase = if (cycleStartLocal != null && currentDayOfCycle > 0) {
-                runCatching {
-                    CyclePredictor.phaseForDay(
-                        dayInCycle   = currentDayOfCycle,
-                        cycleLength  = cycleLength,
-                        periodLength = periodLength,
-                        isPregnant   = isPregnant,
-                        isOnContraceptive = isOnContraceptive
-                    )
-                }.getOrDefault(CyclePhase.UNKNOWN)
-            } else CyclePhase.UNKNOWN
+            // FASE ACTUAL: derivada directamente de la predicción unificada efectiva
+            val currentDayOfCycle = prediction?.currentDayOfCycle ?: 0
+            val currentPhase = prediction?.currentPhase ?: CyclePhase.UNKNOWN
 
             _uiState.update { it.copy(
                 monthYearTitle    = title,
@@ -241,43 +236,21 @@ class CalendarViewModel @Inject constructor(
         val cycleStartLocal: LocalDate? = activeCycle?.let {
             LocalDate.ofInstant(java.time.Instant.ofEpochMilli(it.startDate), ZoneId.of("UTC"))
         }
-        val periodLength = activeCycle?.periodLength ?: 5
 
-        val mathCycleLen = if (closedCycles.size >= 3) {
-            CyclePredictor.weightedAverageCycleLength(closedCycles).toInt().coerceIn(15, 60)
-        } else {
-            activeCycle?.cycleLength?.coerceAtLeast(15) ?: 28
-        }
+        val effectiveResult = getEffectiveCyclePredictionUseCase(
+            activeCycle = activeCycle,
+            closedCycles = closedCycles,
+            isPregnant = isPregnant,
+            isOnContraceptive = isOnContraceptive,
+            age = prefsManager.ageFlow.first()?.toFloat(),
+            height = prefsManager.heightFlow.first(),
+            weight = prefsManager.weightFlow.first(),
+            targetDate = LocalDate.of(todayYear, todayMonth + 1, todayDay)
+        )
 
-        val aiResult = if (closedCycles.size >= 3 && !isOnContraceptive) {
-            val age = prefsManager.ageFlow.first()?.toFloat()
-            val height = prefsManager.heightFlow.first()
-            val weight = prefsManager.weightFlow.first()
-            aiPredictor.predict(
-                closedCycles = closedCycles,
-                currentCycleLen = mathCycleLen.toFloat(),
-                periodLength = periodLength.toFloat(),
-                age = age,
-                height = height,
-                weight = weight
-            )
-        } else null
-
-        val cycleLength = aiResult?.predictedCycleLength?.toInt()?.coerceIn(15, 60) ?: mathCycleLen
-
-        val prediction: CyclePrediction? = if (isCurrentMonth) {
-            cycleStartLocal?.let { startLocal ->
-                runCatching {
-                    CyclePredictor.predict(
-                        startDate    = startLocal,
-                        cycleLength  = cycleLength,
-                        periodLength = periodLength,
-                        isPregnant   = isPregnant,
-                        isOnContraceptive = isOnContraceptive
-                    )
-                }.getOrNull()
-            }
-        } else null
+        val cycleLength = effectiveResult.effectiveCycleLength
+        val periodLength = effectiveResult.periodLength
+        val prediction: CyclePrediction? = if (isCurrentMonth) effectiveResult.prediction else null
 
         val daysList = mutableListOf<CalendarDay>()
         repeat(firstDow) { daysList.add(CalendarDay(0, isEmptyOffset = true)) }
@@ -361,12 +334,14 @@ class CalendarViewModel @Inject constructor(
         sleepHours: Float?, energyLevel: Int?, stressLevel: Int?, waterIntake: Float?,
         basalBodyTemp: Float?, spotting: Boolean
     ) {
+        if (_isSaving.value || _isLoadingLog.value) return
+        val (year, month) = displayYearMonth.value
+        val dateMs = LocalDate.of(year, month + 1, dayOfMonth)
+            .atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
+        _isSaving.value = true
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                val year = displayYearMonth.value.first
-                val month = displayYearMonth.value.second
-                val dateMs = LocalDate.of(year, month + 1, dayOfMonth)
-                    .atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
+            try {
+              withContext(Dispatchers.IO) {
                 val existingLog = repository.getDailyLog(dateMs)
 
                 val correctCycleId = if (existingLog != null && existingLog.dailyLog.cycleId != 0) {
@@ -376,7 +351,7 @@ class CalendarViewModel @Inject constructor(
                     if (matchedCycle != null) {
                         matchedCycle.id
                     } else {
-                        repository.getCurrentActiveCycle()?.id ?: 0
+                        0
                     }
                 }
 
@@ -391,9 +366,9 @@ class CalendarViewModel @Inject constructor(
                     cervicalMucus             = cervicalMucus,
                     notes                     = notes.takeIf { it.isNotBlank() },
                     hadIntercourse            = hadIntercourse,
-                    protectionUsed            = protectionUsed,
-                    contraceptionMethod       = contraceptionMethod,
-                    intercourseNotes          = intercourseNotes,
+                    protectionUsed            = if (hadIntercourse) protectionUsed else null,
+                    contraceptionMethod       = if (hadIntercourse) contraceptionMethod else null,
+                    intercourseNotes          = if (hadIntercourse) intercourseNotes else null,
                     showIntercourseOnCalendar = showOnCalendar,
                     sleepHours                = sleepHours,
                     energyLevel               = energyLevel,
@@ -408,22 +383,44 @@ class CalendarViewModel @Inject constructor(
             )
             }
             _selectedLog.value = null
+            events.send(LogEvent.SAVED)
             // Flow emission will naturally call updateGrid()
-        }
-    }
-
-    fun fetchLogForDay(dayOfMonth: Int) {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                val year = displayYearMonth.value.first
-                val month = displayYearMonth.value.second
-                val dateMs = LocalDate.of(year, month + 1, dayOfMonth)
-                    .atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
-                val log = repository.getDailyLog(dateMs)
-                _selectedLog.value = log
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                events.send(LogEvent.SAVE_FAILED)
+            } finally {
+                _isSaving.value = false
             }
         }
     }
 
-    fun clearSelectedLog() { _selectedLog.value = null }
+    fun fetchLogForDay(dayOfMonth: Int) {
+        val version = ++logLoadVersion
+        logLoadJob?.cancel()
+        val (year, month) = displayYearMonth.value
+        val dateMs = LocalDate.of(year, month + 1, dayOfMonth)
+            .atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
+        _selectedLog.value = null
+        _isLoadingLog.value = true
+        logLoadJob = viewModelScope.launch {
+            try {
+                val log = repository.getDailyLog(dateMs)
+                if (version == logLoadVersion) _selectedLog.value = log
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (version == logLoadVersion) events.send(LogEvent.LOAD_FAILED)
+            } finally {
+                if (version == logLoadVersion) _isLoadingLog.value = false
+            }
+        }
+    }
+
+    fun clearSelectedLog() {
+        logLoadVersion++
+        logLoadJob?.cancel()
+        _isLoadingLog.value = false
+        _selectedLog.value = null
+    }
 }

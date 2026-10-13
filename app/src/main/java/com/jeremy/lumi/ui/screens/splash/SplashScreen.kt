@@ -34,6 +34,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import com.jeremy.lumi.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -240,7 +241,7 @@ fun SplashContent(
                 enter = fadeIn(tween(500, delayMillis = 150))
             ) {
                 Text(
-                    text = "Tu ciclo, tu bienestar",
+                    text = stringResource(R.string.splash_tagline),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f),
                     textAlign = TextAlign.Center

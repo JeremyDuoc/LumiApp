@@ -12,6 +12,7 @@
         <exclude domain="database" path="lumi_database.db-wal" />
         <exclude domain="database" path="lumi_database.db-shm" />
         <exclude domain="sharedpref" path="." />
+        <exclude domain="file" path="datastore/" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="database" path="lumi_db" />
@@ -21,5 +22,6 @@
         <exclude domain="database" path="lumi_database.db-wal" />
         <exclude domain="database" path="lumi_database.db-shm" />
         <exclude domain="sharedpref" path="." />
+        <exclude domain="file" path="datastore/" />
     </device-transfer>
 </data-extraction-rules>

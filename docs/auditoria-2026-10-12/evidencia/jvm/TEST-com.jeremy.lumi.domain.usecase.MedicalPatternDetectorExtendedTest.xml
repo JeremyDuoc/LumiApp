@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jeremy.lumi.domain.usecase.MedicalPatternDetectorExtendedTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-10-12T17:59:44.653Z" hostname="JEREMY" time="0.005">
+  <properties/>
+  <testcase name="test LPD NOT detected with insufficient BBT observations" classname="com.jeremy.lumi.domain.usecase.MedicalPatternDetectorExtendedTest" time="0.0"/>
+  <testcase name="test LPD at boundary 10 days average is not triggered" classname="com.jeremy.lumi.domain.usecase.MedicalPatternDetectorExtendedTest" time="0.0"/>
+  <testcase name="test null userAge skips STRAW+10 detection" classname="com.jeremy.lumi.domain.usecase.MedicalPatternDetectorExtendedTest" time="0.0"/>
+  <testcase name="test perimenopause NOT detected when cycle lengths are stable" classname="com.jeremy.lumi.domain.usecase.MedicalPatternDetectorExtendedTest" time="0.001"/>
+  <testcase name="test perimenopause STRAW+10 detected with highly variable cycle lengths for user 45 years" classname="com.jeremy.lumi.domain.usecase.MedicalPatternDetectorExtendedTest" time="0.001"/>
+  <testcase name="test LPD NOT detected when luteal phase is above 10 days" classname="com.jeremy.lumi.domain.usecase.MedicalPatternDetectorExtendedTest" time="0.0"/>
+  <testcase name="test PMDD not detected when negative moods are uniformly distributed" classname="com.jeremy.lumi.domain.usecase.MedicalPatternDetectorExtendedTest" time="0.001"/>
+  <testcase name="test PMDD detected with negative premenstrual moods and remission at menstruation" classname="com.jeremy.lumi.domain.usecase.MedicalPatternDetectorExtendedTest" time="0.0"/>
+  <testcase name="test empty cycles returns empty alerts" classname="com.jeremy.lumi.domain.usecase.MedicalPatternDetectorExtendedTest" time="0.0"/>
+  <testcase name="test PCOS detection still works after expansion" classname="com.jeremy.lumi.domain.usecase.MedicalPatternDetectorExtendedTest" time="0.001"/>
+  <testcase name="test perimenopause STRAW+10 NOT detected for user under 40" classname="com.jeremy.lumi.domain.usecase.MedicalPatternDetectorExtendedTest" time="0.0"/>
+  <testcase name="test perimenopause CRITICAL severity when hot flashes present" classname="com.jeremy.lumi.domain.usecase.MedicalPatternDetectorExtendedTest" time="0.0"/>
+  <testcase name="test LPD detected when average luteal phase is below 10 days" classname="com.jeremy.lumi.domain.usecase.MedicalPatternDetectorExtendedTest" time="0.0"/>
+  <testcase name="test endometriosis detection still works after expansion" classname="com.jeremy.lumi.domain.usecase.MedicalPatternDetectorExtendedTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

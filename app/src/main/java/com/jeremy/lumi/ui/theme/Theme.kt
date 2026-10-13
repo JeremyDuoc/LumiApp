@@ -39,21 +39,19 @@ enum class AppThemePalette {
     )
 }
 
-// ── Noir · Negro minimalista puro (Instagram/X dark style) ───────────────────
-// A diferencia de Carbono (#111111, con acentos rojos) o Medianoche (índigo),
-// Noir es deliberadamente neutro: negro absoluto, blanco/gris sin tinte de color.
-val NoirPrimary    = Color(0xFFE8E8E8)   // Casi blanco, sin calidez ni frialdad
-val NoirSecondary  = Color(0xFF8A8A8E)   // Gris medio iOS-like
-val NoirTertiary   = Color(0xFF636366)   // Gris oscuro neutro
-val NoirBackground = Color(0xFF000000)   // Negro absoluto
-val NoirSurface    = Color(0xFF1C1C1E)   // Superficie estándar iOS dark
-val NoirOnPrimary  = Color(0xFF000000)
-val NoirOnBg       = Color(0xFFFFFFFF)
+// ── Noir · Atmósfera oscura minimalista aprobada en prototipo HTML ───────────
+val NoirPrimary    = Color(0xFFCFB8F4)   // Acento lila lavanda
+val NoirSecondary  = Color(0xFF9D96AB)   // Texto muted
+val NoirTertiary   = Color(0xFF716C7D)   // Texto dim
+val NoirBackground = Color(0xFF0B0B11)   // Fondo obsidian profundo
+val NoirSurface    = Color(0xFF1B1923)   // Panel de tarjetas
+val NoirOnPrimary  = Color(0xFF0B0B11)
+val NoirOnBg       = Color(0xFFF6F2F9)
 
 private val NoirColorScheme = darkColorScheme(
     primary          = NoirPrimary,
     onPrimary        = NoirOnPrimary,
-    primaryContainer = Color(0xFF2C2C2E),
+    primaryContainer = Color(0xFF23202B),
     secondary        = NoirSecondary,
     onSecondary      = NoirBackground,
     tertiary         = NoirTertiary,
@@ -61,9 +59,9 @@ private val NoirColorScheme = darkColorScheme(
     onBackground     = NoirOnBg,
     surface          = NoirSurface,
     onSurface        = NoirOnBg,
-    surfaceVariant   = Color(0xFF2C2C2E),
-    onSurfaceVariant = Color(0xFFAEAEB2),
-    outline          = Color(0xFF38383A)
+    surfaceVariant   = Color(0xFF23202B),
+    onSurfaceVariant = Color(0xFF9D96AB),
+    outline          = Color(0x1AE1D1ED)
 )
 
 // ── Claras ───────────────────────────────────────────────────────────────────
@@ -572,12 +570,15 @@ fun LumiTheme(
         else -> null
     }
 
+    // Resolver tokens de diseño semánticos unificados del prototipo
+    val lumiTokens = resolveLumiTokens(selectedTheme)
+
     // Los colores semánticos SIEMPRE son DEFAULT (rojo/teal/morado/ámbar).
-    // No se ven afectados por AUTO_HARMONY ni por la paleta de tema.
     val semanticPhaseColors = selectedPhasePalette.toSemanticPhaseColors(isDark)
 
     CompositionLocalProvider(
         LocalIsDarkTheme provides isDark,
+        LocalLumiTokens provides lumiTokens,
         LocalPhaseColors provides phaseColors,
         LocalSemanticPhaseColors provides semanticPhaseColors,
         LocalDialStyle provides dialStyle,

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="log_save_error">Could not save your log. Your changes are still here; please try again.</string>
+    <string name="log_load_error">Could not load your log. Please try again.</string>
+    <string name="cal_day_logged">Has a log</string>
+</resources>

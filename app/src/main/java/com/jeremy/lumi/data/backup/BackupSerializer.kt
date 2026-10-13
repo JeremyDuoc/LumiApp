@@ -20,9 +20,9 @@ data class BackupPayloadDto(
     val formatVersion: Int? = null,
     val dbSchemaVersion: Int? = null,
     val createdAtMs: Long? = null,
-    val cycles: List<CycleDto>? = null,
-    val dailyLogs: List<DailyLogDto>? = null,
-    val symptoms: List<SymptomDto>? = null
+    val cycles: List<CycleDto?>? = null,
+    val dailyLogs: List<DailyLogDto?>? = null,
+    val symptoms: List<SymptomDto?>? = null
 )
 
 data class CycleDto(
@@ -144,9 +144,8 @@ object BackupSerializer {
     /**
      * Parsea y valida el JSON del respaldo.
      * - Rechaza formatos de versiones futuras de la app.
-     * - Descarta filas sin campos esenciales (id/fecha) en lugar de romper toda
-     *   la restauración por una fila dañada.
-     * - Descarta síntomas huérfanos cuyo día no vino en el respaldo.
+     * - Rechaza filas incompletas, duplicadas o huérfanas ANTES de reemplazar datos.
+     *   Una restauración parcial nunca debe borrar silenciosamente el historial.
      */
     fun fromJson(json: String): RestoredData {
         val dto = try {
@@ -158,10 +157,15 @@ object BackupSerializer {
         val format = dto.formatVersion
             ?: throw CorruptBackupException("El respaldo no declara versión de formato")
         if (format > FORMAT_VERSION) throw BackupVersionTooNewException()
+        if (format != FORMAT_VERSION) throw CorruptBackupException("Versión de formato inválida")
+        val schema = dto.dbSchemaVersion ?: throw CorruptBackupException("Falta la versión del esquema")
+        if (schema > DB_SCHEMA_VERSION) throw BackupVersionTooNewException()
+        if (schema < 1) throw CorruptBackupException("Versión de esquema inválida")
 
-        val cycles = dto.cycles.orEmpty().mapNotNull { c ->
-            val id = c.id ?: return@mapNotNull null
-            val start = c.startDate ?: return@mapNotNull null
+        val cycles = (dto.cycles ?: throw CorruptBackupException("Faltan los ciclos")).map { c ->
+            val id = c?.id?.takeIf { it > 0 } ?: throw CorruptBackupException("Ciclo sin identificador válido")
+            val start = c.startDate ?: throw CorruptBackupException("Ciclo sin fecha")
+            if (c.endDate != null && c.endDate < start) throw CorruptBackupException("Fechas de ciclo inválidas")
             CycleEntity(
                 id = id,
                 startDate = start,
@@ -172,9 +176,9 @@ object BackupSerializer {
             )
         }
 
-        val logs = dto.dailyLogs.orEmpty().mapNotNull { l ->
-            val id = l.id ?: return@mapNotNull null
-            val date = l.date ?: return@mapNotNull null
+        val logs = (dto.dailyLogs ?: throw CorruptBackupException("Faltan los registros diarios")).map { l ->
+            val id = l?.id?.takeIf { it > 0 } ?: throw CorruptBackupException("Registro sin identificador válido")
+            val date = l.date ?: throw CorruptBackupException("Registro sin fecha")
             DailyLogEntity(
                 id = id,
                 cycleId = l.cycleId ?: 0,
@@ -199,16 +203,26 @@ object BackupSerializer {
         }
 
         val validLogIds = logs.mapTo(HashSet()) { it.id }
-        val symptoms = dto.symptoms.orEmpty().mapNotNull { s ->
-            val logId = s.dailyLogId ?: return@mapNotNull null
-            val name = s.name ?: return@mapNotNull null
-            if (logId !in validLogIds) return@mapNotNull null
+        val validCycleIds = cycles.mapTo(HashSet()) { it.id }
+        if (validCycleIds.size != cycles.size || validLogIds.size != logs.size ||
+            logs.map { it.date }.toSet().size != logs.size ||
+            logs.any { it.cycleId != 0 && it.cycleId !in validCycleIds }) {
+            throw CorruptBackupException("Registros duplicados o sin ciclo válido")
+        }
+        val symptoms = (dto.symptoms ?: throw CorruptBackupException("Faltan los síntomas")).map { s ->
+            val logId = s?.dailyLogId ?: throw CorruptBackupException("Síntoma sin registro diario")
+            val name = s.name ?: throw CorruptBackupException("Síntoma sin nombre")
+            val id = s.id?.takeIf { it > 0 } ?: throw CorruptBackupException("Síntoma sin identificador válido")
+            if (logId !in validLogIds) throw CorruptBackupException("Síntoma huérfano")
             SymptomEntity(
-                id = s.id ?: 0,
+                id = id,
                 dailyLogId = logId,
                 name = name,
                 intensity = s.intensity ?: 0
             )
+        }
+        if (symptoms.map { it.id }.toSet().size != symptoms.size) {
+            throw CorruptBackupException("Síntomas duplicados")
         }
 
         return RestoredData(cycles, logs, symptoms, dto.createdAtMs)

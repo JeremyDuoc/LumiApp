@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jeremy.lumi.domain.usecase.BondsPrivacyInferenceTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-13T01:47:03.819Z" hostname="JEREMY" time="0.002">
+  <properties/>
+  <testcase name="testFullOptOutRedactsAllHealthData" classname="com.jeremy.lumi.domain.usecase.BondsPrivacyInferenceTest" time="0.001"/>
+  <testcase name="testP16_predictionsExposeCycleStartAndAllowPhaseReconstructionWhenPhaseIsFalse" classname="com.jeremy.lumi.domain.usecase.BondsPrivacyInferenceTest" time="0.001"/>
+  <testcase name="testP04_defaultPrivacyFlagsAreTrueByDefault" classname="com.jeremy.lumi.domain.usecase.BondsPrivacyInferenceTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

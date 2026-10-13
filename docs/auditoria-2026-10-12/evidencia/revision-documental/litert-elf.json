@@ -1,0 +1,34 @@
+[
+  {
+    "Archive": "litert-1.4.2.aar",
+    "Library": "jni/arm64-v8a/libtensorflowlite_jni.so",
+    "Checked": true,
+    "LoadAlignments": [
+      16384,
+      16384,
+      16384
+    ],
+    "AllAtLeast16KB": true
+  },
+  {
+    "Archive": "litert-1.4.2.aar",
+    "Library": "jni/armeabi-v7a/libtensorflowlite_jni.so",
+    "Checked": false
+  },
+  {
+    "Archive": "litert-1.4.2.aar",
+    "Library": "jni/x86/libtensorflowlite_jni.so",
+    "Checked": false
+  },
+  {
+    "Archive": "litert-1.4.2.aar",
+    "Library": "jni/x86_64/libtensorflowlite_jni.so",
+    "Checked": true,
+    "LoadAlignments": [
+      16384,
+      16384,
+      16384
+    ],
+    "AllAtLeast16KB": true
+  }
+]

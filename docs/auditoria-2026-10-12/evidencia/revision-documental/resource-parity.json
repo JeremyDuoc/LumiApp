@@ -1,0 +1,26 @@
+[
+  {
+    "File": "strings_audit.xml",
+    "Strings": 3,
+    "Arrays": 0,
+    "MissingEnglish": []
+  },
+  {
+    "File": "strings_bonds.xml",
+    "Strings": 68,
+    "Arrays": 0,
+    "MissingEnglish": []
+  },
+  {
+    "File": "strings_chat.xml",
+    "Strings": 167,
+    "Arrays": 58,
+    "MissingEnglish": []
+  },
+  {
+    "File": "strings.xml",
+    "Strings": 914,
+    "Arrays": 34,
+    "MissingEnglish": []
+  }
+]

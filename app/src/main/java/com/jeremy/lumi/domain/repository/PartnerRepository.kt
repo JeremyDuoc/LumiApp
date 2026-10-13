@@ -66,8 +66,8 @@ interface PartnerRepository {
      */
     suspend fun publishSnapshot(snapshot: CycleSnapshot)
 
-    /** Envía un detalle (abrazo, té, chocolate…) al vínculo. */
-    suspend fun sendCareAction(linkId: String, action: CareAction)
+    /** Envía un detalle (abrazo, té, chocolate…) al vínculo con mensaje opcional. */
+    suspend fun sendCareAction(linkId: String, action: CareAction, message: String? = null)
 
     /** Revoca el vínculo (cualquiera de las dos personas puede hacerlo). */
     suspend fun unlink(linkId: String)

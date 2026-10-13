@@ -145,12 +145,12 @@ class PartnerViewModel @Inject constructor(
 
     // ── Detalles (Care Actions) ──────────────────────────────────────────────
 
-    /** Envía un Detalle con enfriamiento de 5 minutos compartido. */
-    fun sendCareAction(linkId: String, action: CareAction) {
+    /** Envía un Detalle con enfriamiento de 5 minutos compartido y mensaje opcional. */
+    fun sendCareAction(linkId: String, action: CareAction, message: String? = null) {
         if (_uiState.value.isCareActionOnCooldown()) return
         viewModelScope.launch {
             try {
-                repository.sendCareAction(linkId, action)
+                repository.sendCareAction(linkId, action, message)
                 prefsManager.setHugCooldownUntil(System.currentTimeMillis() + CARE_ACTION_COOLDOWN_MS)
             } catch (e: Exception) {
                 Log.w(TAG, "No se pudo enviar el detalle: ${e.message}")

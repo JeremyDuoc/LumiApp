@@ -33,10 +33,12 @@ class SettingsViewModel @Inject constructor(
     private val chatPreferenceManager: ChatPreferenceManager,
     private val onboardingPreferenceManager: OnboardingPreferenceManager,
     private val repository: LumiRepository,
+    val backupManager: com.jeremy.lumi.data.backup.BackupManager,
     // FIX P3-2: El manager es privado — el Screen solo accede a propiedades
     // expuestas por el ViewModel, no al objeto completo (patrón MVVM correcto).
     private val healthConnectManager: HealthConnectManager,
     private val mockDataGeneratorUseCase: com.jeremy.lumi.domain.usecase.MockDataGeneratorUseCase,
+    private val languagePreferenceManager: com.jeremy.lumi.data.preferences.LanguagePreferenceManager,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -47,6 +49,23 @@ class SettingsViewModel @Inject constructor(
     /** Conjunto de permisos que la app necesita solicitar a Health Connect. */
     val healthConnectPermissions: Set<String>
         get() = healthConnectManager.permissions
+
+    // ── Idioma de la Aplicación ────────────────────────────────────────────
+    val currentLanguage: StateFlow<String> = languagePreferenceManager.selectedLanguageFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = com.jeremy.lumi.data.preferences.LanguagePreferenceManager.SYSTEM_DEFAULT
+        )
+
+    fun setLanguage(languageCode: String, activity: android.app.Activity?) {
+        viewModelScope.launch {
+            languagePreferenceManager.setLanguage(languageCode)
+            if (activity != null) {
+                com.jeremy.lumi.utils.LocaleHelper.applyLocale(activity, languageCode)
+            }
+        }
+    }
 
     // ── Ajustes de Chat ────────────────────────────────────────────────────
     val saveRemindersInChat: StateFlow<Boolean> = chatPreferenceManager.saveRemindersFlow

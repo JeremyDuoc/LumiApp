@@ -3,6 +3,7 @@ package com.jeremy.lumi.ai
 import android.content.Context
 import android.util.Log
 import com.jeremy.lumi.data.local.entity.CycleEntity
+import com.jeremy.lumi.data.local.entity.closedLengthDays
 import com.jeremy.lumi.domain.usecase.CyclePredictor
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.tensorflow.lite.Interpreter
@@ -35,13 +36,24 @@ import kotlin.math.sqrt
  *   [8] BMI                   — calculado o fallback a media
  *   [9] cycle_variance        — std dev de duraciones históricas (personalización on-device)
  *   [10] rolling_mean_3       — media de los últimos 3 ciclos cerrados
- *
  * Inyectado como @Singleton vía Hilt. Se inicializa lazily al primer uso.
  */
+interface CycleAIPredictor {
+    fun isModelReady(): Boolean
+    fun predict(
+        closedCycles    : List<CycleEntity>,
+        currentCycleLen : Float,
+        periodLength    : Float,
+        age             : Float? = null,
+        height          : Float? = null,
+        weight          : Float? = null
+    ): AIPredictionResult
+}
+
 @Singleton
-class LumiAIPredictor @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
+class LumiAIPredictor(
+    private val context: Context
+) : CycleAIPredictor {
 
     companion object {
         private const val TAG = "LumiAIPredictor"
@@ -80,7 +92,7 @@ class LumiAIPredictor @Inject constructor(
     }
 
     /** true si el modelo cargó correctamente y puede hacer inferencias. */
-    fun isModelReady(): Boolean = isInitialized && interpreter != null
+    override fun isModelReady(): Boolean = isInitialized && interpreter != null
 
     // ─────────────────────────────────────────────────────────────────────────
     //  API pública
@@ -97,13 +109,13 @@ class LumiAIPredictor @Inject constructor(
      * @param weight           Peso en kg (opcional).
      * @return [AIPredictionResult] con la predicción final y metadatos de confianza.
      */
-    fun predict(
+    override fun predict(
         closedCycles    : List<CycleEntity>,
         currentCycleLen : Float,
         periodLength    : Float,
-        age             : Float? = null,
-        height          : Float? = null,
-        weight          : Float? = null
+        age             : Float?,
+        height          : Float?,
+        weight          : Float?
     ): AIPredictionResult {
 
         // ── Métricas del historial ───────────────────────────────────────────
@@ -216,9 +228,7 @@ class LumiAIPredictor @Inject constructor(
     private fun extractDurations(closedCycles: List<CycleEntity>): List<Float> =
         closedCycles.mapNotNull { cycle ->
             if (cycle.endDate == null) return@mapNotNull null
-            val start = Instant.ofEpochMilli(cycle.startDate).atZone(ZoneId.of("UTC")).toLocalDate()
-            val end   = Instant.ofEpochMilli(cycle.endDate).atZone(ZoneId.of("UTC")).toLocalDate()
-            val d     = ChronoUnit.DAYS.between(start, end).toFloat()
+            val d = cycle.closedLengthDays()?.toFloat() ?: return@mapNotNull null
             if (d in 15f..60f) d else null
         }
 

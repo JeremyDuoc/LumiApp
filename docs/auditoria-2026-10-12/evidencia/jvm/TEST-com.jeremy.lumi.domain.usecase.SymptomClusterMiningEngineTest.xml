@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jeremy.lumi.domain.usecase.SymptomClusterMiningEngineTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-12T17:59:44.664Z" hostname="JEREMY" time="0.093">
+  <properties/>
+  <testcase name="test symptom names are case-insensitive" classname="com.jeremy.lumi.domain.usecase.SymptomClusterMiningEngineTest" time="0.011"/>
+  <testcase name="test no cluster when symptoms appear fewer than 5 times" classname="com.jeremy.lumi.domain.usecase.SymptomClusterMiningEngineTest" time="0.01"/>
+  <testcase name="test no duplicate clusters A-B and B-A" classname="com.jeremy.lumi.domain.usecase.SymptomClusterMiningEngineTest" time="0.005"/>
+  <testcase name="test detects cluster when Jaccard above threshold" classname="com.jeremy.lumi.domain.usecase.SymptomClusterMiningEngineTest" time="0.004"/>
+  <testcase name="test handles empty log list" classname="com.jeremy.lumi.domain.usecase.SymptomClusterMiningEngineTest" time="0.004"/>
+  <testcase name="test no cluster when Jaccard below threshold" classname="com.jeremy.lumi.domain.usecase.SymptomClusterMiningEngineTest" time="0.004"/>
+  <testcase name="test relative risk above 2 when symptom concentrated in one phase" classname="com.jeremy.lumi.domain.usecase.SymptomClusterMiningEngineTest" time="0.013"/>
+  <testcase name="test cluster at exactly Jaccard threshold boundary" classname="com.jeremy.lumi.domain.usecase.SymptomClusterMiningEngineTest" time="0.01"/>
+  <testcase name="test clusters sorted by Jaccard score descending" classname="com.jeremy.lumi.domain.usecase.SymptomClusterMiningEngineTest" time="0.029"/>
+  <testcase name="test handles logs with no symptoms" classname="com.jeremy.lumi.domain.usecase.SymptomClusterMiningEngineTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

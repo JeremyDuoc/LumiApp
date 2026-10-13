@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.SharingStarted
@@ -51,7 +52,8 @@ class HomeViewModel @Inject constructor(
     private val aiPredictor      : LumiAIPredictor,
     private val rulesEngine      : LumiRulesEngine,
     private val healthConnectManager: com.jeremy.lumi.data.health.HealthConnectManager,
-    private val widgetUpdater    : com.jeremy.lumi.ui.widget.WidgetUpdater
+    private val widgetUpdater    : com.jeremy.lumi.ui.widget.WidgetUpdater,
+    private val getEffectiveCyclePredictionUseCase: com.jeremy.lumi.domain.usecase.GetEffectiveCyclePredictionUseCase
 ) : ViewModel() {
 
     sealed interface HomeEvent {
@@ -165,6 +167,11 @@ class HomeViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            prefsManager.userNameFlow.collect { name ->
+                _uiState.update { it.copy(userName = name) }
+            }
+        }
+        viewModelScope.launch {
             prefsManager.isPregnantFlow.collect { pregnant ->
                 _uiState.update { it.copy(isPregnant = pregnant) }
                 loadCurrentCycle(isPregnant = pregnant)
@@ -247,7 +254,6 @@ class HomeViewModel @Inject constructor(
         if (_uiState.value.isObserverOnly) return
         viewModelScope.launch {
             try {
-                val state = _uiState.value
                 val sharePhase = prefsManager.sharePhaseFlow.first()
                 val shareMood = prefsManager.shareMoodFlow.first()
                 val shareSymptoms = prefsManager.shareSymptomsFlow.first()
@@ -265,18 +271,31 @@ class HomeViewModel @Inject constructor(
                 // tres números, nunca el historial. Solo viaja si comparte predicciones.
                 val activeCycle = repository.getCurrentActiveCycle()
                 val closedCycles = repository.getClosedCycles()
-                val effectiveLength = if (closedCycles.size >= 3) {
-                    com.jeremy.lumi.domain.usecase.CyclePredictor
-                        .weightedAverageCycleLength(closedCycles).toInt().coerceIn(15, 60)
-                } else {
-                    (activeCycle?.cycleLength ?: 28).coerceAtLeast(15)
-                }
+                val isPregnant = prefsManager.isPregnantFlow.first()
+                val isOnContraceptive = prefsManager.isOnContraceptiveFlow.first()
+                val age = prefsManager.ageFlow.first()?.toFloat()
+                val height = prefsManager.heightFlow.first()
+                val weight = prefsManager.weightFlow.first()
+
+                val effectiveResult = getEffectiveCyclePredictionUseCase(
+                    activeCycle = activeCycle,
+                    closedCycles = closedCycles,
+                    isPregnant = isPregnant,
+                    isOnContraceptive = isOnContraceptive,
+                    age = age,
+                    height = height,
+                    weight = weight,
+                    targetDate = LumiClock.today()
+                )
+
+                val effectiveLength = effectiveResult.effectiveCycleLength
+                val todayPrediction = effectiveResult.prediction
 
                 val snapshot = com.jeremy.lumi.domain.model.CycleSnapshot(
-                    currentPhase = if (sharePhase) state.currentPhase else CyclePhase.UNKNOWN,
-                    daysUntilNextPhase = if (sharePredictions) (state.prediction?.daysUntilNextPeriod ?: 0) else 0,
-                    isLate = if (sharePredictions) state.isLate else false,
-                    delayDays = if (sharePredictions) state.delayDays else 0,
+                    currentPhase = if (sharePhase) todayPrediction?.currentPhase ?: CyclePhase.UNKNOWN else CyclePhase.UNKNOWN,
+                    daysUntilNextPhase = if (sharePredictions) (todayPrediction?.daysUntilNextPeriod ?: 0) else 0,
+                    isLate = sharePredictions && todayPrediction?.isLate == true,
+                    delayDays = if (sharePredictions) (todayPrediction?.delayDays ?: 0) else 0,
                     currentMood = currentMood,
                     topSymptoms = topSymptoms,
                     cycleStartDateMs = if (sharePredictions) activeCycle?.startDate else null,
@@ -302,45 +321,34 @@ class HomeViewModel @Inject constructor(
                 val startDate = Instant.ofEpochMilli(cycle.startDate)
                     .atZone(ZoneId.of("UTC")).toLocalDate()
 
-                // ── Predictor matemático (base) ────────────────────────────
-                val mathCycleLen = if (closedCycles.size >= 3) {
-                    CyclePredictor.weightedAverageCycleLength(closedCycles).toInt()
-                        .coerceIn(15, 60)
-                } else {
-                    cycle.cycleLength.coerceAtLeast(15)
-                }
-                val periodLen = cycle.periodLength.coerceAtLeast(1)
-
-                // ── Capa de IA (TFLite) — corre en hilo de cómputo ───────────
-                val aiResult = if (closedCycles.size >= 3) {
-                    withContext(Dispatchers.Default) {
-                        val age    = prefsManager.ageFlow.first()?.toFloat()
-                        val height = prefsManager.heightFlow.first()
-                        val weight = prefsManager.weightFlow.first()
-                        aiPredictor.predict(
-                            closedCycles    = closedCycles,
-                            currentCycleLen = mathCycleLen.toFloat(),
-                            periodLength    = periodLen.toFloat(),
-                            age             = age,
-                            height          = height,
-                            weight          = weight
-                        )
-                    }
-                } else null
-
-                // Ciclo final: usa el resultado blended si el modelo está listo
-                val cycleLen = aiResult?.predictedCycleLength?.toInt()?.coerceIn(15, 60)
-                    ?: mathCycleLen
-
+                // ── Predicción efectiva unificada (TFLite/LiteRT + Matemático) ──────
                 val isOnContraceptive = prefsManager.isOnContraceptiveFlow.first()
+                val age = prefsManager.ageFlow.first()?.toFloat()
+                val height = prefsManager.heightFlow.first()
+                val weight = prefsManager.weightFlow.first()
 
-                val prediction = CyclePredictor.predict(
+                val effectiveResult = withContext(Dispatchers.Default) {
+                    getEffectiveCyclePredictionUseCase(
+                        activeCycle = cycle,
+                        closedCycles = closedCycles,
+                        isPregnant = isPregnant,
+                        isOnContraceptive = isOnContraceptive,
+                        age = age,
+                        height = height,
+                        weight = weight,
+                        targetDate = LumiClock.today()
+                    )
+                }
+
+                val cycleLen = effectiveResult.effectiveCycleLength
+                val periodLen = effectiveResult.periodLength
+                val prediction = effectiveResult.prediction ?: CyclePredictor.predict(
                     startDate = startDate,
                     cycleLength = cycleLen,
                     periodLength = periodLen,
-                    closedCycles = closedCycles,
                     isPregnant = isPregnant,
-                    isOnContraceptive = isOnContraceptive
+                    isOnContraceptive = isOnContraceptive,
+                    effectiveCycleLength = cycleLen
                 )
 
                 // Cache para recálculo dinámico al tocar días del timeline
@@ -390,11 +398,53 @@ class HomeViewModel @Inject constructor(
                         today = currentSelected,
                         closedCycles = closedCycles,
                         isPregnant = isPregnant,
-                        isOnContraceptive = isOnContraceptive
+                        isOnContraceptive = isOnContraceptive,
+                        effectiveCycleLength = cycleLen,
+                        predictionConfidence = effectiveResult.aiConfidence
                     )
                 } else {
                     prediction
                 }
+
+                // ── Factores de predicción honestos ("Basado en:") ───────────
+                val stdDev = activePrediction.predictedCycleLengthStdDev
+                val regScore = if (closedCycles.isEmpty()) {
+                    75
+                } else {
+                    ((1f - (stdDev.coerceIn(0.5f, 6.0f) / 7.5f)) * 100f).coerceIn(45f, 98f).toInt()
+                }
+
+                val histScore = when (closedCycles.size) {
+                    0    -> 35
+                    1    -> 55
+                    2    -> 72
+                    3    -> 85
+                    else -> 96
+                }
+
+                val allLogs = repository.getAllLogs(descending = true).firstOrNull() ?: emptyList()
+                val currentCycleLogs = allLogs.filter { it.dailyLog.date >= cycle.startDate }
+                val daysWithSymptoms = currentCycleLogs.count { it.symptoms.isNotEmpty() || it.dailyLog.mood != null }
+                val currentDayCoerced = activePrediction.currentDayOfCycle.coerceAtLeast(1)
+                val sympScore = ((daysWithSymptoms.toFloat() / currentDayCoerced) * 100f).coerceIn(25f, 95f).toInt()
+
+                val confLabel = when {
+                    activePrediction.predictionConfidenceIndex >= 0.70f -> "Certeza alta"
+                    activePrediction.predictionConfidenceIndex >= 0.45f -> "Certeza moderada"
+                    else                                                 -> "En calibración"
+                }
+
+                val marginFormatted = if (stdDev <= 0.1f) "±1.5 d" 
+                                      else "±${String.format(java.util.Locale.US, "%.1f", stdDev.coerceAtLeast(1.0f))} d"
+
+                val factors = PredictionFactorsUi(
+                    regularityScore = regScore,
+                    historyScore = histScore,
+                    symptomsScore = sympScore,
+                    cycleCount = closedCycles.size,
+                    confidenceLabel = confLabel,
+                    marginDaysText = marginFormatted
+                )
 
                 _uiState.update {
                     it.copy(
@@ -403,6 +453,7 @@ class HomeViewModel @Inject constructor(
                         currentPhase = activePrediction.currentPhase,
                         currentDayOfCycle = activePrediction.currentDayOfCycle,
                         prediction = activePrediction,
+                        predictionFactors = factors,
                         weekDays = weekDays,
                         delayState = activePrediction.delayState,
                         delayDays = activePrediction.delayDays,
@@ -493,16 +544,16 @@ class HomeViewModel @Inject constructor(
                     return@launch
                 }
 
-                val realLength = java.time.temporal.ChronoUnit.DAYS
-                    .between(startOfLast, selectedDate).toInt().coerceIn(15, 90)
-
-                val endOfLast = selectedDate.minusDays(1)
-                    .atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
-
-                repository.endCurrentCycle(endOfLast, realLength)
+                // The repository closes this cycle and starts the next in one transaction.
             }
 
-            val closedCycles = repository.getClosedCycles()
+            val closedCycles = buildList {
+                currentCycle?.let {
+                    val end = selectedDate.minusDays(1).atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
+                    add(it.copy(endDate = end))
+                }
+                addAll(repository.getClosedCycles())
+            }
 
             val newCycleLen = if (closedCycles.size >= 3) {
                 CyclePredictor.weightedAverageCycleLength(closedCycles).toInt().coerceIn(15, 60)
@@ -642,7 +693,8 @@ class HomeViewModel @Inject constructor(
                 today = today,
                 closedCycles = cachedClosedCycles,
                 isPregnant = cachedIsPregnant,
-                isOnContraceptive = cachedIsOnContraceptive
+                isOnContraceptive = cachedIsOnContraceptive,
+                effectiveCycleLength = cachedCycleLen
             )
         } else {
             CyclePredictor.predict(
@@ -652,7 +704,8 @@ class HomeViewModel @Inject constructor(
                 today = targetDate,
                 closedCycles = cachedClosedCycles,
                 isPregnant = cachedIsPregnant,
-                isOnContraceptive = cachedIsOnContraceptive
+                isOnContraceptive = cachedIsOnContraceptive,
+                effectiveCycleLength = cachedCycleLen
             )
         }
 

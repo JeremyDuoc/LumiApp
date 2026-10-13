@@ -2,6 +2,7 @@ package com.jeremy.lumi.domain.usecase
 
 import com.jeremy.lumi.R
 import com.jeremy.lumi.data.local.entity.CycleEntity
+import com.jeremy.lumi.data.local.entity.closedLengthDays
 import com.jeremy.lumi.data.local.entity.DailyLogEntity
 import com.jeremy.lumi.domain.model.AlertSeverity
 import com.jeremy.lumi.domain.model.MedicalAlert
@@ -77,7 +78,7 @@ class MedicalPatternDetector @Inject constructor() {
                     .atZone(java.time.ZoneOffset.UTC).toLocalDate()
                 val end = java.time.Instant.ofEpochMilli(cycle.endDate)
                     .atZone(java.time.ZoneOffset.UTC).toLocalDate()
-                val d = java.time.temporal.ChronoUnit.DAYS.between(start, end).toDouble()
+                val d = cycle.closedLengthDays()?.toDouble() ?: return@mapNotNull null
                 if (d in 15.0..120.0) d else null
             } else null
         }

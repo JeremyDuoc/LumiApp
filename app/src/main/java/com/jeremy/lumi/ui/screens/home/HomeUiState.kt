@@ -20,6 +20,7 @@ data class HomeUiState(
 
     // ── Preferencias ──────────────────────────────────────────────────────
     val isDiscreetMode       : Boolean          = false,
+    val userName             : String?          = null,
     val isPregnant           : Boolean          = false,
     val isOnContraceptive    : Boolean          = false,
     val userGoal             : String           = "health",
@@ -37,7 +38,19 @@ data class HomeUiState(
     val syncError            : Boolean          = false,
 
     // ── Fecha seleccionada en el Timeline (null = hoy) ────────────────────
-    val selectedDate         : java.time.LocalDate? = null
+    val selectedDate         : java.time.LocalDate? = null,
+
+    // ── Factores de Predicción "Basado en:" ────────────────────────────────
+    val predictionFactors    : PredictionFactorsUi? = null
+)
+
+data class PredictionFactorsUi(
+    val regularityScore: Int,      // 0-100%
+    val historyScore: Int,         // 0-100%
+    val symptomsScore: Int,        // 0-100%
+    val cycleCount: Int,           // Número de ciclos completados
+    val confidenceLabel: String,   // e.g. "Certeza alta", "Certeza moderada"
+    val marginDaysText: String     // e.g. "±1.5 días"
 )
 
 data class CycleDayUi(

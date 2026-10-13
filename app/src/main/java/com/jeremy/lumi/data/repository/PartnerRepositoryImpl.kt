@@ -20,6 +20,8 @@ import com.jeremy.lumi.domain.model.LinkType
 import com.jeremy.lumi.domain.model.PartnerLink
 import com.jeremy.lumi.domain.model.SharePreferences
 import com.jeremy.lumi.domain.model.isOwner
+import com.jeremy.lumi.domain.model.mySharePreferences
+import com.jeremy.lumi.domain.model.filteredBy
 import com.jeremy.lumi.domain.repository.PartnerRepository
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -53,6 +55,7 @@ class PartnerRepositoryImpl @Inject constructor(
     companion object {
         private const val TAG = "PartnerRepository"
         private const val LINKS = "partner_links"
+        private const val INVITATIONS = "partner_invitations"
         private const val DIARIES = "diaries"
         private const val ENTRIES = "entries"
         private const val MAX_DIARY_ENTRIES = 200L
@@ -148,9 +151,12 @@ class PartnerRepositoryImpl @Inject constructor(
         val fcmToken = fetchFcmTokenOrNull()
         val code = generateLinkCode()
         val docRef = firestore.collection(LINKS).document()
+        val linkId = docRef.id
+        val now = System.currentTimeMillis()
+        val expiresAt = now + 48 * 60 * 60 * 1000L // 48 horas de caducidad
 
-        val data = mapOf(
-            "linkId" to docRef.id,
+        val linkData = mapOf(
+            "linkId" to linkId,
             "ownerUid" to uid,
             "partnerUid" to null,
             "linkCode" to code,
@@ -175,9 +181,23 @@ class PartnerRepositoryImpl @Inject constructor(
             "partnerSnapshot" to null,
             "lastOwnerCareAction" to null,
             "lastPartnerCareAction" to null,
-            "createdAtMs" to System.currentTimeMillis()
+            "createdAtMs" to now
         )
-        docRef.set(data).await()
+
+        val invitationData = mapOf(
+            "code" to code,
+            "linkId" to linkId,
+            "ownerUid" to uid,
+            "status" to LinkStatus.PENDING.name,
+            "expiresAtMs" to expiresAt,
+            "createdAtMs" to now
+        )
+
+        val batch = firestore.batch()
+        batch.set(docRef, linkData)
+        batch.set(firestore.collection(INVITATIONS).document(code), invitationData)
+        batch.commit().await()
+
         return code
     }
 
@@ -190,19 +210,67 @@ class PartnerRepositoryImpl @Inject constructor(
         val uid = getCurrentUid()
             ?: throw IllegalStateException("Sin sesión de Firebase — revisa la conexión")
         val fcmToken = fetchFcmTokenOrNull()
+        val cleanCode = code.trim()
 
-        val snapshot = firestore.collection(LINKS)
-            .whereEqualTo("linkCode", code)
-            .whereEqualTo("status", LinkStatus.PENDING.name)
-            .limit(1)
-            .get().await()
+        // 1. Obtener la invitación directamente por código único (lectura puntual get)
+        val invitationDoc = try {
+            firestore.collection(INVITATIONS).document(cleanCode).get().await()
+        } catch (e: Exception) {
+            Log.w(TAG, "Error consultando invitación por código: ${e.message}")
+            null
+        }
 
-        val doc = snapshot.documents.firstOrNull() ?: return null
-        // Nadie puede unirse a su propio vínculo
-        if (doc.getString("ownerUid") == uid) return null
+        val linkId: String
+        val invitationRef = invitationDoc?.takeIf { it.exists() }?.reference
 
-        doc.reference.update(
-            mapOf(
+        if (invitationDoc != null && invitationDoc.exists()) {
+            val status = invitationDoc.getString("status")
+            val expiresAt = invitationDoc.getLong("expiresAtMs") ?: 0L
+            val ownerUid = invitationDoc.getString("ownerUid")
+            val resolvedLinkId = invitationDoc.getString("linkId")
+
+            if (status != LinkStatus.PENDING.name || expiresAt <= System.currentTimeMillis() || resolvedLinkId == null) {
+                return null
+            }
+            if (ownerUid == uid) return null // Nadie puede unirse a su propio vínculo
+            linkId = resolvedLinkId
+        } else {
+            // Fallback con consulta directa para instalaciones previas a la migración
+            val snapshot = try {
+                firestore.collection(LINKS)
+                    .whereEqualTo("linkCode", cleanCode)
+                    .whereEqualTo("status", LinkStatus.PENDING.name)
+                    .limit(1)
+                    .get().await()
+            } catch (_: Exception) { null }
+
+            val doc = snapshot?.documents?.firstOrNull() ?: return null
+            if (doc.getString("ownerUid") == uid) return null
+            linkId = doc.id
+        }
+
+        val linkRef = firestore.collection(LINKS).document(linkId)
+
+        // 2. Transacción atómica: canjear invitación y activar el vínculo
+        firestore.runTransaction { transaction ->
+            if (invitationRef != null) {
+                val currentInv = transaction.get(invitationRef)
+                if (currentInv.getString("status") != LinkStatus.PENDING.name) {
+                    throw IllegalStateException("La invitación ya fue canjeada o revocada")
+                }
+                transaction.update(invitationRef, mapOf(
+                    "status" to "CLAIMED",
+                    "claimedByUid" to uid,
+                    "claimedAtMs" to System.currentTimeMillis()
+                ))
+            }
+
+            val currentLink = transaction.get(linkRef)
+            if (currentLink.getString("status") != LinkStatus.PENDING.name) {
+                throw IllegalStateException("El vínculo ya no está pendiente")
+            }
+
+            transaction.update(linkRef, mapOf(
                 "partnerUid" to uid,
                 "partnerDisplayName" to displayName,
                 "partnerAvatarId" to avatarId,
@@ -212,26 +280,30 @@ class PartnerRepositoryImpl @Inject constructor(
                 "partnerShareSymptoms" to privacy.symptoms,
                 "partnerSharePredictions" to privacy.predictions,
                 "status" to LinkStatus.ACTIVE.name
-            )
-        ).await()
+            ))
+        }.await()
 
-        return doc.reference.get().await().toPartnerLink()
+        return linkRef.get().await().toPartnerLink()
     }
 
     // ── Privacidad e identidad por vínculo ───────────────────────────────────
 
     override suspend fun updateMyPrivacy(linkId: String, privacy: SharePreferences) {
         val uid = getCurrentUid() ?: return
-        val link = fetchLink(linkId) ?: return
-        val prefix = if (link.isOwner(uid)) "owner" else "partner"
-        firestore.collection(LINKS).document(linkId).update(
-            mapOf(
+        val ref = firestore.collection(LINKS).document(linkId)
+        firestore.runTransaction { transaction ->
+            val link = transaction.get(ref).toPartnerLink() ?: return@runTransaction
+            check(link.ownerUid == uid || link.partnerUid == uid)
+            val prefix = if (link.isOwner(uid)) "owner" else "partner"
+            val previous = if (link.isOwner(uid)) link.ownerSnapshot else link.partnerSnapshot
+            transaction.update(ref, mapOf(
                 "${prefix}SharePhase" to privacy.phase,
                 "${prefix}ShareMood" to privacy.mood,
                 "${prefix}ShareSymptoms" to privacy.symptoms,
-                "${prefix}SharePredictions" to privacy.predictions
-            )
-        ).await()
+                "${prefix}SharePredictions" to privacy.predictions,
+                "${prefix}Snapshot" to previous?.filteredBy(privacy)?.toFirestoreMap()
+            ))
+        }.await()
     }
 
     override suspend fun updateMyIdentity(linkId: String, displayName: String?, avatarId: String?) {
@@ -251,7 +323,6 @@ class PartnerRepositoryImpl @Inject constructor(
 
     override suspend fun publishSnapshot(snapshot: CycleSnapshot) {
         val uid = getCurrentUid() ?: return
-        val map = snapshot.toFirestoreMap()
 
         // 1. Vínculos donde soy titular → ownerSnapshot
         val asOwner = firestore.collection(LINKS)
@@ -268,20 +339,29 @@ class PartnerRepositoryImpl @Inject constructor(
 
         if (asOwner.isEmpty && asPartner.isEmpty) return
 
-        firestore.runBatch { batch ->
-            asOwner.documents.forEach { batch.update(it.reference, "ownerSnapshot", map) }
-            asPartner.documents.forEach { batch.update(it.reference, "partnerSnapshot", map) }
-        }.await()
+        // Re-read consent in the transaction so a concurrent privacy change cannot
+        // be overwritten by a publication based on an earlier query result.
+        for (document in asOwner.documents + asPartner.documents) {
+            firestore.runTransaction { transaction ->
+                val link = transaction.get(document.reference).toPartnerLink()
+                    ?: return@runTransaction
+                if (link.status != LinkStatus.ACTIVE) return@runTransaction
+                if (link.ownerUid != uid && link.partnerUid != uid) return@runTransaction
+                val field = if (link.isOwner(uid)) "ownerSnapshot" else "partnerSnapshot"
+                transaction.update(document.reference, field,
+                    snapshot.filteredBy(link.mySharePreferences(uid)).toFirestoreMap())
+            }.await()
+        }
     }
 
     // ── Detalles (Care Actions) ──────────────────────────────────────────────
 
-    override suspend fun sendCareAction(linkId: String, action: CareAction) {
+    override suspend fun sendCareAction(linkId: String, action: CareAction, message: String?) {
         val uid = getCurrentUid() ?: return
         val link = fetchLink(linkId) ?: return
         val field = if (link.isOwner(uid)) "lastOwnerCareAction" else "lastPartnerCareAction"
         firestore.collection(LINKS).document(linkId)
-            .update(field, CareActionStatus(action, System.currentTimeMillis()).toFirestoreMap())
+            .update(field, CareActionStatus(action, System.currentTimeMillis(), message).toFirestoreMap())
             .await()
     }
 

@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="com.jeremy.lumi.DataIntegrityTest" tests="5" failures="0" errors="0" skipped="0" time="4.741" timestamp="2026-10-12T18:01:19" hostname="localhost">
+  <properties>
+    <property name="device" value="Pixel_7_Pro(AVD) - 17" />
+    <property name="flavor" value="" />
+    <property name="project" value=":app" />
+  </properties>
+  <testcase name="concurrentDailySavesProduceOneLog" classname="com.jeremy.lumi.DataIntegrityTest" time="0.378" />
+  <testcase name="repeatedPeriodStartsAndUndoPreserveLogs" classname="com.jeremy.lumi.DataIntegrityTest" time="0.233" />
+  <testcase name="zipRoundTripWorksWhileRoomStaysOpen" classname="com.jeremy.lumi.DataIntegrityTest" time="0.795" />
+  <testcase name="emptyOrCorruptArchivesDoNotModifyExistingData" classname="com.jeremy.lumi.DataIntegrityTest" time="0.102" />
+  <testcase name="useAppContext" classname="com.jeremy.lumi.ExampleInstrumentedTest" time="0.045" />
+</testsuite>

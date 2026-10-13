@@ -1,0 +1,94 @@
+[
+  {
+    "Count": 167,
+    "Name": "Error, MissingTranslation"
+  },
+  {
+    "Count": 166,
+    "Name": "Warning, UnusedResources"
+  },
+  {
+    "Count": 89,
+    "Name": "Warning, PluralsCandidate"
+  },
+  {
+    "Count": 33,
+    "Name": "Warning, Typos"
+  },
+  {
+    "Count": 33,
+    "Name": "Warning, UseTomlInstead"
+  },
+  {
+    "Count": 21,
+    "Name": "Warning, GradleDependency"
+  },
+  {
+    "Count": 11,
+    "Name": "Warning, NewerVersionAvailable"
+  },
+  {
+    "Count": 10,
+    "Name": "Warning, TypographyEllipsis"
+  },
+  {
+    "Count": 3,
+    "Name": "Warning, UseKtx"
+  },
+  {
+    "Count": 3,
+    "Name": "Warning, Aligned16KB"
+  },
+  {
+    "Count": 3,
+    "Name": "Warning, TypographyDashes"
+  },
+  {
+    "Count": 2,
+    "Name": "Warning, IconLocation"
+  },
+  {
+    "Count": 2,
+    "Name": "Warning, IconXmlAndPng"
+  },
+  {
+    "Count": 2,
+    "Name": "Warning, ModifierParameter"
+  },
+  {
+    "Count": 2,
+    "Name": "Warning, MonochromeLauncherIcon"
+  },
+  {
+    "Count": 2,
+    "Name": "Warning, UnusedAttribute"
+  },
+  {
+    "Count": 1,
+    "Name": "Warning, AndroidGradlePluginVersion"
+  },
+  {
+    "Count": 1,
+    "Name": "Warning, OldTargetApi"
+  },
+  {
+    "Count": 1,
+    "Name": "Warning, ConstantLocale"
+  },
+  {
+    "Count": 1,
+    "Name": "Warning, ObsoleteSdkInt"
+  },
+  {
+    "Count": 1,
+    "Name": "Warning, UseOfNonLambdaOffsetOverload"
+  },
+  {
+    "Count": 1,
+    "Name": "Warning, AppBundleLocaleChanges"
+  },
+  {
+    "Count": 1,
+    "Name": "Warning, DefaultLocale"
+  }
+]

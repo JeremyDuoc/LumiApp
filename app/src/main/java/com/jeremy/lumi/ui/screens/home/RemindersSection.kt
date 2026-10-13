@@ -1,4 +1,4 @@
-package com.jeremy.lumi.ui.screens.home
+﻿package com.jeremy.lumi.ui.screens.home
 
 import android.app.AlarmManager
 import android.app.TimePickerDialog
@@ -45,20 +45,28 @@ import com.jeremy.lumi.data.local.entity.ReminderType
 import com.jeremy.lumi.data.local.entity.SupplyType
 import java.time.LocalDate
 import java.util.Locale
+import com.jeremy.lumi.ui.theme.LocalIsDarkTheme
 
 @Composable
 fun RemindersSection(viewModel: RemindersViewModel = hiltViewModel()) {
     val reminders    by viewModel.activeReminders.collectAsStateWithLifecycle()
     var showAddSheet by remember { mutableStateOf(false) }
     val context      = LocalContext.current
+    val isDark       = LocalIsDarkTheme.current
+    val surfaceColor = if (isDark) Color(0x1AFFFFFF) else Color(0x0A000000)
+    val borderColor  = if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)
+                       else Color(0x1A000000)
+    val shape        = RoundedCornerShape(24.dp)
 
-    Card(
-        modifier  = Modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(24.dp),
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(0.dp)
+    Box(
+        modifier  = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(surfaceColor)
+            .border(1.dp, borderColor, shape)
+            .padding(20.dp)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column {
 
             // â”€â”€ Cabecera â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Row(
@@ -66,21 +74,53 @@ fun RemindersSection(viewModel: RemindersViewModel = hiltViewModel()) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment     = Alignment.CenterVertically
             ) {
-                Text(stringResource(R.string.reminder_title),
-                    fontSize = 16.sp, fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground)
-                IconButton(onClick = { showAddSheet = true }) {
-                    Icon(Icons.Rounded.Add, stringResource(R.string.reminder_set),
-                        tint = MaterialTheme.colorScheme.primary)
+                Text(
+                    text = stringResource(R.string.reminder_title),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                if (reminders.isNotEmpty()) {
+                    TextButton(
+                        onClick = { showAddSheet = true },
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.reminder_set),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
 
-            // â”€â”€ Lista de recordatorios activos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ── Lista de recordatorios activos ──────────────────────────────────
             if (reminders.isEmpty()) {
                 Spacer(Modifier.height(8.dp))
-                Text(stringResource(R.string.reminder_empty_hint),
-                    fontSize = 13.sp,
-                    color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { showAddSheet = true }
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.reminder_empty_hint),
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.68f),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.reminder_set),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             } else {
                 Spacer(Modifier.height(12.dp))
                 reminders.take(10).forEach { reminder ->
@@ -534,7 +574,7 @@ private fun SupplyChip(text: String, isSelected: Boolean, onClick: () -> Unit) {
 @Composable
 private fun SectionGroupLabel(text: String) {
     Text(text, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.06.sp,
-        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
+        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.68f),
         modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
 }
 

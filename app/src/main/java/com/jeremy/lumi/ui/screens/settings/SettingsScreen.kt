@@ -10,6 +10,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.ChatBubbleOutline
@@ -18,10 +20,12 @@ import androidx.compose.material.icons.rounded.CloudUpload
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.DonutLarge
 import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.*
+import androidx.compose.ui.semantics.Role
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
@@ -145,6 +149,7 @@ fun SettingsScreen(
     val saveReminders by viewModel.saveRemindersInChat.collectAsStateWithLifecycle()
     val userGoal by viewModel.userGoal.collectAsStateWithLifecycle()
     val isPregnant by viewModel.isPregnant.collectAsStateWithLifecycle()
+    val currentLanguage by viewModel.currentLanguage.collectAsStateWithLifecycle()
 
     val customPhaseColorsVal = customPhaseColors
     val activePhaseColors = if (currentPhasePalette == PhaseColorPalette.CUSTOM && customPhaseColorsVal != null) {
@@ -159,10 +164,11 @@ fun SettingsScreen(
     var showGoalSheet by remember { mutableStateOf(false) }
     var showPregnancyEndDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
 
     val context = androidx.compose.ui.platform.LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val backupManager = remember { com.jeremy.lumi.data.backup.BackupManager(context) }
+    val backupManager = viewModel.backupManager
     
     val isHealthConnectEnabled by viewModel.isHealthConnectEnabled.collectAsStateWithLifecycle()
     val healthConnectLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -173,7 +179,7 @@ fun SettingsScreen(
             viewModel.setIsHealthConnectEnabled(true)
         } else {
             viewModel.setIsHealthConnectEnabled(false)
-            android.widget.Toast.makeText(context, "Permisos denegados", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(context, context.getString(R.string.settings_health_connect_denied), android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -184,7 +190,7 @@ fun SettingsScreen(
             coroutineScope.launch {
                 context.contentResolver.openOutputStream(it)?.let { os ->
                     val result = backupManager.exportDatabaseToZip(os)
-                    val msg = if (result.isSuccess) "Copia de seguridad guardada con éxito." else "Error al guardar."
+                    val msg = if (result.isSuccess) context.getString(R.string.settings_backup_export_success) else context.getString(R.string.settings_backup_export_error)
                     android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
                 }
             }
@@ -198,7 +204,7 @@ fun SettingsScreen(
             coroutineScope.launch {
                 context.contentResolver.openInputStream(it)?.let { input ->
                     val result = backupManager.importDatabaseFromZip(input)
-                    val msg = if (result.isSuccess) "Datos restaurados. Por favor, reinicia la app." else "Error al restaurar."
+                    val msg = if (result.isSuccess) context.getString(R.string.settings_backup_import_success) else context.getString(R.string.settings_backup_import_error)
                     android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
                 }
             }
@@ -270,8 +276,8 @@ fun SettingsScreen(
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
                 SettingsSwitchItem(
                     icon = Icons.Rounded.Favorite,
-                    title = "Sincronizar con Health Connect",
-                    subtitle = "Importa temperatura, sueño, pasos y ritmo cardíaco",
+                    title = stringResource(R.string.settings_health_connect_title),
+                    subtitle = stringResource(R.string.settings_health_connect_desc),
                     checked = isHealthConnectEnabled,
                     onCheckedChange = { checked -> 
                         if (checked) {
@@ -279,7 +285,7 @@ fun SettingsScreen(
                             if (viewModel.isHealthConnectAvailable) {
                                 healthConnectLauncher.launch(viewModel.healthConnectPermissions)
                             } else {
-                                android.widget.Toast.makeText(context, "Health Connect no disponible en este dispositivo", android.widget.Toast.LENGTH_SHORT).show()
+                                android.widget.Toast.makeText(context, context.getString(R.string.settings_health_connect_unavailable), android.widget.Toast.LENGTH_SHORT).show()
                             }
                         } else {
                             viewModel.setIsHealthConnectEnabled(false)
@@ -288,20 +294,32 @@ fun SettingsScreen(
                 )
             }
 
-            // â”€â”€ APARIENCIA Y TEMA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-            SettingsSectionTitle("Apariencia")
+            // ── APARIENCIA Y TEMA ─────────────────────────────────────────────
+            SettingsSectionTitle(stringResource(R.string.settings_section_appearance))
             SettingsCard {
                 SettingsItem(
+                    icon = Icons.Rounded.Language,
+                    title = stringResource(R.string.settings_language_title),
+                    subtitle = when (currentLanguage) {
+                        "en" -> stringResource(R.string.settings_language_en)
+                        "es" -> stringResource(R.string.settings_language_es)
+                        else -> stringResource(R.string.settings_language_system)
+                    },
+                    onClick = { showLanguageDialog = true }
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
+                SettingsItem(
                     icon = Icons.Rounded.Palette,
-                    title = "Tema General",
-                    subtitle = currentTheme.name,
+                    title = stringResource(R.string.settings_theme_general),
+                    subtitle = (clarasOptions + oscurasOptions + minimalistasOptions)
+                        .find { it.palette == currentTheme }?.name ?: currentTheme.name,
                     onClick = { showThemeSheet = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
                 SettingsItem(
                     icon = Icons.Rounded.Tune,
-                    title = "Colores de Ciclo",
-                    subtitle = if(currentPhasePalette == PhaseColorPalette.CUSTOM) "Personalizado" else phasePaletteOptions.find { it.palette == currentPhasePalette }?.name ?: "Original",
+                    title = stringResource(R.string.settings_cycle_colors),
+                    subtitle = if(currentPhasePalette == PhaseColorPalette.CUSTOM) stringResource(R.string.settings_cycle_colors_custom) else phasePaletteOptions.find { it.palette == currentPhasePalette }?.name ?: stringResource(R.string.settings_cycle_colors_original),
                     onClick = { showPhaseColorSheet = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
@@ -323,34 +341,34 @@ fun SettingsScreen(
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
                 SettingsItem(
                     icon = Icons.Rounded.Favorite,
-                    title = "Añadir Widget",
-                    subtitle = "Coloca a Lumi en tu pantalla de inicio",
+                    title = stringResource(R.string.settings_add_widget),
+                    subtitle = stringResource(R.string.settings_add_widget_desc),
                     onClick = {
                         val appWidgetManager = android.appwidget.AppWidgetManager.getInstance(context)
                         val myProvider = android.content.ComponentName(context, com.jeremy.lumi.ui.widget.LumiWidgetReceiver::class.java)
                         if (appWidgetManager.isRequestPinAppWidgetSupported) {
                             appWidgetManager.requestPinAppWidget(myProvider, null, null)
                         } else {
-                            android.widget.Toast.makeText(context, "Tu dispositivo no soporta esto. Añádelo manualmente desde tu pantalla de inicio.", android.widget.Toast.LENGTH_LONG).show()
+                            android.widget.Toast.makeText(context, context.getString(R.string.settings_widget_unsupported), android.widget.Toast.LENGTH_LONG).show()
                         }
                     }
                 )
             }
 
-            // â”€â”€ CHAT Y RECORDATORIOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-            SettingsSectionTitle("Chat y Recordatorios")
+            // ── CHAT Y RECORDATORIOS ──────────────────────────────────────────
+            SettingsSectionTitle(stringResource(R.string.settings_chat_reminders_section))
             SettingsCard {
                 SettingsSwitchItem(
                     icon = Icons.Rounded.ChatBubbleOutline,
-                    title = "Recordatorios en Chat",
-                    subtitle = "Guardar un historial en la pestaña de chat",
+                    title = stringResource(R.string.settings_chat_reminders_title),
+                    subtitle = stringResource(R.string.settings_chat_reminders_desc),
                     checked = saveReminders,
                     onCheckedChange = { viewModel.setSaveRemindersInChat(it) }
                 )
             }
 
-            // â”€â”€ RESPALDO DE DATOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-            SettingsSectionTitle("Datos y Respaldo")
+            // ── RESPALDO DE DATOS ─────────────────────────────────────────────
+            SettingsSectionTitle(stringResource(R.string.settings_data_backup_section))
             SettingsCard {
                 SettingsItem(
                     icon = Icons.Rounded.CloudUpload,
@@ -361,21 +379,21 @@ fun SettingsScreen(
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
                 SettingsItem(
                     icon = Icons.Rounded.Check,
-                    title = "Crear Copia de Seguridad",
-                    subtitle = "Exportar tus datos a un archivo ZIP",
+                    title = stringResource(R.string.settings_backup_zip_create),
+                    subtitle = stringResource(R.string.settings_backup_zip_create_desc),
                     onClick = { exportLauncher.launch("Lumi_Backup.zip") }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
                 SettingsItem(
                     icon = Icons.Rounded.Check,
-                    title = "Restaurar Copia",
-                    subtitle = "Importar datos desde un ZIP",
+                    title = stringResource(R.string.settings_backup_zip_restore),
+                    subtitle = stringResource(R.string.settings_backup_zip_restore_desc),
                     onClick = { importLauncher.launch(arrayOf("application/zip")) }
                 )
             }
 
-            // â”€â”€ PRIVACIDAD & PAREJA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-            SettingsSectionTitle("Avanzado")
+            // ── PRIVACIDAD & PAREJA ───────────────────────────────────────────
+            SettingsSectionTitle(stringResource(R.string.settings_section_advanced))
             SettingsCard {
                 SettingsItem(
                     icon = Icons.Rounded.Favorite,
@@ -393,7 +411,7 @@ fun SettingsScreen(
             }
 
             // ——— ZONA DE PELIGRO ——————————————————————————————————————————————
-            SettingsSectionTitle("☠️ Zona de peligro")
+            SettingsSectionTitle(stringResource(R.string.settings_danger_zone))
             // Botón de borrar datos — sin envolver en SettingsCard para mayor énfasis visual
             OutlinedButton(
                 onClick  = { showResetDialog = true },
@@ -431,7 +449,7 @@ fun SettingsScreen(
             Spacer(Modifier.height(16.dp))
             
             // ——— HERRAMIENTAS DE DESARROLLO ———————————————————————————————————
-            SettingsSectionTitle("🛠 Herramientas de Desarrollo")
+            SettingsSectionTitle(stringResource(R.string.settings_dev_tools))
             OutlinedButton(
                 onClick  = { viewModel.injectMockData() },
                 modifier = Modifier
@@ -453,13 +471,13 @@ fun SettingsScreen(
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text       = "Generar Datos de Prueba (Dev)",
+                    text       = stringResource(R.string.settings_dev_generate_mock),
                     fontWeight = FontWeight.SemiBold,
                     fontSize   = 15.sp
                 )
             }
             Text(
-                text     = "Inyecta 4 meses de historial (ciclos y síntomas) para probar los gráficos y descubrimientos.",
+                text     = stringResource(R.string.settings_dev_generate_mock_desc),
                 fontSize = 12.sp,
                 color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
                 modifier = Modifier.padding(horizontal = 28.dp)
@@ -510,6 +528,74 @@ fun SettingsScreen(
                 dismissButton = {
                     TextButton(onClick = { showResetDialog = false }) {
                         Text(stringResource(R.string.dialog_reset_cancel))
+                    }
+                }
+            )
+        }
+
+        if (showLanguageDialog) {
+            AlertDialog(
+                onDismissRequest = { showLanguageDialog = false },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Rounded.Language,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                },
+                title = {
+                    Text(
+                        text = stringResource(R.string.settings_language_title),
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Column(
+                        modifier = Modifier.selectableGroup(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val options = listOf(
+                            "system" to stringResource(R.string.settings_language_system),
+                            "es" to stringResource(R.string.settings_language_es),
+                            "en" to stringResource(R.string.settings_language_en)
+                        )
+                        options.forEach { (code, label) ->
+                            val selected = (currentLanguage == code)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .selectable(
+                                        selected = selected,
+                                        role = Role.RadioButton,
+                                        onClick = {
+                                            showLanguageDialog = false
+                                            val act = com.jeremy.lumi.utils.LocaleHelper.findActivity(context)
+                                            viewModel.setLanguage(code, act)
+                                        }
+                                    )
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = selected,
+                                    onClick = null
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = label,
+                                    fontSize = 15.sp,
+                                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showLanguageDialog = false }) {
+                        Text(stringResource(android.R.string.ok))
                     }
                 }
             )
@@ -894,31 +980,77 @@ private fun ThemeSelector(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .clickable { onClick() }
+            .width(104.dp)
+            .selectable(selected = isSelected, role = androidx.compose.ui.semantics.Role.RadioButton, onClick = onClick)
             .padding(vertical = 4.dp)
     ) {
         Box(
-            modifier = Modifier
-                .size(52.dp)
-                .clip(CircleShape)
-                .background(if (option.isDark) option.darkBg else option.color)
-                .border(
-                    width = if (isSelected) 3.dp else if (option.isDark) 1.5.dp else 0.dp,
-                    color = when {
-                        isSelected  -> MaterialTheme.colorScheme.primary
-                        option.isDark -> option.color.copy(alpha = 0.7f)
-                        else        -> Color.Transparent
-                    },
-                    shape = CircleShape
-                ),
+            modifier = Modifier.size(56.dp),
             contentAlignment = Alignment.Center
         ) {
-            // Para temas oscuros: punto del color primario en el centro
-            if (option.isDark && !isSelected) {
-                Box(Modifier.size(22.dp).clip(CircleShape).background(option.color))
-            }
-            if (isSelected) {
-                Icon(Icons.Rounded.Check, null, tint = Color.White, modifier = Modifier.size(20.dp))
+            if (option.isDark) {
+                // Temas oscuros: fondo oscuro + arco de color primario en Canvas
+                androidx.compose.foundation.Canvas(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                ) {
+                    val radius = size.minDimension / 2f
+                    val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
+                    // Fondo oscuro del tema
+                    drawCircle(color = option.darkBg, radius = radius, center = center)
+                    // Arco de color primario que recorre ~270° (estilo watchface)
+                    drawArc(
+                        color      = option.color.copy(alpha = if (isSelected) 1f else 0.80f),
+                        startAngle = 135f,
+                        sweepAngle = 270f,
+                        useCenter  = false,
+                        style      = androidx.compose.ui.graphics.drawscope.Stroke(
+                            width = if (isSelected) 4.5f.dp.toPx() else 3.dp.toPx(),
+                            cap   = androidx.compose.ui.graphics.StrokeCap.Round
+                        ),
+                        topLeft = androidx.compose.ui.geometry.Offset(
+                            center.x - radius * 0.78f,
+                            center.y - radius * 0.78f
+                        ),
+                        size = androidx.compose.ui.geometry.Size(radius * 1.56f, radius * 1.56f)
+                    )
+                    // Brillo exterior de selección
+                    if (isSelected) {
+                        drawCircle(
+                            color  = option.color.copy(alpha = 0.22f),
+                            radius = radius,
+                            center = center
+                        )
+                    }
+                }
+                // Checkmark de selección centrado
+                if (isSelected) {
+                    Icon(
+                        imageVector        = Icons.Rounded.Check,
+                        contentDescription = null,
+                        tint               = Color.White,
+                        modifier           = Modifier.size(18.dp)
+                    )
+                }
+            } else {
+                // Temas claros: círculo sólido con borde de selección
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(CircleShape)
+                        .background(option.color)
+                        .border(
+                            width = if (isSelected) 3.dp else 0.dp,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isSelected) {
+                        Icon(Icons.Rounded.Check, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    }
+                }
             }
         }
         Spacer(Modifier.height(6.dp))
@@ -927,7 +1059,9 @@ private fun ThemeSelector(
             fontSize   = 11.sp,
             color      = MaterialTheme.colorScheme.onBackground.copy(alpha = if (isSelected) 0.9f else 0.65f),
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-            maxLines   = 1
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            minLines = 2,
+            maxLines = 3
         )
     }
 }
@@ -997,7 +1131,7 @@ private fun PhasePaletteCarousel(
 // ── Selector de ambiente de fondo ─────────────────────────────────────────────
 
 /**
- * Row inline que muestra los 4 ambientes como chips seleccionables.
+ * Grid 2×4 que muestra los 8 ambientes como chips seleccionables.
  * Cada chip tiene una mini-preview del efecto y el nombre del modo.
  */
 @Composable
@@ -1006,6 +1140,9 @@ private fun AmbientPickerRow(
     onChange : (BackgroundAmbient) -> Unit
 ) {
     val isDark = LocalIsDarkTheme.current
+    val entries = BackgroundAmbient.entries
+    val rowOne  = entries.take(4)
+    val rowTwo  = entries.drop(4)
 
     Column(
         modifier = Modifier
@@ -1025,17 +1162,33 @@ private fun AmbientPickerRow(
                 tint               = MaterialTheme.colorScheme.primary
             )
             Text(
-                text       = "Ambiente de fondo",
+                text       = stringResource(R.string.settings_ambient_title),
                 fontWeight = FontWeight.Medium,
                 fontSize   = 15.sp,
                 color      = MaterialTheme.colorScheme.onSurface
             )
         }
+        // Fila 1 — FLAT, AURA, CELESTIAL, ORGANIC
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            BackgroundAmbient.entries.forEach { ambient ->
+            rowOne.forEach { ambient ->
+                AmbientChip(
+                    ambient   = ambient,
+                    selected  = ambient == current,
+                    isDark    = isDark,
+                    onClick   = { onChange(ambient) },
+                    modifier  = Modifier.weight(1f)
+                )
+            }
+        }
+        // Fila 2 — AURORA, PETALS, NEBULA, BREATH
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            rowTwo.forEach { ambient ->
                 AmbientChip(
                     ambient   = ambient,
                     selected  = ambient == current,
@@ -1075,7 +1228,7 @@ private fun AmbientChip(
         AmbientMiniPreview(ambient = ambient, selected = selected, isDark = isDark)
 
         Text(
-            text      = ambient.labelEs,
+            text      = stringResource(ambient.labelRes),
             fontSize  = 11.sp,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             color     = contentColor,
@@ -1096,9 +1249,9 @@ private fun AmbientMiniPreview(
     selected : Boolean,
     isDark   : Boolean
 ) {
-    val semanticColors = LocalSemanticPhaseColors.current
-    val primaryColor   = MaterialTheme.colorScheme.primary
-    val bgColor        = MaterialTheme.colorScheme.surface
+    val phaseColors  = LocalPhaseColors.current
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val bgColor      = MaterialTheme.colorScheme.surface
 
     androidx.compose.foundation.Canvas(
         modifier = Modifier
@@ -1171,7 +1324,7 @@ private fun AmbientMiniPreview(
                 val alphaB = if (isDark) 0.55f else 0.30f
                 drawCircle(
                     brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                        colors = listOf(semanticColors.menstrual.copy(alpha = alphaB), androidx.compose.ui.graphics.Color.Transparent),
+                        colors = listOf(phaseColors.menstrual.copy(alpha = alphaB), androidx.compose.ui.graphics.Color.Transparent),
                         center = androidx.compose.ui.geometry.Offset(-w * 0.05f, -h * 0.05f),
                         radius = w * 0.65f
                     ),
@@ -1180,12 +1333,142 @@ private fun AmbientMiniPreview(
                 )
                 drawCircle(
                     brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                        colors = listOf(semanticColors.follicular.copy(alpha = alphaB * 0.70f), androidx.compose.ui.graphics.Color.Transparent),
+                        colors = listOf(phaseColors.follicular.copy(alpha = alphaB * 0.70f), androidx.compose.ui.graphics.Color.Transparent),
                         center = androidx.compose.ui.geometry.Offset(w * 1.05f, h * 1.05f),
                         radius = w * 0.60f
                     ),
                     radius = w * 0.60f,
                     center = androidx.compose.ui.geometry.Offset(w * 1.05f, h * 1.05f)
+                )
+            }
+            BackgroundAmbient.AURORA -> {
+                // Tres bandas horizontales de aurora boreal
+                val auroraAlpha = if (isDark) 0.70f else 0.35f
+                val colorA = if (isDark) androidx.compose.ui.graphics.Color(0xFF00E5A0) else androidx.compose.ui.graphics.Color(0xFF80D4B8)
+                val colorB = if (isDark) androidx.compose.ui.graphics.Color(0xFF00B0FF) else androidx.compose.ui.graphics.Color(0xFFAAD8F0)
+                val colorC = if (isDark) androidx.compose.ui.graphics.Color(0xFFB07CF0) else androidx.compose.ui.graphics.Color(0xFFD0B4E8)
+                // Banda inferior — teal
+                drawCircle(
+                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        colors = listOf(colorA.copy(alpha = auroraAlpha), androidx.compose.ui.graphics.Color.Transparent),
+                        center = androidx.compose.ui.geometry.Offset(w * 0.50f, h * 0.70f),
+                        radius = w * 0.70f
+                    ),
+                    radius = w * 0.70f,
+                    center = androidx.compose.ui.geometry.Offset(w * 0.50f, h * 0.70f)
+                )
+                // Banda media — cian
+                drawCircle(
+                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        colors = listOf(colorB.copy(alpha = auroraAlpha * 0.80f), androidx.compose.ui.graphics.Color.Transparent),
+                        center = androidx.compose.ui.geometry.Offset(w * 0.45f, h * 0.40f),
+                        radius = w * 0.60f
+                    ),
+                    radius = w * 0.60f,
+                    center = androidx.compose.ui.geometry.Offset(w * 0.45f, h * 0.40f)
+                )
+                // Banda superior — violeta
+                drawCircle(
+                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        colors = listOf(colorC.copy(alpha = auroraAlpha * 0.60f), androidx.compose.ui.graphics.Color.Transparent),
+                        center = androidx.compose.ui.geometry.Offset(w * 0.55f, h * 0.12f),
+                        radius = w * 0.65f
+                    ),
+                    radius = w * 0.65f,
+                    center = androidx.compose.ui.geometry.Offset(w * 0.55f, h * 0.12f)
+                )
+            }
+            BackgroundAmbient.PETALS -> {
+                // 3 círculos translúcidos tipo pétalos
+                val petalAlpha = if (isDark) 0.65f else 0.38f
+                val p1 = if (isDark) androidx.compose.ui.graphics.Color(0xFFC890E8) else androidx.compose.ui.graphics.Color(0xFFE8A0B8)
+                val p2 = if (isDark) androidx.compose.ui.graphics.Color(0xFFE880B0) else androidx.compose.ui.graphics.Color(0xFFF0B890)
+                val p3 = if (isDark) androidx.compose.ui.graphics.Color(0xFF90A8E0) else androidx.compose.ui.graphics.Color(0xFFD8B0D8)
+                drawCircle(
+                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        colors = listOf(p1.copy(alpha = petalAlpha), androidx.compose.ui.graphics.Color.Transparent),
+                        center = androidx.compose.ui.geometry.Offset(w * 0.25f, h * 0.70f),
+                        radius = w * 0.45f
+                    ),
+                    radius = w * 0.45f, center = androidx.compose.ui.geometry.Offset(w * 0.25f, h * 0.70f)
+                )
+                drawCircle(
+                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        colors = listOf(p2.copy(alpha = petalAlpha * 0.85f), androidx.compose.ui.graphics.Color.Transparent),
+                        center = androidx.compose.ui.geometry.Offset(w * 0.75f, h * 0.45f),
+                        radius = w * 0.42f
+                    ),
+                    radius = w * 0.42f, center = androidx.compose.ui.geometry.Offset(w * 0.75f, h * 0.45f)
+                )
+                drawCircle(
+                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        colors = listOf(p3.copy(alpha = petalAlpha * 0.70f), androidx.compose.ui.graphics.Color.Transparent),
+                        center = androidx.compose.ui.geometry.Offset(w * 0.45f, h * 0.20f),
+                        radius = w * 0.38f
+                    ),
+                    radius = w * 0.38f, center = androidx.compose.ui.geometry.Offset(w * 0.45f, h * 0.20f)
+                )
+            }
+            BackgroundAmbient.NEBULA -> {
+                // Tres manchas de niebla cósmica superpuestas
+                val nebulaAlpha = if (isDark) 0.75f else 0.30f
+                val n1 = if (isDark) androidx.compose.ui.graphics.Color(0xFF1A3A8A) else androidx.compose.ui.graphics.Color(0xFFB8C8E8)
+                val n2 = if (isDark) androidx.compose.ui.graphics.Color(0xFF601878) else androidx.compose.ui.graphics.Color(0xFFD8B8D8)
+                val n3 = if (isDark) androidx.compose.ui.graphics.Color(0xFF0A5060) else androidx.compose.ui.graphics.Color(0xFFB0D0D8)
+                drawCircle(
+                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        colors = listOf(n1.copy(alpha = nebulaAlpha), androidx.compose.ui.graphics.Color.Transparent),
+                        center = androidx.compose.ui.geometry.Offset(w * 0.20f, h * 0.35f),
+                        radius = w * 0.72f
+                    ),
+                    radius = w * 0.72f, center = androidx.compose.ui.geometry.Offset(w * 0.20f, h * 0.35f)
+                )
+                drawCircle(
+                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        colors = listOf(n2.copy(alpha = nebulaAlpha * 0.80f), androidx.compose.ui.graphics.Color.Transparent),
+                        center = androidx.compose.ui.geometry.Offset(w * 0.85f, h * 0.15f),
+                        radius = w * 0.58f
+                    ),
+                    radius = w * 0.58f, center = androidx.compose.ui.geometry.Offset(w * 0.85f, h * 0.15f)
+                )
+                drawCircle(
+                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        colors = listOf(n3.copy(alpha = nebulaAlpha * 0.70f), androidx.compose.ui.graphics.Color.Transparent),
+                        center = androidx.compose.ui.geometry.Offset(w * 0.60f, h * 0.80f),
+                        radius = w * 0.55f
+                    ),
+                    radius = w * 0.55f, center = androidx.compose.ui.geometry.Offset(w * 0.60f, h * 0.80f)
+                )
+            }
+            BackgroundAmbient.BREATH -> {
+                // Pulso radial central único
+                val breathAlpha = if (isDark) 0.60f else 0.35f
+                // Halo exterior difuso
+                drawCircle(
+                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        colors = listOf(
+                            primaryColor.copy(alpha = breathAlpha * 0.20f),
+                            androidx.compose.ui.graphics.Color.Transparent
+                        ),
+                        center = androidx.compose.ui.geometry.Offset(w * 0.50f, h * 0.50f),
+                        radius = w * 0.90f
+                    ),
+                    radius = w * 0.90f,
+                    center = androidx.compose.ui.geometry.Offset(w * 0.50f, h * 0.50f)
+                )
+                // Pulso central principal
+                drawCircle(
+                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        colorStops = arrayOf(
+                            0.00f to primaryColor.copy(alpha = breathAlpha),
+                            0.45f to primaryColor.copy(alpha = breathAlpha * 0.55f),
+                            1.00f to androidx.compose.ui.graphics.Color.Transparent
+                        ),
+                        center = androidx.compose.ui.geometry.Offset(w * 0.50f, h * 0.50f),
+                        radius = w * 0.52f
+                    ),
+                    radius = w * 0.52f,
+                    center = androidx.compose.ui.geometry.Offset(w * 0.50f, h * 0.50f)
                 )
             }
         }

@@ -1,0 +1,100 @@
+i  emulators: Starting emulators: firestore
+i  emulators: Detected demo project ID "demo-lumi-audit", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail.
+i  firestore: Firestore Emulator logging to firestore-debug.log
++  firestore: Firestore Emulator UI websocket is running on 9150.
+i  Running script: npm.cmd --prefix tools/firestore-tests test && node --test docs/auditoria-2026-10-12/evidencia/revision-documental/partner-review.test.cjs
+
+> test
+> node --test rules.test.cjs
+
+✔ owner can create a pending invitation (2473.7804ms)
+[2026-10-13T00:37:02.040Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x743f15be error. Code: 7 Message: 7 PERMISSION_DENIED: 
+false for 'create' @ L41, evaluation error at L53:24 for 'update' @ L53, false for 'create' @ L41
+✔ cannot create an active link impersonating a partner (154.1337ms)
+[2026-10-13T00:37:02.148Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x743f15c0 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L53:24 for 'update' @ L53, false for 'update' @ L53
+✔ joining cannot replace the owner (107.1721ms)
+[2026-10-13T00:37:02.242Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x743f15c2 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L53:24 for 'update' @ L53, false for 'update' @ L53
+✔ owner cannot join their own link (93.6577ms)
+[2026-10-13T00:37:02.471Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x743f15c8 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L53:24 for 'update' @ L53, false for 'update' @ L53
+✔ join, edit own privacy and revoke remain available (228.6547ms)
+[2026-10-13T00:37:02.575Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x743f15cb error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L53:24 for 'update' @ L53, false for 'update' @ L53
+[2026-10-13T00:37:02.607Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x743f15cc error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L53:24 for 'update' @ L53, false for 'update' @ L53
+✔ a participant cannot edit the other participants privacy or identity (135.3815ms)
+[2026-10-13T00:37:02.699Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x743f15cf error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L53:24 for 'update' @ L53, false for 'update' @ L53
+✔ a second joiner cannot take over an active invitation (156.1397ms)
+[2026-10-13T00:37:02.923Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x743f15d4 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L53:24 for 'update' @ L53, false for 'update' @ L53
+[2026-10-13T00:37:03.001Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x743f15d6 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L53:24 for 'update' @ L53, false for 'update' @ L53
+[2026-10-13T00:37:03.026Z]  @firebase/firestore: Firestore (11.10.0): GrpcConnection RPC 'Write' stream 0x743f15d7 error. Code: 7 Message: 7 PERMISSION_DENIED: 
+evaluation error at L53:24 for 'update' @ L53, false for 'update' @ L53
+✔ snapshot fields must be cleared when consent is withdrawn (263.1668ms)
+✔ LUM-01 RESOLVED: stranger CANNOT discover or list pending links without code (148.2801ms)
+✔ LUM-01 RESOLVED: joining requires the explicit invitation code and can claim atomically (125.3418ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4352.071
+✖ SEC-01: the transaction used by the Android client must complete (313.5223ms)
+✖ SEC-02: joining with only a link id and without claiming an invitation must be denied (66.7686ms)
+✖ SEC-03: claiming an invitation as a different uid must be denied (60.0356ms)
+✖ SEC-04: a known link id must not bypass invitation expiry (80.6907ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 0
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 912.6912
+
+✖ failing tests:
+
+test at docs\auditoria-2026-10-12\evidencia\revision-documental\partner-review.test.cjs:29:1
+✖ SEC-01: the transaction used by the Android client must complete (313.5223ms)
+  [Error [FirebaseError]: Firestore transactions require all reads to be executed before all writes.] { code: 'invalid-argument', customData: undefined }
+
+test at docs\auditoria-2026-10-12\evidencia\revision-documental\partner-review.test.cjs:41:1
+✖ SEC-02: joining with only a link id and without claiming an invitation must be denied (66.7686ms)
+  Error: Expected request to fail, but it succeeded.
+      at pr.then._a (C:\Users\kiwix\AndroidStudioProjects\Lumi\tools\firestore-tests\node_modules\@firebase\rules-unit-testing\dist\index.cjs.js:579:31)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async TestContext.<anonymous> (C:\Users\kiwix\AndroidStudioProjects\Lumi\docs\auditoria-2026-10-12\evidencia\revision-documental\partner-review.test.cjs:43:3)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at docs\auditoria-2026-10-12\evidencia\revision-documental\partner-review.test.cjs:45:1
+✖ SEC-03: claiming an invitation as a different uid must be denied (60.0356ms)
+  Error: Expected request to fail, but it succeeded.
+      at pr.then._a (C:\Users\kiwix\AndroidStudioProjects\Lumi\tools\firestore-tests\node_modules\@firebase\rules-unit-testing\dist\index.cjs.js:579:31)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async TestContext.<anonymous> (C:\Users\kiwix\AndroidStudioProjects\Lumi\docs\auditoria-2026-10-12\evidencia\revision-documental\partner-review.test.cjs:47:3)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+
+test at docs\auditoria-2026-10-12\evidencia\revision-documental\partner-review.test.cjs:51:1
+✖ SEC-04: a known link id must not bypass invitation expiry (80.6907ms)
+  Error: Expected request to fail, but it succeeded.
+      at pr.then._a (C:\Users\kiwix\AndroidStudioProjects\Lumi\tools\firestore-tests\node_modules\@firebase\rules-unit-testing\dist\index.cjs.js:579:31)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async TestContext.<anonymous> (C:\Users\kiwix\AndroidStudioProjects\Lumi\docs\auditoria-2026-10-12\evidencia\revision-documental\partner-review.test.cjs:56:3)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7)
+!  Script exited unsuccessfully (code 1)
+i  emulators: Shutting down emulators.
+i  firestore: Stopping Firestore Emulator
+!  Firestore Emulator has exited upon receiving signal: SIGINT
+i  hub: Stopping emulator hub
+i  logging: Stopping Logging Emulator
+
+Error: Script "npm.cmd --prefix tools/firestore-tests test && node --test docs/auditoria-2026-10-12/evidencia/revision-documental/partner-review.test.cjs" exited with code 1

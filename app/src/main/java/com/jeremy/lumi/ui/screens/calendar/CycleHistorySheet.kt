@@ -62,14 +62,15 @@ fun CycleHistorySheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Historial de Ciclos",
+                    text = stringResource(R.string.cycle_history_title),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
 
                 Text(
-                    text = "${cycles.size} ${if (cycles.size == 1) "ciclo" else "ciclos"}",
+                    text = if (cycles.size == 1) stringResource(R.string.cycle_history_count_one, cycles.size)
+                           else stringResource(R.string.cycle_history_count_other, cycles.size),
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                 )
@@ -80,7 +81,7 @@ fun CycleHistorySheet(
             if (cycles.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = "No hay ciclos registrados aún",
+                        text = stringResource(R.string.cycle_history_empty),
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                         fontSize = 14.sp
                     )
@@ -103,8 +104,8 @@ fun CycleHistorySheet(
     cycleToDelete?.let { cycle ->
         AlertDialog(
             onDismissRequest = { cycleToDelete = null },
-            title = { Text("¿Eliminar este ciclo?", fontWeight = FontWeight.Bold) },
-            text = { Text("Esta acción eliminará el registro del ciclo del historial. Sus notas y síntomas diarios se conservarán.") },
+            title = { Text(stringResource(R.string.cycle_delete_title), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.cycle_delete_desc)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -113,12 +114,12 @@ fun CycleHistorySheet(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Eliminar", color = MaterialTheme.colorScheme.onError)
+                    Text(stringResource(R.string.btn_delete), color = MaterialTheme.colorScheme.onError)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { cycleToDelete = null }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.btn_cancel))
                 }
             }
         )
@@ -131,20 +132,20 @@ fun CycleHistorySheet(
 
         AlertDialog(
             onDismissRequest = { cycleToEdit = null },
-            title = { Text("Editar Ciclo", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.cycle_edit_title), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(
                         value = cycleLenText,
                         onValueChange = { cycleLenText = it.filter { c -> c.isDigit() }.take(3) },
-                        label = { Text("Duración del ciclo (días)") },
+                        label = { Text(stringResource(R.string.cycle_edit_cycle_length)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = periodLenText,
                         onValueChange = { periodLenText = it.filter { c -> c.isDigit() }.take(2) },
-                        label = { Text("Duración del sangrado (días)") },
+                        label = { Text(stringResource(R.string.cycle_edit_period_length)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -164,12 +165,12 @@ fun CycleHistorySheet(
                         cycleToEdit = null
                     }
                 ) {
-                    Text("Guardar")
+                    Text(stringResource(R.string.btn_save))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { cycleToEdit = null }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.btn_cancel))
                 }
             }
         )
@@ -189,7 +190,7 @@ private fun CycleHistoryCard(
 
     val dateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault())
     val startStr = startDate.format(dateFormatter)
-    val endStr = endDate?.format(dateFormatter) ?: "Activo hoy"
+    val endStr = endDate?.format(dateFormatter) ?: stringResource(R.string.cycle_history_active_today)
 
     val durationDays = if (endDate != null) {
         ChronoUnit.DAYS.between(startDate, endDate).toInt() + 1
@@ -237,7 +238,8 @@ private fun CycleHistoryCard(
                         color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer
                     ) {
                         Text(
-                            text = if (isActive) "En curso ($durationDays días)" else "$durationDays días",
+                            text = if (isActive) stringResource(R.string.cycle_history_in_progress, durationDays)
+                                   else stringResource(R.string.cycle_history_days, durationDays),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
                             color = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer,
@@ -250,7 +252,7 @@ private fun CycleHistoryCard(
                         color = MaterialTheme.colorScheme.surface
                     ) {
                         Text(
-                            text = "Sangrado: ${cycle.periodLength}d",
+                            text = stringResource(R.string.cycle_history_bleeding_days, cycle.periodLength),
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
@@ -263,7 +265,7 @@ private fun CycleHistoryCard(
                 IconButton(onClick = onEdit) {
                     Icon(
                         Icons.Rounded.Edit,
-                        contentDescription = "Editar ciclo",
+                        contentDescription = stringResource(R.string.cycle_edit_cd),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(18.dp)
                     )
@@ -271,7 +273,7 @@ private fun CycleHistoryCard(
                 IconButton(onClick = onDelete) {
                     Icon(
                         Icons.Rounded.Delete,
-                        contentDescription = "Eliminar ciclo",
+                        contentDescription = stringResource(R.string.cycle_delete_cd),
                         tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
                         modifier = Modifier.size(18.dp)
                     )

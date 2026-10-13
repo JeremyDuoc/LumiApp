@@ -43,7 +43,15 @@ android {
     buildFeatures {
         compose = true
     }
+    sourceSets {
+        getByName("androidTest").assets.srcDir("$projectDir/schemas")
+    }
 }
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 
 dependencies {
     implementation(libs.androidx.core.ktx)
@@ -57,10 +65,12 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     testImplementation(libs.junit)
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
+    testImplementation("androidx.room:room-testing:2.6.1")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation("androidx.room:room-testing:2.6.1")
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
@@ -119,8 +129,8 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("com.valentinilk.shimmer:compose-shimmer:1.3.0")
 
-    // 13. TensorFlow Lite (Inteligencia Artificial Local)
-    implementation("org.tensorflow:tensorflow-lite:2.16.1")
+    // 13. TensorFlow Lite / LiteRT (Compatible con páginas de 16 KB en Android 15+)
+    implementation("com.google.ai.edge.litert:litert:1.4.2")
 
     // 14. Health Connect (Sincronización de Salud)
     // NOTA P3-1: beta02 requiere compileSdk=36 (Android 16 preview), incompatible

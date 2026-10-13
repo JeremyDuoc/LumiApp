@@ -3,6 +3,7 @@ package com.jeremy.lumi.ui.screens.insights
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jeremy.lumi.data.local.dao.LumiDao
+import com.jeremy.lumi.data.local.entity.closedLengthDays
 import com.jeremy.lumi.domain.model.CycleType
 import com.jeremy.lumi.domain.model.EstadoGraficasUi
 import com.jeremy.lumi.domain.model.PuntoBarraCiclo
@@ -62,12 +63,7 @@ class GraficasViewModel @Inject constructor(
                 // Promedio ponderado simple para la línea de referencia
                 val promedio = if (ciclosCerrados.isEmpty()) 28f
                 else ciclosCerrados.take(12).map { c ->
-                    val dur = c.endDate?.let { e ->
-                        ChronoUnit.DAYS.between(
-                            Instant.ofEpochMilli(c.startDate).atZone(zona).toLocalDate(),
-                            Instant.ofEpochMilli(e).atZone(zona).toLocalDate()
-                        ).toInt()
-                    } ?: c.cycleLength
+                    val dur = c.closedLengthDays() ?: c.cycleLength
                     dur.coerceIn(15, 90)
                 }.average().toFloat()
 
@@ -168,12 +164,7 @@ class GraficasViewModel @Inject constructor(
         return ciclosCerrados
             .reversed() // Orden cronológico: el más antiguo a la izquierda
             .mapIndexed { indice, ciclo ->
-                val duracion = ciclo.endDate?.let { fin ->
-                    ChronoUnit.DAYS.between(
-                        Instant.ofEpochMilli(ciclo.startDate).atZone(zona).toLocalDate(),
-                        Instant.ofEpochMilli(fin).atZone(zona).toLocalDate()
-                    ).toInt().coerceIn(1, 90)
-                } ?: ciclo.cycleLength
+                val duracion = ciclo.closedLengthDays()?.coerceIn(1, 90) ?: ciclo.cycleLength
 
                 val tipo = when {
                     duracion < 21 -> CycleType.SHORT

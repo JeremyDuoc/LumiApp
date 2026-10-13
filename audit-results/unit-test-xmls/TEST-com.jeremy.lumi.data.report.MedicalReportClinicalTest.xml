@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.jeremy.lumi.data.report.MedicalReportClinicalTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-13T01:47:03.619Z" hostname="JEREMY" time="0.019">
+  <properties/>
+  <testcase name="testMedicalReportDataConstruction" classname="com.jeremy.lumi.data.report.MedicalReportClinicalTest" time="0.016"/>
+  <testcase name="testFigoDurationClassification" classname="com.jeremy.lumi.data.report.MedicalReportClinicalTest" time="0.0"/>
+  <testcase name="testFigoRegularityClassification" classname="com.jeremy.lumi.data.report.MedicalReportClinicalTest" time="0.001"/>
+  <testcase name="testWho3Over6CoverlineDetection" classname="com.jeremy.lumi.data.report.MedicalReportClinicalTest" time="0.001"/>
+  <testcase name="testFigoFrequencyClassification" classname="com.jeremy.lumi.data.report.MedicalReportClinicalTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
