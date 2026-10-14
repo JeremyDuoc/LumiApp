@@ -1,24 +1,19 @@
 package com.jeremy.lumi.ui.screens.onboarding
 
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.ChildCare
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,1500 +21,1900 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.foundation.Image
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import com.jeremy.lumi.R
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jeremy.lumi.domain.model.OnboardingData
 import com.jeremy.lumi.domain.model.SecondaryGoal
 import com.jeremy.lumi.domain.model.UserGoal
-import kotlinx.coroutines.launch
+import com.jeremy.lumi.ui.components.LumiBrandFlower
+import com.jeremy.lumi.ui.components.LumiBrandLockup
+import com.jeremy.lumi.ui.screens.settings.SettingsViewModel
+import com.jeremy.lumi.ui.theme.AppThemePalette
+import com.jeremy.lumi.ui.theme.LumiThemeTokens
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlin.math.abs
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  ONBOARDING SCREEN
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+private val STEP_TITLES = listOf(
+    "BIENVENIDA",
+    "SEGURIDAD",
+    "TU NOMBRE",
+    "TU CICLO",
+    "ÚLTIMO PERIODO",
+    "PREFERENCIAS",
+    "PERSONALIZACIÓN",
+    "LISTO"
+)
 
+/**
+ * Onboarding v3 nativo de Lumi — Transcripción fidedigna de:
+ * Lumi_Onboarding_Logo_Contextual_v3 (1).html
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnboardingScreen(
-    viewModel  : OnboardingViewModel = hiltViewModel(),
-    onComplete : () -> Unit
+    viewModel: OnboardingViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel(),
+    onComplete: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val scope   = rememberCoroutineScope()
+    val currentTheme by settingsViewModel.currentTheme.collectAsStateWithLifecycle()
+    val tokens = LumiThemeTokens.current
+    val scrollState = rememberScrollState()
+
+    var showPrivacyDialog by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    val stepNumber = uiState.currentStepNumber
+    val isFirstStep = uiState.currentStepIndex == 0
+    val isFinalStep = stepNumber == 7
+    val showHeaderBrand = stepNumber != 0 && stepNumber != 7
+
+    val isBlush = currentTheme == AppThemePalette.PETALO
+
+    // Resetear scroll al cambiar de paso
+    LaunchedEffect(stepNumber) {
+        scrollState.scrollTo(0)
+    }
 
     Box(
-        Modifier
+        modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(tokens.bg)
     ) {
-        Column(Modifier.fillMaxSize()) {
-
-            // ── Indicador de progreso (oculto en página de celebración) ────────────────
-            if (uiState.currentPage < 9) {
-                Spacer(Modifier.height(52.dp))
-                PageIndicator(
-                    totalPages   = 9,
-                    currentPage  = uiState.currentPage,
-                    modifier     = Modifier.align(Alignment.CenterHorizontally)
-                )
-                Spacer(Modifier.height(32.dp))
-            } else {
-                Spacer(Modifier.height(52.dp))
-            }
-
-            // â”€â”€ Contenido de la página activa â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-            AnimatedContent(
-                targetState  = uiState.currentPage,
-                transitionSpec = {
-                    val forward = targetState > initialState
-                    (slideInHorizontally { if (forward) it else -it } + fadeIn(tween(320)))
-                        .togetherWith(slideOutHorizontally { if (forward) -it else it } + fadeOut(tween(220)))
-                },
-                modifier     = Modifier.weight(1f),
-                label        = "onboarding_page"
-            ) { page ->
-                when (page) {
-                    0 -> PageWelcome(
-                        onTrackCycleClick = { viewModel.nextPage() },
-                        onObserverClick   = { viewModel.completeObserverOnboarding(onComplete) }
-                    )
-                    1 -> PageDisclaimer(
-                        accepted = uiState.data.medicalDisclaimerAccepted,
-                        onAcceptedChange = { accepted -> viewModel.setMedicalDisclaimerAccepted(accepted) }
-                    )
-                    2 -> PageName(
-                        name     = uiState.data.userName ?: "",
-                        onChange = { viewModel.setUserName(it) }
-                    )
-                    3 -> PageRegularity(
-                        isRegular = uiState.data.isRegular,
-                        onChange  = { viewModel.setRegularity(it) }
-                    )
-                    4 -> PageCycleLength(
-                        days      = uiState.data.cycleLength,
-                        isRegular = uiState.data.isRegular,
-                        onChange  = { viewModel.setCycleLength(it) }
-                    )
-                    5 -> PageLastPeriod(
-                        selectedDate    = uiState.data.lastPeriodDate,
-                        lastPeriodKnown = uiState.data.lastPeriodKnown,
-                        onDatePicked    = { known, date -> 
-                            viewModel.setLastPeriodKnown(known)
-                            if (known && date != null) viewModel.setLastPeriodDate(date)
-                        }
-                    )
-                    6 -> PagePhysicalProfile(
-                        age      = uiState.data.age,
-                        height   = uiState.data.height,
-                        weight   = uiState.data.weight,
-                        onAge    = { viewModel.setAge(it) },
-                        onHeight = { viewModel.setHeight(it) },
-                        onWeight = { viewModel.setWeight(it) }
-                    )
-                    7 -> PageSecondaryGoals(
-                        selected = uiState.data.secondaryGoals,
-                        onToggle = { viewModel.toggleSecondaryGoal(it) }
-                    )
-                    8 -> PagePeriodAndGoal(
-                        periodLength        = uiState.data.periodLength,
-                        selectedGoal        = uiState.data.userGoal,
-                        isOnContraceptive   = uiState.data.isOnContraceptive,
-                        onPeriodChange      = { viewModel.setPeriodLength(it) },
-                        onGoalChange        = { viewModel.setUserGoal(it) },
-                        // FIX P3-3: Pasar el setter al composable de la página.
-                        onContraceptiveChange = { viewModel.setIsOnContraceptive(it) }
-                    )
-                    9 -> PageCelebration(
-                        userName   = uiState.data.userName,
-                        onComplete = { viewModel.completeOnboarding(onComplete) }
-                    )
-                }
-            }
-
-            if (uiState.currentPage in 1..8) {
-                BottomNavButtons(
-                    currentPage   = uiState.currentPage,
-                    isCompleting  = uiState.isCompleting,
-                    isNextEnabled = uiState.isNextEnabled,
-                    onBack        = { viewModel.prevPage() },
-                    onNext        = { viewModel.nextPage() },
-                    onSkip        = { viewModel.nextPage() }
-                )
-                Spacer(Modifier.height(32.dp))
-            }
-        }
-    }
-}
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  INDICADOR DE PÁGINAS â€” dots animados estilo iOS
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-@Composable
-private fun PageIndicator(totalPages: Int, currentPage: Int, modifier: Modifier = Modifier) {
-    val primary = MaterialTheme.colorScheme.primary
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        repeat(totalPages) { index ->
-            val selected = index == currentPage
-            val width by animateDpAsState(
-                targetValue = if (selected) 24.dp else 8.dp,
-                animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium),
-                label = "dot_width_$index"
-            )
-            val alpha by animateFloatAsState(
-                targetValue = if (selected) 1f else 0.35f,
-                animationSpec = tween(300),
-                label = "dot_alpha_$index"
-            )
-            Box(
-                Modifier
-                    .height(8.dp)
-                    .width(width)
-                    .clip(CircleShape)
-                    .alpha(alpha)
-                    .background(primary)
-            )
-        }
-    }
-}
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  BOTONERA INFERIOR
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-@Composable
-private fun BottomNavButtons(
-    currentPage  : Int,
-    isCompleting : Boolean,
-    isNextEnabled: Boolean = true,
-    onBack       : () -> Unit,
-    onNext       : () -> Unit,
-    onSkip       : () -> Unit
-) {
-    val primary = MaterialTheme.colorScheme.primary
-
-    Column(
-        modifier            = Modifier.padding(horizontal = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // Botón principal
-        Button(
-            onClick  = onNext,
-            enabled  = !isCompleting && isNextEnabled,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            shape    = RoundedCornerShape(18.dp),
-            colors   = ButtonDefaults.buttonColors(containerColor = primary)
-        ) {
-            if (isCompleting) {
-                CircularProgressIndicator(
-                    color    = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(20.dp),
-                    strokeWidth = 2.dp
-                )
-            } else {
-                Text(
-                    text       = if (currentPage < 8) stringResource(R.string.onboarding_continue) else stringResource(R.string.onboarding_start_cycle_btn),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize   = 16.sp
-                )
-            }
-        }
-
-        // Fila secundaria: Atrás (izq) + Saltar (der, en páginas opcionales)
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment     = Alignment.CenterVertically
-        ) {
-            if (currentPage > 0) {
-                TextButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, null, Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(stringResource(R.string.onboarding_back), fontSize = 14.sp)
-                }
-            } else {
-                Spacer(Modifier.width(1.dp))
-            }
-
-            // Saltar: disponible en páginas opcionales (nombre, perfil físico, objetivos)
-            if (currentPage in listOf(2, 6, 7)) {
-                TextButton(onClick = onSkip) {
-                    Text(
-                        stringResource(R.string.onboarding_skip),
-                        fontSize = 14.sp,
-                        color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-                    )
-                }
-            }
-        }
-    }
-}
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  PÁGINA 0 â€” BIENVENIDA
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-@Composable
-private fun PageWelcome(
-    onTrackCycleClick: () -> Unit,
-    onObserverClick: () -> Unit
-) {
-    val primary   = MaterialTheme.colorScheme.primary
-    val secondary = MaterialTheme.colorScheme.secondary
-
-    // Animaciones de entrada escalonadas
-    val alpha1  = remember { Animatable(0f) }
-    val scale1  = remember { Animatable(0.7f) }
-    val alpha2  = remember { Animatable(0f) }
-    val offset2 = remember { Animatable(20f) }
-    val alpha3  = remember { Animatable(0f) }
-    val offset3 = remember { Animatable(20f) }
-
-    LaunchedEffect(Unit) {
-        // Logo
-        launch { alpha1.animateTo(1f, tween(600, easing = FastOutSlowInEasing)) }
-        launch { scale1.animateTo(1f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow)) }
-        // Título (delay 300ms)
-        launch {
-            kotlinx.coroutines.delay(300)
-            launch { alpha2.animateTo(1f, tween(500)) }
-            launch { offset2.animateTo(0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium)) }
-        }
-        // Subtítulo (delay 500ms)
-        launch {
-            kotlinx.coroutines.delay(500)
-            launch { alpha3.animateTo(1f, tween(500)) }
-            launch { offset3.animateTo(0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium)) }
-        }
-    }
-
-    var privacyAccepted by remember { mutableStateOf(false) }
-
-    Column(
-        modifier            = Modifier.fillMaxSize().padding(horizontal = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        // Logo animado
-        Image(
-            painter = painterResource(id = R.drawable.lumi_logo),
-            contentDescription = "Lumi logo",
-            contentScale = ContentScale.Fit,
+        // Fondo ambiental suave superior
+        Box(
             modifier = Modifier
-                .size(120.dp)
-                .scale(scale1.value)
-                .alpha(alpha1.value)
+                .fillMaxWidth()
+                .height(340.dp)
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(
+                            if (tokens.isDark) Color(0x18B884CA) else Color(0x35E4AFDB),
+                            Color.Transparent
+                        ),
+                        radius = 800f
+                    )
+                )
         )
 
-        Spacer(Modifier.height(36.dp))
-
-        // Título
-        Text(
-            text       = stringResource(R.string.onboarding_goal_title),
-            fontSize   = 28.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign  = TextAlign.Center,
-            color      = MaterialTheme.colorScheme.onBackground,
-            modifier   = Modifier
-                .alpha(alpha2.value)
-                .graphicsLayer { translationY = offset2.value.dp.toPx() }
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        // Tagline
-        Text(
-            text      = stringResource(R.string.onboarding_goal_subtitle),
-            fontSize  = 16.sp,
-            textAlign = TextAlign.Center,
-            color     = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
-            lineHeight = 24.sp,
-            modifier  = Modifier
-                .alpha(alpha3.value)
-                .graphicsLayer { translationY = offset3.value.dp.toPx() }
-        )
-
-        Spacer(Modifier.height(48.dp))
-
-        // Botones de selección
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .alpha(alpha3.value)
-                .graphicsLayer { translationY = offset3.value.dp.toPx() },
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .fillMaxSize()
+                .statusBarsPadding()
         ) {
-            // Opción 1: Track Cycle
-            Surface(
-                onClick = onTrackCycleClick,
-                enabled = privacyAccepted,
-                shape = RoundedCornerShape(20.dp),
-                color = if (privacyAccepted) primary else primary.copy(alpha = 0.4f),
-                modifier = Modifier.fillMaxWidth().height(80.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 20.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .background(Color.White.copy(alpha = 0.2f), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(androidx.compose.material.icons.Icons.Rounded.CalendarMonth, contentDescription = null, tint = Color.White)
-                    }
-                    Spacer(Modifier.width(16.dp))
-                    Column {
-                        Text(
-                            text = stringResource(R.string.onboarding_track_my_cycle),
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp,
-                            color = Color.White
-                        )
-                        Text(
-                            text = stringResource(R.string.onboarding_track_my_cycle_desc),
-                            fontSize = 13.sp,
-                            color = Color.White.copy(alpha = 0.8f)
-                        )
-                    }
-                }
-            }
-
-            // Opción 2: Observer
-            Surface(
-                onClick = onObserverClick,
-                enabled = privacyAccepted,
-                shape = RoundedCornerShape(20.dp),
-                color = if (privacyAccepted) primary.copy(alpha = 0.08f) else primary.copy(alpha = 0.03f),
-                border = BorderStroke(1.dp, if (privacyAccepted) primary.copy(alpha = 0.15f) else primary.copy(alpha = 0.05f)),
-                modifier = Modifier.fillMaxWidth().height(80.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 20.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .background(primary.copy(alpha = 0.15f), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(androidx.compose.material.icons.Icons.Rounded.People, contentDescription = null, tint = primary)
-                    }
-                    Spacer(Modifier.width(16.dp))
-                    Column {
-                        Text(
-                            text = stringResource(R.string.onboarding_partner_mode),
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Text(
-                            text = stringResource(R.string.onboarding_partner_mode_desc),
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                        )
-                    }
-                }
-            }
-        }
-        
-        Spacer(Modifier.height(32.dp))
-
-        // Checkbox de Privacidad
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .alpha(alpha3.value)
-                .graphicsLayer { translationY = offset3.value.dp.toPx() },
-            verticalAlignment = Alignment.Top
-        ) {
-            Checkbox(
-                checked = privacyAccepted,
-                onCheckedChange = { privacyAccepted = it },
-                colors = CheckboxDefaults.colors(checkedColor = primary)
-            )
-            Text(
-                text = stringResource(R.string.onboarding_privacy_consent),
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                lineHeight = 16.sp,
-                modifier = Modifier.padding(top = 12.dp)
-            )
-        }
-    }
-}
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  PÁGINA 1 â€” NOMBRE
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-@Composable
-private fun PageName(name: String, onChange: (String) -> Unit) {
-    PageShell(
-        icon      = Icons.Rounded.Person,
-        title     = stringResource(R.string.onboarding_name_title),
-        subtitle  = stringResource(R.string.onboarding_name_subtitle)
-    ) {
-        OutlinedTextField(
-            value         = name,
-            onValueChange = onChange,
-            placeholder   = { Text(stringResource(R.string.onboarding_name_hint)) },
-            singleLine    = true,
-            shape         = RoundedCornerShape(16.dp),
-            modifier      = Modifier.fillMaxWidth(),
-            colors        = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor   = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f)
-            )
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        Text(
-            text     = stringResource(R.string.onboarding_name_private_note),
-            fontSize = 11.sp,
-            color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f)
-        )
-    }
-}
-
-// ────────────────────────────────────────────────────────────────────────────────────────────────
-//  PÁGINA 2 — REGULARIDAD
-// ────────────────────────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun PageRegularity(isRegular: Boolean?, onChange: (Boolean?) -> Unit) {
-    PageShell(
-        icon     = Icons.Rounded.Sync,
-        title    = stringResource(R.string.onboarding_regular_title),
-        subtitle = stringResource(R.string.onboarding_regular_subtitle)
-    ) {
-        val options = listOf(
-            Pair(true, stringResource(R.string.onboarding_regular_yes)),
-            Pair(false, stringResource(R.string.onboarding_regular_no)),
-            Pair(null, stringResource(R.string.onboarding_regular_unsure))
-        )
-
-        options.forEach { (value, label) ->
-            GoalChip(
-                icon     = if (value == true) Icons.Rounded.CheckCircle else if (value == false) Icons.Rounded.Timeline else Icons.Rounded.QuestionMark,
-                label    = label,
-                selected = isRegular == value,
-                onClick  = { onChange(value) },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(Modifier.height(12.dp))
-        }
-    }
-}
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  PÁGINA 4 — FECHA DE ÚLTIMA periodo (Wheel picker)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-@Composable
-private fun PageLastPeriod(selectedDate: Long, lastPeriodKnown: Boolean, onDatePicked: (Boolean, Long?) -> Unit) {
-    // Rango: últimos 90 días hasta hoy
-    val today  = LocalDate.now()
-    val dates  = remember { (0..89).map { today.minusDays(it.toLong()) } }
-
-    // Índice activo: el que corresponde a la fecha guardada, o hoy (0)
-    val initialIndex = remember(selectedDate) {
-        if (selectedDate == 0L) 0
-        else {
-            val selected = Instant.ofEpochMilli(selectedDate)
-                .atZone(ZoneId.of("UTC")).toLocalDate()
-            dates.indexOfFirst { it == selected }.coerceAtLeast(0)
-        }
-    }
-
-    PageShell(
-        icon     = Icons.Rounded.CalendarToday,
-        title    = stringResource(R.string.onboarding_last_period_title),
-        subtitle = stringResource(R.string.onboarding_last_period_subtitle)
-    ) {
-        if (!lastPeriodKnown) {
-            Box(
-                Modifier
+            // ── TOP BAR: Header Brand + Theme Toggle ──────────────────────────
+            Row(
+                modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
-                    .padding(20.dp),
-                contentAlignment = Alignment.Center
+                    .height(56.dp)
+                    .padding(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    stringResource(R.string.onboarding_last_period_unknown_desc),
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center
-                )
-            }
-            Spacer(Modifier.height(24.dp))
-            TextButton(
-                onClick = { onDatePicked(true, today.atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()) },
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            ) {
-                Text(stringResource(R.string.onboarding_enter_date))
-            }
-        } else {
-            DateWheelPicker(
-                dates        = dates,
-                initialIndex = initialIndex,
-                onDateSelected = { date ->
-                    val millis = date.atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
-                    onDatePicked(true, millis)
+                // Header Brand: visible solo en pasos intermedios (1..6)
+                AnimatedVisibility(
+                    visible = showHeaderBrand,
+                    enter = fadeIn(tween(300)) + slideInVertically(tween(300)) { -it / 2 },
+                    exit = fadeOut(tween(200)) + slideOutVertically(tween(200)) { -it / 2 }
+                ) {
+                    LumiBrandLockup(
+                        flowerSize = 21,
+                        fontSize = 22.sp,
+                        starSize = 11.sp,
+                        letterSpacing = (-1.2).sp,
+                        animated = true
+                    )
                 }
-            )
 
-            Spacer(Modifier.height(12.dp))
+                if (!showHeaderBrand) {
+                    Spacer(modifier = Modifier.width(1.dp))
+                }
 
-            TextButton(
-                onClick = {
-                    onDatePicked(false, null)
-                },
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            ) {
-                Text(
-                    text     = stringResource(R.string.onboarding_dont_remember),
-                    fontSize = 13.sp,
-                    color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-                )
-            }
-        }
-    }
-}
-
-// ────────────────────────────────────────────────────────────────────────────────────────────────
-//  WHEEL DATE PICKER
-// ────────────────────────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun DateWheelPicker(
-    dates          : List<LocalDate>,
-    initialIndex   : Int,
-    onDateSelected : (LocalDate) -> Unit
-) {
-    val itemHeightDp    = 52.dp
-    val visibleItems    = 5
-    val density         = LocalDensity.current
-    val itemHeightPx    = with(density) { itemHeightDp.toPx() }
-    val listState       = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
-    val flingBehavior   = rememberSnapFlingBehavior(listState)
-    val locale          = Locale.getDefault()
-    val pattern         = if (locale.language == "en") "MMMM d · yyyy" else "d 'de' MMMM · yyyy"
-    val formatter       = remember(locale) { DateTimeFormatter.ofPattern(pattern, locale) }
-
-    // Emitir la fecha central cada vez que el scroll se detiene
-    val centerIndex by remember {
-        derivedStateOf {
-            val offset = listState.firstVisibleItemScrollOffset
-            val first  = listState.firstVisibleItemIndex
-            if (offset > itemHeightPx / 2) first + 1 else first
-        }
-    }
-
-    LaunchedEffect(centerIndex) {
-        if (centerIndex in dates.indices) onDateSelected(dates[centerIndex])
-    }
-
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(itemHeightDp * visibleItems)
-    ) {
-        // Líneas seleccionadoras
-        repeat(2) { i ->
-            val topOffset = (itemHeightDp * ((visibleItems / 2) + i))
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .offset(y = topOffset)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
-            )
-        }
-
-        LazyColumn(
-            state         = listState,
-            flingBehavior = flingBehavior,
-            modifier      = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(vertical = itemHeightDp * (visibleItems / 2))
-        ) {
-            items(dates.size) { index ->
-                val distFromCenter = abs(centerIndex - index)
-                val scale  by animateFloatAsState(
-                    targetValue   = when (distFromCenter) { 0 -> 1f; 1 -> 0.88f; else -> 0.75f },
-                    animationSpec = tween(150),
-                    label         = "wheel_scale_$index"
-                )
-                val alpha by animateFloatAsState(
-                    targetValue   = when (distFromCenter) { 0 -> 1f; 1 -> 0.6f; else -> 0.3f },
-                    animationSpec = tween(150),
-                    label         = "wheel_alpha_$index"
-                )
-
+                // Botón de alternancia de tema (Noir <-> Blush)
                 Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(itemHeightDp)
-                        .graphicsLayer { scaleX = scale; scaleY = scale }
-                        .alpha(alpha),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(tokens.panel)
+                        .border(1.dp, tokens.line, RoundedCornerShape(22.dp))
+                        .clickable {
+                            val nextTheme = if (isBlush) AppThemePalette.NOIR else AppThemePalette.PETALO
+                            settingsViewModel.changeTheme(nextTheme)
+                        }
+                        .padding(horizontal = 12.dp, vertical = 7.dp)
                 ) {
                     Text(
-                        text       = dates[index].format(formatter),
-                        fontSize   = if (distFromCenter == 0) 17.sp else 15.sp,
-                        fontWeight = if (distFromCenter == 0) FontWeight.SemiBold else FontWeight.Normal,
-                        color      = if (distFromCenter == 0) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onBackground,
-                        textAlign  = TextAlign.Center
+                        text = if (isBlush) "◑ Tema: Blush" else "◐ Tema: Noir",
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = tokens.muted
                     )
                 }
             }
-        }
-    }
-}
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  PÁGINA 3 — DURACIÓN DEL CICLO
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-@Composable
-private fun PageCycleLength(days: Int, isRegular: Boolean?, onChange: (Int) -> Unit) {
-    PageShell(
-        icon     = Icons.Rounded.Loop,
-        title    = stringResource(R.string.onboarding_cycle_length_title),
-        subtitle = if (isRegular == false) stringResource(R.string.onboarding_cycle_irregular_subtitle)
-                   else stringResource(R.string.onboarding_cycle_regular_subtitle)
-    ) {
-        // Valor grande central
-        Text(
-            text       = stringResource(R.string.cycle_history_days, days),
-            fontSize   = 48.sp,
-            fontWeight = FontWeight.Bold,
-            color      = MaterialTheme.colorScheme.primary,
-            modifier   = Modifier.align(Alignment.CenterHorizontally)
-        )
-
-        Spacer(Modifier.height(4.dp))
-
-        // Etiqueta contextual
-        val label = when {
-            days < 24 -> stringResource(R.string.onboarding_cycle_short)
-            days > 35 -> stringResource(R.string.onboarding_cycle_long)
-            else      -> stringResource(R.string.onboarding_cycle_typical)
-        }
-        Text(
-            text     = label,
-            fontSize = 13.sp,
-            color    = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
-
-        Spacer(Modifier.height(24.dp))
-
-        Slider(
-            value         = days.toFloat(),
-            onValueChange = { onChange(it.toInt()) },
-            valueRange    = 21f..45f,
-            steps         = 23,
-            modifier      = Modifier.fillMaxWidth(),
-            colors        = SliderDefaults.colors(
-                thumbColor       = MaterialTheme.colorScheme.primary,
-                activeTrackColor = MaterialTheme.colorScheme.primary
-            )
-        )
-
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("21", fontSize = 11.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f))
-            Text("45", fontSize = 11.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f))
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        TextButton(
-            onClick  = { onChange(28) },
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        ) {
-            Text(
-                stringResource(R.string.onboarding_cycle_default_button),
-                fontSize = 13.sp,
-                color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-            )
-        }
-    }
-}
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  PÁGINA 4 — DURACIÓN DEL PERIODO + OBJETIVO
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-@Composable
-private fun PagePeriodAndGoal(
-    periodLength          : Int,
-    selectedGoal          : UserGoal,
-    isOnContraceptive     : Boolean,
-    onPeriodChange        : (Int) -> Unit,
-    onGoalChange          : (UserGoal) -> Unit,
-    // FIX P3-3: Nuevo parámetro para el toggle de pastilla anticonceptiva.
-    onContraceptiveChange : (Boolean) -> Unit
-) {
-    PageShell(
-        icon     = Icons.Rounded.WaterDrop,
-        title    = stringResource(R.string.onboarding_final_details_title),
-        subtitle = stringResource(R.string.onboarding_final_details_subtitle)
-    ) {
-        // ── Duración del periodo ─────────────────────────────────────────────
-        Text(
-            stringResource(R.string.onboarding_period_length_label),
-            fontSize   = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            color      = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(Modifier.height(8.dp))
-
-        Text(
-            text       = stringResource(R.string.cycle_history_days, periodLength),
-            fontSize   = 36.sp,
-            fontWeight = FontWeight.Bold,
-            color      = MaterialTheme.colorScheme.primary,
-            modifier   = Modifier.align(Alignment.CenterHorizontally)
-        )
-
-        Slider(
-            value         = periodLength.toFloat(),
-            onValueChange = { onPeriodChange(it.toInt()) },
-            valueRange    = 1f..10f,
-            steps         = 8,
-            modifier      = Modifier.fillMaxWidth(),
-            colors        = SliderDefaults.colors(
-                thumbColor       = MaterialTheme.colorScheme.primary,
-                activeTrackColor = MaterialTheme.colorScheme.primary
-            )
-        )
-
-        Spacer(Modifier.height(24.dp))
-        HorizontalDivider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f))
-        Spacer(Modifier.height(20.dp))
-
-        // ── Objetivo ─────────────────────────────────────────────────────────
-        Text(
-            stringResource(R.string.onboarding_primary_goal_title),
-            fontSize   = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            color      = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(Modifier.height(12.dp))
-
-        val goals = listOf(
-            Triple(UserGoal.TRACK_CYCLE,       Icons.Rounded.Loop,         stringResource(R.string.settings_goal_track)),
-            Triple(UserGoal.AVOID_PREGNANCY,   Icons.Rounded.Shield,       stringResource(R.string.settings_goal_avoid)),
-            Triple(UserGoal.SEEK_PREGNANCY,    Icons.Rounded.ChildCare,    stringResource(R.string.settings_goal_seek)),
-            Triple(UserGoal.HEALTH_MONITORING, Icons.Rounded.MonitorHeart, stringResource(R.string.settings_goal_health))
-        )
-
-        goals.chunked(2).forEach { row ->
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            // ── STEPBAR: Indicador de paso y barra de progreso animada ────────
+            AnimatedVisibility(
+                visible = !isFinalStep,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
             ) {
-                row.forEach { (goal, icon, label) ->
-                    GoalChip(
-                        icon       = icon,
-                        label      = label,
-                        selected   = selectedGoal == goal,
-                        onClick    = { onGoalChange(goal) },
-                        modifier   = Modifier.weight(1f)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 6.dp)
+                ) {
+                    val stepIndex = uiState.currentStepIndex + 1
+                    val totalSteps = uiState.totalStepsCount
+                    val title = STEP_TITLES.getOrElse(stepNumber) { "" }
+
+                    Text(
+                        text = "${stepIndex.toString().padStart(2, '0')} / ${totalSteps.toString().padStart(2, '0')} · $title",
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.1.sp,
+                        color = tokens.muted
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    val animatedProgress by animateFloatAsState(
+                        targetValue = stepIndex.toFloat() / totalSteps.toFloat(),
+                        animationSpec = tween(durationMillis = 360, easing = FastOutSlowInEasing),
+                        label = "progress_bar"
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(tokens.line)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(animatedProgress)
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(
+                                    Brush.horizontalGradient(
+                                        listOf(
+                                            tokens.rose,
+                                            tokens.accent
+                                        )
+                                    )
+                                )
+                        )
+                    }
+                }
+            }
+
+            // ── CONTENIDO PRINCIPAL: AnimatedContent por paso ─────────────────
+            AnimatedContent(
+                targetState = stepNumber,
+                transitionSpec = {
+                    val forward = targetState > initialState
+                    if (forward) {
+                        (slideInHorizontally(tween(300)) { it } + fadeIn(tween(300)))
+                            .togetherWith(slideOutHorizontally(tween(250)) { -it } + fadeOut(tween(250)))
+                    } else {
+                        (slideInHorizontally(tween(300)) { -it } + fadeIn(tween(300)))
+                            .togetherWith(slideOutHorizontally(tween(250)) { it } + fadeOut(tween(250)))
+                    }
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                label = "onboarding_step_content"
+            ) { step ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = 24.dp, vertical = 12.dp)
+                ) {
+                    when (step) {
+                        0 -> StepWelcome(
+                            mode = uiState.data.mode,
+                            onSelectMode = { viewModel.setMode(it) }
+                        )
+                        1 -> StepSafety(
+                            mode = uiState.data.mode,
+                            medicalAccepted = uiState.data.medicalDisclaimerAccepted,
+                            privacyAccepted = uiState.data.privacyAccepted,
+                            onToggleMedical = { viewModel.setMedicalAccepted(!uiState.data.medicalDisclaimerAccepted) },
+                            onTogglePrivacy = { viewModel.setPrivacyAccepted(!uiState.data.privacyAccepted) },
+                            onOpenPrivacyInfo = { showPrivacyDialog = true }
+                        )
+                        2 -> StepName(
+                            name = uiState.data.userName ?: "",
+                            onNameChange = { viewModel.setUserName(it) }
+                        )
+                        3 -> StepCycle(
+                            regularityChoice = uiState.data.regularityChoice,
+                            onSelectRegularity = { viewModel.setRegularity(it) },
+                            cycleKnown = uiState.data.cycleLengthKnown,
+                            cycleDays = uiState.data.cycleLength,
+                            onToggleCycleKnown = { viewModel.setCycleLengthKnown(!uiState.data.cycleLengthKnown) },
+                            onCycleDaysChange = { viewModel.setCycleLength(it) }
+                        )
+                        4 -> StepDate(
+                            dateKnown = uiState.data.lastPeriodKnown,
+                            dateEpoch = uiState.data.lastPeriodDate,
+                            onToggleDateKnown = { viewModel.setLastPeriodKnown(it) },
+                            onOpenDatePicker = { showDatePicker = true }
+                        )
+                        5 -> StepPreferences(
+                            mode = uiState.data.mode,
+                            selectedGoal = uiState.data.userGoal,
+                            onSelectGoal = { viewModel.setUserGoal(it) },
+                            contraceptionChoice = uiState.data.contraceptionChoice,
+                            onSelectContraception = { viewModel.setContraceptionChoice(it) }
+                        )
+                        6 -> StepPersonalize(
+                            periodKnown = uiState.data.periodLengthKnown,
+                            periodDays = uiState.data.periodLength,
+                            onTogglePeriodKnown = { viewModel.setPeriodLengthKnown(!uiState.data.periodLengthKnown) },
+                            onPeriodDaysChange = { viewModel.setPeriodLength(it) },
+                            secondaryGoals = uiState.data.secondaryGoals,
+                            onToggleSecondary = { viewModel.toggleSecondaryGoal(it) },
+                            age = uiState.data.age,
+                            height = uiState.data.height,
+                            weight = uiState.data.weight,
+                            onUpdatePhysical = { a, h, w -> viewModel.setPhysicalProfile(a, h, w) }
+                        )
+                        7 -> StepFinish(
+                            data = uiState.data,
+                            onEditStep = { viewModel.jumpToStep(it) }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(28.dp))
+                }
+            }
+
+            // ── FOOTER: Botón primario + Navegación secundaria ─────────────────
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.Transparent, tokens.bg.copy(alpha = 0.95f), tokens.bg)
+                        )
+                    )
+                    .padding(horizontal = 24.dp, vertical = 12.dp)
+                    .navigationBarsPadding()
+            ) {
+                val primaryText = when {
+                    isFirstStep -> "Empezar →"
+                    isFinalStep -> "Ver mi inicio"
+                    stepNumber == 6 -> "Terminar →"
+                    else -> "Continuar →"
+                }
+
+                Button(
+                    onClick = {
+                        if (isFinalStep) {
+                            viewModel.completeOnboarding(onComplete)
+                        } else {
+                            viewModel.nextStep()
+                        }
+                    },
+                    enabled = uiState.isNextEnabled && !uiState.isCompleting,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent
+                    ),
+                    contentPadding = PaddingValues(0.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(
+                            if (uiState.isNextEnabled && !uiState.isCompleting) {
+                                Brush.linearGradient(listOf(Color(0xFFEAB0CE), Color(0xFFC6B1F4)))
+                            } else {
+                                Brush.linearGradient(listOf(tokens.line, tokens.line))
+                            }
+                        )
+                ) {
+                    if (uiState.isCompleting) {
+                        CircularProgressIndicator(
+                            color = tokens.text,
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    } else {
+                        Text(
+                            text = primaryText,
+                            fontSize = 14.5.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = (-0.2).sp,
+                            color = if (uiState.isNextEnabled) Color(0xFF23182C) else tokens.muted
+                        )
+                    }
+                }
+
+                // Sub-footer: Volver / Omitir / Nota
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(36.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (!isFirstStep) {
+                        TextButton(
+                            onClick = { viewModel.prevStep() },
+                            contentPadding = PaddingValues(horizontal = 4.dp)
+                        ) {
+                            Text(
+                                text = "← Volver",
+                                fontSize = 12.sp,
+                                color = tokens.muted
+                            )
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.width(1.dp))
+                    }
+
+                    if (stepNumber in listOf(2, 6)) {
+                        TextButton(
+                            onClick = { viewModel.nextStep() },
+                            contentPadding = PaddingValues(horizontal = 4.dp)
+                        ) {
+                            Text(
+                                text = "Omitir",
+                                fontSize = 12.sp,
+                                color = tokens.muted
+                            )
+                        }
+                    } else if (isFinalStep) {
+                        Text(
+                            text = "Tus datos se guardan de forma local",
+                            fontSize = 10.5.sp,
+                            color = tokens.muted
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // ── DIÁLOGO: POLÍTICA DE PRIVACIDAD ──────────────────────────────────────
+    if (showPrivacyDialog) {
+        AlertDialog(
+            onDismissRequest = { showPrivacyDialog = false },
+            containerColor = tokens.panel,
+            shape = RoundedCornerShape(24.dp),
+            title = {
+                Text(
+                    text = "Política de privacidad",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = tokens.text
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "En Lumi, tu intimidad y privacidad son absolutas:",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = tokens.text
+                    )
+                    Text(
+                        text = "• Todos tus registros menstruales, notas y parámetros fisiológicos se almacenan de manera local y cifrada en tu dispositivo.",
+                        fontSize = 12.sp,
+                        color = tokens.muted
+                    )
+                    Text(
+                        text = "• No vendemos tus datos a anunciantes ni terceros.",
+                        fontSize = 12.sp,
+                        color = tokens.muted
+                    )
+                    Text(
+                        text = "• En cualquier momento puedes exportar tus datos en PDF/ZIP o eliminarlos de manera irreversible.",
+                        fontSize = 12.sp,
+                        color = tokens.muted
                     )
                 }
-                // Si la fila tiene solo 1 elemento, añadir spacer
-                if (row.size == 1) Spacer(Modifier.weight(1f))
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showPrivacyDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = tokens.accent),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Entendido", color = tokens.bg, fontWeight = FontWeight.Bold)
+                }
             }
-            Spacer(Modifier.height(10.dp))
-        }
-
-        Spacer(Modifier.height(24.dp))
-        HorizontalDivider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f))
-        Spacer(Modifier.height(20.dp))
-
-        // FIX P3-3: Toggle de modo anticonceptivo hormonal en el onboarding.
-        // Permite a usuarias declarar el uso de pastilla desde el primer arranque.
-        Text(
-            stringResource(R.string.onboarding_use_contraceptives_question),
-            fontSize   = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            color      = MaterialTheme.colorScheme.onBackground
         )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            stringResource(R.string.onboarding_contraceptives_subtitle),
-            fontSize = 12.sp,
-            color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f)
+    }
+
+    // ── DIÁLOGO: SELECTOR DE FECHA NATIVO M3 ─────────────────────────────────
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = if (uiState.data.lastPeriodDate > 0) uiState.data.lastPeriodDate else System.currentTimeMillis()
         )
-        Spacer(Modifier.height(10.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .clickable(
-                    indication        = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) { onContraceptiveChange(!isOnContraceptive) }
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let {
+                            viewModel.setLastPeriodDate(it)
+                        }
+                        showDatePicker = false
+                    }
+                ) {
+                    Text("Guardar", color = tokens.accent, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancelar", color = tokens.muted)
+                }
+            },
+            colors = DatePickerDefaults.colors(containerColor = tokens.panel)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            DatePicker(
+                state = datePickerState,
+                colors = DatePickerDefaults.colors(
+                    titleContentColor = tokens.text,
+                    headlineContentColor = tokens.text,
+                    weekdayContentColor = tokens.muted,
+                    subheadContentColor = tokens.muted,
+                    yearContentColor = tokens.text,
+                    currentYearContentColor = tokens.accent,
+                    selectedYearContentColor = tokens.bg,
+                    selectedYearContainerColor = tokens.accent,
+                    dayContentColor = tokens.text,
+                    selectedDayContentColor = tokens.bg,
+                    selectedDayContainerColor = tokens.accent
+                )
+            )
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PASO 0: BIENVENIDA
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun StepWelcome(
+    mode: String,
+    onSelectMode: (String) -> Unit
+) {
+    val tokens = LumiThemeTokens.current
+
+    // Showcase hero grande centrado con flor viva
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp, bottom = 24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        LumiBrandLockup(
+            flowerSize = 46,
+            fontSize = 42.sp,
+            starSize = 16.sp,
+            letterSpacing = (-2.8).sp,
+            animated = true
+        )
+    }
+
+    EditorialHeading(
+        normalText = "Tu ciclo, ",
+        italicText = "a tu manera.",
+        desc = "Elige cómo quieres usar Lumi."
+    )
+
+    Spacer(modifier = Modifier.height(20.dp))
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        ChoiceCard(
+            title = "Seguir mi ciclo",
+            subtitle = "Registros y estimaciones personales.",
+            icon = Icons.Rounded.CalendarToday,
+            selected = mode == "track",
+            onClick = { onSelectMode("track") }
+        )
+
+        ChoiceCard(
+            title = "Acompañar a alguien",
+            subtitle = "Conectar con una persona de confianza.",
+            icon = Icons.Rounded.People,
+            selected = mode == "support",
+            onClick = { onSelectMode("support") }
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PASO 1: SEGURIDAD
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun StepSafety(
+    mode: String,
+    medicalAccepted: Boolean,
+    privacyAccepted: Boolean,
+    onToggleMedical: () -> Unit,
+    onTogglePrivacy: () -> Unit,
+    onOpenPrivacyInfo: () -> Unit
+) {
+    val tokens = LumiThemeTokens.current
+
+    EditorialHeading(
+        normalText = "Tu bienestar, ",
+        italicText = "con claridad.",
+        desc = "Antes de comenzar."
+    )
+
+    Spacer(modifier = Modifier.height(18.dp))
+
+    // Tarjeta médica institucional
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(tokens.panel)
+            .border(1.dp, tokens.line, RoundedCornerShape(18.dp))
+            .padding(18.dp)
+    ) {
+        Column {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Icon(
                     imageVector = Icons.Rounded.Shield,
                     contentDescription = null,
-                    tint   = if (isOnContraceptive) MaterialTheme.colorScheme.primary
-                             else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
+                    tint = tokens.accent,
                     modifier = Modifier.size(20.dp)
                 )
-                Spacer(Modifier.width(12.dp))
                 Text(
-                    text = if (isOnContraceptive) stringResource(R.string.onboarding_contraceptive_yes) else stringResource(R.string.onboarding_contraceptive_no),
-                    fontSize   = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = if (isOnContraceptive) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                    text = "Lumi acompaña, no diagnostica",
+                    fontSize = 14.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = tokens.text
                 )
             }
-            Switch(
-                checked         = isOnContraceptive,
-                onCheckedChange = onContraceptiveChange,
-                colors          = SwitchDefaults.colors(
-                    checkedThumbColor  = MaterialTheme.colorScheme.onPrimary,
-                    checkedTrackColor  = MaterialTheme.colorScheme.primary
-                )
-            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                BulletText("Las predicciones son estimaciones, no certezas.")
+                BulletText("No utilices Lumi como anticonceptivo.")
+                BulletText("Si algo te preocupa o tienes síntomas intensos, busca atención profesional.")
+            }
         }
     }
-}
 
-@Composable
-private fun GoalChip(
-    icon     : ImageVector,
-    label    : String,
-    selected : Boolean,
-    onClick  : () -> Unit,
-    modifier : Modifier = Modifier
-) {
-    val primary = MaterialTheme.colorScheme.primary
-    val bgColor by animateColorAsState(
-        targetValue   = if (selected) primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface,
-        animationSpec = tween(250),
-        label         = "goal_chip_bg"
-    )
-    val borderColor by animateColorAsState(
-        targetValue   = if (selected) primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f),
-        animationSpec = tween(250),
-        label         = "goal_chip_border"
+    Spacer(modifier = Modifier.height(14.dp))
+
+    // Checkbox 1: Limitaciones médicas
+    ConsentCheckbox(
+        checked = medicalAccepted,
+        onCheckedChange = { onToggleMedical() },
+        boldText = "Entiendo estas limitaciones.",
+        subText = if (mode == "support") {
+            " Como acompañante, solo veré información que me autoricen a compartir."
+        } else {
+            " Puedo cambiar mis preferencias más adelante."
+        }
     )
 
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(bgColor)
-            .border(1.dp, borderColor, RoundedCornerShape(16.dp))
-            .clickable(
-                indication         = null,
-                interactionSource  = remember { MutableInteractionSource() },
-                onClick            = onClick
-            )
-            .padding(vertical = 14.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        Icon(
-            imageVector  = icon,
-            contentDescription = null,
-            tint         = if (selected) primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f),
-            modifier     = Modifier.size(22.dp)
-        )
-        Text(
-            text       = label,
-            fontSize   = 12.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-            textAlign  = TextAlign.Center,
-            color      = if (selected) primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-            lineHeight = 16.sp
-        )
-    }
+    Spacer(modifier = Modifier.height(10.dp))
+
+    // Checkbox 2: Privacidad y consentimiento
+    ConsentCheckbox(
+        checked = privacyAccepted,
+        onCheckedChange = { onTogglePrivacy() },
+        boldText = "Acepto la política de privacidad",
+        subText = " y autorizo el tratamiento de mis datos para prestar el servicio. ",
+        actionText = "Consultar política",
+        onActionClick = onOpenPrivacyInfo
+    )
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  PAGE SHELL â€” estructura común a las páginas 1-4
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
+// ─────────────────────────────────────────────────────────────────────────────
+//  PASO 2: TU NOMBRE
+// ─────────────────────────────────────────────────────────────────────────────
 @Composable
-private fun PageShell(
-    icon     : ImageVector,
-    title    : String,
-    subtitle : String,
-    content  : @Composable ColumnScope.() -> Unit
+private fun StepName(
+    name: String,
+    onNameChange: (String) -> Unit
 ) {
-    val alpha  = remember { Animatable(0f) }
-    val offset = remember { Animatable(16f) }
-    LaunchedEffect(Unit) {
-        launch { alpha.animateTo(1f, tween(400, easing = FastOutSlowInEasing)) }
-        launch { offset.animateTo(0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium)) }
-    }
+    val tokens = LumiThemeTokens.current
 
-    Column(
+    EditorialHeading(
+        normalText = "¿Cómo te gustaría ",
+        italicText = "que te saludemos?",
+        desc = "Puedes usar un apodo o dejarlo vacío."
+    )
+
+    Spacer(modifier = Modifier.height(20.dp))
+
+    Text(
+        text = "Nombre o apodo · opcional",
+        fontSize = 11.5.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = tokens.muted
+    )
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    OutlinedTextField(
+        value = name,
+        onValueChange = { if (it.length <= 32) onNameChange(it) },
+        placeholder = { Text("Tu apodo", color = tokens.muted) },
+        singleLine = true,
+        shape = RoundedCornerShape(15.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = tokens.panel,
+            unfocusedContainerColor = tokens.panel,
+            focusedBorderColor = tokens.accent,
+            unfocusedBorderColor = tokens.line,
+            focusedTextColor = tokens.text,
+            unfocusedTextColor = tokens.text
+        ),
+        modifier = Modifier.fillMaxWidth()
+    )
+
+    Spacer(modifier = Modifier.height(18.dp))
+
+    // Preview del saludo en Home
+    Box(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 28.dp)
-            .alpha(alpha.value)
-            .graphicsLayer { translationY = offset.value.dp.toPx() },
-        verticalArrangement = Arrangement.spacedBy(0.dp)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(17.dp))
+            .background(tokens.panel)
+            .border(1.dp, tokens.line, RoundedCornerShape(17.dp))
+            .padding(18.dp)
     ) {
-        // Ícono de sección
-        Box(
-            Modifier
-                .size(56.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, null, Modifier.size(26.dp), MaterialTheme.colorScheme.primary)
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        Text(
-            text       = title,
-            fontSize   = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color      = MaterialTheme.colorScheme.onBackground,
-            lineHeight = 30.sp
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        Text(
-            text      = subtitle,
-            fontSize  = 14.sp,
-            color     = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-            lineHeight = 20.sp
-        )
-
-        Spacer(Modifier.height(28.dp))
-
-        content()
-    }
-}
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  PÁGINA 5 — CELEBRACIÓN "¡Todo listo!"
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-@Composable
-private fun PageCelebration(
-    userName  : String?,
-    onComplete: () -> Unit
-) {
-    val primary   = MaterialTheme.colorScheme.primary
-    val secondary = MaterialTheme.colorScheme.secondary
-
-    // Animaciones de entrada escalonadas
-    val alphaLogo  = remember { Animatable(0f) }
-    val scaleLogo  = remember { Animatable(0.4f) }
-    val alphaText  = remember { Animatable(0f) }
-    val alphaBtn   = remember { Animatable(0f) }
-    val offsetText = remember { Animatable(30f) }
-
-    // Pulso continuo del icono
-    val pulse = remember { Animatable(1f) }
-
-    val scope = rememberCoroutineScope()
-
-    LaunchedEffect(Unit) {
-        // Entrada del logo
-        launch { alphaLogo.animateTo(1f, tween(500)) }
-        launch { scaleLogo.animateTo(1f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow)) }
-        // Texto (delay 400ms)
-        launch {
-            kotlinx.coroutines.delay(400)
-            launch { alphaText.animateTo(1f, tween(500)) }
-            launch { offsetText.animateTo(0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMediumLow)) }
-        }
-        // Botón (delay 700ms)
-        launch {
-            kotlinx.coroutines.delay(700)
-            alphaBtn.animateTo(1f, tween(400))
-        }
-        // Pulso continuo del logo
-        launch {
-            kotlinx.coroutines.delay(600)
-            while (true) {
-                pulse.animateTo(1.08f, tween(900, easing = FastOutSlowInEasing))
-                pulse.animateTo(1f,    tween(900, easing = FastOutSlowInEasing))
-            }
-        }
-    }
-
-    Column(
-        modifier            = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        // Icono animado con pulso
-        Image(
-            painter = painterResource(id = R.drawable.lumi_logo),
-            contentDescription = "Lumi logo",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .size(120.dp)
-                .scale(scaleLogo.value * pulse.value)
-                .alpha(alphaLogo.value)
-        )
-
-        Spacer(Modifier.height(36.dp))
-
-        // Saludo personalizado
-        Column(
-            modifier            = Modifier
-                .alpha(alphaText.value)
-                .graphicsLayer { translationY = offsetText.value.dp.toPx() },
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column {
             Text(
-                text       = if (!userName.isNullOrBlank()) stringResource(R.string.onboarding_all_ready_named, userName) else stringResource(R.string.onboarding_all_ready),
-                fontSize   = 28.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign  = TextAlign.Center,
-                color      = MaterialTheme.colorScheme.onBackground
+                text = "Así aparecerá en Inicio",
+                fontSize = 11.sp,
+                color = tokens.muted
             )
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text      = stringResource(R.string.onboarding_complete_subtitle),
-                fontSize  = 16.sp,
-                textAlign = TextAlign.Center,
-                color      = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                lineHeight = 24.sp
-            )
-            Spacer(Modifier.height(8.dp))
-            // Nota de privacidad breve
-            Box(
-                Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(primary.copy(alpha = 0.08f))
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.Security, null, Modifier.size(14.dp), primary)
-                    Spacer(Modifier.width(6.dp))
+            Spacer(modifier = Modifier.height(6.dp))
+
+            val cleanName = name.trim()
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (cleanName.isNotBlank()) {
                     Text(
-                        stringResource(R.string.onboarding_local_storage_note),
-                        fontSize  = 11.sp,
-                        color     = primary
+                        text = "Hola, ",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = tokens.text
+                    )
+                    Text(
+                        text = "$cleanName.",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontStyle = FontStyle.Italic,
+                        fontFamily = FontFamily.Serif,
+                        color = tokens.accent
+                    )
+                } else {
+                    Text(
+                        text = "Hola.",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = tokens.text
                     )
                 }
             }
         }
+    }
 
-        Spacer(Modifier.height(44.dp))
+    Spacer(modifier = Modifier.height(14.dp))
+    Text(
+        text = "Puedes cambiarlo más adelante.",
+        fontSize = 11.5.sp,
+        color = tokens.muted
+    )
+}
 
-        // Botón principal
-        Button(
-            onClick  = onComplete,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .alpha(alphaBtn.value),
-            shape  = RoundedCornerShape(18.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = primary)
-        ) {
-            Text(
-                text       = stringResource(R.string.onboarding_start_button),
-                fontWeight = FontWeight.SemiBold,
-                fontSize   = 16.sp
-            )
+// ─────────────────────────────────────────────────────────────────────────────
+//  PASO 3: TU CICLO
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun StepCycle(
+    regularityChoice: String?,
+    onSelectRegularity: (String) -> Unit,
+    cycleKnown: Boolean,
+    cycleDays: Int,
+    onToggleCycleKnown: () -> Unit,
+    onCycleDaysChange: (Int) -> Unit
+) {
+    val tokens = LumiThemeTokens.current
+
+    EditorialHeading(
+        normalText = "¿Cómo suelen ser ",
+        italicText = "tus ciclos?",
+        desc = "No necesitas saberlo con exactitud."
+    )
+
+    Spacer(modifier = Modifier.height(18.dp))
+
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        ChoiceCard(
+            title = "Bastante regulares",
+            subtitle = "Suelen llegar con intervalos parecidos.",
+            icon = Icons.Rounded.Check,
+            selected = regularityChoice == "yes",
+            onClick = { onSelectRegularity("yes") }
+        )
+
+        ChoiceCard(
+            title = "Varían bastante",
+            subtitle = "No siempre llegan cuando los espero.",
+            icon = Icons.Rounded.Waves,
+            selected = regularityChoice == "no",
+            onClick = { onSelectRegularity("no") }
+        )
+
+        ChoiceCard(
+            title = "No estoy segura",
+            subtitle = "Prefiero empezar sin suponer.",
+            icon = Icons.Rounded.HelpOutline,
+            selected = regularityChoice == "unknown",
+            onClick = { onSelectRegularity("unknown") }
+        )
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // Caja de duración aproximada
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(tokens.panel)
+            .border(1.dp, tokens.line, RoundedCornerShape(18.dp))
+            .padding(16.dp)
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Duración aproximada",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = tokens.text
+                    )
+                    Text(
+                        text = "De un inicio de periodo al siguiente.",
+                        fontSize = 11.sp,
+                        color = tokens.muted
+                    )
+                }
+
+                TextButton(
+                    onClick = onToggleCycleKnown,
+                    contentPadding = PaddingValues(horizontal = 4.dp)
+                ) {
+                    Text(
+                        text = if (cycleKnown) "No lo sé" else "Estimar duración",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = tokens.accent
+                    )
+                }
+            }
+
+            if (cycleKnown) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            text = cycleDays.toString(),
+                            fontSize = 48.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = tokens.accent,
+                            letterSpacing = (-2).sp
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "días",
+                            fontSize = 14.sp,
+                            color = tokens.muted,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+
+                    Slider(
+                        value = cycleDays.toFloat(),
+                        onValueChange = { onCycleDaysChange(it.toInt()) },
+                        valueRange = 21f..45f,
+                        steps = 23,
+                        colors = SliderDefaults.colors(
+                            thumbColor = tokens.accent,
+                            activeTrackColor = tokens.accent,
+                            inactiveTrackColor = tokens.line
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("21 días", fontSize = 11.sp, color = tokens.muted)
+                        Text("45 días", fontSize = 11.sp, color = tokens.muted)
+                    }
+                }
+            } else {
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "Todavía no conozco mi duración habitual.",
+                    fontSize = 12.sp,
+                    color = tokens.muted
+                )
+            }
         }
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  PÁGINA 5 — PERFIL FÍSICO (opcional, para calibrar la IA local)
+//  PASO 4: ÚLTIMO PERIODO
 // ─────────────────────────────────────────────────────────────────────────────
-
 @Composable
-private fun PagePhysicalProfile(
-    age      : Int?,
-    height   : Float?,
-    weight   : Float?,
-    onAge    : (Int?) -> Unit,
-    onHeight : (Float?) -> Unit,
-    onWeight : (Float?) -> Unit
+private fun StepDate(
+    dateKnown: Boolean,
+    dateEpoch: Long,
+    onToggleDateKnown: (Boolean) -> Unit,
+    onOpenDatePicker: () -> Unit
 ) {
-    var ageText    by remember { mutableStateOf(age?.toString() ?: "") }
-    var heightText by remember { mutableStateOf(height?.let { "%.0f".format(it) } ?: "") }
-    var weightText by remember { mutableStateOf(weight?.let { "%.1f".format(it) } ?: "") }
+    val tokens = LumiThemeTokens.current
 
-    PageShell(
-        icon     = Icons.Rounded.MonitorHeart,
-        title    = stringResource(R.string.onboarding_physical_title),
-        subtitle = stringResource(R.string.onboarding_physical_subtitle)
-    ) {
-        // ── Disclaimer de privacidad ────────────────────────────────────────
+    EditorialHeading(
+        normalText = "¿Cuándo empezó ",
+        italicText = "tu último periodo?",
+        desc = "La fecha ayuda a iniciar tus estimaciones."
+    )
+
+    Spacer(modifier = Modifier.height(18.dp))
+
+    // Selector micro-pills
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        MicroPill(
+            label = "Elegir fecha",
+            selected = dateKnown,
+            onClick = { onToggleDateKnown(true) }
+        )
+        MicroPill(
+            label = "No lo recuerdo",
+            selected = !dateKnown,
+            onClick = { onToggleDateKnown(false) }
+        )
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    if (dateKnown) {
+        val formattedDate = remember(dateEpoch) {
+            if (dateEpoch > 0) {
+                Instant.ofEpochMilli(dateEpoch)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+                    .format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM yyyy", Locale("es")))
+            } else {
+                "Toca para seleccionar fecha"
+            }
+        }
+
         Box(
-            Modifier
+            modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.07f))
-                .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.18f), RoundedCornerShape(14.dp))
-                .padding(14.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(tokens.panel)
+                .border(1.dp, tokens.line, RoundedCornerShape(18.dp))
+                .clickable { onOpenDatePicker() }
+                .padding(18.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Rounded.Lock,
-                    contentDescription = null,
-                    tint     = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(Modifier.width(10.dp))
+            Column {
                 Text(
-                    text      = stringResource(R.string.onboarding_physical_disclaimer),
-                    fontSize  = 12.sp,
-                    color     = MaterialTheme.colorScheme.primary,
+                    text = "Primer día de sangrado",
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = tokens.muted
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = formattedDate,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = if (dateEpoch > 0) tokens.text else tokens.muted
+                    )
+                    Icon(
+                        imageVector = Icons.Rounded.CalendarMonth,
+                        contentDescription = null,
+                        tint = tokens.accent,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "Puedes corregirlo desde Calendario en cualquier momento.",
+                    fontSize = 11.sp,
+                    color = tokens.muted
+                )
+            }
+        }
+    } else {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(18.dp))
+                .background(tokens.panel)
+                .border(1.dp, tokens.line, RoundedCornerShape(18.dp))
+                .padding(18.dp)
+        ) {
+            Column {
+                Icon(
+                    imageVector = Icons.Rounded.CalendarToday,
+                    contentDescription = null,
+                    tint = tokens.accent,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Puedes empezar sin una fecha.",
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = tokens.text
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Lumi esperará a tu primer registro para iniciar un ciclo. No mostrará un periodo ficticio.",
+                    fontSize = 11.5.sp,
+                    color = tokens.muted,
+                    lineHeight = 16.sp
+                )
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PASO 5: PREFERENCIAS
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun StepPreferences(
+    mode: String,
+    selectedGoal: UserGoal?,
+    onSelectGoal: (UserGoal) -> Unit,
+    contraceptionChoice: String,
+    onSelectContraception: (String) -> Unit
+) {
+    val tokens = LumiThemeTokens.current
+
+    EditorialHeading(
+        normalText = "¿Qué te gustaría ",
+        italicText = "hacer con Lumi?",
+        desc = "Para organizar tu experiencia inicial."
+    )
+
+    Spacer(modifier = Modifier.height(18.dp))
+
+    // Cuadrícula 2x2 de objetivos
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        GoalCard(
+            title = "Entender mi ciclo",
+            icon = Icons.Rounded.CalendarToday,
+            selected = selectedGoal == UserGoal.TRACK_CYCLE,
+            onClick = { onSelectGoal(UserGoal.TRACK_CYCLE) },
+            modifier = Modifier.weight(1f)
+        )
+        GoalCard(
+            title = "Conocer mi bienestar",
+            icon = Icons.Rounded.Favorite,
+            selected = selectedGoal == UserGoal.HEALTH_MONITORING,
+            onClick = { onSelectGoal(UserGoal.HEALTH_MONITORING) },
+            modifier = Modifier.weight(1f)
+        )
+    }
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        GoalCard(
+            title = "Buscar embarazo",
+            icon = Icons.Rounded.Eco,
+            selected = selectedGoal == UserGoal.SEEK_PREGNANCY,
+            onClick = { onSelectGoal(UserGoal.SEEK_PREGNANCY) },
+            modifier = Modifier.weight(1f)
+        )
+        GoalCard(
+            title = "Evitar embarazo",
+            icon = Icons.Rounded.Shield,
+            selected = selectedGoal == UserGoal.AVOID_PREGNANCY,
+            onClick = { onSelectGoal(UserGoal.AVOID_PREGNANCY) },
+            modifier = Modifier.weight(1f)
+        )
+    }
+
+    if (selectedGoal == UserGoal.AVOID_PREGNANCY) {
+        Spacer(modifier = Modifier.height(14.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(tokens.field)
+                .border(BorderStroke(1.dp, tokens.accent.copy(alpha = 0.4f)), RoundedCornerShape(10.dp))
+                .padding(12.dp)
+        ) {
+            Text(
+                text = "Importante: las predicciones del ciclo no sirven para evitar un embarazo. Lumi no ofrece protección anticonceptiva.",
+                fontSize = 11.sp,
+                lineHeight = 15.sp,
+                color = tokens.text
+            )
+        }
+    }
+
+    Spacer(modifier = Modifier.height(20.dp))
+    HorizontalDivider(color = tokens.line, thickness = 1.dp)
+    Spacer(modifier = Modifier.height(18.dp))
+
+    // Pregunta sobre anticoncepción hormonal
+    Text(
+        text = "¿Usas anticoncepción hormonal?",
+        fontSize = 14.sp,
+        fontWeight = FontWeight.Bold,
+        color = tokens.text
+    )
+    Text(
+        text = "Puede afectar el sangrado y las predicciones.",
+        fontSize = 11.5.sp,
+        color = tokens.muted
+    )
+
+    Spacer(modifier = Modifier.height(12.dp))
+
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        MicroPill(
+            label = "Sí",
+            selected = contraceptionChoice == "yes",
+            onClick = { onSelectContraception("yes") }
+        )
+        MicroPill(
+            label = "No",
+            selected = contraceptionChoice == "no",
+            onClick = { onSelectContraception("no") }
+        )
+        MicroPill(
+            label = "Prefiero no decir",
+            selected = contraceptionChoice == "unsure",
+            onClick = { onSelectContraception("unsure") }
+        )
+    }
+
+    if (mode == "support") {
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+            text = "La persona acompañante no necesita proporcionar información menstrual.",
+            fontSize = 11.sp,
+            color = tokens.muted
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PASO 6: PERSONALIZACIÓN
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun StepPersonalize(
+    periodKnown: Boolean,
+    periodDays: Int,
+    onTogglePeriodKnown: () -> Unit,
+    onPeriodDaysChange: (Int) -> Unit,
+    secondaryGoals: Set<SecondaryGoal>,
+    onToggleSecondary: (SecondaryGoal) -> Unit,
+    age: Int?,
+    height: Float?,
+    weight: Float?,
+    onUpdatePhysical: (Int?, Float?, Float?) -> Unit
+) {
+    val tokens = LumiThemeTokens.current
+    var isPhysicalExpanded by remember { mutableStateOf(false) }
+
+    EditorialHeading(
+        normalText = "Últimos ",
+        italicText = "detalles.",
+        desc = "Todo esto es opcional y podrás cambiarlo."
+    )
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // Caja de duración del sangrado
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(tokens.panel)
+            .border(1.dp, tokens.line, RoundedCornerShape(18.dp))
+            .padding(16.dp)
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Duración del sangrado",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = tokens.text
+                    )
+                    Text(
+                        text = "Si conoces tu promedio.",
+                        fontSize = 11.sp,
+                        color = tokens.muted
+                    )
+                }
+
+                TextButton(
+                    onClick = onTogglePeriodKnown,
+                    contentPadding = PaddingValues(horizontal = 4.dp)
+                ) {
+                    Text(
+                        text = if (periodKnown) "No lo sé" else "Elegir",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = tokens.accent
+                    )
+                }
+            }
+
+            if (periodKnown) {
+                Spacer(modifier = Modifier.height(14.dp))
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            text = periodDays.toString(),
+                            fontSize = 46.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = tokens.accent,
+                            letterSpacing = (-2).sp
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "días",
+                            fontSize = 14.sp,
+                            color = tokens.muted,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+
+                    Slider(
+                        value = periodDays.toFloat(),
+                        onValueChange = { onPeriodDaysChange(it.toInt()) },
+                        valueRange = 1f..10f,
+                        steps = 8,
+                        colors = SliderDefaults.colors(
+                            thumbColor = tokens.accent,
+                            activeTrackColor = tokens.accent,
+                            inactiveTrackColor = tokens.line
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("1 día", fontSize = 11.sp, color = tokens.muted)
+                        Text("10 días", fontSize = 11.sp, color = tokens.muted)
+                    }
+                }
+            } else {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Sin promedio por ahora.",
+                    fontSize = 11.5.sp,
+                    color = tokens.muted
+                )
+            }
+        }
+    }
+
+    Spacer(modifier = Modifier.height(20.dp))
+
+    Text(
+        text = "Quiero prestar atención a...",
+        fontSize = 14.sp,
+        fontWeight = FontWeight.Bold,
+        color = tokens.text
+    )
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    // Cuadrícula de síntomas / bienestar
+    val symptomTiles = listOf(
+        Triple(SecondaryGoal.MANAGE_CRAMPS, "Cólicos", Icons.Rounded.Favorite),
+        Triple(SecondaryGoal.IMPROVE_SLEEP, "Sueño", Icons.Rounded.Bedtime),
+        Triple(SecondaryGoal.UNDERSTAND_MOOD, "Estado de ánimo", Icons.Rounded.AutoAwesome),
+        Triple(SecondaryGoal.TRACK_FERTILITY, "Fertilidad", Icons.Rounded.Eco),
+        Triple(SecondaryGoal.REDUCE_STRESS, "Estrés", Icons.Rounded.Waves)
+    )
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        symptomTiles.take(3).forEach { (goal, label, icon) ->
+            SymptomTile(
+                label = label,
+                icon = icon,
+                selected = goal in secondaryGoals,
+                onClick = { onToggleSecondary(goal) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        symptomTiles.drop(3).forEach { (goal, label, icon) ->
+            SymptomTile(
+                label = label,
+                icon = icon,
+                selected = goal in secondaryGoals,
+                onClick = { onToggleSecondary(goal) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Spacer(modifier = Modifier.weight(1f))
+    }
+
+    Spacer(modifier = Modifier.height(20.dp))
+
+    // Acordeón Perfil Físico (opcional)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(tokens.panel)
+            .border(1.dp, tokens.line, RoundedCornerShape(16.dp))
+            .padding(16.dp)
+    ) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { isPhysicalExpanded = !isPhysicalExpanded },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Perfil físico (opcional)",
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = tokens.text
+                )
+                Icon(
+                    imageVector = if (isPhysicalExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = tokens.muted
+                )
+            }
+
+            AnimatedVisibility(visible = isPhysicalExpanded) {
+                Column(modifier = Modifier.padding(top = 14.dp)) {
+                    var ageStr by remember { mutableStateOf(age?.toString() ?: "") }
+                    var heightStr by remember { mutableStateOf(height?.toString() ?: "") }
+                    var weightStr by remember { mutableStateOf(weight?.toString() ?: "") }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = ageStr,
+                            onValueChange = {
+                                ageStr = it
+                                onUpdatePhysical(it.toIntOrNull(), heightStr.toFloatOrNull(), weightStr.toFloatOrNull())
+                            },
+                            label = { Text("Edad", fontSize = 10.sp) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                        OutlinedTextField(
+                            value = heightStr,
+                            onValueChange = {
+                                heightStr = it
+                                onUpdatePhysical(ageStr.toIntOrNull(), it.toFloatOrNull(), weightStr.toFloatOrNull())
+                            },
+                            label = { Text("Altura (cm)", fontSize = 10.sp) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                        OutlinedTextField(
+                            value = weightStr,
+                            onValueChange = {
+                                weightStr = it
+                                onUpdatePhysical(ageStr.toIntOrNull(), heightStr.toFloatOrNull(), it.toFloatOrNull())
+                            },
+                            label = { Text("Peso (kg)", fontSize = 10.sp) },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Solo si quieres añadirlos para calibrar predicciones.",
+                        fontSize = 11.sp,
+                        color = tokens.muted
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PASO 7: LISTO (RESUMEN)
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun StepFinish(
+    data: OnboardingData,
+    onEditStep: (Int) -> Unit
+) {
+    val tokens = LumiThemeTokens.current
+    val cleanName = data.userName?.trim() ?: ""
+
+    // Showcase hero grande centrado con flor viva
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 10.dp, bottom = 20.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        LumiBrandLockup(
+            flowerSize = 46,
+            fontSize = 42.sp,
+            starSize = 16.sp,
+            letterSpacing = (-2.8).sp,
+            animated = true
+        )
+    }
+
+    EditorialHeading(
+        normalText = "Todo listo",
+        italicText = if (cleanName.isNotBlank()) ", $cleanName." else ".",
+        desc = "Puedes cambiar tus elecciones cuando quieras."
+    )
+
+    Spacer(modifier = Modifier.height(18.dp))
+
+    if (data.mode == "support") {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(18.dp))
+                .background(tokens.panel)
+                .border(1.dp, tokens.line, RoundedCornerShape(18.dp))
+                .padding(18.dp)
+        ) {
+            Column {
+                Text(
+                    text = "Tu próximo paso",
+                    fontSize = 11.sp,
+                    color = tokens.muted
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Conectar con confianza.",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = tokens.text
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Pide un código de Bonds. No verás registros hasta que la otra persona autorice qué compartir.",
+                    fontSize = 12.sp,
+                    color = tokens.muted,
                     lineHeight = 17.sp
                 )
             }
         }
-
-        Spacer(Modifier.height(24.dp))
-
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            ProfileNumberField(
-                label         = stringResource(R.string.onboarding_field_age),
-                value         = ageText,
-                unit          = stringResource(R.string.onboarding_unit_years),
-                placeholder   = stringResource(R.string.onboarding_hint_age),
-                onValueChange = { raw ->
-                    ageText = raw.filter { it.isDigit() }.take(3)
-                    onAge(ageText.toIntOrNull()?.takeIf { it in 10..99 })
-                }
+    } else {
+        // Cuadrícula 2x2 de resumen editable
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(9.dp)
+        ) {
+            SummaryBox(
+                title = "Tu saludo",
+                value = if (cleanName.isNotBlank()) "Hola, $cleanName." else "Hola.",
+                onEdit = { onEditStep(2) },
+                modifier = Modifier.weight(1f)
             )
-            ProfileNumberField(
-                label         = stringResource(R.string.onboarding_field_height),
-                value         = heightText,
-                unit          = stringResource(R.string.onboarding_unit_cm),
-                placeholder   = stringResource(R.string.onboarding_hint_height),
-                onValueChange = { raw ->
-                    heightText = raw.filter { it.isDigit() }.take(3)
-                    onHeight(heightText.toFloatOrNull()?.takeIf { it in 100f..220f })
-                }
-            )
-            ProfileNumberField(
-                label         = stringResource(R.string.onboarding_field_weight),
-                value         = weightText,
-                unit          = stringResource(R.string.onboarding_unit_kg),
-                placeholder   = stringResource(R.string.onboarding_hint_weight),
-                onValueChange = { raw ->
-                    val filtered = raw.filter { it.isDigit() || it == '.' }
-                        .let { s -> if (s.count { it == '.' } > 1) weightText else s }
-                        .take(5)
-                    weightText = filtered
-                    onWeight(filtered.toFloatOrNull()?.takeIf { it in 30f..250f })
-                }
+            SummaryBox(
+                title = "Tu ciclo",
+                value = if (data.cycleLengthKnown) "${data.cycleLength} días · aprox." else "Por conocer",
+                onEdit = { onEditStep(3) },
+                modifier = Modifier.weight(1f)
             )
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(9.dp))
 
-        Text(
-            text      = stringResource(R.string.onboarding_physical_complete_later),
-            fontSize  = 11.sp,
-            color     = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
-            textAlign = TextAlign.Center,
-            modifier  = Modifier.fillMaxWidth()
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(9.dp)
+        ) {
+            val dateLabel = if (data.lastPeriodKnown && data.lastPeriodDate > 0) {
+                Instant.ofEpochMilli(data.lastPeriodDate)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+                    .format(DateTimeFormatter.ofPattern("d 'de' MMM", Locale("es")))
+            } else {
+                "Sin registrar"
+            }
+
+            val goalLabel = when (data.userGoal) {
+                UserGoal.TRACK_CYCLE -> "Entender mi ciclo"
+                UserGoal.HEALTH_MONITORING -> "Conocer mi bienestar"
+                UserGoal.SEEK_PREGNANCY -> "Buscar embarazo"
+                UserGoal.AVOID_PREGNANCY -> "Evitar embarazo"
+                null -> "Sin seleccionar"
+            }
+
+            SummaryBox(
+                title = "Último periodo",
+                value = dateLabel,
+                onEdit = { onEditStep(4) },
+                modifier = Modifier.weight(1f)
+            )
+            SummaryBox(
+                title = "Tu objetivo",
+                value = goalLabel,
+                onEdit = { onEditStep(5) },
+                modifier = Modifier.weight(1f)
+            )
+        }
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  COMPONENTES REUTILIZABLES DE ONBOARDING
+// ─────────────────────────────────────────────────────────────────────────────
+
 @Composable
-private fun ProfileNumberField(
-    label        : String,
-    value        : String,
-    unit         : String,
-    placeholder  : String,
-    onValueChange: (String) -> Unit
+private fun EditorialHeading(
+    normalText: String,
+    italicText: String,
+    desc: String
 ) {
-    val primary = MaterialTheme.colorScheme.primary
+    val tokens = LumiThemeTokens.current
+
     Column {
-        Text(
-            text       = label,
-            fontSize   = 13.sp,
-            fontWeight = FontWeight.SemiBold,
-            color      = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
-        )
-        Spacer(Modifier.height(6.dp))
-        OutlinedTextField(
-            value         = value,
-            onValueChange = onValueChange,
-            placeholder   = {
-                Text(placeholder, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.35f))
-            },
-            singleLine    = true,
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
-            ),
-            trailingIcon  = {
-                Text(
-                    text     = unit,
-                    fontSize = 13.sp,
-                    color    = primary.copy(alpha = 0.6f),
-                    modifier = Modifier.padding(end = 12.dp)
-                )
-            },
-            shape  = RoundedCornerShape(14.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor   = primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.18f)
-            ),
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  PÁGINA 6 — OBJETIVOS SECUNDARIOS (multi-selección)
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun PageSecondaryGoals(
-    selected : Set<SecondaryGoal>,
-    onToggle : (SecondaryGoal) -> Unit
-) {
-    val goals = listOf(
-        Triple(SecondaryGoal.MANAGE_CRAMPS,   Icons.Rounded.Favorite,           stringResource(R.string.onboarding_goal_cramps)),
-        Triple(SecondaryGoal.IMPROVE_SLEEP,   Icons.Rounded.Bedtime,            stringResource(R.string.onboarding_goal_sleep)),
-        Triple(SecondaryGoal.UNDERSTAND_MOOD, Icons.Rounded.SentimentSatisfied, stringResource(R.string.onboarding_goal_mood)),
-        Triple(SecondaryGoal.TRACK_FERTILITY, Icons.Rounded.Spa,                stringResource(R.string.onboarding_goal_fertility)),
-        Triple(SecondaryGoal.REDUCE_STRESS,   Icons.Rounded.SelfImprovement,    stringResource(R.string.onboarding_goal_reduce_stress)),
-        Triple(SecondaryGoal.PARTNER_MODE,    Icons.Rounded.People,             stringResource(R.string.onboarding_goal_partner_mode))
-    )
-
-    PageShell(
-        icon     = Icons.Rounded.Stars,
-        title    = stringResource(R.string.onboarding_goals_title),
-        subtitle = stringResource(R.string.onboarding_goals_subtitle)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            goals.chunked(2).forEach { row ->
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    row.forEach { (goal, icon, label) ->
-                        SecondaryGoalChip(
-                            icon     = icon,
-                            label    = label,
-                            selected = goal in selected,
-                            onClick  = { onToggle(goal) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    if (row.size == 1) Spacer(Modifier.weight(1f))
-                }
-            }
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        if (selected.isEmpty()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text      = stringResource(R.string.onboarding_goals_skip_note),
-                fontSize  = 11.sp,
-                color     = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
-                textAlign = TextAlign.Center,
-                modifier  = Modifier.fillMaxWidth()
+                text = normalText,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-1.2).sp,
+                color = tokens.text
             )
-        } else {
-            Row(
-                modifier              = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment     = Alignment.CenterVertically
-            ) {
-                Icon(
-                    Icons.Rounded.CheckCircle,
-                    contentDescription = null,
-                    tint     = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(14.dp)
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text       = if (selected.size == 1) stringResource(R.string.onboarding_goals_count_one, selected.size) else stringResource(R.string.onboarding_goals_count_other, selected.size),
-                    fontSize   = 12.sp,
-                    color      = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Medium
-                )
-            }
+            Text(
+                text = italicText,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Normal,
+                fontStyle = FontStyle.Italic,
+                fontFamily = FontFamily.Serif,
+                letterSpacing = (-1.2).sp,
+                color = tokens.accent
+            )
+        }
+
+        if (desc.isNotBlank()) {
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = desc,
+                fontSize = 13.sp,
+                lineHeight = 18.sp,
+                color = tokens.muted
+            )
         }
     }
 }
 
 @Composable
-private fun SecondaryGoalChip(
-    icon     : ImageVector,
-    label    : String,
-    selected : Boolean,
-    onClick  : () -> Unit,
-    modifier : Modifier = Modifier
+private fun ChoiceCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit
 ) {
-    val primary = MaterialTheme.colorScheme.primary
-    val bgColor by animateColorAsState(
-        targetValue   = if (selected) primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface,
-        animationSpec = tween(220),
-        label         = "sec_goal_bg"
-    )
-    val borderColor by animateColorAsState(
-        targetValue   = if (selected) primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f),
-        animationSpec = tween(220),
-        label         = "sec_goal_border"
-    )
-    val scale by animateFloatAsState(
-        targetValue   = if (selected) 1.02f else 1f,
-        animationSpec = spring(Spring.DampingRatioMediumBouncy),
-        label         = "sec_goal_scale"
-    )
+    val tokens = LumiThemeTokens.current
 
-    Box(
-        modifier = modifier
-            .scale(scale)
-            .clip(RoundedCornerShape(16.dp))
-            .background(bgColor)
-            .border(1.5.dp, borderColor, RoundedCornerShape(16.dp))
-            .clickable(
-                indication        = null,
-                interactionSource = remember { MutableInteractionSource() },
-                onClick           = onClick
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(19.dp))
+            .background(if (selected) tokens.accentSoft else tokens.panel)
+            .border(
+                width = if (selected) 1.5.dp else 1.dp,
+                color = if (selected) tokens.accent else tokens.line,
+                shape = RoundedCornerShape(19.dp)
             )
-            .padding(vertical = 14.dp, horizontal = 8.dp)
+            .clickable { onClick() }
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        if (selected) {
-            Icon(
-                Icons.Rounded.Check,
-                contentDescription = null,
-                tint     = primary,
-                modifier = Modifier.size(14.dp).align(Alignment.TopEnd)
-            )
-        }
-        Column(
-            modifier            = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(13.dp))
+                .background(if (selected) tokens.field else tokens.panel2),
+            contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector        = icon,
+                imageVector = icon,
                 contentDescription = null,
-                tint     = if (selected) primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                modifier = Modifier.size(22.dp)
+                tint = tokens.accent,
+                modifier = Modifier.size(20.dp)
             )
+        }
+
+        Spacer(modifier = Modifier.width(14.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text       = label,
-                fontSize   = 11.sp,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                textAlign  = TextAlign.Center,
-                color      = if (selected) primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f),
-                lineHeight = 15.sp
+                text = title,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = tokens.text
             )
+            if (subtitle.isNotBlank()) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    fontSize = 11.sp,
+                    color = tokens.muted
+                )
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .clip(CircleShape)
+                .background(if (selected) tokens.accent else Color.Transparent)
+                .border(1.dp, if (selected) tokens.accent else tokens.line, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            if (selected) {
+                Text(
+                    text = "✓",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = tokens.bg
+                )
+            }
         }
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  PÁGINA 1 — AVISO MÉDICO LEGAL
-// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun GoalCard(
+    title: String,
+    icon: ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val tokens = LumiThemeTokens.current
+
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(if (selected) tokens.accentSoft else tokens.panel)
+            .border(
+                width = if (selected) 1.5.dp else 1.dp,
+                color = if (selected) tokens.accent else tokens.line,
+                shape = RoundedCornerShape(18.dp)
+            )
+            .clickable { onClick() }
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(tokens.panel2),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = tokens.accent,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(10.dp))
+
+        Text(
+            text = title,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = tokens.text,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
 
 @Composable
-fun PageDisclaimer(
-    accepted: Boolean,
-    onAcceptedChange: (Boolean) -> Unit
+private fun MicroPill(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
 ) {
+    val tokens = LumiThemeTokens.current
+
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (selected) tokens.accentSoft else tokens.panel)
+            .border(
+                width = if (selected) 1.5.dp else 1.dp,
+                color = if (selected) tokens.accent else tokens.line,
+                shape = RoundedCornerShape(12.dp)
+            )
+            .clickable { onClick() }
+            .padding(horizontal = 14.dp, vertical = 9.dp)
+    ) {
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            color = if (selected) tokens.text else tokens.muted
+        )
+    }
+}
+
+@Composable
+private fun SymptomTile(
+    label: String,
+    icon: ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val tokens = LumiThemeTokens.current
+
     Column(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
+        modifier = modifier
+            .height(84.dp)
+            .clip(RoundedCornerShape(15.dp))
+            .background(if (selected) tokens.accentSoft else tokens.panel)
+            .border(
+                width = if (selected) 1.5.dp else 1.dp,
+                color = if (selected) tokens.accent else tokens.line,
+                shape = RoundedCornerShape(15.dp)
+            )
+            .clickable { onClick() }
+            .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Icon(
-            imageVector = androidx.compose.material.icons.Icons.Rounded.HealthAndSafety,
+            imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(64.dp)
+            tint = tokens.accent,
+            modifier = Modifier.size(20.dp)
         )
-        Spacer(Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = stringResource(R.string.onboarding_disclaimer_title),
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center
+            text = label,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = tokens.text,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
         )
-        Spacer(Modifier.height(24.dp))
-        
-        Surface(
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
-            shape = RoundedCornerShape(16.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-        ) {
-            Column(modifier = Modifier.padding(20.dp)) {
+    }
+}
+
+@Composable
+private fun SummaryBox(
+    title: String,
+    value: String,
+    onEdit: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val tokens = LumiThemeTokens.current
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(tokens.panel)
+            .border(1.dp, tokens.line, RoundedCornerShape(14.dp))
+            .padding(12.dp)
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = stringResource(R.string.onboarding_disclaimer_not_doctor),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onBackground
+                    text = title,
+                    fontSize = 10.sp,
+                    color = tokens.muted
                 )
-                Spacer(Modifier.height(12.dp))
                 Text(
-                    text = stringResource(R.string.onboarding_disclaimer_bullets),
-                    fontSize = 14.sp,
-                    lineHeight = 22.sp,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+                    text = "Editar",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = tokens.accent,
+                    modifier = Modifier.clickable { onEdit() }
                 )
             }
-        }
-        
-        Spacer(Modifier.height(32.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            androidx.compose.material3.Checkbox(
-                checked = accepted,
-                onCheckedChange = { onAcceptedChange(it) },
-                colors = androidx.compose.material3.CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary)
-            )
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = stringResource(R.string.onboarding_disclaimer_checkbox),
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f),
-                fontWeight = FontWeight.Medium
+                text = value,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = tokens.text,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
+        }
+    }
+}
+
+@Composable
+private fun BulletText(text: String) {
+    val tokens = LumiThemeTokens.current
+    Row(
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text("•", fontSize = 12.sp, color = tokens.muted)
+        Text(
+            text = text,
+            fontSize = 12.sp,
+            lineHeight = 17.sp,
+            color = tokens.muted
+        )
+    }
+}
+
+@Composable
+private fun ConsentCheckbox(
+    checked: Boolean,
+    onCheckedChange: () -> Unit,
+    boldText: String,
+    subText: String,
+    actionText: String? = null,
+    onActionClick: (() -> Unit)? = null
+) {
+    val tokens = LumiThemeTokens.current
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(tokens.panel)
+            .border(1.dp, tokens.line, RoundedCornerShape(14.dp))
+            .clickable { onCheckedChange() }
+            .padding(12.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Checkbox(
+            checked = checked,
+            onCheckedChange = { onCheckedChange() },
+            colors = CheckboxDefaults.colors(
+                checkedColor = tokens.accent,
+                uncheckedColor = tokens.line,
+                checkmarkColor = tokens.bg
+            ),
+            modifier = Modifier.size(24.dp)
+        )
+
+        Spacer(modifier = Modifier.width(10.dp))
+
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = boldText,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = tokens.text
+                )
+            }
+            Text(
+                text = subText,
+                fontSize = 11.sp,
+                color = tokens.muted,
+                lineHeight = 16.sp
+            )
+            if (actionText != null && onActionClick != null) {
+                Text(
+                    text = actionText,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = tokens.accent,
+                    modifier = Modifier.clickable { onActionClick() }
+                )
+            }
         }
     }
 }

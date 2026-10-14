@@ -244,12 +244,17 @@ fun HomeScreen(
                             DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Locale("es"))
                         }
                         val dateEyebrow = remember(todayDate) { todayDate.format(dateFmt) }
-                        val displayUserName = uiState.userName?.takeIf { it.isNotBlank() } ?: "kiwi"
+                        val rawName = uiState.userName?.trim()?.takeIf { it.isNotBlank() }
+                        val (titleNormal, titleItalic) = if (rawName != null) {
+                            "Hola, " to "$rawName."
+                        } else {
+                            "Hola." to ""
+                        }
 
                         LumiEditorialHeading(
                             eyebrow = dateEyebrow,
-                            titleNormal = "Hola, ",
-                            titleSerifItalic = "$displayUserName.",
+                            titleNormal = titleNormal,
+                            titleSerifItalic = titleItalic,
                             subtitle = "Un día a tu ritmo.",
                             modifier = Modifier
                                 .fillMaxWidth()

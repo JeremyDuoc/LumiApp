@@ -32,14 +32,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.core.*
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
 
 /**
- * Logotipo orgánico de la flor de Lumi con degradado cónico multicolor.
+ * Logotipo orgánico de la flor de Lumi con degradado cónico multicolor y animación viva.
+ * Conforme al prototipo HTML Lumi_Onboarding_Logo_Contextual_v3:
+ * - RoundRect con 4 radios asimétricos
+ * - Inclinación base de -25° con suave respiración orgánica
+ * - Aura radial suave de destello
  */
 @Composable
-fun LumiBrandFlower(modifier: Modifier = Modifier, size: Int = 20) {
+fun LumiBrandFlower(
+    modifier: Modifier = Modifier,
+    size: Int = 20,
+    animated: Boolean = true
+) {
     val colors = listOf(
         Color(0xFFE9B3C4),
         Color(0xFFD4B3ED),
@@ -48,33 +60,167 @@ fun LumiBrandFlower(modifier: Modifier = Modifier, size: Int = 20) {
         Color(0xFFE9B3C4)
     )
 
-    Canvas(
-        modifier = modifier
-            .size(size.dp)
-            .rotate(-25f)
+    val infiniteTransition = if (animated) rememberInfiniteTransition(label = "flower_anim") else null
+    val flowerScale = infiniteTransition?.animateFloat(
+        initialValue = 1.0f,
+        targetValue = 1.038f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2950, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "flower_scale"
+    )?.value ?: 1.0f
+
+    val rotationOffset = infiniteTransition?.animateFloat(
+        initialValue = 0f,
+        targetValue = 1.8f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2950, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "flower_rotation"
+    )?.value ?: 0f
+
+    val glowAlpha = infiniteTransition?.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 0.85f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2950, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "flower_glow"
+    )?.value ?: 0.5f
+
+    Box(
+        modifier = modifier.size(size.dp),
+        contentAlignment = Alignment.Center
     ) {
-        val sweepBrush = Brush.sweepGradient(colors)
-        val path = Path().apply {
-            addRoundRect(
-                RoundRect(
-                    left = 0f,
-                    top = 0f,
-                    right = this@Canvas.size.width,
-                    bottom = this@Canvas.size.height,
-                    topLeftCornerRadius = CornerRadius(this@Canvas.size.width * 0.45f, this@Canvas.size.height * 0.55f),
-                    topRightCornerRadius = CornerRadius(this@Canvas.size.width * 0.65f, this@Canvas.size.height * 0.40f),
-                    bottomRightCornerRadius = CornerRadius(this@Canvas.size.width * 0.55f, this@Canvas.size.height * 0.65f),
-                    bottomLeftCornerRadius = CornerRadius(this@Canvas.size.width * 0.40f, this@Canvas.size.height * 0.50f)
-                )
+        // Aura suave de fondo (Glow)
+        if (animated) {
+            Box(
+                modifier = Modifier
+                    .size((size * 1.35f).dp)
+                    .alpha(glowAlpha)
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color(0x44D3AEF0),
+                                Color(0x18D6B0E9),
+                                Color.Transparent
+                            )
+                        ),
+                        shape = CircleShape
+                    )
             )
         }
-        drawPath(path = path, brush = sweepBrush)
+
+        Canvas(
+            modifier = Modifier
+                .size(size.dp)
+                .scale(flowerScale)
+                .rotate(-25f + rotationOffset)
+        ) {
+            val sweepBrush = Brush.sweepGradient(colors)
+            val path = Path().apply {
+                addRoundRect(
+                    RoundRect(
+                        left = 0f,
+                        top = 0f,
+                        right = this@Canvas.size.width,
+                        bottom = this@Canvas.size.height,
+                        topLeftCornerRadius = CornerRadius(this@Canvas.size.width * 0.45f, this@Canvas.size.height * 0.55f),
+                        topRightCornerRadius = CornerRadius(this@Canvas.size.width * 0.65f, this@Canvas.size.height * 0.40f),
+                        bottomRightCornerRadius = CornerRadius(this@Canvas.size.width * 0.55f, this@Canvas.size.height * 0.65f),
+                        bottomLeftCornerRadius = CornerRadius(this@Canvas.size.width * 0.40f, this@Canvas.size.height * 0.50f)
+                    )
+                )
+            }
+            drawPath(path = path, brush = sweepBrush)
+        }
+    }
+}
+
+/**
+ * Lockup de marca unificado oficial de Lumi:
+ * - Flor animada ([LumiBrandFlower])
+ * - Tipografía "lumi" en negrita editorial
+ * - Destello estrella "✦" con animación viva de destello, rotación y pulso
+ *
+ * Utilizar este componente en TODAS las cabeceras y pantallas para garantizar 100% consistencia.
+ */
+@Composable
+fun LumiBrandLockup(
+    modifier: Modifier = Modifier,
+    flowerSize: Int = 21,
+    fontSize: TextUnit = 24.sp,
+    starSize: TextUnit = 12.sp,
+    letterSpacing: TextUnit = (-1.5).sp,
+    textColor: Color = LumiThemeTokens.current.text,
+    starColor: Color = LumiThemeTokens.current.accent,
+    animated: Boolean = true
+) {
+    val infiniteTransition = if (animated) rememberInfiniteTransition(label = "brand_lockup_twinkle") else null
+    val starScale = infiniteTransition?.animateFloat(
+        initialValue = 0.82f,
+        targetValue = 1.16f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "star_scale"
+    )?.value ?: 1f
+
+    val starAlpha = infiniteTransition?.animateFloat(
+        initialValue = 0.46f,
+        targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "star_alpha"
+    )?.value ?: 1f
+
+    val starRotation = infiniteTransition?.animateFloat(
+        initialValue = -10f,
+        targetValue = 8f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "star_rot"
+    )?.value ?: 0f
+
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        LumiBrandFlower(size = flowerSize, animated = animated)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "lumi",
+                fontSize = fontSize,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = letterSpacing,
+                color = textColor
+            )
+            Spacer(modifier = Modifier.width(3.dp))
+            Text(
+                text = "✦",
+                fontSize = starSize,
+                color = starColor,
+                modifier = Modifier
+                    .scale(starScale)
+                    .alpha(starAlpha)
+                    .rotate(starRotation)
+            )
+        }
     }
 }
 
 /**
  * Cabecera superior unificada de Lumi:
- * - Brand: [Flor] + "lumi" + "✦"
+ * - Brand: [LumiBrandLockup] con flor animada y destello vivo
  * - Acciones: Selector de tema (paleta) + Notificaciones con badge dot
  */
 @Composable
@@ -96,28 +242,14 @@ fun LumiTopBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Marca Lumi
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            LumiBrandFlower(size = 21)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "lumi",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-1.5).sp,
-                    color = tokens.text
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "✦",
-                    fontSize = 11.sp,
-                    color = tokens.dim
-                )
-            }
-        }
+        // Marca Lumi unificada y animada
+        LumiBrandLockup(
+            flowerSize = 21,
+            fontSize = 24.sp,
+            starSize = 11.sp,
+            letterSpacing = (-1.5).sp,
+            animated = true
+        )
 
         // Acciones superiores
         Row(

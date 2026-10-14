@@ -38,22 +38,25 @@ enum class SecondaryGoal {
  */
 data class OnboardingData(
     val userName         : String?              = null,
+    val mode             : String               = "track", // "track" | "support"
     val isRegular        : Boolean?             = null,
+    val regularityChoice : String?              = null,    // "yes" | "no" | "unknown"
+    val cycleLengthKnown : Boolean              = false,
     val cycleLength      : Int                  = 28,
-    val lastPeriodKnown  : Boolean              = true,
+    val lastPeriodKnown  : Boolean              = false,
     val lastPeriodDate   : Long                 = 0L,
+    val periodLengthKnown: Boolean              = false,
     val periodLength     : Int                  = 5,
-    val userGoal         : UserGoal             = UserGoal.TRACK_CYCLE,
+    val userGoal         : UserGoal?            = null,
+    val contraceptionChoice: String             = "unsure", // "yes" | "no" | "unsure"
+    val isOnContraceptive: Boolean              = false,
+    // --- Objetivos secundarios (múltiples) ---
+    val secondaryGoals   : Set<SecondaryGoal>   = emptySet(),
     // --- Perfil físico (opcional, solo para calibración IA local) ---
     val age              : Int?                 = null,
     val height           : Float?               = null,   // cm
     val weight           : Float?               = null,   // kg
-    // --- Objetivos secundarios (múltiples) ---
-    val secondaryGoals   : Set<SecondaryGoal>   = emptySet(),
-    // FIX P3-3: Modo anticonceptivo recogido durante el onboarding.
-    // Persiste en DataStore al completar el wizard y afecta predictor + chat.
-    val isOnContraceptive: Boolean              = false,
-    
-    // Disclaimer Médico obligatorio (cumplimiento legal)
-    val medicalDisclaimerAccepted: Boolean      = false
+    // Cumplimiento legal y consentimientos
+    val medicalDisclaimerAccepted: Boolean      = false,
+    val privacyAccepted  : Boolean              = false
 )
