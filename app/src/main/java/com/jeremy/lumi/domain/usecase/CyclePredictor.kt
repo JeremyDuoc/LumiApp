@@ -5,7 +5,6 @@ import com.jeremy.lumi.data.local.entity.closedLengthDays
 import com.jeremy.lumi.domain.model.CyclePhase
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import kotlin.math.roundToInt
@@ -317,6 +316,9 @@ object CyclePredictor {
             val preDays = valid.subList(i - 6, i)
             val postDays = valid.subList(i, i + 3)
 
+            // Criterio de continuidad temporal: el primer día post-shift debe ser contiguo al último pre-shift
+            if (postDays.first().first != preDays.last().first + 1) continue
+
             val coverline = preDays.maxOf { it.second }
             val allHigher = postDays.all { it.second > coverline }
             val thirdHigherEnough = (postDays[2].second - coverline) >= 0.20f
@@ -399,7 +401,7 @@ object CyclePredictor {
                 delayState          = DelayState.ON_TIME,
                 delayDays           = 0,
                 isLate              = false,
-                dayOfPhase          = ChronoUnit.DAYS.between(startDate, today).toInt() + 1,
+                dayOfPhase          = (ChronoUnit.DAYS.between(startDate, today).toInt() + 1).coerceAtLeast(1),
                 fertileWindowStartDate = LocalDate.MAX,
                 fertileWindowEndDate   = LocalDate.MAX,
                 isInFertileWindow      = false,
@@ -455,8 +457,8 @@ object CyclePredictor {
         val dayOfPhase = when (currentPhase) {
             CyclePhase.MENSTRUAL -> realDay
             CyclePhase.FOLLICULAR -> realDay - periodLength
-            CyclePhase.OVULATION -> realDay - (ovulationDay - 2) // Ventana: ovDay-1, ovDay, ovDay+1 -> 1, 2, 3
-            CyclePhase.LUTEAL -> realDay - (if (isOnContraceptive) ovulationDay else (ovulationDay + 1))
+            CyclePhase.OVULATION -> realDay - (ovulationDay - 5) + 1 // Ventana OMS/ACOG de 7 días: (ovDay - 5)..(ovDay + 1)
+            CyclePhase.LUTEAL -> realDay - (ovulationDay + 1)
             else -> 1
         }.coerceAtLeast(1)
 
@@ -512,8 +514,4 @@ object CyclePredictor {
             predictedCycleLengthStdDev = stdDev
         )
     }
-
-    // ── Extension helper ─────────────────────────────────────────────────────
-    private fun Long.toLocalDate(): LocalDate =
-        Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
 }

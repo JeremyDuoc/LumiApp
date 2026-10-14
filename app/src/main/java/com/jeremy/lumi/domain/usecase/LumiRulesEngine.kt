@@ -88,15 +88,20 @@ class LumiRulesEngine @Inject constructor(
 
     private fun getRandomStringArray(resId: Int): String {
         val array = context.resources.getStringArray(resId)
-        return array.random()
+        return array.randomOrNull() ?: ""
     }
 
     fun generateWelcomeMessage(ctx: CycleContext): String {
         val baseGreeting = getRandomStringArray(R.array.chat_welcome_base)
         
+        val painPrefix = if (ctx.todayPainLevel >= 7) {
+            String.format(getRandomStringArray(R.array.chat_welcome_pain), ctx.todayPainLevel)
+        } else ""
+
         val isPmsWindow = ctx.phase == CyclePhase.LUTEAL && ctx.daysUntilPeriod in 0..6
+        val isPmsMood = ClinicalLabels.matchesMood(ctx.todayMood, R.string.mood_sad, R.string.mood_irritated, R.string.mood_sensitive)
         val hasPmsSymptoms = ctx.todayPainLevel > 0 || 
-                             ClinicalLabels.matchesMood(ctx.todayMood, R.string.mood_sad, R.string.mood_irritated, R.string.mood_sensitive) || 
+                             isPmsMood || 
                              ClinicalLabels.hasAnySymptom(ctx.todaySymptoms, R.string.symp_headache, R.string.symp_bloating, R.string.symp_breast_tenderness, R.string.symp_fatigue, R.string.symp_acne) ||
                              (ctx.todayStressLevel != null && ctx.todayStressLevel >= 6)
         
@@ -104,35 +109,32 @@ class LumiRulesEngine @Inject constructor(
         val isHappyOrEnergetic = ClinicalLabels.matchesMood(ctx.todayMood, R.string.mood_happy, R.string.mood_energetic, R.string.mood_calm)
 
         if (isPmsWindow && hasPmsSymptoms) {
-            val moodMsg = ctx.todayMood?.let { "te sientas ${it.lowercase()}" } ?: "tengas estos síntomas"
-            return baseGreeting + String.format(getRandomStringArray(R.array.chat_welcome_pms), moodMsg)
+            val moodMsg = if (isPmsMood && ctx.todayMood != null) "te sientas ${ctx.todayMood.lowercase()}" else "tengas estos síntomas"
+            return baseGreeting + painPrefix + String.format(getRandomStringArray(R.array.chat_welcome_pms), moodMsg)
         }
         
-        // periodo: Fase Folicular + Cansancio (Inusual)
+        // Folicular + Cansancio (Inusual)
         if (ctx.phase == CyclePhase.FOLLICULAR && isTiredOrSad) {
-            return baseGreeting + context.getString(R.string.chat_welcome_follicular_tired)
+            return baseGreeting + painPrefix + context.getString(R.string.chat_welcome_follicular_tired)
         }
         
-        // periodo: Fase Folicular + Energía (Esperado)
+        // Folicular + Energía (Esperado)
         if (ctx.phase == CyclePhase.FOLLICULAR && isHappyOrEnergetic) {
-            return baseGreeting + context.getString(R.string.chat_welcome_follicular_energy)
+            return baseGreeting + painPrefix + context.getString(R.string.chat_welcome_follicular_energy)
         }
         
-        // periodo: Fase Lútea Temprana/Media + Antojos o Cansancio
-        val hasLutealSymptoms = ctx.todaySymptoms.intersect(listOf("Antojos", "Hinchazón", "Digestión pesada")).isNotEmpty()
+        // Fase Lútea Temprana/Media + Antojos o Cansancio
+        val hasLutealSymptoms = ClinicalLabels.hasAnySymptom(ctx.todaySymptoms, R.string.symp_bloating, R.string.symp_diarrhea)
         if (ctx.phase == CyclePhase.LUTEAL && !isPmsWindow && (hasLutealSymptoms || isTiredOrSad)) {
-            return baseGreeting + context.getString(R.string.chat_welcome_luteal_symptoms)
+            return baseGreeting + painPrefix + context.getString(R.string.chat_welcome_luteal_symptoms)
         }
-
-        val painPrefix = if (ctx.todayPainLevel >= 7) {
-            String.format(getRandomStringArray(R.array.chat_welcome_pain), ctx.todayPainLevel)
-        } else ""
 
         val phaseMessage = when (ctx.phase) {
             CyclePhase.MENSTRUAL -> getRandomStringArray(R.array.chat_welcome_phase_menstrual)
             CyclePhase.FOLLICULAR -> getRandomStringArray(R.array.chat_welcome_phase_follicular)
             CyclePhase.OVULATION -> getRandomStringArray(R.array.chat_welcome_phase_ovulation)
             CyclePhase.LUTEAL -> getRandomStringArray(R.array.chat_welcome_phase_luteal)
+            CyclePhase.PREGNANCY -> context.getString(R.string.desc_pregnancy)
             else -> getRandomStringArray(R.array.chat_welcome_phase_unknown)
         }
         return baseGreeting + painPrefix + phaseMessage
@@ -152,17 +154,37 @@ class LumiRulesEngine @Inject constructor(
             ChatQuestion.EXERCISE_RECOMMENDATION -> answerExercise(cycleContext)
             ChatQuestion.WHY_LATE_PERIOD         -> answerLatePeriod(cycleContext)
             ChatQuestion.SPOTTING_EXPLANATION    -> answerSpotting(cycleContext)
-            ChatQuestion.HEADACHE_RELIEF         -> context.getString(R.string.chat_smart_headache_body, "")
+            ChatQuestion.HEADACHE_RELIEF         -> {
+                val phaseNote = when (cycleContext.phase) {
+                    CyclePhase.LUTEAL -> context.getString(R.string.chat_smart_headache_luteal, cycleContext.daysUntilPeriod.coerceAtLeast(0))
+                    CyclePhase.MENSTRUAL -> context.getString(R.string.chat_smart_headache_menstrual)
+                    else -> ""
+                }
+                context.getString(R.string.chat_smart_headache_body, phaseNote)
+            }
             ChatQuestion.DIGESTIVE_RELIEF        -> context.getString(R.string.chat_smart_digestive_body)
             ChatQuestion.UNPROTECTED_SEX         -> context.getString(R.string.chat_smart_unprotected_sex)
             ChatQuestion.CONTRACEPTION_INFO      -> if (cycleContext.isOnContraceptive) context.getString(R.string.chat_smart_contraception_active) else context.getString(R.string.chat_smart_contraception_natural)
             ChatQuestion.BIO_PATTERNS            -> context.getString(R.string.chat_smart_patterns_empty)
-            ChatQuestion.NUTRITION_RECOMMENDATION -> context.getString(R.string.chat_smart_nutrition_general)
+            ChatQuestion.NUTRITION_RECOMMENDATION -> {
+                when (cycleContext.phase) {
+                    CyclePhase.MENSTRUAL  -> context.getString(R.string.chat_smart_nutrition_menstrual)
+                    CyclePhase.FOLLICULAR -> context.getString(R.string.chat_smart_nutrition_follicular)
+                    CyclePhase.OVULATION  -> context.getString(R.string.chat_smart_nutrition_ovulation)
+                    CyclePhase.LUTEAL     -> context.getString(R.string.chat_smart_nutrition_luteal)
+                    else                  -> context.getString(R.string.chat_smart_nutrition_general)
+                }
+            }
         }
     }
 
     fun getAvailableQuestions(context: CycleContext): List<ChatQuestion> {
         val filtered = ChatQuestion.entries.filter { question ->
+            if (context.phase == CyclePhase.PREGNANCY) {
+                if (question == ChatQuestion.WHEN_NEXT_PERIOD || question == ChatQuestion.WHEN_FERTILE_WINDOW || question == ChatQuestion.WHY_LATE_PERIOD) {
+                    return@filter false
+                }
+            }
             when (question) {
                 ChatQuestion.WHY_LATE_PERIOD     -> context.isLate
                 ChatQuestion.SPOTTING_EXPLANATION -> context.todaySymptoms.any {
@@ -202,19 +224,26 @@ class LumiRulesEngine @Inject constructor(
     }
 
     private fun answerNextPeriod(ctx: CycleContext): String {
+        if (ctx.phase == CyclePhase.PREGNANCY) {
+            return context.getString(R.string.desc_pregnancy)
+        }
         return if (ctx.isLate) {
             String.format(getRandomStringArray(R.array.chat_next_period_late), ctx.delayDays, ctx.cycleLength)
         } else {
-            val base = when (ctx.daysUntilPeriod) {
+            val days = ctx.daysUntilPeriod.coerceAtLeast(0)
+            val base = when (days) {
                 0 -> getRandomStringArray(R.array.chat_next_period_base_0)
                 1 -> getRandomStringArray(R.array.chat_next_period_base_1)
-                else -> String.format(getRandomStringArray(R.array.chat_next_period_base_n), ctx.daysUntilPeriod)
+                else -> String.format(getRandomStringArray(R.array.chat_next_period_base_n), days)
             }
             String.format(getRandomStringArray(R.array.chat_next_period_on_time), base)
         }
     }
 
     private fun answerFertileWindow(ctx: CycleContext): String {
+        if (ctx.phase == CyclePhase.PREGNANCY) {
+            return context.getString(R.string.desc_pregnancy)
+        }
         if (ctx.isOnContraceptive) {
             return getRandomStringArray(R.array.chat_fertile_contraceptive)
         }
