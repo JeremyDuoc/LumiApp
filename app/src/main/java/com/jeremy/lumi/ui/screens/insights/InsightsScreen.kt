@@ -107,6 +107,7 @@ import com.jeremy.lumi.domain.model.PuntoBarraCiclo
 import com.jeremy.lumi.domain.model.PuntoBbt
 import com.jeremy.lumi.ui.components.AmbientBackgroundLayer
 import com.jeremy.lumi.ui.components.LumiBrandFlower
+import com.jeremy.lumi.ui.components.LumiBrandLockup
 import com.jeremy.lumi.ui.components.LumiThemeSheet
 import com.jeremy.lumi.ui.screens.settings.SettingsViewModel
 import com.jeremy.lumi.ui.theme.AmbientScreen
@@ -182,24 +183,13 @@ fun InsightsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        LumiBrandFlower(size = 22)
-                        Text(
-                            text = "lumi",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-1.2).sp,
-                            color = tokens.text
-                        )
-                        Text(
-                            text = "✦",
-                            fontSize = 14.sp,
-                            color = tokens.accent
-                        )
-                    }
+                    LumiBrandLockup(
+                        flowerSize = 22,
+                        fontSize = 22.sp,
+                        starSize = 14.sp,
+                        letterSpacing = (-1.2).sp,
+                        animated = true
+                    )
 
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),

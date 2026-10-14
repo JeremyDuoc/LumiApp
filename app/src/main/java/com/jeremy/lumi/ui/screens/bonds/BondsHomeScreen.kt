@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import com.jeremy.lumi.ui.components.LumiBrandLockup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -233,26 +234,13 @@ private fun BondsTopHeader(
                 )
             }
             Spacer(modifier = Modifier.width(4.dp))
-            Box(
-                modifier = Modifier
-                    .size(26.dp)
-                    .clip(CircleShape)
-                    .background(
-                        Brush.linearGradient(
-                            listOf(
-                                BondsTheme.Peach,
-                                BondsTheme.Blush,
-                                BondsTheme.Lavender
-                            )
-                        )
-                    )
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Lumi",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = BondsTheme.DeepNavy
+            LumiBrandLockup(
+                flowerSize = 22,
+                fontSize = 21.sp,
+                starSize = 13.sp,
+                letterSpacing = (-1.2).sp,
+                textColor = BondsTheme.DeepNavy,
+                animated = true
             )
         }
 
