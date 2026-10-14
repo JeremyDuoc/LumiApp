@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -793,7 +794,7 @@ private fun StepCycle(
         ChoiceCard(
             title = "No estoy segura",
             subtitle = "Prefiero empezar sin suponer.",
-            icon = Icons.Rounded.HelpOutline,
+            icon = Icons.AutoMirrored.Rounded.HelpOutline,
             selected = regularityChoice == "unknown",
             onClick = { onSelectRegularity("unknown") }
         )

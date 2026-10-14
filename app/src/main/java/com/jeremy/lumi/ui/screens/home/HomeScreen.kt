@@ -195,7 +195,7 @@ fun HomeScreen(
     }
 
     // Color de acento para AURA: usa el color armónico de la fase actual
-    val currentAuraColor: Color? = if (uiState.currentPhase != CyclePhase.UNKNOWN && uiState.currentPhase != null) {
+    val currentAuraColor: Color? = if (uiState.currentPhase != CyclePhase.UNKNOWN) {
         homePhaseColor(uiState.currentPhase)
     } else null
 

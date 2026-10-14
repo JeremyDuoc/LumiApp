@@ -30,9 +30,9 @@ import androidx.compose.material.icons.rounded.CloudUpload
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.ExpandMore
-import androidx.compose.material.icons.rounded.HelpOutline
+import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material.icons.rounded.Logout
+import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Visibility
@@ -506,7 +506,7 @@ private fun ConnectedCard(
                 )
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.Logout,
+                    imageVector = Icons.AutoMirrored.Rounded.Logout,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp)
                 )
@@ -633,7 +633,7 @@ private fun HowItWorksSection() {
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    imageVector = Icons.Rounded.HelpOutline,
+                    imageVector = Icons.AutoMirrored.Rounded.HelpOutline,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
@@ -734,7 +734,7 @@ private fun BackupDialogs(uiState: BackupUiState, viewModel: BackupViewModel) {
 
         BackupDialog.ConfirmDisconnect -> AlertDialog(
             onDismissRequest = viewModel::dismissDialog,
-            icon = { Icon(Icons.Rounded.Logout, contentDescription = null) },
+            icon = { Icon(Icons.AutoMirrored.Rounded.Logout, contentDescription = null) },
             title = { Text(stringResource(R.string.backup_disconnect_confirm_title)) },
             text = { Text(stringResource(R.string.backup_disconnect_confirm_desc)) },
             confirmButton = {

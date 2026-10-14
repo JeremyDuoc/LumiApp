@@ -42,7 +42,7 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material.icons.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.PictureAsPdf
 import androidx.compose.material.icons.rounded.Thermostat
@@ -1687,7 +1687,7 @@ private fun SectionAcompanamiento(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text("Preparar mi visita", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            Icon(Icons.Rounded.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(14.dp))
                         }
                     }
                 }
@@ -1718,7 +1718,7 @@ private fun SectionAcompanamiento(
                         Text("Guardar resumen como PDF", fontSize = 11.sp, color = tokens.text)
                     }
                 }
-                Icon(imageVector = Icons.Rounded.KeyboardArrowRight, contentDescription = null, tint = tokens.muted, modifier = Modifier.size(15.dp))
+                Icon(imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = tokens.muted, modifier = Modifier.size(15.dp))
             }
         }
 
