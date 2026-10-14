@@ -94,7 +94,9 @@ fun HomeScreen(
     onNavigateToSettings: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
     remindersViewModel: RemindersViewModel = hiltViewModel(),
-    settingsViewModel: SettingsViewModel = hiltViewModel()
+    settingsViewModel: SettingsViewModel = hiltViewModel(),
+    quickLogViewModel: QuickLogViewModel = hiltViewModel(),
+    partnerViewModel: PartnerViewModel = hiltViewModel()
 ) {
     val uiState           by viewModel.uiState.collectAsStateWithLifecycle()
     var showBalloonGame   by remember { mutableStateOf(false) }
@@ -112,22 +114,12 @@ fun HomeScreen(
     }
 
     val activeReminders by remindersViewModel.activeReminders.collectAsStateWithLifecycle()
-    val quickLogViewModel: QuickLogViewModel = hiltViewModel()
     val todayLog by quickLogViewModel.todayLog.collectAsStateWithLifecycle()
     val hasEntry = todayLog != null
 
-    var lastSyncedPrediction by remember { mutableStateOf<CyclePrediction?>(null) }
-    var lastSyncedRemindersHash by remember { androidx.compose.runtime.mutableIntStateOf(0) }
-
-    LaunchedEffect(uiState.prediction, activeReminders) {
-        val currentRemindersHash = activeReminders.hashCode()
-        if (uiState.prediction != null && 
-            (uiState.prediction != lastSyncedPrediction || currentRemindersHash != lastSyncedRemindersHash)) {
-            
-            remindersViewModel.syncCycleReminders(uiState.prediction!!)
-            lastSyncedPrediction = uiState.prediction
-            lastSyncedRemindersHash = currentRemindersHash
-        }
+    LaunchedEffect(uiState.prediction) {
+        val prediction = uiState.prediction ?: return@LaunchedEffect
+        remindersViewModel.syncCycleReminders(prediction)
     }
 
     LaunchedEffect(quickLogViewModel) {
@@ -169,39 +161,36 @@ fun HomeScreen(
 
     // Sheet para ver ciclo de un vínculo (para usuarios normales)
     var linkedSheetLink by remember { mutableStateOf<PartnerLink?>(null) }
-    val partnerViewModel: PartnerViewModel = hiltViewModel()
     val partnerUiState by partnerViewModel.uiState.collectAsStateWithLifecycle()
 
-    if (uiState.homeMode == HomeMode.OBSERVER_GATE) {
-        ObserverGateScreen(onNavigateToPartner = onNavigateToPartner)
-        HugAnimationOverlay(visible = uiState.showHugAnimation)
-        return
-    }
-
-    if (uiState.homeMode == HomeMode.OBSERVER_HOME) {
-        val activeLink = uiState.linkedCycles.firstOrNull()
-        if (activeLink != null) {
-            ObserverScreen(
-                link = activeLink,
-                currentUid = partnerUiState.currentUid ?: "",
-                uiState = partnerUiState,
-                onSendCareAction = { action -> partnerViewModel.sendCareAction(activeLink.linkId, action) },
-                onUnlink = { partnerViewModel.unlink(activeLink.linkId) },
-                onBack = {}
-            )
-            HugAnimationOverlay(visible = uiState.showHugAnimation)
-            return
+    when (uiState.homeMode) {
+        HomeMode.OBSERVER_GATE -> {
+            ObserverGateScreen(onNavigateToPartner = onNavigateToPartner)
         }
-    }
+        HomeMode.OBSERVER_HOME -> {
+            val activeLink = uiState.linkedCycles.firstOrNull()
+            if (activeLink != null) {
+                ObserverScreen(
+                    link = activeLink,
+                    currentUid = partnerUiState.currentUid ?: "",
+                    uiState = partnerUiState,
+                    onSendCareAction = { action -> partnerViewModel.sendCareAction(activeLink.linkId, action) },
+                    onUnlink = { partnerViewModel.unlink(activeLink.linkId) },
+                    onBack = {}
+                )
+            } else {
+                ObserverGateScreen(onNavigateToPartner = onNavigateToPartner)
+            }
+        }
+        HomeMode.NORMAL -> {
+            // Color de acento para AURA: usa el color armónico de la fase actual
+            val currentAuraColor: Color? = if (uiState.currentPhase != CyclePhase.UNKNOWN) {
+                homePhaseColor(uiState.currentPhase)
+            } else null
 
-    // Color de acento para AURA: usa el color armónico de la fase actual
-    val currentAuraColor: Color? = if (uiState.currentPhase != CyclePhase.UNKNOWN) {
-        homePhaseColor(uiState.currentPhase)
-    } else null
+            val homeScrollState = rememberScrollState()
 
-    val homeScrollState = rememberScrollState()
-
-    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+            Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         AmbientBackgroundLayer(
             screenType           = AmbientScreen.HOME,
             accentColor          = currentAuraColor,
@@ -482,7 +471,6 @@ fun HomeScreen(
 
         if (showBalloonGame) BalloonGameSheet { showBalloonGame = false }
         if (showQuickLogSheet) {
-            val todayLog by quickLogViewModel.todayLog.collectAsStateWithLifecycle()
             val activeCategories by quickLogViewModel.activeCategories.collectAsStateWithLifecycle()
 
             DailyLogSheet(
@@ -511,6 +499,8 @@ fun HomeScreen(
                 onSendCareAction = { action -> partnerViewModel.sendCareAction(link.linkId, action) },
                 onDismiss = { linkedSheetLink = null }
             )
+        }
+    }
         }
     }
 

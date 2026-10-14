@@ -150,11 +150,13 @@ class RemindersViewModel @Inject constructor(
                 val triggerMillis = AlarmScheduler.epochMillisAt(
                     prediction.nextPeriodDate.minusDays(2), reminder.hourOfDay, reminder.minute
                 )
-                repository.updateNextTrigger(reminder.id, triggerMillis)
-                try {
-                    AlarmScheduler.schedule(application, reminder.copy(nextTriggerAt = triggerMillis))
-                } catch (e: Exception) {
-                    _errorFlow.emit(application.getString(R.string.error_schedule_alarm, e.message ?: ""))
+                if (reminder.nextTriggerAt != triggerMillis) {
+                    repository.updateNextTrigger(reminder.id, triggerMillis)
+                    try {
+                        AlarmScheduler.schedule(application, reminder.copy(nextTriggerAt = triggerMillis))
+                    } catch (e: Exception) {
+                        _errorFlow.emit(application.getString(R.string.error_schedule_alarm, e.message ?: ""))
+                    }
                 }
             }
 
@@ -163,7 +165,7 @@ class RemindersViewModel @Inject constructor(
                     val triggerMillis = AlarmScheduler.epochMillisAt(
                         prediction.nextOvulationDate.minusDays(1), reminder.hourOfDay, reminder.minute
                     )
-                    if (triggerMillis > 0) {
+                    if (triggerMillis > 0 && reminder.nextTriggerAt != triggerMillis) {
                         repository.updateNextTrigger(reminder.id, triggerMillis)
                         try {
                             AlarmScheduler.schedule(application, reminder.copy(nextTriggerAt = triggerMillis))
@@ -178,11 +180,13 @@ class RemindersViewModel @Inject constructor(
                 val triggerMillis = AlarmScheduler.epochMillisAt(
                     prediction.nextPeriodDate.minusDays(3), reminder.hourOfDay, reminder.minute
                 )
-                repository.updateNextTrigger(reminder.id, triggerMillis)
-                try {
-                    AlarmScheduler.schedule(application, reminder.copy(nextTriggerAt = triggerMillis))
-                } catch (e: Exception) {
-                    _errorFlow.emit(application.getString(R.string.error_schedule_alarm, e.message ?: ""))
+                if (reminder.nextTriggerAt != triggerMillis) {
+                    repository.updateNextTrigger(reminder.id, triggerMillis)
+                    try {
+                        AlarmScheduler.schedule(application, reminder.copy(nextTriggerAt = triggerMillis))
+                    } catch (e: Exception) {
+                        _errorFlow.emit(application.getString(R.string.error_schedule_alarm, e.message ?: ""))
+                    }
                 }
             }
         }

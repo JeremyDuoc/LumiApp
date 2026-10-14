@@ -69,6 +69,8 @@ import java.time.ZoneId
 import java.util.Date
 import java.util.Locale
 
+private val MARKDOWN_TOKEN_REGEX = Regex("""(\*\*(.+?)\*\*|\*(.+?)\*)""")
+
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  CHAT SCREEN
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -338,23 +340,6 @@ private fun LumiChatTopBar(thread: String, onBack: (() -> Unit)?) {
     val subtitleText = if (thread == "lumi") stringResource(R.string.chat_status_online) else stringResource(R.string.chat_subtitle_history)
     val iconVector = if (thread == "lumi") Icons.Rounded.AutoAwesome else Icons.Rounded.Notifications
 
-    // Respiración suave del avatar
-    val infiniteAnim = rememberInfiniteTransition(label = "avatar_breath")
-    val avatarScale  by infiniteAnim.animateFloat(
-        initialValue    = 0.97f,
-        targetValue     = 1.03f,
-        animationSpec   = infiniteRepeatable(tween(2800, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label           = "avatar_scale"
-    )
-    val glowAlpha by infiniteAnim.animateFloat(
-        initialValue  = 0.20f,
-        targetValue   = 0.55f,
-        animationSpec = infiniteRepeatable(tween(2400, easing = LinearEasing), RepeatMode.Reverse),
-        label         = "glow_alpha"
-    )
-
-
-
     CenterAlignedTopAppBar(
         navigationIcon = {
             if (onBack != null) {
@@ -497,19 +482,27 @@ private fun AnimatedDayLabel(label: String) {
 
 @Composable
 private fun AnimatedChatBubble(message: ChatMessageEntity) {
-    val alpha  = remember(message.id) { Animatable(0f) }
-    val offset = remember(message.id) { Animatable(18f) }
-
-    LaunchedEffect(message.id) {
-        launch { alpha.animateTo(1f, tween(420, easing = FastOutSlowInEasing)) }
-        launch { offset.animateTo(0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow)) }
+    val isRecent = remember(message.id) {
+        System.currentTimeMillis() - message.timestamp < 3500
     }
+    if (isRecent) {
+        val alpha  = remember(message.id) { Animatable(0f) }
+        val offset = remember(message.id) { Animatable(18f) }
 
-    Box(
-        Modifier
-            .alpha(alpha.value)
-            .graphicsLayer { translationY = offset.value.dp.toPx() }
-    ) {
+        LaunchedEffect(message.id) {
+            launch { alpha.animateTo(1f, tween(350, easing = FastOutSlowInEasing)) }
+            launch { offset.animateTo(0f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow)) }
+        }
+
+        Box(
+            Modifier.graphicsLayer {
+                this.alpha = alpha.value
+                translationY = offset.value.dp.toPx()
+            }
+        ) {
+            PremiumChatBubble(message)
+        }
+    } else {
         PremiumChatBubble(message)
     }
 }
@@ -527,21 +520,6 @@ private fun PremiumChatBubble(message: ChatMessageEntity) {
         ChatMessageType.SUPPLY_REMINDER,
         ChatMessageType.METHOD_REMINDER,
         ChatMessageType.CUSTOM
-    )
-
-    // ── Pulso del indicador "visto" ──────────────────────────────────────
-    val infiniteAnim  = rememberInfiniteTransition(label = "seen_pulse")
-    val seenGlowAlpha by infiniteAnim.animateFloat(
-        initialValue  = 0.25f,
-        targetValue   = 0.85f,
-        animationSpec = infiniteRepeatable(tween(1600, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label         = "seen_glow"
-    )
-    val seenScale by infiniteAnim.animateFloat(
-        initialValue  = 0.85f,
-        targetValue   = 1.15f,
-        animationSpec = infiniteRepeatable(tween(1600, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label         = "seen_scale"
     )
 
     Row(
@@ -631,9 +609,8 @@ private fun PremiumChatBubble(message: ChatMessageEntity) {
                         Box(
                             Modifier
                                 .size(6.dp)
-                                .scale(seenScale)
                                 .clip(CircleShape)
-                                .background(primary.copy(alpha = seenGlowAlpha))
+                                .background(primary.copy(alpha = 0.55f))
                         )
                     }
                 }
@@ -758,7 +735,7 @@ private fun parseMarkdownToAnnotatedString(
     val processedText = lines.joinToString("\n")
 
     return buildAnnotatedString {
-        val tokenRegex = Regex("""(\*\*(.+?)\*\*|\*(.+?)\*)""")
+        val tokenRegex = MARKDOWN_TOKEN_REGEX
         var lastIndex = 0
 
         for (match in tokenRegex.findAll(processedText)) {

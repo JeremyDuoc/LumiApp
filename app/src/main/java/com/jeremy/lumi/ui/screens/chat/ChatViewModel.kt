@@ -83,6 +83,50 @@ class ChatViewModel @Inject constructor(
                 val activeCycle = cycles.find { it.endDate == null }
                 val closedCycles = cycles.filter { it.endDate != null }.sortedByDescending { it.startDate }
 
+                if (isChatEmpty) {
+                    val welcomeMsg = if (activeCycle != null) {
+                        val startDate = Instant.ofEpochMilli(activeCycle.startDate)
+                            .atZone(ZoneId.of("UTC")).toLocalDate()
+
+                        val cycleLen = if (closedCycles.size >= 3) {
+                            CyclePredictor.weightedAverageCycleLength(closedCycles).toInt().coerceIn(15, 60)
+                        } else {
+                            activeCycle.cycleLength.coerceAtLeast(15)
+                        }
+                        val periodLen = activeCycle.periodLength.coerceAtLeast(1)
+                        val isOnContraceptive = onboardingPrefs.isOnContraceptiveFlow.first()
+
+                        val prediction = CyclePredictor.predict(
+                            startDate = startDate,
+                            cycleLength = cycleLen,
+                            periodLength = periodLen,
+                            closedCycles = closedCycles,
+                            isOnContraceptive = isOnContraceptive
+                        )
+
+                        // ── INYECCIÓN DE MENSAJE DE BIENVENIDA CONTEXTUAL ──
+                        val welcomeCtx = CycleContext(
+                            phase = prediction.currentPhase,
+                            dayOfCycle = prediction.currentDayOfCycle,
+                            dayOfPhase = prediction.dayOfPhase,
+                            daysUntilPeriod = 0, daysUntilOvulation = 0, cycleLength = cycleLen, isLate = false, delayDays = 0
+                        )
+                        rulesEngine.generateWelcomeMessage(welcomeCtx)
+                    } else {
+                        context.getString(R.string.chat_empty_welcome)
+                    }
+
+                    chatDao.insertMessage(
+                        ChatMessageEntity(
+                            text = welcomeMsg,
+                            messageType = ChatMessageType.GREETING,
+                            timestamp = System.currentTimeMillis()
+                        )
+                    )
+                    chatPrefs.setLastInsightDate(LocalDate.now().toString())
+                    return@withContext
+                }
+
                 if (activeCycle != null) {
                     val startDate = Instant.ofEpochMilli(activeCycle.startDate)
                         .atZone(ZoneId.of("UTC")).toLocalDate()
@@ -102,29 +146,6 @@ class ChatViewModel @Inject constructor(
                         closedCycles = closedCycles,
                         isOnContraceptive = isOnContraceptive
                     )
-
-                    if (isChatEmpty) {
-                        // ── INYECCIÓN DE MENSAJE DE BIENVENIDA CONTEXTUAL ──
-                        // Crear un contexto simulado solo con la fase para el saludo
-                        val welcomeCtx = CycleContext(
-                            phase = prediction.currentPhase,
-                            dayOfCycle = prediction.currentDayOfCycle,
-                            dayOfPhase = prediction.dayOfPhase,
-                            daysUntilPeriod = 0, daysUntilOvulation = 0, cycleLength = cycleLen, isLate = false, delayDays = 0
-                        )
-                        val welcomeMsg = rulesEngine.generateWelcomeMessage(welcomeCtx)
-                        
-                        chatDao.insertMessage(
-                            ChatMessageEntity(
-                                text = welcomeMsg,
-                                messageType = ChatMessageType.GREETING,
-                                timestamp = System.currentTimeMillis()
-                            )
-                        )
-                        // Marcamos el insight de hoy como visto para no saturar
-                        chatPrefs.setLastInsightDate(LocalDate.now().toString())
-                        return@withContext
-                    }
 
                     // Lógica normal de Insights Diarios
                     val todayStr = LocalDate.now().toString()
@@ -204,43 +225,49 @@ class ChatViewModel @Inject constructor(
      * Persiste tanto la pregunta como la respuesta en Room.
      */
     fun askQuestion(question: ChatQuestion) {
+        if (_isTyping.value) return
         val ctx = rulesEngine.currentCycleContext.value
         _askedQuestions.value = _askedQuestions.value + question
+        _isTyping.value = true
+
         viewModelScope.launch {
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                // Insertar la pregunta como mensaje del usuario
-                chatDao.insertMessage(
-                    ChatMessageEntity(
-                        text        = context.getString(question.displayTextRes),
-                        messageType = ChatMessageType.USER,
-                        timestamp   = System.currentTimeMillis()
+            try {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    // Insertar la pregunta como mensaje del usuario
+                    chatDao.insertMessage(
+                        ChatMessageEntity(
+                            text        = context.getString(question.displayTextRes),
+                            messageType = ChatMessageType.USER,
+                            timestamp   = System.currentTimeMillis()
+                        )
                     )
-                )
-            }
-            
-            // Simular indicador de escritura de Lumi
-            _isTyping.value = true
-            kotlinx.coroutines.delay(750)
-            
-            val recentLogs = try {
-                repository.getAllLogs(descending = true).firstOrNull() ?: emptyList()
-            } catch (e: Exception) {
-                emptyList()
-            }
+                }
 
-            // Generar respuesta estructurada y clínicamente validada
-            val answer = smartChatEngine.generateAnswerForQuestion(question, ctx, recentLogs)
+                // Simular indicador de escritura de Lumi
+                kotlinx.coroutines.delay(750)
 
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                chatDao.insertMessage(
-                    ChatMessageEntity(
-                        text        = answer,
-                        messageType = ChatMessageType.GREETING,
-                        timestamp   = System.currentTimeMillis()
+                val recentLogs = try {
+                    repository.getAllLogs(descending = true).firstOrNull() ?: emptyList()
+                } catch (e: Exception) {
+                    if (e is kotlinx.coroutines.CancellationException) throw e
+                    emptyList()
+                }
+
+                // Generar respuesta estructurada y clínicamente validada
+                val answer = smartChatEngine.generateAnswerForQuestion(question, ctx, recentLogs)
+
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    chatDao.insertMessage(
+                        ChatMessageEntity(
+                            text        = answer,
+                            messageType = ChatMessageType.GREETING,
+                            timestamp   = System.currentTimeMillis()
+                        )
                     )
-                )
+                }
+            } finally {
+                _isTyping.value = false
             }
-            _isTyping.value = false
         }
     }
 
@@ -251,42 +278,47 @@ class ChatViewModel @Inject constructor(
     fun sendUserMessage(text: String) {
         val trimmed = text.trim()
         if (trimmed.isBlank() || _isTyping.value) return
+        _isTyping.value = true
 
         viewModelScope.launch {
-            // 1. Insertar el mensaje del usuario de inmediato en la base de datos
-            val userMsg = ChatMessageEntity(
-                text = trimmed,
-                messageType = ChatMessageType.USER,
-                timestamp = System.currentTimeMillis()
-            )
-            chatDao.insertMessage(userMsg)
+            try {
+                // 1. Insertar el mensaje del usuario de inmediato en la base de datos
+                val userMsg = ChatMessageEntity(
+                    text = trimmed,
+                    messageType = ChatMessageType.USER,
+                    timestamp = System.currentTimeMillis()
+                )
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    chatDao.insertMessage(userMsg)
+                }
 
-            // 2. Activar indicador de "Lumi está escribiendo..."
-            _isTyping.value = true
+                // 2. Obtener contexto del ciclo actual y registros recientes
+                val ctx = rulesEngine.currentCycleContext.value
+                val recentLogs = try {
+                    repository.getAllLogs(descending = true).firstOrNull() ?: emptyList()
+                } catch (e: Exception) {
+                    if (e is kotlinx.coroutines.CancellationException) throw e
+                    emptyList()
+                }
 
-            // 3. Obtener contexto del ciclo actual y registros recientes
-            val ctx = rulesEngine.currentCycleContext.value
-            val recentLogs = try {
-                repository.getAllLogs(descending = true).firstOrNull() ?: emptyList()
-            } catch (e: Exception) {
-                emptyList()
+                // 3. Pausa de realismo conversacional
+                kotlinx.coroutines.delay(850)
+
+                // 4. Generar respuesta contextual con el motor clínico inteligente
+                val responseText = smartChatEngine.generateResponse(trimmed, ctx, recentLogs)
+
+                // 5. Guardar la respuesta de Lumi en Room
+                val lumiMsg = ChatMessageEntity(
+                    text = responseText,
+                    messageType = ChatMessageType.GREETING,
+                    timestamp = System.currentTimeMillis()
+                )
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    chatDao.insertMessage(lumiMsg)
+                }
+            } finally {
+                _isTyping.value = false
             }
-
-            // 4. Pausa de realismo conversacional
-            kotlinx.coroutines.delay(850)
-
-            // 5. Generar respuesta contextual con el motor clínico inteligente
-            val responseText = smartChatEngine.generateResponse(trimmed, ctx, recentLogs)
-
-            // 6. Guardar la respuesta de Lumi en Room
-            val lumiMsg = ChatMessageEntity(
-                text = responseText,
-                messageType = ChatMessageType.GREETING,
-                timestamp = System.currentTimeMillis()
-            )
-            chatDao.insertMessage(lumiMsg)
-
-            _isTyping.value = false
         }
     }
 

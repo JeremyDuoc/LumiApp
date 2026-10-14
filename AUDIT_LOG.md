@@ -75,8 +75,32 @@
   - `BackupPreferenceManager.kt` & `ChatPreferenceManager.kt`: Reubicadas las claves estáticas de DataStore en sus respectivos `companion object`.
 
 ### 6. `ui/screens` & `ui/viewmodel` (Fugas de memoria, ciclo de vida y Compose Recomposition)
-*Auditoría en curso...*
+- **Estado:** ✅ APROBADO Y OPTIMIZADO (`BUILD SUCCESSFUL in 1m 8s`, 124 tests unitarios pasados `testDebugUnitTest in 53s`).
+- **Archivos Auditados y Optimizados:**
+  - `ChatViewModel.kt`, `ChatScreen.kt`
+  - `HomeViewModel.kt`, `HomeScreen.kt`, `RemindersViewModel.kt`
+- **Bugs Críticos y Cuellos de Botella Erradicados:**
+  - `ChatViewModel.kt`:
+    - **Protección contra bloqueo permanente de escritura:** Envuelto el ciclo de vida del indicador `_isTyping` en bloques `try-finally { _isTyping.value = false }`, evitando que fallos inesperados o cancelaciones de corrutina dejen el chat bloqueado indefinidamente.
+    - **Prevención de carreras de pulsación doble:** Se conmuta `_isTyping.value = true` de manera síncrona en el hilo principal antes de lanzar `viewModelScope.launch`, rechazando envíos concurrentes duplicados.
+    - **Re-lanzamiento de CancellationException:** Se propaga `CancellationException` de corrutinas para respetar la cancelación estructural de Kotlin.
+    - **Mensaje de bienvenida inicial robusto:** Si el chat está vacío y aún no existe un ciclo activo cargado, se emite un mensaje de bienvenida contextual y empático en lugar de fallar silenciosamente.
+  - `ChatScreen.kt`:
+    - **Eliminación de bucle infinito de recomposición:** Removido el pulsador continuo `rememberInfiniteTransition` dentro de cada burbuja `PremiumChatBubble`, eliminando recomposiciones permanentes a 60/120 FPS en el hilo de UI.
+    - **Solución al parpadeo de reciclaje en LazyColumn:** Restringida la animación de entrada en `AnimatedChatBubble` a mensajes con antigüedad menor a 3.5 segundos (`System.currentTimeMillis() - message.timestamp < 3500`), previniendo saltos y re-animaciones molestas al desplazarse por el historial.
+    - **Micro-optimizaciones de parsing:** Centralizada la expresión regular de tokens markdown `MARKDOWN_TOKEN_REGEX` en nivel superior como `Regex`, evitando recompilaciones de Regex en cada frame o mensaje.
+  - `HomeViewModel.kt`:
+    - **Cancelación de carreras de carga:** Implementado `loadCycleJob?.cancel()` para evitar ejecuciones concurrentes desordenadas de `loadCurrentCycle()` disparadas simultáneamente por cambios en reloj, embarazo o anticonceptivos.
+    - **Offload de cálculo pesado a segundo plano:** Reubicados el mapeo del timeline continuo de 112 días (`weekDays`) y el cálculo estadístico de factores de predicción a `withContext(Dispatchers.Default)`, liberando el hilo principal de caídas de frames al navegar al Home.
+    - **Limpieza de dependencias y código muerto:** Removida dependencia no utilizada `aiPredictor: LumiAIPredictor` del constructor e importación; eliminado método residual de depuración `generateRandomSymptomsForToday()`.
+  - `RemindersViewModel.kt` & `HomeScreen.kt`:
+    - **Ruptura de bucle infinito de invalidación de Room:** En `RemindersViewModel.syncCycleReminders()`, agregado un guard de verificación `if (reminder.nextTriggerAt != triggerMillis)` antes de invocar `repository.updateNextTrigger()`, eliminando escrituras innecesarias en SQLite y re-programaciones redundantes del `AlarmScheduler`.
+    - **Desacoplamiento de claves en HomeScreen:** Simplificado `LaunchedEffect(uiState.prediction)` para que dependa exclusivamente del objeto de predicción y no de hashes volátiles de la lista de recordatorios activos.
+    - **Elevación de ViewModels (Hoisting):** Promovidos `quickLogViewModel` y `partnerViewModel` como parámetros con valores por defecto de la función composable `HomeScreen`, erradicando llamadas directas a `hiltViewModel()` dentro del cuerpo o ramas de la pantalla.
+    - **Estructuración limpia de navegación:** Reemplazados los retornos tempranos (`return` en Compose) por una expresión idiomática exhaustiva `when (uiState.homeMode) { NORMAL, OBSERVER_GATE, OBSERVER_HOME }`.
+    - **Eliminación de subscripción duplicada:** Removida la doble recolección de `todayLog` dentro de `showQuickLogSheet`, reutilizando el estado recolectado en el nivel superior.
 
 ---
+
 
 

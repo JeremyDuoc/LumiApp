@@ -2,7 +2,6 @@ package com.jeremy.lumi.ui.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.jeremy.lumi.ai.LumiAIPredictor
 import com.jeremy.lumi.domain.model.CyclePhase
 import com.jeremy.lumi.domain.model.PartnerLink
 import com.jeremy.lumi.domain.repository.LumiRepository
@@ -52,7 +51,6 @@ class HomeViewModel @Inject constructor(
     private val repository       : LumiRepository,
     private val prefsManager     : OnboardingPreferenceManager,
     private val partnerRepository: com.jeremy.lumi.domain.repository.PartnerRepository,
-    private val aiPredictor      : LumiAIPredictor,
     private val rulesEngine      : LumiRulesEngine,
     private val healthConnectManager: com.jeremy.lumi.data.health.HealthConnectManager,
     private val widgetUpdater    : com.jeremy.lumi.ui.widget.WidgetUpdater,
@@ -83,6 +81,7 @@ class HomeViewModel @Inject constructor(
 
     private var lastSeenHugTimestamps = java.util.concurrent.ConcurrentHashMap<String, Long>()
     private var hugAnimationJob: Job? = null
+    private var loadCycleJob: Job? = null
 
     // ── Cache para recálculo dinámico al tocar días del timeline ───────────
     private var cachedStartDate: LocalDate? = null
@@ -314,7 +313,8 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun loadCurrentCycle(isPregnant: Boolean = _uiState.value.isPregnant) {
-        viewModelScope.launch {
+        loadCycleJob?.cancel()
+        loadCycleJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
             val cycle = repository.getCurrentActiveCycle()
@@ -365,94 +365,98 @@ class HomeViewModel @Inject constructor(
 
                 val today = LumiClock.today()
                 val currentSelected = _uiState.value.selectedDate
-
-                // Timeline continuo alineado por semanas completas (Lunes a Domingo):
-                // 4 semanas atrás (~28 días) + 12 semanas adelante (~84 días), total 16 semanas completas (112 días)
-                val startMonday = today.minusWeeks(4).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-                val endSunday = today.plusWeeks(12).with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
-                val totalDays = ChronoUnit.DAYS.between(startMonday, endSunday) + 1
-
-                val weekDays = (0 until totalDays).map { offset ->
-                    val date = startMonday.plusDays(offset)
-                    val (phase, isPrediction) = CyclePredictor.phaseForDateInActiveCycle(
-                        startDate = startDate,
-                        cycleLength = cycleLen,
-                        periodLength = periodLen,
-                        date = date,
-                        today = today,
-                        isPregnant = _uiState.value.isPregnant,
-                        isOnContraceptive = isOnContraceptive
-                    )
-                    val isToday = date == today
-                    val isSelected = (currentSelected != null && date == currentSelected) || (currentSelected == null && isToday)
-                    CycleDayUi(
-                        date = date,
-                        dayOfMonth = date.dayOfMonth,
-                        weekdayLabel = date.dayOfWeek
-                            .getDisplayName(TextStyle.SHORT, Locale("es"))
-                            .replaceFirstChar { it.uppercase() },
-                        phase = phase,
-                        isToday = isToday,
-                        isPrediction = isPrediction,
-                        isSelected = isSelected
-                    )
-                }
-
-                val activePrediction = if (currentSelected != null && currentSelected != today) {
-                    CyclePredictor.predict(
-                        startDate = startDate,
-                        cycleLength = cycleLen,
-                        periodLength = periodLen,
-                        today = currentSelected,
-                        closedCycles = closedCycles,
-                        isPregnant = isPregnant,
-                        isOnContraceptive = isOnContraceptive,
-                        effectiveCycleLength = cycleLen,
-                        predictionConfidence = effectiveResult.aiConfidence
-                    )
-                } else {
-                    prediction
-                }
-
-                // ── Factores de predicción honestos ("Basado en:") ───────────
-                val stdDev = activePrediction.predictedCycleLengthStdDev
-                val regScore = if (closedCycles.isEmpty()) {
-                    75
-                } else {
-                    ((1f - (stdDev.coerceIn(0.5f, 6.0f) / 7.5f)) * 100f).coerceIn(45f, 98f).toInt()
-                }
-
-                val histScore = when (closedCycles.size) {
-                    0    -> 35
-                    1    -> 55
-                    2    -> 72
-                    3    -> 85
-                    else -> 96
-                }
-
                 val allLogs = repository.getAllLogs(descending = true).firstOrNull() ?: emptyList()
-                val currentCycleLogs = allLogs.filter { it.dailyLog.date >= cycle.startDate }
-                val daysWithSymptoms = currentCycleLogs.count { it.symptoms.isNotEmpty() || it.dailyLog.mood != null }
-                val currentDayCoerced = activePrediction.currentDayOfCycle.coerceAtLeast(1)
-                val sympScore = ((daysWithSymptoms.toFloat() / currentDayCoerced) * 100f).coerceIn(25f, 95f).toInt()
 
-                val confLabel = when {
-                    activePrediction.predictionConfidenceIndex >= 0.70f -> "Certeza alta"
-                    activePrediction.predictionConfidenceIndex >= 0.45f -> "Certeza moderada"
-                    else                                                 -> "En calibración"
+                val (weekDays, activePrediction, factors) = withContext(Dispatchers.Default) {
+                    // Timeline continuo alineado por semanas completas (Lunes a Domingo):
+                    // 4 semanas atrás (~28 días) + 12 semanas adelante (~84 días), total 16 semanas completas (112 días)
+                    val startMonday = today.minusWeeks(4).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                    val endSunday = today.plusWeeks(12).with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
+                    val totalDays = ChronoUnit.DAYS.between(startMonday, endSunday) + 1
+
+                    val computedWeekDays = (0 until totalDays).map { offset ->
+                        val date = startMonday.plusDays(offset)
+                        val (phase, isPrediction) = CyclePredictor.phaseForDateInActiveCycle(
+                            startDate = startDate,
+                            cycleLength = cycleLen,
+                            periodLength = periodLen,
+                            date = date,
+                            today = today,
+                            isPregnant = isPregnant,
+                            isOnContraceptive = isOnContraceptive
+                        )
+                        val isToday = date == today
+                        val isSelected = (currentSelected != null && date == currentSelected) || (currentSelected == null && isToday)
+                        CycleDayUi(
+                            date = date,
+                            dayOfMonth = date.dayOfMonth,
+                            weekdayLabel = date.dayOfWeek
+                                .getDisplayName(TextStyle.SHORT, Locale("es"))
+                                .replaceFirstChar { it.uppercase() },
+                            phase = phase,
+                            isToday = isToday,
+                            isPrediction = isPrediction,
+                            isSelected = isSelected
+                        )
+                    }
+
+                    val computedActivePrediction = if (currentSelected != null && currentSelected != today) {
+                        CyclePredictor.predict(
+                            startDate = startDate,
+                            cycleLength = cycleLen,
+                            periodLength = periodLen,
+                            today = currentSelected,
+                            closedCycles = closedCycles,
+                            isPregnant = isPregnant,
+                            isOnContraceptive = isOnContraceptive,
+                            effectiveCycleLength = cycleLen,
+                            predictionConfidence = effectiveResult.aiConfidence
+                        )
+                    } else {
+                        prediction
+                    }
+
+                    // ── Factores de predicción honestos ("Basado en:") ───────────
+                    val stdDev = computedActivePrediction.predictedCycleLengthStdDev
+                    val regScore = if (closedCycles.isEmpty()) {
+                        75
+                    } else {
+                        ((1f - (stdDev.coerceIn(0.5f, 6.0f) / 7.5f)) * 100f).coerceIn(45f, 98f).toInt()
+                    }
+
+                    val histScore = when (closedCycles.size) {
+                        0    -> 35
+                        1    -> 55
+                        2    -> 72
+                        3    -> 85
+                        else -> 96
+                    }
+
+                    val currentCycleLogs = allLogs.filter { it.dailyLog.date >= cycle.startDate }
+                    val daysWithSymptoms = currentCycleLogs.count { it.symptoms.isNotEmpty() || it.dailyLog.mood != null }
+                    val currentDayCoerced = computedActivePrediction.currentDayOfCycle.coerceAtLeast(1)
+                    val sympScore = ((daysWithSymptoms.toFloat() / currentDayCoerced) * 100f).coerceIn(25f, 95f).toInt()
+
+                    val confLabel = when {
+                        computedActivePrediction.predictionConfidenceIndex >= 0.70f -> "Certeza alta"
+                        computedActivePrediction.predictionConfidenceIndex >= 0.45f -> "Certeza moderada"
+                        else                                                         -> "En calibración"
+                    }
+
+                    val marginFormatted = if (stdDev <= 0.1f) "±1.5 d" 
+                                          else "±${String.format(java.util.Locale.US, "%.1f", stdDev.coerceAtLeast(1.0f))} d"
+
+                    val computedFactors = PredictionFactorsUi(
+                        regularityScore = regScore,
+                        historyScore = histScore,
+                        symptomsScore = sympScore,
+                        cycleCount = closedCycles.size,
+                        confidenceLabel = confLabel,
+                        marginDaysText = marginFormatted
+                    )
+
+                    Triple(computedWeekDays, computedActivePrediction, computedFactors)
                 }
-
-                val marginFormatted = if (stdDev <= 0.1f) "±1.5 d" 
-                                      else "±${String.format(java.util.Locale.US, "%.1f", stdDev.coerceAtLeast(1.0f))} d"
-
-                val factors = PredictionFactorsUi(
-                    regularityScore = regScore,
-                    historyScore = histScore,
-                    symptomsScore = sympScore,
-                    cycleCount = closedCycles.size,
-                    confidenceLabel = confLabel,
-                    marginDaysText = marginFormatted
-                )
 
                 _uiState.update {
                     it.copy(
@@ -639,28 +643,6 @@ class HomeViewModel @Inject constructor(
                     repository.saveDailyLogWithSymptoms(updatedLog, existingLog.symptoms)
                 }
             }
-        }
-    }
-
-    fun generateRandomSymptomsForToday() {
-        viewModelScope.launch {
-            val todayDate = LumiClock.today()
-            val todayMillis = todayDate.atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
-            val activeCycle = repository.getCurrentActiveCycle() ?: return@launch
-
-            val moods = listOf("Feliz", "Sensible", "Triste", "Irritado")
-            val randomMood = moods.random()
-            val randomPain = (1..10).random()
-            
-            val log = com.jeremy.lumi.data.local.entity.DailyLogEntity(
-                cycleId = activeCycle.id,
-                date = todayMillis,
-                mood = randomMood,
-                painLevel = randomPain,
-                energyLevel = (1..5).random(),
-                sleepHours = (4..9).random().toFloat()
-            )
-            repository.saveDailyLogWithSymptoms(log, emptyList())
         }
     }
 
