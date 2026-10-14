@@ -19,6 +19,7 @@ import androidx.compose.material.icons.outlined.EditCalendar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,18 +56,18 @@ fun LumiTodayCard(
     }
 
     val buttonText = if (hasEntry) "Ver mi registro" else "Registrar mi día"
+    val cardGradient = remember(tokens.panel, tokens.panel2) {
+        Brush.linearGradient(listOf(tokens.panel, tokens.panel2))
+    }
+    val cardShape = remember { RoundedCornerShape(24.dp) }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(
-                Brush.linearGradient(
-                    listOf(tokens.panel, tokens.panel2)
-                )
-            )
-            .border(1.dp, tokens.line, RoundedCornerShape(24.dp))
+            .clip(cardShape)
+            .background(cardGradient)
+            .border(1.dp, tokens.line, cardShape)
             .padding(18.dp)
     ) {
         // Marca de agua decorativa ✳

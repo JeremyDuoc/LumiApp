@@ -1,11 +1,13 @@
 package com.jeremy.lumi.ui.screens.home
 
+import androidx.compose.runtime.Immutable
 import com.jeremy.lumi.data.local.entity.CycleEntity
 import com.jeremy.lumi.domain.model.CyclePhase
 import com.jeremy.lumi.domain.model.PartnerLink
 import com.jeremy.lumi.domain.usecase.CyclePrediction
 import com.jeremy.lumi.domain.usecase.DelayState
 
+@Immutable
 data class HomeUiState(
     val isLoading            : Boolean          = true,
     val activeCycle          : CycleEntity?     = null,
@@ -44,6 +46,7 @@ data class HomeUiState(
     val predictionFactors    : PredictionFactorsUi? = null
 )
 
+@Immutable
 data class PredictionFactorsUi(
     val regularityScore: Int,      // 0-100%
     val historyScore: Int,         // 0-100%
@@ -53,6 +56,7 @@ data class PredictionFactorsUi(
     val marginDaysText: String     // e.g. "±1.5 días"
 )
 
+@Immutable
 data class CycleDayUi(
     val date         : java.time.LocalDate,
     val dayOfMonth   : Int,

@@ -41,6 +41,9 @@ import com.jeremy.lumi.ui.theme.LumiThemeTokens
 import kotlin.math.cos
 import kotlin.math.sin
 
+private val DotColor = Color(0xFFF7E8FE)
+private val DotAuraColor = Color(0xFFF7E8FE).copy(alpha = 0.35f)
+
 /**
  * Aro de visualización del ciclo menstrual aprobado en el prototipo interactivo Lumi.
  *
@@ -74,6 +77,8 @@ fun LumiCycleRing(
         progressAnim.animateTo(rawProgress, animationSpec = tween(durationMillis = 900))
     }
 
+    val glowColors = remember(tokens.glow) { listOf(tokens.glow, tokens.glow.copy(alpha = 0f)) }
+
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -94,7 +99,7 @@ fun LumiCycleRing(
                 // 0. Resplandor radial suave circular (elimina el artefacto cuadrado en GPUs físicas)
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(tokens.glow, tokens.glow.copy(alpha = 0f)),
+                        colors = glowColors,
                         center = center,
                         radius = (diameter / 2f) + (strokePx * 2f)
                     ),
@@ -130,13 +135,13 @@ fun LumiCycleRing(
 
                 // Aura del dot
                 drawCircle(
-                    color = Color(0xFFF7E8FE).copy(alpha = 0.35f),
+                    color = DotAuraColor,
                     radius = strokePx * 0.75f,
                     center = Offset(dotX, dotY)
                 )
                 // Centro del dot
                 drawCircle(
-                    color = Color(0xFFF7E8FE),
+                    color = DotColor,
                     radius = strokePx * 0.45f,
                     center = Offset(dotX, dotY)
                 )

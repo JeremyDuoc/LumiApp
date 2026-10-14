@@ -43,6 +43,8 @@ import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
 
+private val SpanishLocale = Locale("es")
+
 /**
  * Tira semanal continua de días aprobada en el prototipo interactivo Lumi.
  *
@@ -102,12 +104,14 @@ fun LumiWeekStrip(
     val isDateOtherThanTodaySelected = selectedDate != null && !selectedDate.isEqual(today)
     val showReturnToToday = !isViewingCurrentWeek || isDateOtherThanTodaySelected
 
+    val dayShape = remember { RoundedCornerShape(16.dp) }
+
     val weekMonthLabel = remember(currentWeek) {
         if (currentWeek.isEmpty()) ""
         else {
             val firstDay = currentWeek.first().date
             val lastDay = currentWeek.last().date
-            val locale = Locale("es")
+            val locale = SpanishLocale
             if (firstDay.month == lastDay.month) {
                 val m = firstDay.month.getDisplayName(TextStyle.FULL, locale).replaceFirstChar { it.uppercase() }
                 "$m ${firstDay.year}"
@@ -260,7 +264,7 @@ fun LumiWeekStrip(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(dayShape)
                             .background(if (isDaySelected) tokens.accentSoft else Color.Transparent)
                             .border(
                                 width = 1.dp,
@@ -269,7 +273,7 @@ fun LumiWeekStrip(
                                     isDayToday -> tokens.accent.copy(alpha = 0.35f)
                                     else -> Color.Transparent
                                 },
-                                shape = RoundedCornerShape(16.dp)
+                                shape = dayShape
                             )
                             .clickable { onSelectDate(day.date) }
                             .padding(vertical = 8.dp),

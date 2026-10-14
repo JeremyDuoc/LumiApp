@@ -1,5 +1,13 @@
 package com.jeremy.lumi.ui.components
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,30 +29,33 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.animation.core.*
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
- * Logotipo orgánico de la flor de Lumi con degradado cónico multicolor y animación viva.
- * Conforme al prototipo HTML Lumi_Onboarding_Logo_Contextual_v3:
- * - RoundRect con 4 radios asimétricos
- * - Inclinación base de -25° con suave respiración orgánica
- * - Aura radial suave de destello
+ * Flor con contorno orgánico, color en movimiento y luz suave.
+ * Las fases se leen al dibujar para evitar recomponer la cabecera en cada frame.
  */
 @Composable
 fun LumiBrandFlower(
@@ -52,90 +63,106 @@ fun LumiBrandFlower(
     size: Int = 20,
     animated: Boolean = true
 ) {
-    val colors = listOf(
-        Color(0xFFE9B3C4),
-        Color(0xFFD4B3ED),
-        Color(0xFFA8D1C9),
-        Color(0xFFF5CCAA),
-        Color(0xFFE9B3C4)
-    )
+    val colors = remember {
+        listOf(
+            Color(0xFFE9B3C4),
+            Color(0xFFD4B3ED),
+            Color(0xFFA8D1C9),
+            Color(0xFFF5CCAA),
+            Color(0xFFE9B3C4)
+        )
+    }
 
     val infiniteTransition = if (animated) rememberInfiniteTransition(label = "flower_anim") else null
-    val flowerScale = infiniteTransition?.animateFloat(
-        initialValue = 1.0f,
-        targetValue = 1.038f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2950, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "flower_scale"
-    )?.value ?: 1.0f
-
-    val rotationOffset = infiniteTransition?.animateFloat(
+    val organicPhase = infiniteTransition?.animateFloat(
         initialValue = 0f,
-        targetValue = 1.8f,
+        targetValue = (2 * PI).toFloat(),
         animationSpec = infiniteRepeatable(
-            animation = tween(2950, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
+            animation = tween(8000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
         ),
-        label = "flower_rotation"
-    )?.value ?: 0f
+        label = "flower_organic_phase"
+    )
 
-    val glowAlpha = infiniteTransition?.animateFloat(
-        initialValue = 0.35f,
-        targetValue = 0.85f,
+    val gradientRotation = infiniteTransition?.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2950, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
+            animation = tween(7000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
         ),
-        label = "flower_glow"
-    )?.value ?: 0.5f
+        label = "flower_gradient_rotation"
+    )
+    val path = remember { Path() }
 
     Box(
         modifier = modifier.size(size.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Aura suave de fondo (Glow)
-        if (animated) {
-            Box(
-                modifier = Modifier
-                    .size((size * 1.35f).dp)
-                    .alpha(glowAlpha)
-                    .background(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0x44D3AEF0),
-                                Color(0x18D6B0E9),
-                                Color.Transparent
-                            )
-                        ),
-                        shape = CircleShape
-                    )
-            )
-        }
+        Canvas(modifier = Modifier.size(size.dp)) {
+            val phase = organicPhase?.value ?: 0f
+            val breath = if (animated) sin(phase * 2f) else 0f
+            val sway = if (animated) sin(phase) else 0f
+            val morph = if (animated) sin(phase + 0.8f) * 0.09f else 0f
+            val width = this.size.width
+            val height = this.size.height
 
-        Canvas(
-            modifier = Modifier
-                .size(size.dp)
-                .scale(flowerScale)
-                .rotate(-25f + rotationOffset)
-        ) {
-            val sweepBrush = Brush.sweepGradient(colors)
-            val path = Path().apply {
+            if (animated) {
+                val glowCenter = center + Offset(width * sway * 0.12f, -height * 0.08f)
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        0f to Color(0xFFD4B3ED).copy(alpha = 0.28f + 0.10f * breath),
+                        0.5f to Color(0xFFE9B3C4).copy(alpha = 0.14f),
+                        1f to Color.Transparent,
+                        center = glowCenter,
+                        radius = width * (0.82f + 0.04f * breath)
+                    ),
+                    radius = width * (0.82f + 0.04f * breath),
+                    center = glowCenter
+                )
+            }
+
+            path.reset()
+            path.apply {
                 addRoundRect(
                     RoundRect(
                         left = 0f,
                         top = 0f,
-                        right = this@Canvas.size.width,
-                        bottom = this@Canvas.size.height,
-                        topLeftCornerRadius = CornerRadius(this@Canvas.size.width * 0.45f, this@Canvas.size.height * 0.55f),
-                        topRightCornerRadius = CornerRadius(this@Canvas.size.width * 0.65f, this@Canvas.size.height * 0.40f),
-                        bottomRightCornerRadius = CornerRadius(this@Canvas.size.width * 0.55f, this@Canvas.size.height * 0.65f),
-                        bottomLeftCornerRadius = CornerRadius(this@Canvas.size.width * 0.40f, this@Canvas.size.height * 0.50f)
+                        right = width,
+                        bottom = height,
+                        topLeftCornerRadius = CornerRadius(width * (0.45f + morph), height * (0.55f - morph)),
+                        topRightCornerRadius = CornerRadius(width * (0.65f - morph), height * (0.40f + morph)),
+                        bottomRightCornerRadius = CornerRadius(width * (0.55f + morph), height * (0.65f - morph)),
+                        bottomLeftCornerRadius = CornerRadius(width * (0.40f - morph), height * (0.50f + morph))
                     )
                 )
             }
-            drawPath(path = path, brush = sweepBrush)
+            // Color rotates inside the silhouette, independently of its gentle sway.
+            // Amplitudes remain legible even in the 21 dp header mark.
+            translate(left = width * sway * 0.025f, top = height * sway * 0.075f) {
+                rotate(-25f + sway * 12f) {
+                    scale(1f + breath * 0.09f, 1f - breath * 0.055f) {
+                        clipPath(path) {
+                            rotate(gradientRotation?.value ?: 0f) {
+                                drawCircle(Brush.sweepGradient(colors, center), radius = width)
+                            }
+                            val lightCenter = Offset(
+                                width * (0.32f + sway * 0.20f),
+                                height * (0.28f + if (animated) cos(phase) * 0.16f else 0f)
+                            )
+                            drawCircle(
+                                brush = Brush.radialGradient(
+                                    colors = listOf(Color.White.copy(alpha = 0.22f), Color.Transparent),
+                                    center = lightCenter,
+                                    radius = width * 0.75f
+                                ),
+                                radius = width,
+                                center = center
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -160,35 +187,21 @@ fun LumiBrandLockup(
     animated: Boolean = true
 ) {
     val infiniteTransition = if (animated) rememberInfiniteTransition(label = "brand_lockup_twinkle") else null
-    val starScale = infiniteTransition?.animateFloat(
-        initialValue = 0.82f,
-        targetValue = 1.16f,
+    val starTwinkle = infiniteTransition?.animateFloat(
+        initialValue = 0f,
+        targetValue = 0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
+            animation = keyframes {
+                durationMillis = 6200
+                0f at 0 using FastOutSlowInEasing
+                1f at 900 using FastOutSlowInEasing
+                0f at 2100
+                0f at 6200
+            },
+            repeatMode = RepeatMode.Restart
         ),
-        label = "star_scale"
-    )?.value ?: 1f
-
-    val starAlpha = infiniteTransition?.animateFloat(
-        initialValue = 0.46f,
-        targetValue = 1.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "star_alpha"
-    )?.value ?: 1f
-
-    val starRotation = infiniteTransition?.animateFloat(
-        initialValue = -10f,
-        targetValue = 8f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "star_rot"
-    )?.value ?: 0f
+        label = "star_twinkle"
+    )
 
     Row(
         modifier = modifier,
@@ -210,9 +223,13 @@ fun LumiBrandLockup(
                 fontSize = starSize,
                 color = starColor,
                 modifier = Modifier
-                    .scale(starScale)
-                    .alpha(starAlpha)
-                    .rotate(starRotation)
+                    .graphicsLayer {
+                        val twinkle = starTwinkle?.value ?: 0f
+                        scaleX = 1f + twinkle * 0.16f
+                        scaleY = scaleX
+                        alpha = if (animated) 0.72f + twinkle * 0.28f else 1f
+                        rotationZ = twinkle * 12f
+                    }
             )
         }
     }
