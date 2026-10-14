@@ -63,7 +63,7 @@
 
 ### 5. `data/preferences` & `data/backup` (Seguridad, Concurrencia y Robustez)
 - **Estado:** ✅ APROBADO Y BLINDADO (`BUILD SUCCESSFUL in 1m 14s`, 124 tests unitarios pasados `testDebugUnitTest in 1m 6s`).
-- **Commit:** Pendiente
+- **Commit:** `f417eae` - `fix(data): harden DataStore I/O, sync sqlite_sequence on restore, and enforce cryptographic constraints`
 - **Vulnerabilidades y Bugs Críticos Corregidos:**
   - `ThemePreferenceManager.kt`: Resuelto bug crítico de truncado donde `selectedThemeFlow` forzaba `NOIR` en más de 30 temas visuales de la app; y `selectedPhasePaletteFlow` eliminaba la paleta `CUSTOM` impidiendo la personalización de colores de fase.
   - `ThemePreferenceManager.kt`, `OnboardingPreferenceManager.kt`, `ChatPreferenceManager.kt`, `BackupPreferenceManager.kt`, `LanguagePreferenceManager.kt`: Implementado `safeData` mediante `.catch { if (it is IOException) emit(emptyPreferences()) else throw it }` en más de 30 flujos de DataStore, blindando la app frente a crashes por corrupción o fallos de lectura I/O en almacenamiento.
