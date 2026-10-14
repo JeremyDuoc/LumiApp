@@ -24,30 +24,20 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("Boolean", "USE_FIREBASE_EMULATOR", "false")
+            buildConfigField("String", "FIREBASE_PROJECT_ID", "\"lumi-7c924\"")
+            buildConfigField("String", "EMULATOR_HOST", "\"\"")
+        }
         release {
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-        }
-    }
-
-    flavorDimensions += "environment"
-    productFlavors {
-        create("prod") {
-            dimension = "environment"
             buildConfigField("Boolean", "USE_FIREBASE_EMULATOR", "false")
             buildConfigField("String", "FIREBASE_PROJECT_ID", "\"lumi-7c924\"")
             buildConfigField("String", "EMULATOR_HOST", "\"\"")
-        }
-        create("local") {
-            dimension = "environment"
-            applicationIdSuffix = ".local"
-            versionNameSuffix = "-local"
-            buildConfigField("Boolean", "USE_FIREBASE_EMULATOR", "true")
-            buildConfigField("String", "FIREBASE_PROJECT_ID", "\"demo-lumi-bonds\"")
-            buildConfigField("String", "EMULATOR_HOST", "\"10.0.2.2\"")
         }
     }
 
