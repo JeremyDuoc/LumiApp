@@ -63,6 +63,7 @@ data class BondMember(
 
 data class BondsUiState(
     val isLoading: Boolean = true,
+    val isDemoMode: Boolean = false,
     val members: List<BondMember> = emptyList(),
     val selectedMember: BondMember? = null,
     val pendingInviteCode: String? = null,
@@ -104,10 +105,13 @@ class BondsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(BondsUiState())
     val uiState: StateFlow<BondsUiState> = _uiState.asStateFlow()
 
+    private var realMembers: List<BondMember> = emptyList()
+
     init {
         loadInitialUserSession()
         observeBondsCircle()
         observeUserPreferences()
+        observeDemoMode()
     }
 
     private fun loadInitialUserSession() {
@@ -183,7 +187,13 @@ class BondsViewModel @Inject constructor(
                     )
                 }
 
-                val resolvedMembers = memberList
+                realMembers = memberList
+                val isDemo = _uiState.value.isDemoMode
+                val resolvedMembers = if (isDemo) {
+                    BondsPreviewFixtures.sampleMembers
+                } else {
+                    memberList
+                }
 
                 _uiState.update { current ->
                     val prevSelectedId = current.selectedMember?.linkId
@@ -196,6 +206,34 @@ class BondsViewModel @Inject constructor(
                     )
                 }
             }
+        }
+    }
+
+    private fun observeDemoMode() {
+        viewModelScope.launch {
+            prefsManager.bondsDemoModeFlow.collect { isDemo ->
+                _uiState.update { current ->
+                    val resolvedMembers = if (isDemo) {
+                        BondsPreviewFixtures.sampleMembers
+                    } else {
+                        realMembers
+                    }
+                    val selected = resolvedMembers.find { it.linkId == current.selectedMember?.linkId }
+                        ?: resolvedMembers.firstOrNull()
+                    current.copy(
+                        isDemoMode = isDemo,
+                        members = resolvedMembers,
+                        selectedMember = selected
+                    )
+                }
+            }
+        }
+    }
+
+    fun toggleDemoMode(enable: Boolean? = null) {
+        val target = enable ?: !_uiState.value.isDemoMode
+        viewModelScope.launch {
+            prefsManager.setBondsDemoMode(target)
         }
     }
 
@@ -243,6 +281,17 @@ class BondsViewModel @Inject constructor(
         message: String? = null,
         onSuccess: () -> Unit = {}
     ) {
+        if (_uiState.value.isDemoMode) {
+            _uiState.update {
+                it.copy(
+                    isSendingGesture = false,
+                    lastGestureSent = action
+                )
+            }
+            onSuccess()
+            return
+        }
+
         if (_uiState.value.isCooldownActive) {
             _uiState.update { it.copy(errorMessage = "Debes esperar a que termine el tiempo de enfriamiento.") }
             return
@@ -353,6 +402,19 @@ class BondsViewModel @Inject constructor(
      * Actualiza la privacidad específica para un vínculo determinado.
      */
     fun updateLinkPrivacy(linkId: String, privacy: SharePreferences) {
+        if (_uiState.value.isDemoMode) {
+            _uiState.update { current ->
+                val updated = current.members.map { m ->
+                    if (m.linkId == linkId) m.copy(mySharePrefs = privacy) else m
+                }
+                val updatedSelected = if (current.selectedMember?.linkId == linkId) {
+                    current.selectedMember.copy(mySharePrefs = privacy)
+                } else current.selectedMember
+                current.copy(members = updated, selectedMember = updatedSelected)
+            }
+            return
+        }
+
         viewModelScope.launch {
             try {
                 partnerRepository.updateMyPrivacy(linkId, privacy)
@@ -376,6 +438,18 @@ class BondsViewModel @Inject constructor(
      * Desvincula una persona específica sin alterar los demás vínculos.
      */
     fun unlinkMember(linkId: String, onFinished: () -> Unit = {}) {
+        if (_uiState.value.isDemoMode) {
+            _uiState.update { current ->
+                val remaining = current.members.filter { it.linkId != linkId }
+                current.copy(
+                    members = remaining,
+                    selectedMember = remaining.firstOrNull()
+                )
+            }
+            onFinished()
+            return
+        }
+
         viewModelScope.launch {
             try {
                 partnerRepository.unlink(linkId)

@@ -6,8 +6,8 @@ const { initializeTestEnvironment, assertSucceeds, assertFails } = require('@fir
 const { doc, setDoc, updateDoc, getDoc } = require('firebase/firestore');
 
 // Módulo real de producción de Cloud Functions
-process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8180';
-process.env.GCLOUD_PROJECT = 'demo-lumi-e2e-test';
+process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
+process.env.GCLOUD_PROJECT = 'demo-lumi-bonds';
 
 const functionsModule = require('../../functions/index.js');
 const { redeemBondsInvitationCore, revokeBondsLinkCore } = functionsModule._core;
@@ -25,10 +25,10 @@ const invDocRef = (uid, code) =>
 
 before(async () => {
   env = await initializeTestEnvironment({
-    projectId: 'demo-lumi-e2e-test',
+    projectId: 'demo-lumi-bonds',
     firestore: {
       host: '127.0.0.1',
-      port: 8180,
+      port: 8080,
       rules: readFileSync(path.join(__dirname, '../../firestore.rules'), 'utf8')
     }
   });

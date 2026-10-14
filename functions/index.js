@@ -221,6 +221,9 @@ async function revokeBondsLinkCore({ db, callerUid, data = {} }) {
 
 // ── 3. Migración Idempotente de Consentimiento Heredado (Core Logic) ──────────
 async function migrateLegacyConsentCore({ db, callerUid, data = {} }) {
+  if (!callerUid) {
+    throw new HttpsError("unauthenticated", "Se requiere una sesión autenticada para migrar vínculos.");
+  }
   const { linkId } = data;
   const now = Date.now();
 
@@ -232,7 +235,7 @@ async function migrateLegacyConsentCore({ db, callerUid, data = {} }) {
         throw new HttpsError("not-found", "El vínculo no existe.");
       }
       const val = doc.data();
-      if (callerUid && val.ownerUid !== callerUid && val.partnerUid !== callerUid) {
+      if (val.ownerUid !== callerUid && val.partnerUid !== callerUid) {
         throw new HttpsError("permission-denied", "No autorizado para migrar este vínculo.");
       }
 
@@ -346,10 +349,13 @@ exports.revokeBondsLink = onCall(
 exports.migrateLegacyBondsConsent = onCall(
   { cors: true },
   async (request) => {
+    if (!request.auth?.uid) {
+      throw new HttpsError("unauthenticated", "Se requiere una sesión autenticada para migrar vínculos.");
+    }
     const db = getFirestore();
     return migrateLegacyConsentCore({
       db,
-      callerUid: request.auth?.uid,
+      callerUid: request.auth.uid,
       data: request.data || {}
     });
   }

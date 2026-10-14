@@ -5,6 +5,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.AggregateSource
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.messaging.FirebaseMessaging
 import com.jeremy.lumi.data.remote.partner.toCareActionStatus
 import com.jeremy.lumi.data.remote.partner.toDiaryEntry
@@ -49,6 +50,7 @@ import javax.inject.Singleton
 class PartnerRepositoryImpl @Inject constructor(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
+    private val functions: FirebaseFunctions,
     private val messaging: FirebaseMessaging
 ) : PartnerRepository {
 
@@ -219,7 +221,6 @@ class PartnerRepositoryImpl @Inject constructor(
         val cleanCode = code.trim()
 
         // 1. Canje atómico en servidor mediante Cloud Function (P0-3 y SEC-NEW-01)
-        val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
         val payload = hashMapOf(
             "code" to cleanCode,
             "partnerDisplayName" to displayName,
@@ -331,7 +332,6 @@ class PartnerRepositoryImpl @Inject constructor(
     override suspend fun unlink(linkId: String) {
         val uid = getCurrentUid() ?: return
         try {
-            val functions = com.google.firebase.functions.FirebaseFunctions.getInstance()
             functions.getHttpsCallable("revokeBondsLink")
                 .call(mapOf("linkId" to linkId))
                 .await()
@@ -439,9 +439,13 @@ class PartnerRepositoryImpl @Inject constructor(
         firestore.collection(LINKS).document(linkId).get().await().toPartnerLink()
 
     private suspend fun fetchFcmTokenOrNull(): String? = try {
-        messaging.token.await()
+        if (com.jeremy.lumi.BuildConfig.USE_FIREBASE_EMULATOR) {
+            "mock-fcm-token-local"
+        } else {
+            messaging.token.await()
+        }
     } catch (e: Exception) {
         Log.w(TAG, "No se pudo obtener el token FCM: ${e.message}")
-        null
+        if (com.jeremy.lumi.BuildConfig.USE_FIREBASE_EMULATOR) "mock-fcm-token-local" else null
     }
 }

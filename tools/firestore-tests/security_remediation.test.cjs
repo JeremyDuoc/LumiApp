@@ -46,10 +46,10 @@ const invDocRef = (uid, code = '88776655') =>
 
 before(async () => {
   env = await initializeTestEnvironment({
-    projectId: 'demo-lumi-remediation-test',
+    projectId: 'demo-lumi-bonds',
     firestore: {
       host: '127.0.0.1',
-      port: 8180,
+      port: 8080,
       rules: readFileSync(path.join(__dirname, '../../firestore.rules'), 'utf8')
     }
   });

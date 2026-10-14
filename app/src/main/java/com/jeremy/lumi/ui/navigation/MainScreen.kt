@@ -216,6 +216,7 @@ fun AppNavGraph() {
                 },
                 onOpenPairingPrivacy = { rootNavController.navigate(AppRoutes.BONDS_PAIRING) },
                 onOpenSharedCalendar = { rootNavController.navigate(AppRoutes.BONDS_SHARED_CALENDAR) },
+                onToggleDemoMode = { bondsViewModel.toggleDemoMode() },
                 onNavigateBack = { rootNavController.popBackStack() }
             )
         }
@@ -237,6 +238,7 @@ fun AppNavGraph() {
                 },
                 onOpenPairingPrivacy = { rootNavController.navigate(AppRoutes.BONDS_PAIRING) },
                 onOpenSharedCalendar = { rootNavController.navigate(AppRoutes.BONDS_SHARED_CALENDAR) },
+                onToggleDemoMode = { bondsViewModel.toggleDemoMode() },
                 onNavigateBack = { rootNavController.popBackStack() }
             )
         }
@@ -287,12 +289,13 @@ fun AppNavGraph() {
 
             val bondsViewModel: BondsViewModel = hiltViewModel()
             val uiState by bondsViewModel.uiState.collectAsStateWithLifecycle()
-            val recipient = uiState.members.find { it.linkId == linkIdParam } ?: uiState.selectedMember
+            val allMembers = if (uiState.members.isNotEmpty()) uiState.members else if (uiState.isDemoMode) BondsPreviewFixtures.sampleMembers else emptyList()
+            val recipient = allMembers.find { it.linkId == linkIdParam } ?: uiState.selectedMember ?: allMembers.firstOrNull()
 
             BondsSendGestureScreen(
                 initialAction = action,
                 recipient = recipient,
-                allMembers = uiState.members,
+                allMembers = allMembers,
                 isSending = uiState.isSendingGesture,
                 onSend = { linkId, careAction, message, onComplete ->
                     bondsViewModel.sendGesture(linkId, careAction, message, onComplete)
@@ -304,9 +307,10 @@ fun AppNavGraph() {
         composable(route = AppRoutes.BONDS_SHARED_CALENDAR) {
             val bondsViewModel: BondsViewModel = hiltViewModel()
             val uiState by bondsViewModel.uiState.collectAsStateWithLifecycle()
+            val members = if (uiState.members.isNotEmpty()) uiState.members else if (uiState.isDemoMode) BondsPreviewFixtures.sampleMembers else emptyList()
 
             BondsSharedCalendarScreen(
-                members = uiState.members,
+                members = members,
                 onNavigateBack = { rootNavController.popBackStack() }
             )
         }
@@ -315,7 +319,7 @@ fun AppNavGraph() {
             val linkId = backStackEntry.arguments?.getString("linkId") ?: return@composable
             val bondsViewModel: BondsViewModel = hiltViewModel()
             val uiState by bondsViewModel.uiState.collectAsStateWithLifecycle()
-            val member = uiState.members.find { it.linkId == linkId }
+            val member = uiState.members.find { it.linkId == linkId } ?: BondsPreviewFixtures.sampleMembers.find { it.linkId == linkId }
 
             if (member != null) {
                 BondsPersonDetailScreen(
@@ -507,6 +511,7 @@ fun MainScreen(
                                 onOpenSendGesture = { member, action -> onOpenBondsSendGesture(member?.linkId ?: "", action.name) },
                                 onOpenPairingPrivacy = onOpenBondsPairing,
                                 onOpenSharedCalendar = onOpenBondsSharedCalendar,
+                                onToggleDemoMode = { bondsViewModel.toggleDemoMode() },
                                 onNavigateBack = {
                                     coroutineScope.launch { pagerState.animateScrollToPage(0) }
                                 }

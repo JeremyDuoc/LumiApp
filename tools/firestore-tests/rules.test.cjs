@@ -14,8 +14,8 @@ const pending = {
 const ref = uid => doc(env.authenticatedContext(uid).firestore(), 'partner_links/link');
 before(async () => {
   env = await initializeTestEnvironment({
-    projectId: 'demo-lumi-audit', firestore: {
-      host: '127.0.0.1', port: 8180,
+    projectId: 'demo-lumi-bonds', firestore: {
+      host: '127.0.0.1', port: 8080,
       rules: readFileSync(path.join(__dirname, '../../firestore.rules'), 'utf8')
     }
   });

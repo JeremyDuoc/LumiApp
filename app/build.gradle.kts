@@ -32,6 +32,25 @@ android {
             )
         }
     }
+
+    flavorDimensions += "environment"
+    productFlavors {
+        create("prod") {
+            dimension = "environment"
+            buildConfigField("Boolean", "USE_FIREBASE_EMULATOR", "false")
+            buildConfigField("String", "FIREBASE_PROJECT_ID", "\"lumi-7c924\"")
+            buildConfigField("String", "EMULATOR_HOST", "\"\"")
+        }
+        create("local") {
+            dimension = "environment"
+            applicationIdSuffix = ".local"
+            versionNameSuffix = "-local"
+            buildConfigField("Boolean", "USE_FIREBASE_EMULATOR", "true")
+            buildConfigField("String", "FIREBASE_PROJECT_ID", "\"demo-lumi-bonds\"")
+            buildConfigField("String", "EMULATOR_HOST", "\"10.0.2.2\"")
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -42,6 +61,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     sourceSets {
         getByName("androidTest").assets.srcDir("$projectDir/schemas")

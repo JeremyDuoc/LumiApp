@@ -2,8 +2,8 @@ const { before, after, beforeEach, test } = require('node:test');
 const assert = require('node:assert/strict');
 
 // Configuración de Admin SDK contra el Firestore Emulator local
-process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8180';
-process.env.GCLOUD_PROJECT = 'demo-lumi-cf-test';
+process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
+process.env.GCLOUD_PROJECT = 'demo-lumi-bonds';
 
 // Importar DIRECTAMENTE el módulo real de producción de Cloud Functions
 const functionsModule = require('../../functions/index.js');

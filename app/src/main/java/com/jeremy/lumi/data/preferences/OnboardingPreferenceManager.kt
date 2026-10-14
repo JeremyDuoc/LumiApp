@@ -55,6 +55,7 @@ class OnboardingPreferenceManager @Inject constructor(
         private val SHARE_PREDICTIONS_KEY = booleanPreferencesKey("share_predictions")
         private val SHARE_MOOD_KEY = booleanPreferencesKey("share_mood")
         private val SHARE_SYMPTOMS_KEY = booleanPreferencesKey("share_symptoms")
+        private val BONDS_DEMO_MODE_KEY = booleanPreferencesKey("bonds_demo_mode")
 
         // --- Perfil físico (opcional, para calibración IA local) ---
         private val USER_AGE_KEY            = intPreferencesKey("user_age")
@@ -79,6 +80,16 @@ class OnboardingPreferenceManager @Inject constructor(
         dataStore.edit { prefs -> 
             prefs[ONBOARDING_DONE_KEY] = true 
             prefs[IS_OBSERVER_ONLY_KEY] = isObserver
+        }
+    }
+
+    /** Modo Demostración de Bonds: permite explorar la interfaz con datos de ejemplo sin vincular */
+    val bondsDemoModeFlow: Flow<Boolean> = dataStore.data
+        .map { prefs -> prefs[BONDS_DEMO_MODE_KEY] ?: false }
+
+    suspend fun setBondsDemoMode(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[BONDS_DEMO_MODE_KEY] = enabled
         }
     }
 

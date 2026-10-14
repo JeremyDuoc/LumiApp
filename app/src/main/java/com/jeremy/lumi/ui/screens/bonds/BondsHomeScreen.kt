@@ -34,6 +34,7 @@ import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.PersonOutline
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.QrCode
 import androidx.compose.material.icons.rounded.Security
@@ -45,6 +46,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -86,6 +88,7 @@ fun BondsHomeScreen(
     onOpenSendGesture: (BondMember?, CareAction) -> Unit,
     onOpenPairingPrivacy: () -> Unit,
     onOpenSharedCalendar: () -> Unit,
+    onToggleDemoMode: () -> Unit = {},
     onNavigateBack: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
@@ -95,6 +98,8 @@ fun BondsHomeScreen(
         containerColor = BondsTheme.WarmBackground,
         topBar = {
             BondsTopHeader(
+                isDemoMode = uiState.isDemoMode,
+                onToggleDemoMode = onToggleDemoMode,
                 onOpenPairing = onOpenPairingPrivacy,
                 onOpenCalendar = onOpenSharedCalendar,
                 onNavigateBack = onNavigateBack
@@ -128,10 +133,25 @@ fun BondsHomeScreen(
                 )
             }
 
+            // ── Banner interactivo de Modo Demostración ───────────────────────────
+            AnimatedVisibility(
+                visible = uiState.isDemoMode,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Column {
+                    Spacer(modifier = Modifier.height(14.dp))
+                    BondsDemoModeBanner(
+                        onExitDemo = onToggleDemoMode
+                    )
+                }
+            }
+
             if (uiState.members.isEmpty()) {
                 Spacer(modifier = Modifier.height(20.dp))
                 BondsEmptyStateView(
-                    onPairClick = onOpenPairingPrivacy
+                    onPairClick = onOpenPairingPrivacy,
+                    onToggleDemoMode = onToggleDemoMode
                 )
             } else {
                 Spacer(modifier = Modifier.height(24.dp))
@@ -205,6 +225,8 @@ fun BondsHomeScreen(
 
 @Composable
 private fun BondsTopHeader(
+    isDemoMode: Boolean = false,
+    onToggleDemoMode: () -> Unit = {},
     onOpenPairing: () -> Unit,
     onOpenCalendar: () -> Unit,
     onNavigateBack: () -> Unit
@@ -258,6 +280,19 @@ private fun BondsTopHeader(
 
         // Iconos de acción a la derecha
         Row(verticalAlignment = Alignment.CenterVertically) {
+            // Acceso rápido a Modo Demostración
+            IconButton(
+                onClick = onToggleDemoMode,
+                modifier = Modifier.size(38.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.AutoAwesome,
+                    contentDescription = if (isDemoMode) "Salir de Modo Demostración" else "Modo Demostración",
+                    tint = if (isDemoMode) BondsTheme.SoftViolet else BondsTheme.DeepNavy.copy(alpha = 0.5f),
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(2.dp))
             IconButton(
                 onClick = onOpenCalendar,
                 modifier = Modifier.size(38.dp)
@@ -269,7 +304,7 @@ private fun BondsTopHeader(
                     modifier = Modifier.size(22.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.width(2.dp))
             IconButton(
                 onClick = onOpenPairing,
                 modifier = Modifier.size(38.dp)
@@ -619,7 +654,10 @@ private fun BondsFeelingCard(
 }
 
 @Composable
-private fun BondsEmptyStateView(onPairClick: () -> Unit) {
+private fun BondsEmptyStateView(
+    onPairClick: () -> Unit,
+    onToggleDemoMode: () -> Unit = {}
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -709,6 +747,33 @@ private fun BondsEmptyStateView(onPairClick: () -> Unit) {
                     )
                 }
 
+                Spacer(modifier = Modifier.height(10.dp))
+
+                OutlinedButton(
+                    onClick = onToggleDemoMode,
+                    shape = BondsTheme.PillShape,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = BondsTheme.SoftViolet
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, BondsTheme.SoftViolet.copy(alpha = 0.6f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(46.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.AutoAwesome,
+                        contentDescription = null,
+                        tint = BondsTheme.SoftViolet,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Explorar modo visual (Demo)",
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
@@ -716,6 +781,69 @@ private fun BondsEmptyStateView(onPairClick: () -> Unit) {
                     fontSize = 11.5.sp,
                     color = BondsTheme.TextTertiary,
                     textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BondsDemoModeBanner(onExitDemo: () -> Unit) {
+    Card(
+        shape = BondsTheme.CardShapeMedium,
+        colors = CardDefaults.cardColors(containerColor = BondsTheme.SoftViolet.copy(alpha = 0.10f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .border(1.dp, BondsTheme.SoftViolet.copy(alpha = 0.35f), BondsTheme.CardShapeMedium)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.AutoAwesome,
+                    contentDescription = null,
+                    tint = BondsTheme.SoftViolet,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Column {
+                    Text(
+                        text = "Modo Demostración activo",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = BondsTheme.DeepNavy
+                    )
+                    Text(
+                        text = "Explorando perfiles de muestra sin vincular dispositivos",
+                        fontSize = 11.sp,
+                        color = BondsTheme.TextSecondary
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            OutlinedButton(
+                onClick = onExitDemo,
+                shape = BondsTheme.PillShape,
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = BondsTheme.SoftViolet
+                ),
+                border = androidx.compose.foundation.BorderStroke(1.dp, BondsTheme.SoftViolet.copy(alpha = 0.6f))
+            ) {
+                Text(
+                    text = "Salir",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
