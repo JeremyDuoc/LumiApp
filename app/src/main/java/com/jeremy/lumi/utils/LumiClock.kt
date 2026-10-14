@@ -28,6 +28,11 @@ object LumiClock {
         return today()
     }
 
+    /**
+     * Retorna el timestamp en milisegundos correspondiente a las 00:00:00 UTC
+     * de la fecha actual de Lumi. Utilizado como clave canónica de partición
+     * para registros diarios en la base de datos Room.
+     */
     fun todayUtcMillis(): Long {
         return today().atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
     }

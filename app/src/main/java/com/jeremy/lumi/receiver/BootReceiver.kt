@@ -3,6 +3,7 @@ package com.jeremy.lumi.receiver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import com.jeremy.lumi.domain.repository.LumiRepository
 import com.jeremy.lumi.reminders.AlarmScheduler
 import dagger.hilt.android.AndroidEntryPoint
@@ -35,6 +36,8 @@ class BootReceiver : BroadcastReceiver() {
                         activeReminders.forEach { reminder ->
                             AlarmScheduler.schedule(context, reminder)
                         }
+                    } catch (e: Exception) {
+                        Log.e("BootReceiver", "Error al reprogramar alarmas tras reinicio: ${e.message}", e)
                     } finally {
                         pendingResult.finish()
                     }

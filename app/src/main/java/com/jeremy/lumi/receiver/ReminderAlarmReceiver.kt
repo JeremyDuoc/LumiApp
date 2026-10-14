@@ -16,8 +16,8 @@ import com.jeremy.lumi.data.local.entity.ReminderEntity
 import com.jeremy.lumi.data.local.entity.ReminderType
 import com.jeremy.lumi.data.local.entity.SupplyType
 import com.jeremy.lumi.domain.repository.LumiRepository
-import com.jeremy.lumi.notifications.LumiNotificationChannel
-import com.jeremy.lumi.notifications.NotificationChannels
+import com.jeremy.lumi.notification.LumiNotificationChannel
+import com.jeremy.lumi.notification.NotificationChannels
 import com.jeremy.lumi.reminders.AlarmScheduler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -77,6 +77,8 @@ class ReminderAlarmReceiver : BroadcastReceiver() {
                     // PERIOD_SOON / OVULATION_SOON / SUPPLY_REMINDER: se reprograman
                     // desde RemindersViewModel.syncCycleReminders(), no aquí.
                 }
+            } catch (e: Exception) {
+                android.util.Log.e("ReminderAlarmReceiver", "Error al procesar recordatorio $reminderId: ${e.message}", e)
             } finally {
                 pendingResult.finish()
             }

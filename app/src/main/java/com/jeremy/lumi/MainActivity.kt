@@ -28,8 +28,12 @@ class MainActivity : ComponentActivity() {
     lateinit var languagePreferenceManager: com.jeremy.lumi.data.preferences.LanguagePreferenceManager
 
     override fun attachBaseContext(newBase: android.content.Context) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            super.attachBaseContext(newBase)
+            return
+        }
         val lang = kotlinx.coroutines.runBlocking {
-            kotlinx.coroutines.withTimeoutOrNull(400) {
+            kotlinx.coroutines.withTimeoutOrNull(200) {
                 com.jeremy.lumi.data.preferences.LanguagePreferenceManager(newBase).getSelectedLanguage()
             } ?: com.jeremy.lumi.data.preferences.LanguagePreferenceManager.SYSTEM_DEFAULT
         }

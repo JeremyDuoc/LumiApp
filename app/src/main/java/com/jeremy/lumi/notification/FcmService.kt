@@ -1,8 +1,10 @@
 package com.jeremy.lumi.notification
 
-import android.app.NotificationChannel
+import android.Manifest
 import android.app.NotificationManager
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -17,6 +19,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -128,29 +131,33 @@ class FcmService : FirebaseMessagingService() {
         }
     }
 
-    private fun showNotification(title: String, body: String) {
-        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    override fun onDestroy() {
+        serviceScope.cancel()
+        super.onDestroy()
+    }
 
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            getString(R.string.pm_notif_channel_name),
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            description = getString(R.string.pm_notif_channel_desc)
+    private fun showNotification(title: String, body: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val granted = checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+                    PackageManager.PERMISSION_GRANTED
+            if (!granted) return
         }
-        manager.createNotificationChannel(channel)
+
+        NotificationChannels.ensureAllChannelsExist(this)
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         val openAppIntent = android.content.Intent(this, com.jeremy.lumi.MainActivity::class.java).apply {
             flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
+        val notifId = (System.currentTimeMillis() % 100000).toInt()
         val pendingIntent = android.app.PendingIntent.getActivity(
             this,
-            System.currentTimeMillis().toInt(),
+            notifId,
             openAppIntent,
             android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(this, LumiNotificationChannel.PARTNER.channelId)
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
@@ -160,6 +167,10 @@ class FcmService : FirebaseMessagingService() {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
-        manager.notify(System.currentTimeMillis().toInt(), notification)
+        try {
+            manager.notify(notifId, notification)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error al mostrar notificación FCM: ${e.message}")
+        }
     }
 }

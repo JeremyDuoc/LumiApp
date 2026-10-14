@@ -1,4 +1,4 @@
-package com.jeremy.lumi.notifications
+package com.jeremy.lumi.notification
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -50,6 +50,14 @@ enum class LumiNotificationChannel(
         nameRes      = R.string.notif_channel_urgent_name,
         descRes      = R.string.notif_channel_urgent_desc,
         soundResName = "pill_alert"
+    ),
+
+    // Canal del Modo Pareja — para detalles y alertas compartidas
+    PARTNER(
+        channelId    = "partner_channel",
+        nameRes      = R.string.pm_notif_channel_name,
+        descRes      = R.string.pm_notif_channel_desc,
+        soundResName = null
     );
 
     companion object {

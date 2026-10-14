@@ -23,11 +23,13 @@ object LocaleHelper {
     fun applyLocale(activity: Activity, languageCode: String) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val localeManager = activity.getSystemService(LocaleManager::class.java)
-            if (languageCode == "system") {
-                localeManager?.applicationLocales = LocaleList.getEmptyLocaleList()
+            val locales = if (languageCode == "system") {
+                LocaleList.getEmptyLocaleList()
             } else {
-                localeManager?.applicationLocales = LocaleList.forLanguageTags(languageCode)
+                LocaleList.forLanguageTags(languageCode)
             }
+            localeManager?.applicationLocales = locales
+            return
         }
 
         val targetLocale = getTargetLocale(languageCode)

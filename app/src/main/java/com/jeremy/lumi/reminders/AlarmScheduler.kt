@@ -53,8 +53,8 @@ object AlarmScheduler {
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
             
-            // Si no dimos una fecha base explícita y la hora ya pasó, pasa al día siguiente
-            if (baseDate == null && before(now)) {
+            // Si la hora ya pasó para esa fecha objetivo, pasa al día siguiente
+            if (before(now)) {
                 add(Calendar.DATE, 1)
             }
         }
@@ -78,17 +78,31 @@ object AlarmScheduler {
 
         if (reminder.nextTriggerAt <= System.currentTimeMillis()) return
 
-        try {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                reminder.nextTriggerAt,
-                pendingIntent
-            )
-        } catch (e: SecurityException) {
-            // Log error or fallback to non-exact alarm.
-            // On Android 14+, the OS can aggressively revoke exact alarm permissions.
+        val canExact = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            alarmManager.canScheduleExactAlarms()
+        } else {
+            true
+        }
+
+        if (canExact) {
             try {
-                alarmManager.set(
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    reminder.nextTriggerAt,
+                    pendingIntent
+                )
+            } catch (e: SecurityException) {
+                try {
+                    alarmManager.setAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        reminder.nextTriggerAt,
+                        pendingIntent
+                    )
+                } catch (ignored: Exception) {}
+            }
+        } else {
+            try {
+                alarmManager.setAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     reminder.nextTriggerAt,
                     pendingIntent

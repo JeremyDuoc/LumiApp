@@ -7,12 +7,8 @@ import com.jeremy.lumi.data.local.entity.closedLengthDays
 import com.jeremy.lumi.domain.usecase.CyclePredictor
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.tensorflow.lite.Interpreter
-import java.io.FileInputStream
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
-import java.time.Instant
-import java.time.ZoneId
-import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.sqrt
@@ -51,8 +47,8 @@ interface CycleAIPredictor {
 }
 
 @Singleton
-class LumiAIPredictor(
-    private val context: Context
+class LumiAIPredictor @Inject constructor(
+    @ApplicationContext private val context: Context
 ) : CycleAIPredictor {
 
     companion object {
@@ -87,6 +83,8 @@ class LumiAIPredictor(
             Log.d(TAG, "Modelo TFLite (11 features) inicializado correctamente.")
         } catch (e: Exception) {
             Log.e(TAG, "Error al inicializar el modelo TFLite: ${e.message}")
+            interpreter?.close()
+            interpreter = null
             isInitialized = false
         }
     }
@@ -242,7 +240,7 @@ class LumiAIPredictor(
 
     private fun loadModelFile(): MappedByteBuffer {
         return context.assets.openFd(MODEL_FILE).use { fd ->
-            FileInputStream(fd.fileDescriptor).use { stream ->
+            fd.createInputStream().use { stream ->
                 stream.channel.map(FileChannel.MapMode.READ_ONLY, fd.startOffset, fd.declaredLength)
             }
         }

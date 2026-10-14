@@ -104,3 +104,37 @@
 
 
 
+
+### 7. Integración con el Sistema, Alarmas, Notificaciones, IA y DI (`reminders`, `receiver`, `notification`, `ai`, `di`, `utils`)
+- **Estado:** ✅ APROBADO Y BLINDADO (`BUILD SUCCESSFUL in 1m 43s`, 124 tests unitarios pasados `testDebugUnitTest in 44s`).
+- **Archivos Auditados y Optimizados:**
+  - `AndroidManifest.xml`
+  - `AlarmScheduler.kt`, `BootReceiver.kt`, `ReminderAlarmReceiver.kt`
+  - `FcmService.kt`, `NotificationChannels.kt`, `LumiApp.kt`
+  - `CyclePredictor.kt` (ai), `AIModule.kt`, `AppModule.kt`
+  - `LocaleHelper.kt`, `MainActivity.kt`, `LumiClock.kt`
+- **Bugs Críticos y Optimizaciones de Plataforma:**
+  - `AndroidManifest.xml`: Exportado explícitamente `BootReceiver` con `android:exported="true"`, garantizando que el sistema operativo (`system_server`) entregue los broadcasts `BOOT_COMPLETED`, `MY_PACKAGE_REPLACED` y `SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED`, previniendo la pérdida total silenciosa de alarmas tras reiniciar el dispositivo.
+  - `AlarmScheduler.kt`:
+    - **Verificación proactiva de alarmas exactas:** Verificado `canScheduleExactAlarms()` en Android 12+ (API 31+) antes de invocar `setExactAndAllowWhileIdle()`, evitando caídas por `SecurityException` no controlada.
+    - **Fallback de Doze Mode:** Reemplazado `alarmManager.set(...)` por `setAndAllowWhileIdle(...)` en el fallback sin permiso exacto, garantizando que recordatorios críticos (pastilla, métodos anticonceptivos) despierten al dispositivo incluso en reposo profundo.
+    - **Corrección de fechas pasadas:** Corregido `computeNextTrigger` para que avance automáticamente al día siguiente si la hora ya venció hoy, evitando descartar el recordatorio.
+  - `LocaleHelper.kt` & `MainActivity.kt`:
+    - **Prevención de doble recreación de Activity:** En Android 13+ (API 33+), se delega exclusivamente a `LocaleManager.applicationLocales` retornando inmediatamente, previniendo la colisión con la API deprecada y la doble recreación abrupta de la Activity.
+    - **Optimización de arranque en frío:** Omitido `runBlocking` en `attachBaseContext` en Android 13+ donde el sistema gestiona los recursos de idioma por app de forma nativa.
+  - `BootReceiver.kt` & `ReminderAlarmReceiver.kt`:
+    - **Blindaje de corrutinas asíncronas:** Añadidos bloques `catch (e: Exception)` con registro seguro en Logcat en las corrutinas `goAsync()`, previniendo crashes en segundo plano si la base de datos Room o el programador de alarmas se bloquean durante el inicio del sistema.
+  - `CyclePredictor.kt` (AI / LiteRT):
+    - **Prevención de fuga de memoria nativa (C++ Heap):** En el constructor `init`, si `loadScalerParams()` falla, se cierra y anula explícitamente `interpreter?.close()`, evitando fugar el contexto nativo de TensorFlow Lite.
+    - **Solución a error EBADF:** En `loadModelFile()`, reemplazado el cierre prematuro del descriptor APK por `fd.createInputStream().use`, garantizando un mapeo seguro de memoria en `FileChannel`.
+    - **Limpieza de código muerto:** Eliminados imports obsoletos de `java.time` y `FileInputStream`.
+  - `FcmService.kt` & `NotificationChannels.kt`:
+    - **Ciclo de vida y fuga de corrutinas:** Implementado `onDestroy()` con `serviceScope.cancel()` en `FcmService`.
+    - **Permiso POST_NOTIFICATIONS:** Añadida verificación de `Manifest.permission.POST_NOTIFICATIONS` en Android 13+ antes de despachar notificaciones push.
+    - **Unificación de canales:** Integrado el canal `partner_channel` dentro de `LumiNotificationChannel.PARTNER` y normalizado el paquete a `com.jeremy.lumi.notification`.
+  - `di/AIModule.kt` & `di/AppModule.kt`:
+    - **Simplificación idiomática de Dagger Hilt:** Anotado `LumiAIPredictor` con `@Inject constructor` y refactorizado `AIModule` a clase abstracta con `@Binds`; eliminados métodos `@Provides` redundantes en `AppModule` que duplicaban constructores inyectables.
+  - `LumiClock.kt`:
+    - Documentado explícitamente `todayUtcMillis()` como la clave de partición canónica a medianoche UTC para la base de datos Room.
+
+---

@@ -7,7 +7,7 @@ import dagger.hilt.android.HiltAndroidApp
 class LumiApp : Application(){
     override fun onCreate() {
         super.onCreate()
-        com.jeremy.lumi.notifications.NotificationChannels.ensureAllChannelsExist(this)
+        com.jeremy.lumi.notification.NotificationChannels.ensureAllChannelsExist(this)
         
         val workRequest = androidx.work.PeriodicWorkRequestBuilder<com.jeremy.lumi.ui.widget.WidgetUpdaterWorker>(
             24, java.util.concurrent.TimeUnit.HOURS
