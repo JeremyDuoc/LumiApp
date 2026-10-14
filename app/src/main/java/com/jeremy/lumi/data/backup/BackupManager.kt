@@ -32,7 +32,7 @@ class BackupManager @Inject constructor(
                 try {
                     val source = database.openHelper.writableDatabase
                     // Schema comes from our own database, never from an untrusted archive.
-                    source.query("SELECT sql FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name != 'android_metadata'").use { cursor ->
+                    source.query("SELECT sql FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name != 'android_metadata' AND sql IS NOT NULL").use { cursor ->
                         while (cursor.moveToNext()) snapshot.execSQL(cursor.getString(0))
                     }
                     for (table in tables + "room_master_table") {
@@ -120,13 +120,23 @@ class BackupManager @Inject constructor(
                         }
                     }
                 }
+                // Sincronizar sqlite_sequence para claves autoincrementales evitando colisiones futuras
+                for (table in tables) {
+                    try {
+                        target.execSQL("DELETE FROM sqlite_sequence WHERE name = '$table'")
+                        target.execSQL("INSERT INTO sqlite_sequence (name, seq) VALUES ('$table', (SELECT COALESCE(MAX(id), 0) FROM `$table`))")
+                    } catch (_: Exception) {
+                        // Si la tabla no tiene autoincrement en sqlite_sequence, ignorar
+                    }
+                }
             }
+            // Notificar a Room InvalidationTracker para refrescar los Flows activos
+            database.invalidationTracker.refreshVersionsAsync()
         }
     }
 
     private suspend fun archiveOperation(block: suspend (File) -> Unit): Result<Unit> = withContext(Dispatchers.IO) {
-        val directory = File.createTempFile("lumi-archive-", "", context.cacheDir)
-        check(directory.delete() && directory.mkdir())
+        val directory = File(context.cacheDir, "lumi-archive-${java.util.UUID.randomUUID()}").apply { mkdirs() }
         try {
             block(directory)
             Result.success(Unit)

@@ -150,8 +150,12 @@ object BackupSerializer {
     fun fromJson(json: String): RestoredData {
         val dto = try {
             gson.fromJson(json, BackupPayloadDto::class.java)
-        } catch (e: JsonSyntaxException) {
-            throw CorruptBackupException("El contenido del respaldo no es JSON válido")
+        } catch (e: Exception) {
+            when (e) {
+                is JsonSyntaxException, is java.lang.IllegalStateException ->
+                    throw CorruptBackupException("El contenido del respaldo no es JSON válido")
+                else -> throw e
+            }
         } ?: throw CorruptBackupException("El respaldo está vacío")
 
         val format = dto.formatVersion
@@ -171,8 +175,8 @@ object BackupSerializer {
                 startDate = start,
                 endDate = c.endDate,
                 predictedOvulationDate = c.predictedOvulationDate,
-                cycleLength = c.cycleLength ?: 28,
-                periodLength = c.periodLength ?: 5
+                cycleLength = c.cycleLength?.takeIf { it in 15..120 } ?: 28,
+                periodLength = c.periodLength?.takeIf { it in 1..20 } ?: 5
             )
         }
 
@@ -184,7 +188,7 @@ object BackupSerializer {
                 cycleId = l.cycleId ?: 0,
                 date = date,
                 flowIntensity = l.flowIntensity,
-                painLevel = l.painLevel ?: 0,
+                painLevel = l.painLevel?.coerceIn(0, 10) ?: 0,
                 spotting = l.spotting ?: false,
                 mood = l.mood,
                 energyLevel = l.energyLevel,
@@ -218,7 +222,7 @@ object BackupSerializer {
                 id = id,
                 dailyLogId = logId,
                 name = name,
-                intensity = s.intensity ?: 0
+                intensity = s.intensity?.coerceIn(0, 5) ?: 0
             )
         }
         if (symptoms.map { it.id }.toSet().size != symptoms.size) {

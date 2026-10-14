@@ -3,15 +3,19 @@ package com.jeremy.lumi.data.preferences
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.jeremy.lumi.domain.model.SecondaryGoal
 import com.jeremy.lumi.domain.model.UserGoal
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -42,13 +46,13 @@ class OnboardingPreferenceManager @Inject constructor(
         private val IS_ON_CONTRACEPTIVE_KEY = booleanPreferencesKey("is_on_contraceptive")
         private val IS_HEALTH_CONNECT_ENABLED_KEY = booleanPreferencesKey("is_health_connect_enabled")
         private val IS_DISCREET_KEY     = booleanPreferencesKey("is_discreet_mode")
-        private val LOG_CATEGORIES_KEY  = androidx.datastore.preferences.core.stringSetPreferencesKey("active_log_categories")
+        private val LOG_CATEGORIES_KEY  = stringSetPreferencesKey("active_log_categories")
         // Clave para persistir que la usuaria ya cerró el banner de retraso manualmente.
         // Se guarda el día del ciclo en que se cerró; si el día cambia, vuelve a mostrarse.
-        private val DELAY_BANNER_DISMISSED_DAY_KEY = androidx.datastore.preferences.core.intPreferencesKey("delay_banner_dismissed_day")
+        private val DELAY_BANNER_DISMISSED_DAY_KEY = intPreferencesKey("delay_banner_dismissed_day")
         
         // Cooldown de abrazos virtuales
-        private val HUG_COOLDOWN_UNTIL_KEY = androidx.datastore.preferences.core.longPreferencesKey("hug_cooldown_until")
+        private val HUG_COOLDOWN_UNTIL_KEY = longPreferencesKey("hug_cooldown_until")
         
         // --- Partner Sharing Privacy ---
         private val SHARE_PHASE_KEY = booleanPreferencesKey("share_phase")
@@ -66,14 +70,23 @@ class OnboardingPreferenceManager @Inject constructor(
         private val USER_AVATAR_KEY         = stringPreferencesKey("user_avatar_id")
     }
 
+    private val safeData: Flow<androidx.datastore.preferences.core.Preferences> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+
     // ── Onboarding completado ─────────────────────────────────────────────────
 
     /** true si la usuaria ya completó (o saltó) el onboarding. */
-    val isOnboardingCompleted: Flow<Boolean> = dataStore.data
+    val isOnboardingCompleted: Flow<Boolean> = safeData
         .map { prefs -> prefs[ONBOARDING_DONE_KEY] ?: false }
 
     /** true si la app se instaló solo para observar a alguien más */
-    val isObserverOnly: Flow<Boolean> = dataStore.data
+    val isObserverOnly: Flow<Boolean> = safeData
         .map { prefs -> prefs[IS_OBSERVER_ONLY_KEY] ?: false }
 
     suspend fun markOnboardingCompleted(isObserver: Boolean = false) {
@@ -84,7 +97,7 @@ class OnboardingPreferenceManager @Inject constructor(
     }
 
     /** Modo Demostración de Bonds: permite explorar la interfaz con datos de ejemplo sin vincular */
-    val bondsDemoModeFlow: Flow<Boolean> = dataStore.data
+    val bondsDemoModeFlow: Flow<Boolean> = safeData
         .map { prefs -> prefs[BONDS_DEMO_MODE_KEY] ?: false }
 
     suspend fun setBondsDemoMode(enabled: Boolean) {
@@ -96,11 +109,11 @@ class OnboardingPreferenceManager @Inject constructor(
     // ── Datos de perfil ───────────────────────────────────────────────────────
 
     /** Nombre de la usuaria. Null si lo saltó. */
-    val userNameFlow: Flow<String?> = dataStore.data
+    val userNameFlow: Flow<String?> = safeData
         .map { prefs -> prefs[USER_NAME_KEY]?.takeIf { it.isNotBlank() } }
 
     /** Avatar de la usuaria para Bonds y perfil. */
-    val avatarIdFlow: Flow<String?> = dataStore.data
+    val avatarIdFlow: Flow<String?> = safeData
         .map { prefs -> prefs[USER_AVATAR_KEY]?.takeIf { it.isNotBlank() } }
 
     suspend fun setUserAvatar(avatarId: String?) {
@@ -111,38 +124,38 @@ class OnboardingPreferenceManager @Inject constructor(
     }
 
     /** Si el ciclo es regular. Null si no lo sabe. */
-    val isRegularFlow: Flow<Boolean?> = dataStore.data
+    val isRegularFlow: Flow<Boolean?> = safeData
         .map { prefs -> prefs[IS_REGULAR_KEY] }
 
     /** Objetivo de uso de la app. Por defecto TRACK_CYCLE. */
-    val userGoalFlow: Flow<UserGoal> = dataStore.data
+    val userGoalFlow: Flow<UserGoal> = safeData
         .map { prefs ->
             val saved = prefs[USER_GOAL_KEY]
             runCatching { UserGoal.valueOf(saved ?: UserGoal.TRACK_CYCLE.name) }
                 .getOrDefault(UserGoal.TRACK_CYCLE)
         }
 
-    val cycleLengthFlow: Flow<Int> = dataStore.data
+    val cycleLengthFlow: Flow<Int> = safeData
         .map { prefs -> prefs[CYCLE_LENGTH_KEY] ?: 28 }
 
-    val periodLengthFlow: Flow<Int> = dataStore.data
+    val periodLengthFlow: Flow<Int> = safeData
         .map { prefs -> prefs[PERIOD_LENGTH_KEY] ?: 5 }
 
     // ── Nuevas Preferencias (Embarazo, Modo Discreto, Categorías de Registro) ──
 
-    val isPregnantFlow: Flow<Boolean> = dataStore.data
+    val isPregnantFlow: Flow<Boolean> = safeData
         .map { prefs -> prefs[IS_PREGNANT_KEY] ?: false }
 
-    val isOnContraceptiveFlow: Flow<Boolean> = dataStore.data
+    val isOnContraceptiveFlow: Flow<Boolean> = safeData
         .map { prefs -> prefs[IS_ON_CONTRACEPTIVE_KEY] ?: false }
 
-    val isHealthConnectEnabledFlow: Flow<Boolean> = dataStore.data
+    val isHealthConnectEnabledFlow: Flow<Boolean> = safeData
         .map { prefs -> prefs[IS_HEALTH_CONNECT_ENABLED_KEY] ?: false }
 
-    val isDiscreetModeFlow: Flow<Boolean> = dataStore.data
+    val isDiscreetModeFlow: Flow<Boolean> = safeData
         .map { prefs -> prefs[IS_DISCREET_KEY] ?: false }
 
-    val activeLogCategoriesFlow: Flow<Set<String>> = dataStore.data
+    val activeLogCategoriesFlow: Flow<Set<String>> = safeData
         .map { prefs -> 
             prefs[LOG_CATEGORIES_KEY] ?: setOf("physical", "digestive", "mucus", "intercourse") // Por defecto todo activo o personalizar
         }
@@ -179,10 +192,10 @@ class OnboardingPreferenceManager @Inject constructor(
     }
 
     // --- Partner Privacy Flows & Setters ---
-    val sharePhaseFlow: Flow<Boolean> = dataStore.data.map { it[SHARE_PHASE_KEY] ?: true }
-    val sharePredictionsFlow: Flow<Boolean> = dataStore.data.map { it[SHARE_PREDICTIONS_KEY] ?: true }
-    val shareMoodFlow: Flow<Boolean> = dataStore.data.map { it[SHARE_MOOD_KEY] ?: true }
-    val shareSymptomsFlow: Flow<Boolean> = dataStore.data.map { it[SHARE_SYMPTOMS_KEY] ?: true }
+    val sharePhaseFlow: Flow<Boolean> = safeData.map { it[SHARE_PHASE_KEY] ?: true }
+    val sharePredictionsFlow: Flow<Boolean> = safeData.map { it[SHARE_PREDICTIONS_KEY] ?: true }
+    val shareMoodFlow: Flow<Boolean> = safeData.map { it[SHARE_MOOD_KEY] ?: true }
+    val shareSymptomsFlow: Flow<Boolean> = safeData.map { it[SHARE_SYMPTOMS_KEY] ?: true }
 
     suspend fun setSharePhase(share: Boolean) = dataStore.edit { it[SHARE_PHASE_KEY] = share }
     suspend fun setSharePredictions(share: Boolean) = dataStore.edit { it[SHARE_PREDICTIONS_KEY] = share }
@@ -191,24 +204,24 @@ class OnboardingPreferenceManager @Inject constructor(
 
     // --- Perfil físico (solo local, para calibrar el modelo TFLite) ---
     /** Edad de la usuaria. null si no la ingresó. */
-    val ageFlow: Flow<Int?> = dataStore.data.map { it[USER_AGE_KEY] }
+    val ageFlow: Flow<Int?> = safeData.map { it[USER_AGE_KEY] }
     /** Talla en cm. null si no la ingresó. */
-    val heightFlow: Flow<Float?> = dataStore.data.map { it[USER_HEIGHT_KEY] }
+    val heightFlow: Flow<Float?> = safeData.map { it[USER_HEIGHT_KEY] }
     /** Peso en kg. null si no la ingresó. */
-    val weightFlow: Flow<Float?> = dataStore.data.map { it[USER_WEIGHT_KEY] }
+    val weightFlow: Flow<Float?> = safeData.map { it[USER_WEIGHT_KEY] }
     /** Objetivos secundarios seleccionados. */
-    val secondaryGoalsFlow: Flow<Set<SecondaryGoal>> = dataStore.data.map { prefs ->
+    val secondaryGoalsFlow: Flow<Set<SecondaryGoal>> = safeData.map { prefs ->
         prefs[SECONDARY_GOALS_KEY]?.mapNotNull {
             runCatching { SecondaryGoal.valueOf(it) }.getOrNull()
         }?.toSet() ?: emptySet()
     }
     
-    val medicalDisclaimerAcceptedFlow: Flow<Boolean> = dataStore.data.map { it[MEDICAL_DISCLAIMER_KEY] ?: false }
+    val medicalDisclaimerAcceptedFlow: Flow<Boolean> = safeData.map { it[MEDICAL_DISCLAIMER_KEY] ?: false }
 
     // ── Recordatorio persistido de Banner de retraso ───────────────────────────────────────────────────
 
     /** El día del ciclo en que se cerró el banner. -1 = nunca cerrado. */
-    val delayBannerDismissedDayFlow: kotlinx.coroutines.flow.Flow<Int> = dataStore.data
+    val delayBannerDismissedDayFlow: Flow<Int> = safeData
         .map { prefs -> prefs[DELAY_BANNER_DISMISSED_DAY_KEY] ?: -1 }
 
     /** Persiste que se cerró el banner en el día [cycleDay] del ciclo actual. */
@@ -223,7 +236,7 @@ class OnboardingPreferenceManager @Inject constructor(
 
     // ── Persistencia del cooldown de abrazos ──────────────────────────────────
     
-    val hugCooldownUntilFlow: Flow<Long> = dataStore.data
+    val hugCooldownUntilFlow: Flow<Long> = safeData
         .map { prefs -> prefs[HUG_COOLDOWN_UNTIL_KEY] ?: 0L }
 
     suspend fun setHugCooldownUntil(timestamp: Long) {

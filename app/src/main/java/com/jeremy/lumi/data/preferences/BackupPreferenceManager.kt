@@ -3,14 +3,17 @@ package com.jeremy.lumi.data.preferences
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -34,22 +37,33 @@ data class EncryptionKeyMaterial(
 class BackupPreferenceManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    private val ACCOUNT_EMAIL = stringPreferencesKey("cuenta_google_email")
-    private val LAST_BACKUP_MS = longPreferencesKey("ultimo_respaldo_ms")
-    private val AUTO_BACKUP = booleanPreferencesKey("respaldo_automatico")
-    private val WRAPPED_KEY = stringPreferencesKey("clave_cifrado_envuelta")
-    private val KEY_SALT_B64 = stringPreferencesKey("clave_salt_b64")
-    private val KEY_ITERATIONS = intPreferencesKey("clave_iteraciones")
-    private val DRIVE_FILE_ID = stringPreferencesKey("drive_file_id")
+    companion object {
+        private val ACCOUNT_EMAIL = stringPreferencesKey("cuenta_google_email")
+        private val LAST_BACKUP_MS = longPreferencesKey("ultimo_respaldo_ms")
+        private val AUTO_BACKUP = booleanPreferencesKey("respaldo_automatico")
+        private val WRAPPED_KEY = stringPreferencesKey("clave_cifrado_envuelta")
+        private val KEY_SALT_B64 = stringPreferencesKey("clave_salt_b64")
+        private val KEY_ITERATIONS = intPreferencesKey("clave_iteraciones")
+        private val DRIVE_FILE_ID = stringPreferencesKey("drive_file_id")
+    }
+
+    private val safeData: Flow<androidx.datastore.preferences.core.Preferences> =
+        context.backupDataStore.data.catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
 
     val accountEmailFlow: Flow<String?> =
-        context.backupDataStore.data.map { it[ACCOUNT_EMAIL] }
+        safeData.map { it[ACCOUNT_EMAIL] }
 
     val lastBackupMsFlow: Flow<Long?> =
-        context.backupDataStore.data.map { it[LAST_BACKUP_MS] }
+        safeData.map { it[LAST_BACKUP_MS] }
 
     val autoBackupFlow: Flow<Boolean> =
-        context.backupDataStore.data.map { it[AUTO_BACKUP] ?: false }
+        safeData.map { it[AUTO_BACKUP] ?: false }
 
     suspend fun setAccountEmail(email: String?) {
         context.backupDataStore.edit { prefs ->
@@ -73,9 +87,9 @@ class BackupPreferenceManager @Inject constructor(
         }
     }
 
-    /** Lectura puntual del material de clave; null si nunca se creó. */
+    /** Lectura puntual del material de clave; null si nunca se creó o falla I/O. */
     suspend fun getEncryptionKeyMaterial(): EncryptionKeyMaterial? {
-        val prefs = context.backupDataStore.data.first()
+        val prefs = safeData.firstOrNull() ?: return null
         val wrapped = prefs[WRAPPED_KEY] ?: return null
         val salt = prefs[KEY_SALT_B64] ?: return null
         val iterations = prefs[KEY_ITERATIONS] ?: return null
@@ -83,7 +97,7 @@ class BackupPreferenceManager @Inject constructor(
     }
 
     suspend fun getFileId(): String? =
-        context.backupDataStore.data.first()[DRIVE_FILE_ID]
+        safeData.firstOrNull()?.get(DRIVE_FILE_ID)
 
     suspend fun setFileId(fileId: String?) {
         context.backupDataStore.edit { prefs ->

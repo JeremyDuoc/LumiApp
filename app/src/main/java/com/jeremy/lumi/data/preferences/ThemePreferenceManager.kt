@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -13,10 +14,11 @@ import com.jeremy.lumi.ui.theme.BackgroundAmbient
 import com.jeremy.lumi.ui.theme.DialStyle
 import com.jeremy.lumi.ui.theme.PhaseColorPalette
 import com.jeremy.lumi.ui.theme.PhaseColors
-import com.jeremy.lumi.ui.theme.PhaseDefaultLight
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -52,14 +54,22 @@ class ThemePreferenceManager @Inject constructor(
         private val CUSTOM_LUTEAL_KEY     = longPreferencesKey("phase_custom_luteal")
     }
 
+    private val safeData: Flow<Preferences> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+
     // ── Tema general de la app ────────────────────────────────────────────────
 
-    val selectedThemeFlow: Flow<AppThemePalette> = context.dataStore.data
+    val selectedThemeFlow: Flow<AppThemePalette> = safeData
         .map { prefs ->
             val saved = prefs[THEME_KEY]
-            val resolved = runCatching { AppThemePalette.valueOf(saved ?: DEFAULT_THEME.name) }
+            runCatching { AppThemePalette.valueOf(saved ?: DEFAULT_THEME.name) }
                 .getOrDefault(DEFAULT_THEME)
-            if (resolved == AppThemePalette.PETALO) AppThemePalette.PETALO else AppThemePalette.NOIR
         }
 
     suspend fun saveTheme(theme: AppThemePalette) {
@@ -70,7 +80,7 @@ class ThemePreferenceManager @Inject constructor(
 
     // ── Estilo de aro (DialStyle) ─────────────────────────────────────────────
 
-    val dialStyleFlow: Flow<DialStyle> = context.dataStore.data
+    val dialStyleFlow: Flow<DialStyle> = safeData
         .map { prefs ->
             val saved = prefs[DIAL_STYLE_KEY]
             runCatching { DialStyle.valueOf(saved ?: DEFAULT_DIAL_STYLE.name) }
@@ -85,12 +95,11 @@ class ThemePreferenceManager @Inject constructor(
 
     // ── Ambiente de fondo ─────────────────────────────────────────────────
 
-    val backgroundAmbientFlow: Flow<BackgroundAmbient> = context.dataStore.data
+    val backgroundAmbientFlow: Flow<BackgroundAmbient> = safeData
         .map { prefs ->
             val saved = prefs[AMBIENT_KEY]
-            val resolved = runCatching { BackgroundAmbient.valueOf(saved ?: DEFAULT_AMBIENT.name) }
+            runCatching { BackgroundAmbient.valueOf(saved ?: DEFAULT_AMBIENT.name) }
                 .getOrDefault(DEFAULT_AMBIENT)
-            if (resolved == BackgroundAmbient.CELESTIAL) BackgroundAmbient.CELESTIAL else BackgroundAmbient.FLAT
         }
 
     suspend fun saveBackgroundAmbient(ambient: BackgroundAmbient) {
@@ -101,16 +110,11 @@ class ThemePreferenceManager @Inject constructor(
 
     // ── Paleta de colores de fase ───────────────────────────────────────────
 
-    val selectedPhasePaletteFlow: Flow<PhaseColorPalette> = context.dataStore.data
+    val selectedPhasePaletteFlow: Flow<PhaseColorPalette> = safeData
         .map { prefs ->
             val saved = prefs[PHASE_PALETTE_KEY]
-            val resolved = runCatching { PhaseColorPalette.valueOf(saved ?: DEFAULT_PHASE_PALETTE.name) }
+            runCatching { PhaseColorPalette.valueOf(saved ?: DEFAULT_PHASE_PALETTE.name) }
                 .getOrDefault(DEFAULT_PHASE_PALETTE)
-            when (resolved) {
-                PhaseColorPalette.PASTEL -> PhaseColorPalette.PASTEL
-                PhaseColorPalette.MINIMALISTA -> PhaseColorPalette.MINIMALISTA
-                else -> PhaseColorPalette.AUTO_HARMONY
-            }
         }
 
     suspend fun savePhasePalette(palette: PhaseColorPalette) {
@@ -121,7 +125,7 @@ class ThemePreferenceManager @Inject constructor(
 
     // Colores custom — null si la usuaria no ha guardado nunca un set personalizado.
     // Cuando selectedPhasePaletteFlow emite CUSTOM, este flow es el que se debe usar.
-    val customPhaseColorsFlow: Flow<PhaseColors?> = context.dataStore.data
+    val customPhaseColorsFlow: Flow<PhaseColors?> = safeData
         .map { prefs ->
             val m = prefs[CUSTOM_MENSTRUAL_KEY]
             val f = prefs[CUSTOM_FOLLICULAR_KEY]

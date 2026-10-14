@@ -1,6 +1,7 @@
 package com.jeremy.lumi.data.backup
 
 import java.nio.ByteBuffer
+import java.security.GeneralSecurityException
 import java.security.SecureRandom
 import javax.crypto.AEADBadTagException
 import javax.crypto.Cipher
@@ -58,7 +59,11 @@ object BackupCrypto {
         val keyBytes: ByteArray,
         val salt: ByteArray,
         val iterations: Int
-    )
+    ) {
+        fun clear() {
+            keyBytes.fill(0)
+        }
+    }
 
     /** Parámetros de derivación leídos de la cabecera de un archivo existente. */
     class Header(
@@ -79,6 +84,8 @@ object BackupCrypto {
         salt: ByteArray,
         iterations: Int = DEFAULT_ITERATIONS
     ): DerivedKey {
+        require(salt.size == SALT_SIZE) { "El salt debe tener exactamente $SALT_SIZE bytes" }
+        require(iterations >= 50_000) { "Iteraciones insuficientes para PBKDF2" }
         val spec = PBEKeySpec(passphrase, salt, iterations, KEY_BITS)
         val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
         val keyBytes = factory.generateSecret(spec).encoded
@@ -110,7 +117,7 @@ object BackupCrypto {
 
     /** Lee y valida la cabecera sin descifrar (para conocer sal/iteraciones). */
     fun readHeader(fileBytes: ByteArray): Header {
-        if (fileBytes.size <= HEADER_SIZE) {
+        if (fileBytes.size < HEADER_SIZE + (TAG_BITS / 8)) {
             throw CorruptBackupException("El archivo es demasiado corto para ser un respaldo")
         }
         val buffer = ByteBuffer.wrap(fileBytes)
@@ -119,13 +126,13 @@ object BackupCrypto {
             throw CorruptBackupException("El archivo no es un respaldo de Lumi")
         }
         val version = buffer.get()
-        if (version > FORMAT_VERSION) {
-            throw CorruptBackupException("Versión de cifrado desconocida: $version")
+        if (version != FORMAT_VERSION) {
+            throw CorruptBackupException("Versión de cifrado no soportada: $version")
         }
         val salt = ByteArray(SALT_SIZE).also { buffer.get(it) }
         val iterations = buffer.int
-        if (iterations !in 1..10_000_000) {
-            throw CorruptBackupException("Cabecera de respaldo corrupta")
+        if (iterations !in 50_000..10_000_000) {
+            throw CorruptBackupException("Cabecera de respaldo corrupta o iteraciones fuera de rango seguro")
         }
         val iv = ByteArray(IV_SIZE).also { buffer.get(it) }
         return Header(salt, iterations, iv)
@@ -148,6 +155,8 @@ object BackupCrypto {
             cipher.doFinal(fileBytes, HEADER_SIZE, fileBytes.size - HEADER_SIZE)
         } catch (e: AEADBadTagException) {
             throw WrongPassphraseException()
+        } catch (e: GeneralSecurityException) {
+            throw CorruptBackupException("Error criptográfico al descifrar respaldo: ${e.message}")
         }
     }
 }

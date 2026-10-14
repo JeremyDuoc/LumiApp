@@ -53,7 +53,7 @@
 
 ### 4. `ui/components` & Compose Performance (`LumiCycleRing`, `LumiTodayCard`, `LumiWeekStrip`, `HomeUiState`)
 - **Estado:** ✅ APROBADO Y OPTIMIZADO (`BUILD SUCCESSFUL in 1m 9s`, Tests unitarios pasados `testDebugUnitTest in 1m 8s`).
-- **Commit:** Pendiente
+- **Commit:** `ad352d4` - `perf(ui): optimize Compose allocations, cache brushes and shapes, and mark UI state @Immutable`
 - **Optimizaciones de Renderizado y Estabilidad:**
   - `HomeUiState.kt`: Anotadas las data classes de presentación (`HomeUiState`, `PredictionFactorsUi`, `CycleDayUi`) con `@Immutable` de Compose runtime, garantizando que el compilador de Compose omita recomposiciones superfluas de árboles completos cuando las referencias no mutan.
   - `LumiCycleRing.kt`: Extraídas constantes estáticas de color (`DotColor`, `DotAuraColor`) fuera de la función de renderizado; cacheados los colores de resplandor `glowColors` mediante `remember(tokens.glow)`, previniendo alocaciones de `Brush` y listas de `Color` en cada frame del bucle de animación a 60/120 FPS.
@@ -61,7 +61,20 @@
   - `LumiWeekStrip.kt`: Cacheada la forma `dayShape = remember { RoundedCornerShape(16.dp) }` y centralizado `SpanishLocale = Locale("es")` como constante de nivel superior, erradicando alocaciones masivas de shapes en el renderizado de cada día de la semana.
   - `LumiTopBar.kt`: Reemplazados modificadores dinámicos separados (`scale`, `alpha`, `rotate`) con un único bloque `Modifier.graphicsLayer` impulsado por keyframes para la animación del logo, optimizando el canal de composición y GPU; reutilizada instancia de `Path` mediante `remember { Path() }`.
 
-### 5. `data/preferences`, `data/backup` & `data/remote`
+### 5. `data/preferences` & `data/backup` (Seguridad, Concurrencia y Robustez)
+- **Estado:** ✅ APROBADO Y BLINDADO (`BUILD SUCCESSFUL in 1m 14s`, 124 tests unitarios pasados `testDebugUnitTest in 1m 6s`).
+- **Commit:** Pendiente
+- **Vulnerabilidades y Bugs Críticos Corregidos:**
+  - `ThemePreferenceManager.kt`: Resuelto bug crítico de truncado donde `selectedThemeFlow` forzaba `NOIR` en más de 30 temas visuales de la app; y `selectedPhasePaletteFlow` eliminaba la paleta `CUSTOM` impidiendo la personalización de colores de fase.
+  - `ThemePreferenceManager.kt`, `OnboardingPreferenceManager.kt`, `ChatPreferenceManager.kt`, `BackupPreferenceManager.kt`, `LanguagePreferenceManager.kt`: Implementado `safeData` mediante `.catch { if (it is IOException) emit(emptyPreferences()) else throw it }` en más de 30 flujos de DataStore, blindando la app frente a crashes por corrupción o fallos de lectura I/O en almacenamiento.
+  - `BackupManager.kt`: Corregida desincronización de `sqlite_sequence` tras la importación del archivo de respaldo; se sincroniza explícitamente el valor autoincremental de cada tabla para evitar `SQLiteConstraintException: UNIQUE constraint failed` en inserciones subsiguientes.
+  - `BackupManager.kt`: Notificado el `database.invalidationTracker.refreshVersionsAsync()` tras la transacción de importación para que los flujos activos y observadores de Room DAOs en la UI actualicen sus datos inmediatamente.
+  - `BackupManager.kt`: Prevenida colisión TOCTOU creando directorios temporales de forma atómica (`File(cacheDir, "lumi-archive-${UUID}").mkdirs()`) y añadida cláusula `AND sql IS NOT NULL` en la consulta de tablas.
+  - `BackupCrypto.kt`: Agregada validación estricta de longitud de salt (`require(salt.size == 16)`), iteraciones mínimas (`>= 50_000`), verificación de longitud mínima del archivo binario y captura de `GeneralSecurityException` en descifrado; implementado método de borrado seguro en memoria `DerivedKey.clear()`.
+  - `BackupSerializer.kt`: Añadida validación de rangos biológicos en longitudes de ciclo (`15..120` días) y periodo (`1..20` días), limitación de niveles de dolor (`0..10`) e intensidad (`0..5`), y captura combinada de `JsonSyntaxException` y `IllegalStateException`.
+  - `BackupPreferenceManager.kt` & `ChatPreferenceManager.kt`: Reubicadas las claves estáticas de DataStore en sus respectivos `companion object`.
+
+### 6. `ui/screens` & `ui/viewmodel` (Fugas de memoria, ciclo de vida y Compose Recomposition)
 *Auditoría en curso...*
 
 ---
