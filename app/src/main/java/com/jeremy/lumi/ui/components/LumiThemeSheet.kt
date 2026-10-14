@@ -46,11 +46,7 @@ data class ThemeAtmosphereOption(
 
 val PrimaryAtmospheres = listOf(
     ThemeAtmosphereOption(AppThemePalette.NOIR, "Noir", Color(0xFF0B0B11), Color(0xFFCFB8F4)),
-    ThemeAtmosphereOption(AppThemePalette.PETALO, "Blush", Color(0xFFFFFBF9), Color(0xFFA381C4)),
-    ThemeAtmosphereOption(AppThemePalette.LUMI_SAGE_DARK, "Sage", Color(0xFF0D181A), Color(0xFFB9C8BA)),
-    ThemeAtmosphereOption(AppThemePalette.LUMI_SPARK_DARK, "Spark", Color(0xFF1B1923), Color(0xFFE8A0C0)),
-    ThemeAtmosphereOption(AppThemePalette.LUMI_OCEAN_DARK, "Océano", Color(0xFF0D2447), Color(0xFF00D2FF)),
-    ThemeAtmosphereOption(AppThemePalette.LUMI_FOREST_DARK, "Bosque", Color(0xFF0F2E20), Color(0xFF93F9B9))
+    ThemeAtmosphereOption(AppThemePalette.PETALO, "Blush", Color(0xFFFFFBF9), Color(0xFFA381C4))
 )
 
 /**
@@ -125,9 +121,9 @@ fun LumiThemeSheet(
             Spacer(modifier = Modifier.height(20.dp))
 
             LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                columns = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 items(PrimaryAtmospheres) { item ->

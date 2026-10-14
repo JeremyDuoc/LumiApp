@@ -448,11 +448,11 @@ val LocalBrandBackgroundGradient = compositionLocalOf<Brush?> { null }
 
 @Composable
 fun LumiTheme(
-    selectedTheme        : AppThemePalette   = AppThemePalette.LUMI_SPARK_DARK,
+    selectedTheme        : AppThemePalette   = AppThemePalette.NOIR,
     selectedPhasePalette : PhaseColorPalette = PhaseColorPalette.AUTO_HARMONY,
     customPhaseColors    : PhaseColors?      = null,   // non-null cuando CUSTOM está guardado
     dialStyle            : DialStyle         = DialStyle.GRADIENT,
-    selectedAmbient      : BackgroundAmbient = BackgroundAmbient.AURA,
+    selectedAmbient      : BackgroundAmbient = BackgroundAmbient.FLAT,
     content              : @Composable () -> Unit
 ) {
     val colorScheme = when (selectedTheme) {

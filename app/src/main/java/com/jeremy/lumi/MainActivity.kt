@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             // Escuchamos el Flow de DataStore en tiempo real en la raíz de la app
             val selectedTheme by themePreferenceManager.selectedThemeFlow.collectAsStateWithLifecycle(
-                initialValue = AppThemePalette.LUMI_SPARK_DARK // Valor mientras carga
+                initialValue = AppThemePalette.NOIR // Valor mientras carga
             )
 
 
@@ -65,9 +65,9 @@ class MainActivity : ComponentActivity() {
                 initialValue = DialStyle.GRADIENT
             )
 
-            // Ambiente de fondo (Plano, Aura, Celeste, Orgánico)
+            // Ambiente de fondo (Plano, Celeste)
             val selectedAmbient by themePreferenceManager.backgroundAmbientFlow.collectAsStateWithLifecycle(
-                initialValue = BackgroundAmbient.AURA
+                initialValue = BackgroundAmbient.FLAT
             )
 
             // Le pasamos la elección de la usuaria a nuestro Tema

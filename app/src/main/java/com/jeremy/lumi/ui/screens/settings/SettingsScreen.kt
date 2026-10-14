@@ -52,62 +52,6 @@ import com.jeremy.lumi.ui.components.CupertinoActionSheet
 import com.jeremy.lumi.ui.components.CupertinoActionSheetButton
 import com.jeremy.lumi.ui.components.CupertinoActionSheetCancelButton
 
-// ── Modelo de dato para cada opción de tema ───────────────────────────────────
-
-private data class ThemeOption(
-    val palette : AppThemePalette,
-    val name    : String,
-    val color   : Color,
-    val isDark  : Boolean = false,
-    val darkBg  : Color   = Color(0xFF1A1A2E)
-)
-
-// ── Listas por grupo ──────────────────────────────────────────────────────────
-
-private val clarasOptions = listOf(
-    ThemeOption(AppThemePalette.LUMI_SPARK, "Lumi Spark", LumiSparkPrimary),
-    ThemeOption(AppThemePalette.LUMI_OCEAN, "Lumi Océano", LumiOceanPrimary),
-    ThemeOption(AppThemePalette.LUMI_FOREST, "Lumi Bosque", LumiForestPrimary),
-    ThemeOption(AppThemePalette.LUMI_SUNSET, "Lumi Ocaso", LumiSunsetPrimary),
-    ThemeOption(AppThemePalette.LUMI_DUNE, "Lumi Duna", LumiDunePrimary),
-    ThemeOption(AppThemePalette.LAVANDA,   "Lavanda",   LavandaPrimary),
-    ThemeOption(AppThemePalette.CACTUS,    "Cactus",    CactusPrimary),
-    ThemeOption(AppThemePalette.HORTENSIA, "Hortensia", HortensiaPrimary),
-    ThemeOption(AppThemePalette.TIERRA,    "Tierra",    TierraPrimary),
-    ThemeOption(AppThemePalette.LUXE,      "Luxe",      LuxePrimary),
-    ThemeOption(AppThemePalette.PETALO,    "Pétalo",    PetaloPrimary),
-    ThemeOption(AppThemePalette.PIEDRA,    "Piedra",    PiedraPrimary),
-)
-
-private val oscurasOptions = listOf(
-    ThemeOption(AppThemePalette.LUMI_SPARK_DARK, "Lumi Spark Oscuro", LumiSparkDarkPrimary, isDark = true, darkBg = Color(0xFF1A161C)),
-    ThemeOption(AppThemePalette.LUMI_OCEAN_DARK, "Lumi Océano Oscuro", LumiOceanDarkPrimary, isDark = true, darkBg = Color(0xFF070F1A)),
-    ThemeOption(AppThemePalette.LUMI_FOREST_DARK, "Lumi Bosque Oscuro", LumiForestDarkPrimary, isDark = true, darkBg = Color(0xFF08120D)),
-    ThemeOption(AppThemePalette.LUMI_SUNSET_DARK, "Lumi Ocaso Oscuro", LumiSunsetDarkPrimary, isDark = true, darkBg = Color(0xFF140805)),
-    ThemeOption(AppThemePalette.LUMI_DUNE_DARK, "Lumi Duna Oscura", LumiDuneDarkPrimary, isDark = true, darkBg = Color(0xFF120E08)),
-    ThemeOption(AppThemePalette.MEDIANOCHE, "Medianoche", MedianochePrimary, isDark = true, darkBg = Color(0xFF13101F)),
-    ThemeOption(AppThemePalette.COSMOS,     "Cosmos",     CosmosPrimary,     isDark = true, darkBg = Color(0xFF080E1C)),
-    ThemeOption(AppThemePalette.CARBONO,    "Carbono",    CarbonoPrimary,    isDark = true, darkBg = Color(0xFF111111)),
-    ThemeOption(AppThemePalette.ECLIPSE,    "Eclipse",    EclipsePrimary,    isDark = true, darkBg = Color(0xFF160E0F)),
-    ThemeOption(AppThemePalette.NOCHE_ROSA, "Noche Rosa", NochePrimary,      isDark = true, darkBg = Color(0xFF1A1318)),
-    ThemeOption(AppThemePalette.OBSIDIANA,  "Obsidiana",  ObsidianaPrimary,  isDark = true, darkBg = Color(0xFF0A0F0F)),
-    ThemeOption(AppThemePalette.VINO,       "Vino",       VinoPrimary,       isDark = true, darkBg = Color(0xFF120A10)),
-    ThemeOption(AppThemePalette.FORJA,      "Forja",      ForjaPrimary,      isDark = true, darkBg = Color(0xFF0F1318)),
-    ThemeOption(AppThemePalette.AMBAR,      "Ámbar",      AmbarPrimary,      isDark = true, darkBg = Color(0xFF120E08)),
-    ThemeOption(AppThemePalette.NOIR,       "Noir",       NoirPrimary,       isDark = true, darkBg = Color(0xFF000000)),
-)
-
-private val minimalistasOptions = listOf(
-    ThemeOption(AppThemePalette.PAPEL,   "Papel",   PapelPrimary),
-    ThemeOption(AppThemePalette.NIEBLA,  "Niebla",  NieblaPrimary),
-    ThemeOption(AppThemePalette.SAL,     "Sal",     SalPrimary),
-    ThemeOption(AppThemePalette.ARENA,   "Arena",   ArenaPrimary),
-    ThemeOption(AppThemePalette.PIZARRA, "Pizarra", PizarraPrimary),
-    ThemeOption(AppThemePalette.HUMO,    "Humo",    HumoPrimary),
-    ThemeOption(AppThemePalette.LIENZO,  "Lienzo",  LienzoPrimary),
-    ThemeOption(AppThemePalette.CENIZA,  "Ceniza",  CenizaPrimary),
-)
-
 // ── Modelo de dato para cada preset de colores de fase ────────────────────────
 
 private data class PhasePaletteOption(
@@ -116,18 +60,8 @@ private data class PhasePaletteOption(
 )
 
 private val phasePaletteOptions = listOf(
-    PhasePaletteOption(PhaseColorPalette.AUTO_HARMONY, "Armonía con el tema"),
-    PhasePaletteOption(PhaseColorPalette.DEFAULT,     "Original"),
-    PhasePaletteOption(PhaseColorPalette.OCEANO_GRADIENT, "Lumi Océano"),
-    PhasePaletteOption(PhaseColorPalette.BOSQUE_GRADIENT, "Lumi Bosque"),
-    PhasePaletteOption(PhaseColorPalette.OCASO_GRADIENT,  "Lumi Ocaso"),
-    PhasePaletteOption(PhaseColorPalette.DUNA_GRADIENT,   "Lumi Duna"),
-    PhasePaletteOption(PhaseColorPalette.PASTEL,      "Pastel"),
-    PhasePaletteOption(PhaseColorPalette.MINIMALISTA, "Minimalista"),
-    PhasePaletteOption(PhaseColorPalette.VIVID,       "Vívido"),
-    PhasePaletteOption(PhaseColorPalette.TIERRA,      "Tierra"),
-    PhasePaletteOption(PhaseColorPalette.OCEANO,      "Océano Frío"),
-    PhasePaletteOption(PhaseColorPalette.MONOCROMO,   "Monocromo"),
+    PhasePaletteOption(PhaseColorPalette.MINIMALISTA, "Noir"),
+    PhasePaletteOption(PhaseColorPalette.PASTEL,      "Blush")
 )
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -328,15 +262,21 @@ fun SettingsScreen(
                 SettingsItem(
                     icon = Icons.Rounded.Palette,
                     title = stringResource(R.string.settings_theme_general),
-                    subtitle = (clarasOptions + oscurasOptions + minimalistasOptions)
-                        .find { it.palette == currentTheme }?.name ?: currentTheme.name,
+                    subtitle = when (currentTheme) {
+                        AppThemePalette.PETALO -> "Blush"
+                        else -> "Noir"
+                    },
                     onClick = { showThemeSheet = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
                 SettingsItem(
                     icon = Icons.Rounded.Tune,
                     title = stringResource(R.string.settings_cycle_colors),
-                    subtitle = if(currentPhasePalette == PhaseColorPalette.CUSTOM) stringResource(R.string.settings_cycle_colors_custom) else phasePaletteOptions.find { it.palette == currentPhasePalette }?.name ?: stringResource(R.string.settings_cycle_colors_original),
+                    subtitle = when (currentPhasePalette) {
+                        PhaseColorPalette.PASTEL -> "Blush"
+                        PhaseColorPalette.MINIMALISTA -> "Noir"
+                        else -> if (currentTheme.isDark()) "Noir" else "Blush"
+                    },
                     onClick = { showPhaseColorSheet = true }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
@@ -619,20 +559,14 @@ fun SettingsScreen(
         }
 
         if (showThemeSheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showThemeSheet = false },
-                containerColor = MaterialTheme.colorScheme.surface
-            ) {
-                Column(Modifier.verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
-                    Text(stringResource(R.string.settings_general_theme), fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.onSurface)
-                    Spacer(Modifier.height(8.dp))
-                    ThemeCarousel("Claras", clarasOptions, currentTheme) { viewModel.changeTheme(it) }
-                    Spacer(Modifier.height(16.dp))
-                    ThemeCarousel("Oscuras", oscurasOptions, currentTheme) { viewModel.changeTheme(it) }
-                    Spacer(Modifier.height(16.dp))
-                    ThemeCarousel("Minimalistas", minimalistasOptions, currentTheme) { viewModel.changeTheme(it) }
-                }
-            }
+            com.jeremy.lumi.ui.components.LumiThemeSheet(
+                selectedTheme = currentTheme,
+                onSelectTheme = {
+                    viewModel.changeTheme(it)
+                    showThemeSheet = false
+                },
+                onDismiss = { showThemeSheet = false }
+            )
         }
 
         if (showPhaseColorSheet) {
@@ -641,51 +575,24 @@ fun SettingsScreen(
                 containerColor = MaterialTheme.colorScheme.surface
             ) {
                 Column(Modifier.verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
-                    Text(stringResource(R.string.settings_cycle_colors), fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.onSurface)
+                    Text(
+                        stringResource(R.string.settings_cycle_colors),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                     Spacer(Modifier.height(8.dp))
                     PhasePaletteCarousel(
                         options        = phasePaletteOptions,
                         currentPalette = currentPhasePalette,
                         currentTheme   = currentTheme,
                         isDark         = isDark,
-                        onSelect       = { viewModel.changePhasePalette(it) }
+                        onSelect       = {
+                            viewModel.changePhasePalette(it)
+                            showPhaseColorSheet = false
+                        }
                     )
-                    Spacer(Modifier.height(24.dp))
-                    Text(stringResource(R.string.settings_customize_phase), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 24.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.7f))
-                    Spacer(Modifier.height(12.dp))
-                    Column(
-                        modifier = Modifier
-                            .padding(horizontal = 24.dp)
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(18.dp)
-                    ) {
-                        PhaseColorPicker(
-                            label         = stringResource(R.string.phase_menstrual),
-                            currentColor  = activePhaseColors.menstrual,
-                            onColorPicked = { viewModel.changeSinglePhaseColor(PhaseSlot.MENSTRUAL, it, isDark) }
-                        )
-                        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
-                        PhaseColorPicker(
-                            label         = stringResource(R.string.phase_follicular),
-                            currentColor  = activePhaseColors.follicular,
-                            onColorPicked = { viewModel.changeSinglePhaseColor(PhaseSlot.FOLLICULAR, it, isDark) }
-                        )
-                        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
-                        PhaseColorPicker(
-                            label         = stringResource(R.string.phase_ovulation),
-                            currentColor  = activePhaseColors.ovulation,
-                            onColorPicked = { viewModel.changeSinglePhaseColor(PhaseSlot.OVULATION, it, isDark) }
-                        )
-                        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
-                        PhaseColorPicker(
-                            label         = stringResource(R.string.phase_luteal),
-                            currentColor  = activePhaseColors.luteal,
-                            onColorPicked = { viewModel.changeSinglePhaseColor(PhaseSlot.LUTEAL, it, isDark) }
-                        )
-                    }
                 }
             }
         }
@@ -953,135 +860,13 @@ private fun SettingsSwitchItem(icon: androidx.compose.ui.graphics.vector.ImageVe
 //  THEME CAROUSEL â€” etiqueta + LazyRow deslizable
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-@Composable
-private fun ThemeCarousel(
-    label        : String,
-    options      : List<ThemeOption>,
-    currentTheme : AppThemePalette,
-    onSelect     : (AppThemePalette) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(
-            text          = label,
-            fontSize      = 12.sp,
-            fontWeight    = FontWeight.SemiBold,
-            color         = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
-            letterSpacing = 0.5.sp,
-            modifier      = Modifier.padding(horizontal = 24.dp)
-        )
-        LazyRow(
-            contentPadding        = PaddingValues(horizontal = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            items(options, key = { it.palette.name }) { option ->
-                ThemeSelector(
-                    option       = option,
-                    isSelected   = currentTheme == option.palette,
-                    onClick      = { onSelect(option.palette) }
-                )
-            }
-        }
-    }
-}
+
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  THEME SELECTOR â€” círculo + nombre
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-@Composable
-private fun ThemeSelector(
-    option     : ThemeOption,
-    isSelected : Boolean,
-    onClick    : () -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .width(104.dp)
-            .selectable(selected = isSelected, role = androidx.compose.ui.semantics.Role.RadioButton, onClick = onClick)
-            .padding(vertical = 4.dp)
-    ) {
-        Box(
-            modifier = Modifier.size(56.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            if (option.isDark) {
-                // Temas oscuros: fondo oscuro + arco de color primario en Canvas
-                androidx.compose.foundation.Canvas(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                ) {
-                    val radius = size.minDimension / 2f
-                    val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
-                    // Fondo oscuro del tema
-                    drawCircle(color = option.darkBg, radius = radius, center = center)
-                    // Arco de color primario que recorre ~270° (estilo watchface)
-                    drawArc(
-                        color      = option.color.copy(alpha = if (isSelected) 1f else 0.80f),
-                        startAngle = 135f,
-                        sweepAngle = 270f,
-                        useCenter  = false,
-                        style      = androidx.compose.ui.graphics.drawscope.Stroke(
-                            width = if (isSelected) 4.5f.dp.toPx() else 3.dp.toPx(),
-                            cap   = androidx.compose.ui.graphics.StrokeCap.Round
-                        ),
-                        topLeft = androidx.compose.ui.geometry.Offset(
-                            center.x - radius * 0.78f,
-                            center.y - radius * 0.78f
-                        ),
-                        size = androidx.compose.ui.geometry.Size(radius * 1.56f, radius * 1.56f)
-                    )
-                    // Brillo exterior de selección
-                    if (isSelected) {
-                        drawCircle(
-                            color  = option.color.copy(alpha = 0.22f),
-                            radius = radius,
-                            center = center
-                        )
-                    }
-                }
-                // Checkmark de selección centrado
-                if (isSelected) {
-                    Icon(
-                        imageVector        = Icons.Rounded.Check,
-                        contentDescription = null,
-                        tint               = Color.White,
-                        modifier           = Modifier.size(18.dp)
-                    )
-                }
-            } else {
-                // Temas claros: círculo sólido con borde de selección
-                Box(
-                    modifier = Modifier
-                        .size(52.dp)
-                        .clip(CircleShape)
-                        .background(option.color)
-                        .border(
-                            width = if (isSelected) 3.dp else 0.dp,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                            shape = CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (isSelected) {
-                        Icon(Icons.Rounded.Check, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                    }
-                }
-            }
-        }
-        Spacer(Modifier.height(6.dp))
-        Text(
-            text       = option.name,
-            fontSize   = 11.sp,
-            color      = MaterialTheme.colorScheme.onBackground.copy(alpha = if (isSelected) 0.9f else 0.65f),
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            minLines = 2,
-            maxLines = 3
-        )
-    }
-}
+
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  PHASE PALETTE CAROUSEL â€” cada opción es un mini-anillo de 4 cuartos de color
@@ -1158,8 +943,6 @@ private fun AmbientPickerRow(
 ) {
     val isDark = LocalIsDarkTheme.current
     val entries = BackgroundAmbient.entries
-    val rowOne  = entries.take(4)
-    val rowTwo  = entries.drop(4)
 
     Column(
         modifier = Modifier
@@ -1185,27 +968,11 @@ private fun AmbientPickerRow(
                 color      = MaterialTheme.colorScheme.onSurface
             )
         }
-        // Fila 1 — FLAT, AURA, CELESTIAL, ORGANIC
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            rowOne.forEach { ambient ->
-                AmbientChip(
-                    ambient   = ambient,
-                    selected  = ambient == current,
-                    isDark    = isDark,
-                    onClick   = { onChange(ambient) },
-                    modifier  = Modifier.weight(1f)
-                )
-            }
-        }
-        // Fila 2 — AURORA, PETALS, NEBULA, BREATH
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            rowTwo.forEach { ambient ->
+            entries.forEach { ambient ->
                 AmbientChip(
                     ambient   = ambient,
                     selected  = ambient == current,
@@ -1291,22 +1058,6 @@ private fun AmbientMiniPreview(
                     )
                 )
             }
-            BackgroundAmbient.AURA -> {
-                // Halo central
-                drawCircle(
-                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                        colors = listOf(
-                            primaryColor.copy(alpha = if (isDark) 0.60f else 0.35f),
-                            primaryColor.copy(alpha = 0.05f),
-                            androidx.compose.ui.graphics.Color.Transparent
-                        ),
-                        center = androidx.compose.ui.geometry.Offset(w * 0.5f, h * 0.55f),
-                        radius = w * 0.55f
-                    ),
-                    radius = w * 0.55f,
-                    center = androidx.compose.ui.geometry.Offset(w * 0.5f, h * 0.55f)
-                )
-            }
             BackgroundAmbient.CELESTIAL -> {
                 // Estrellitas
                 val starPositions = listOf(
@@ -1335,158 +1086,6 @@ private fun AmbientMiniPreview(
                 clipPath(moonPath) {
                     drawCircle(bgColor, moonR, androidx.compose.ui.geometry.Offset(moonC.x - moonR * 0.1f, moonC.y))
                 }
-            }
-            BackgroundAmbient.ORGANIC -> {
-                // Dos blobs de color en esquinas
-                val alphaB = if (isDark) 0.55f else 0.30f
-                drawCircle(
-                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                        colors = listOf(phaseColors.menstrual.copy(alpha = alphaB), androidx.compose.ui.graphics.Color.Transparent),
-                        center = androidx.compose.ui.geometry.Offset(-w * 0.05f, -h * 0.05f),
-                        radius = w * 0.65f
-                    ),
-                    radius = w * 0.65f,
-                    center = androidx.compose.ui.geometry.Offset(-w * 0.05f, -h * 0.05f)
-                )
-                drawCircle(
-                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                        colors = listOf(phaseColors.follicular.copy(alpha = alphaB * 0.70f), androidx.compose.ui.graphics.Color.Transparent),
-                        center = androidx.compose.ui.geometry.Offset(w * 1.05f, h * 1.05f),
-                        radius = w * 0.60f
-                    ),
-                    radius = w * 0.60f,
-                    center = androidx.compose.ui.geometry.Offset(w * 1.05f, h * 1.05f)
-                )
-            }
-            BackgroundAmbient.AURORA -> {
-                // Tres bandas horizontales de aurora boreal
-                val auroraAlpha = if (isDark) 0.70f else 0.35f
-                val colorA = if (isDark) androidx.compose.ui.graphics.Color(0xFF00E5A0) else androidx.compose.ui.graphics.Color(0xFF80D4B8)
-                val colorB = if (isDark) androidx.compose.ui.graphics.Color(0xFF00B0FF) else androidx.compose.ui.graphics.Color(0xFFAAD8F0)
-                val colorC = if (isDark) androidx.compose.ui.graphics.Color(0xFFB07CF0) else androidx.compose.ui.graphics.Color(0xFFD0B4E8)
-                // Banda inferior — teal
-                drawCircle(
-                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                        colors = listOf(colorA.copy(alpha = auroraAlpha), androidx.compose.ui.graphics.Color.Transparent),
-                        center = androidx.compose.ui.geometry.Offset(w * 0.50f, h * 0.70f),
-                        radius = w * 0.70f
-                    ),
-                    radius = w * 0.70f,
-                    center = androidx.compose.ui.geometry.Offset(w * 0.50f, h * 0.70f)
-                )
-                // Banda media — cian
-                drawCircle(
-                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                        colors = listOf(colorB.copy(alpha = auroraAlpha * 0.80f), androidx.compose.ui.graphics.Color.Transparent),
-                        center = androidx.compose.ui.geometry.Offset(w * 0.45f, h * 0.40f),
-                        radius = w * 0.60f
-                    ),
-                    radius = w * 0.60f,
-                    center = androidx.compose.ui.geometry.Offset(w * 0.45f, h * 0.40f)
-                )
-                // Banda superior — violeta
-                drawCircle(
-                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                        colors = listOf(colorC.copy(alpha = auroraAlpha * 0.60f), androidx.compose.ui.graphics.Color.Transparent),
-                        center = androidx.compose.ui.geometry.Offset(w * 0.55f, h * 0.12f),
-                        radius = w * 0.65f
-                    ),
-                    radius = w * 0.65f,
-                    center = androidx.compose.ui.geometry.Offset(w * 0.55f, h * 0.12f)
-                )
-            }
-            BackgroundAmbient.PETALS -> {
-                // 3 círculos translúcidos tipo pétalos
-                val petalAlpha = if (isDark) 0.65f else 0.38f
-                val p1 = if (isDark) androidx.compose.ui.graphics.Color(0xFFC890E8) else androidx.compose.ui.graphics.Color(0xFFE8A0B8)
-                val p2 = if (isDark) androidx.compose.ui.graphics.Color(0xFFE880B0) else androidx.compose.ui.graphics.Color(0xFFF0B890)
-                val p3 = if (isDark) androidx.compose.ui.graphics.Color(0xFF90A8E0) else androidx.compose.ui.graphics.Color(0xFFD8B0D8)
-                drawCircle(
-                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                        colors = listOf(p1.copy(alpha = petalAlpha), androidx.compose.ui.graphics.Color.Transparent),
-                        center = androidx.compose.ui.geometry.Offset(w * 0.25f, h * 0.70f),
-                        radius = w * 0.45f
-                    ),
-                    radius = w * 0.45f, center = androidx.compose.ui.geometry.Offset(w * 0.25f, h * 0.70f)
-                )
-                drawCircle(
-                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                        colors = listOf(p2.copy(alpha = petalAlpha * 0.85f), androidx.compose.ui.graphics.Color.Transparent),
-                        center = androidx.compose.ui.geometry.Offset(w * 0.75f, h * 0.45f),
-                        radius = w * 0.42f
-                    ),
-                    radius = w * 0.42f, center = androidx.compose.ui.geometry.Offset(w * 0.75f, h * 0.45f)
-                )
-                drawCircle(
-                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                        colors = listOf(p3.copy(alpha = petalAlpha * 0.70f), androidx.compose.ui.graphics.Color.Transparent),
-                        center = androidx.compose.ui.geometry.Offset(w * 0.45f, h * 0.20f),
-                        radius = w * 0.38f
-                    ),
-                    radius = w * 0.38f, center = androidx.compose.ui.geometry.Offset(w * 0.45f, h * 0.20f)
-                )
-            }
-            BackgroundAmbient.NEBULA -> {
-                // Tres manchas de niebla cósmica superpuestas
-                val nebulaAlpha = if (isDark) 0.75f else 0.30f
-                val n1 = if (isDark) androidx.compose.ui.graphics.Color(0xFF1A3A8A) else androidx.compose.ui.graphics.Color(0xFFB8C8E8)
-                val n2 = if (isDark) androidx.compose.ui.graphics.Color(0xFF601878) else androidx.compose.ui.graphics.Color(0xFFD8B8D8)
-                val n3 = if (isDark) androidx.compose.ui.graphics.Color(0xFF0A5060) else androidx.compose.ui.graphics.Color(0xFFB0D0D8)
-                drawCircle(
-                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                        colors = listOf(n1.copy(alpha = nebulaAlpha), androidx.compose.ui.graphics.Color.Transparent),
-                        center = androidx.compose.ui.geometry.Offset(w * 0.20f, h * 0.35f),
-                        radius = w * 0.72f
-                    ),
-                    radius = w * 0.72f, center = androidx.compose.ui.geometry.Offset(w * 0.20f, h * 0.35f)
-                )
-                drawCircle(
-                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                        colors = listOf(n2.copy(alpha = nebulaAlpha * 0.80f), androidx.compose.ui.graphics.Color.Transparent),
-                        center = androidx.compose.ui.geometry.Offset(w * 0.85f, h * 0.15f),
-                        radius = w * 0.58f
-                    ),
-                    radius = w * 0.58f, center = androidx.compose.ui.geometry.Offset(w * 0.85f, h * 0.15f)
-                )
-                drawCircle(
-                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                        colors = listOf(n3.copy(alpha = nebulaAlpha * 0.70f), androidx.compose.ui.graphics.Color.Transparent),
-                        center = androidx.compose.ui.geometry.Offset(w * 0.60f, h * 0.80f),
-                        radius = w * 0.55f
-                    ),
-                    radius = w * 0.55f, center = androidx.compose.ui.geometry.Offset(w * 0.60f, h * 0.80f)
-                )
-            }
-            BackgroundAmbient.BREATH -> {
-                // Pulso radial central único
-                val breathAlpha = if (isDark) 0.60f else 0.35f
-                // Halo exterior difuso
-                drawCircle(
-                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                        colors = listOf(
-                            primaryColor.copy(alpha = breathAlpha * 0.20f),
-                            androidx.compose.ui.graphics.Color.Transparent
-                        ),
-                        center = androidx.compose.ui.geometry.Offset(w * 0.50f, h * 0.50f),
-                        radius = w * 0.90f
-                    ),
-                    radius = w * 0.90f,
-                    center = androidx.compose.ui.geometry.Offset(w * 0.50f, h * 0.50f)
-                )
-                // Pulso central principal
-                drawCircle(
-                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                        colorStops = arrayOf(
-                            0.00f to primaryColor.copy(alpha = breathAlpha),
-                            0.45f to primaryColor.copy(alpha = breathAlpha * 0.55f),
-                            1.00f to androidx.compose.ui.graphics.Color.Transparent
-                        ),
-                        center = androidx.compose.ui.geometry.Offset(w * 0.50f, h * 0.50f),
-                        radius = w * 0.52f
-                    ),
-                    radius = w * 0.52f,
-                    center = androidx.compose.ui.geometry.Offset(w * 0.50f, h * 0.50f)
-                )
             }
         }
     }

@@ -115,7 +115,7 @@ class SettingsViewModel @Inject constructor(
         .stateIn(
             scope        = viewModelScope,
             started      = SharingStarted.WhileSubscribed(5000),
-            initialValue = AppThemePalette.LUMI_SPARK_DARK
+            initialValue = AppThemePalette.NOIR
         )
 
     fun changeTheme(newTheme: AppThemePalette) {
@@ -145,7 +145,7 @@ class SettingsViewModel @Inject constructor(
         .stateIn(
             scope        = viewModelScope,
             started      = SharingStarted.WhileSubscribed(5000),
-            initialValue = BackgroundAmbient.AURA
+            initialValue = BackgroundAmbient.FLAT
         )
 
     fun changeBackgroundAmbient(ambient: BackgroundAmbient) {

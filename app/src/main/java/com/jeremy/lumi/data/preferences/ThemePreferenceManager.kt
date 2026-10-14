@@ -29,7 +29,7 @@ class ThemePreferenceManager @Inject constructor(
     companion object {
         private val THEME_KEY = stringPreferencesKey("selected_theme")
         // Paleta por defecto si nunca se ha guardado nada
-        private val DEFAULT_THEME = AppThemePalette.LUMI_SPARK_DARK
+        private val DEFAULT_THEME = AppThemePalette.NOIR
 
 
         // ── Colores de fase ────────────────────────────────────────────────
@@ -42,7 +42,7 @@ class ThemePreferenceManager @Inject constructor(
 
         // ── Ambiente de fondo ───────────────────────────────────────────────
         private val AMBIENT_KEY = stringPreferencesKey("background_ambient")
-        private val DEFAULT_AMBIENT = BackgroundAmbient.AURA
+        private val DEFAULT_AMBIENT = BackgroundAmbient.FLAT
 
         // Overrides individuales — solo se leen cuando PHASE_PALETTE_KEY == CUSTOM.
         // Se guardan como Long (ARGB) porque Color no es serializable directamente.
@@ -57,9 +57,9 @@ class ThemePreferenceManager @Inject constructor(
     val selectedThemeFlow: Flow<AppThemePalette> = context.dataStore.data
         .map { prefs ->
             val saved = prefs[THEME_KEY]
-            // runCatching evita crashes si en el futuro se renombra algún valor del enum
-            runCatching { AppThemePalette.valueOf(saved ?: DEFAULT_THEME.name) }
+            val resolved = runCatching { AppThemePalette.valueOf(saved ?: DEFAULT_THEME.name) }
                 .getOrDefault(DEFAULT_THEME)
+            if (resolved == AppThemePalette.PETALO) AppThemePalette.PETALO else AppThemePalette.NOIR
         }
 
     suspend fun saveTheme(theme: AppThemePalette) {
@@ -88,8 +88,9 @@ class ThemePreferenceManager @Inject constructor(
     val backgroundAmbientFlow: Flow<BackgroundAmbient> = context.dataStore.data
         .map { prefs ->
             val saved = prefs[AMBIENT_KEY]
-            runCatching { BackgroundAmbient.valueOf(saved ?: DEFAULT_AMBIENT.name) }
+            val resolved = runCatching { BackgroundAmbient.valueOf(saved ?: DEFAULT_AMBIENT.name) }
                 .getOrDefault(DEFAULT_AMBIENT)
+            if (resolved == BackgroundAmbient.CELESTIAL) BackgroundAmbient.CELESTIAL else BackgroundAmbient.FLAT
         }
 
     suspend fun saveBackgroundAmbient(ambient: BackgroundAmbient) {
@@ -103,8 +104,13 @@ class ThemePreferenceManager @Inject constructor(
     val selectedPhasePaletteFlow: Flow<PhaseColorPalette> = context.dataStore.data
         .map { prefs ->
             val saved = prefs[PHASE_PALETTE_KEY]
-            runCatching { PhaseColorPalette.valueOf(saved ?: DEFAULT_PHASE_PALETTE.name) }
+            val resolved = runCatching { PhaseColorPalette.valueOf(saved ?: DEFAULT_PHASE_PALETTE.name) }
                 .getOrDefault(DEFAULT_PHASE_PALETTE)
+            when (resolved) {
+                PhaseColorPalette.PASTEL -> PhaseColorPalette.PASTEL
+                PhaseColorPalette.MINIMALISTA -> PhaseColorPalette.MINIMALISTA
+                else -> PhaseColorPalette.AUTO_HARMONY
+            }
         }
 
     suspend fun savePhasePalette(palette: PhaseColorPalette) {
