@@ -1,60 +1,140 @@
 package com.jeremy.lumi.ui.screens.insights
 
-import androidx.compose.animation.core.*
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Analytics
-import androidx.compose.material.icons.rounded.AutoGraph
-import androidx.compose.material.icons.rounded.Description
-import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.WaterDrop
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.MonitorHeart
-import androidx.compose.material.icons.rounded.Star
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.PictureAsPdf
+import androidx.compose.material.icons.rounded.Thermostat
+import androidx.compose.material.icons.rounded.Timeline
+import androidx.compose.material.icons.rounded.VolunteerActivism
+import androidx.compose.material.icons.rounded.WarningAmber
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jeremy.lumi.R
-import com.jeremy.lumi.domain.model.*
-import kotlinx.coroutines.delay
+import com.jeremy.lumi.domain.model.AlertSeverity
+import com.jeremy.lumi.domain.model.CyclePhase
+import com.jeremy.lumi.domain.model.CycleType
+import com.jeremy.lumi.domain.model.HistoricalCycleStats
+import com.jeremy.lumi.domain.model.LumiObservation
+import com.jeremy.lumi.domain.model.PuntoBarraCiclo
+import com.jeremy.lumi.domain.model.PuntoBbt
+import com.jeremy.lumi.ui.components.AmbientBackgroundLayer
+import com.jeremy.lumi.ui.components.LumiBrandFlower
+import com.jeremy.lumi.ui.components.LumiThemeSheet
+import com.jeremy.lumi.ui.screens.settings.SettingsViewModel
+import com.jeremy.lumi.ui.theme.AmbientScreen
+import com.jeremy.lumi.ui.theme.LocalPhaseColors
+import com.jeremy.lumi.ui.theme.LumiThemeTokens
 import kotlinx.coroutines.launch
-
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InsightsScreen(
-    onNavigateBack: () -> Unit,
-    viewModel: InsightsViewModel = hiltViewModel()
+    onNavigateBack: () -> Unit = {},
+    viewModel: InsightsViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var showSosSheet by remember { mutableStateOf(false) }
+    val currentTheme by settingsViewModel.currentTheme.collectAsStateWithLifecycle()
+    val tokens = LumiThemeTokens.current
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val scrollState = rememberScrollState()
 
-    // PDF Export: cuando el ViewModel entrega bytes, abrimos el selector de destino
+    var showSosSheet by remember { mutableStateOf(false) }
+    var showThemeSheet by remember { mutableStateOf(false) }
+    var activeTab by remember { mutableIntStateOf(0) } // 0: Resumen, 1: Tendencias, 2: Bienestar
+
+    // PDF Export launcher nativo
     val pdfLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/pdf")
     ) { uri ->
@@ -64,6 +144,7 @@ fun InsightsScreen(
             context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
         }
         viewModel.clearPdfBytes()
+        Toast.makeText(context, "Reporte PDF guardado correctamente", Toast.LENGTH_SHORT).show()
     }
 
     LaunchedEffect(uiState.pdfBytes) {
@@ -80,212 +161,289 @@ fun InsightsScreen(
         }
     }
 
-    var screenReady by remember { mutableStateOf(false) }
-    LaunchedEffect(uiState.isLoading) {
-        if (!uiState.isLoading) { delay(60); screenReady = true }
-    }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(tokens.bg)
+    ) {
+        AmbientBackgroundLayer(
+            screenType = AmbientScreen.CONTENT,
+            scrollOffsetProvider = { scrollState.value.toFloat() }
+        )
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.ArrowBack, 
-                            contentDescription = "Atrás", 
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                },
-                title = {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Scaffold(
+            topBar = {
+                // Cabecera de marca Lumi aprobada: Logo + Flor + Botones de acción
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        LumiBrandFlower(size = 22)
                         Text(
-                            text       = stringResource(R.string.insights_title),
+                            text = "lumi",
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
-                            fontSize   = 17.sp,
-                            color      = MaterialTheme.colorScheme.onBackground
+                            letterSpacing = (-1.2).sp,
+                            color = tokens.text
                         )
                         Text(
-                            text     = stringResource(R.string.insights_subtitle),
-                            fontSize = 11.sp,
-                            color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                            text = "✦",
+                            fontSize = 14.sp,
+                            color = tokens.accent
                         )
                     }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
-        if (uiState.isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-            }
-        } else if (uiState.insights == null) {
-            // Estado vacío â€” todavía no hay ciclos suficientes
-            InsightsEmptyState(Modifier.padding(paddingValues))
-        } else {
-            val insights = uiState.insights!!
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
-            ) {
-                Spacer(Modifier.height(4.dp))
 
-                // FIX P2-5: Aviso para usuarias con anticonceptivos hormonales.
-                // Las estadísticas de ovulación y fase lúteal no les aplican.
-                if (uiState.isOnContraceptive) {
-                    androidx.compose.foundation.layout.Box(
-                        modifier = androidx.compose.ui.Modifier
-                            .fillMaxWidth()
-                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
-                            .padding(horizontal = 14.dp, vertical = 10.dp)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = { showThemeSheet = true },
+                            modifier = Modifier.size(36.dp)
+                        ) {
                             Icon(
-                                imageVector = Icons.Rounded.Analytics,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = androidx.compose.ui.Modifier.size(16.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                text = stringResource(R.string.insights_pill_mode_note),
-                                fontSize = 12.sp,
-                                lineHeight = 16.sp,
-                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                            )
-                        }
-                    }
-                }
-
-                // --- Alertas Médicas Locales ---
-                if (uiState.medicalAlerts.isNotEmpty()) {
-                    uiState.medicalAlerts.forEachIndexed { index, alert ->
-                        InsightsFadeIn(screenReady, index) {
-                            MedicalAlertCard(
-                                alert = alert,
-                                onDismiss = { viewModel.dismissAlert(alert) }
-                            )
-                        }
-                    }
-                }
-
-                // â”€â”€ Resumen de ciclos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-                insights.historicalStats?.let { stats ->
-                    InsightsFadeIn(screenReady, 0) {
-                        CycleStatsCard(stats)
-                    }
-                }
-
-                // -- Graficas Avanzadas (Canvas premium) --
-                // Seccion con su propio GraficasViewModel: historial detallado
-                // de ciclos, tendencia de dolor/estres por dia y curva BBT.
-                InsightsFadeIn(screenReady, 100) {
-                    GraficasAvanzadasSection()
-                }
-
-                // â”€â”€ Donut Chart: Distribución de Fases (Canvas) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-                insights.historicalStats?.let { stats ->
-                    InsightsFadeIn(screenReady, 120) {
-                        PhaseDistributionDonutCard(stats)
-                    }
-                }
-
-                // ── Síntomas × Fase ──────────────────────────────────────
-                if (insights.symptomCorrelations.isNotEmpty()) {
-                    InsightsFadeIn(screenReady, 160) {
-                        SymptomCorrelationCard(insights.symptomCorrelations.take(5))
-                    }
-                }
-
-                // â”€â”€ Distribución de humor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-                insights.moodDistribution?.let { mood ->
-                    if (mood.totalDays > 0) {
-                        InsightsFadeIn(screenReady, 240) {
-                            MoodDistributionCard(mood)
-                        }
-                    }
-                }
-
-                // ── Descubrimientos Ocultos (Bivariables) ────────────────────────────────
-                if (insights.bivariableInsights.isNotEmpty()) {
-                    InsightsFadeIn(screenReady, 280) {
-                        BivariableInsightsCard(insights.bivariableInsights)
-                    }
-                }
-
-                // ── Botón Modo SOS (Resumen Médico) ──────────────────────────────────────
-                InsightsFadeIn(screenReady, 300) {
-                    Button(
-                        onClick = { showSosSheet = true },
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        shape = RoundedCornerShape(18.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    ) {
-                        Icon(androidx.compose.material.icons.Icons.Rounded.MonitorHeart, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.insights_btn_prep_doctor), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
-
-                // ── Exportar PDF para el médico ──────────────────────────────────────────
-                InsightsFadeIn(screenReady, 360) {
-                    OutlinedButton(
-                        onClick  = { viewModel.generateMedicalReport() },
-                        enabled  = !uiState.isGeneratingPdf,
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        shape    = RoundedCornerShape(18.dp),
-                        border   = androidx.compose.foundation.BorderStroke(
-                            1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                        )
-                    ) {
-                        if (uiState.isGeneratingPdf) {
-                            CircularProgressIndicator(
-                                modifier  = Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                                color     = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(Modifier.width(10.dp))
-                            Text(stringResource(R.string.insights_pdf_generating), fontSize = 15.sp,
-                                color = MaterialTheme.colorScheme.primary)
-                        } else {
-                            Icon(
-                                androidx.compose.material.icons.Icons.Rounded.Description,
-                                contentDescription = null,
-                                tint   = MaterialTheme.colorScheme.primary,
+                                imageVector = Icons.Outlined.Palette,
+                                contentDescription = "Cambiar atmósfera de diseño",
+                                tint = tokens.muted,
                                 modifier = Modifier.size(20.dp)
                             )
-                            Spacer(Modifier.width(10.dp))
-                            Text(
-                                stringResource(R.string.insights_btn_export_pdf),
-                                fontSize   = 15.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color      = MaterialTheme.colorScheme.primary
+                        }
+
+                        IconButton(
+                            onClick = { viewModel.openSheet(InsightsSheetType.INFO) },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Info,
+                                contentDescription = "Acerca de estos datos",
+                                tint = tokens.muted,
+                                modifier = Modifier.size(19.dp)
                             )
                         }
                     }
                 }
+            },
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            containerColor = Color.Transparent
+        ) { paddingValues ->
+            if (uiState.isLoading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = tokens.accent)
+                }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .verticalScroll(scrollState)
+                ) {
+                    // Control de rango compacto (Sin encabezado decorativo rechazado)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(22.dp))
+                                .background(tokens.panel)
+                                .border(1.dp, tokens.line, RoundedCornerShape(22.dp))
+                                .clickable {
+                                    val nextRange = when (uiState.cycleRange) {
+                                        3 -> 6
+                                        6 -> 12
+                                        else -> 3
+                                    }
+                                    viewModel.setCycleRange(nextRange)
+                                }
+                                .padding(horizontal = 12.dp, vertical = 7.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.CalendarToday,
+                                    contentDescription = null,
+                                    tint = tokens.text,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Text(
+                                    text = "Últimos ${uiState.cycleRange} ciclos",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = tokens.text
+                                )
+                                Icon(
+                                    imageVector = Icons.Rounded.KeyboardArrowDown,
+                                    contentDescription = null,
+                                    tint = tokens.muted,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
 
-                Spacer(Modifier.height(32.dp))
+                        Text(
+                            text = if (uiState.availableCyclesCount > 0)
+                                "${uiState.availableCyclesCount.coerceAtMost(uiState.cycleRange)} registros analizados"
+                            else "Sin registros",
+                            fontSize = 10.sp,
+                            color = tokens.dim
+                        )
+                    }
+
+                    // Enlaces de navegación rápida por sección
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(20.dp)
+                    ) {
+                        listOf("Resumen", "Tendencias", "Bienestar").forEachIndexed { index, tabTitle ->
+                            val isActive = activeTab == index
+                            Column(
+                                modifier = Modifier
+                                    .clickable {
+                                        activeTab = index
+                                        coroutineScope.launch {
+                                            when (index) {
+                                                0 -> scrollState.animateScrollTo(0)
+                                                1 -> scrollState.animateScrollTo(420)
+                                                2 -> scrollState.animateScrollTo(1080)
+                                            }
+                                        }
+                                    }
+                                    .padding(bottom = 8.dp)
+                            ) {
+                                Text(
+                                    text = tabTitle,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isActive) tokens.text else tokens.dim
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .height(2.dp)
+                                        .width(36.dp)
+                                        .background(if (isActive) tokens.accent else Color.Transparent)
+                                )
+                            }
+                        }
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(26.dp)
+                    ) {
+                        // Aviso informativo para usuarias con anticonceptivos hormonales
+                        if (uiState.isOnContraceptive) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(tokens.accentSoft)
+                                    .border(1.dp, tokens.line, RoundedCornerShape(14.dp))
+                                    .padding(horizontal = 14.dp, vertical = 10.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Timeline,
+                                        contentDescription = null,
+                                        tint = tokens.accent,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        text = stringResource(R.string.insights_pill_mode_note),
+                                        fontSize = 12.sp,
+                                        lineHeight = 16.sp,
+                                        color = tokens.text
+                                    )
+                                }
+                            }
+                        }
+
+                        // ── RESUMEN ESTADÍSTICO (Hero Card) ──────────────────────────
+                        val stats = uiState.insights?.historicalStats
+                        SectionHeroCard(
+                            stats = stats,
+                            observationsCount = uiState.observations.size,
+                            onViewObservations = { viewModel.openSheet(InsightsSheetType.OBSERVATIONS) }
+                        )
+
+                        // ── 01 / EVOLUCIÓN: Así han cambiado ─────────────────────────
+                        SectionEvolucion(
+                            stats = stats,
+                            cycleBars = uiState.cycleBars,
+                            selectedCycleIndex = uiState.selectedCycleIndex,
+                            onSelectBar = { viewModel.selectCycleBar(it) },
+                            onOpenObservations = { viewModel.openSheet(InsightsSheetType.OBSERVATIONS) },
+                            isPhaseExpanded = uiState.isPhaseDistributionExpanded,
+                            onTogglePhaseExpanded = { viewModel.togglePhaseDistribution() }
+                        )
+
+                        // ── 02 / BIENESTAR: Lo que registras ─────────────────────────
+                        SectionBienestar(
+                            symptomCorrelations = uiState.insights?.symptomCorrelations ?: emptyList(),
+                            selectedSymptomNote = uiState.selectedSymptomNote,
+                            onSelectSymptomCell = { sym, phase, lvl, cnt ->
+                                viewModel.selectSymptomCell(sym, phase, lvl, cnt)
+                            },
+                            moodDistribution = uiState.insights?.moodDistribution,
+                            showAllMoods = uiState.showAllMoods,
+                            onToggleShowAllMoods = { viewModel.toggleShowAllMoods() },
+                            bbtPoints = uiState.bbtPoints,
+                            hayDatosBbt = uiState.hayDatosBbt,
+                            onAddDemoTemp = { day, temp -> viewModel.addDemoTemperature(day, temp) },
+                            onClearDemoTemp = { viewModel.clearDemoTemperatures() }
+                        )
+
+                        // ── 03 / INTERPRETACIÓN: Mirar con calma ─────────────────────
+                        SectionInterpretacion(
+                            bivariableInsights = uiState.insights?.bivariableInsights ?: emptyList(),
+                            onOpenObservations = { viewModel.openSheet(InsightsSheetType.OBSERVATIONS) }
+                        )
+
+                        // ── 04 / ACOMPAÑAMIENTO: Cuando quieras hablarlo ─────────────
+                        SectionAcompanamiento(
+                            onOpenConsult = { showSosSheet = true },
+                            onExportPdf = { viewModel.generateMedicalReport() },
+                            isGeneratingPdf = uiState.isGeneratingPdf
+                        )
+
+                        Spacer(Modifier.height(32.dp))
+                    }
+                }
             }
-            
-            if (showSosSheet) {
+
+            // ── HOJAS MODALES ─────────────────────────────────────────────────────────
+
+            // Modal de Selección de Tema
+            if (showThemeSheet) {
+                LumiThemeSheet(
+                    selectedTheme = currentTheme,
+                    onSelectTheme = { settingsViewModel.changeTheme(it) },
+                    onDismiss = { showThemeSheet = false }
+                )
+            }
+
+            // Modal de Preparación Médica (SosModeSheet nativa preservada)
+            if (showSosSheet && uiState.insights != null) {
                 SosModeSheet(
-                    insights = insights,
+                    insights = uiState.insights!!,
                     medicalAlerts = uiState.medicalAlerts,
                     isOnContraceptive = uiState.isOnContraceptive,
                     lmpDate = uiState.lmpDate,
@@ -294,695 +452,1507 @@ fun InsightsScreen(
                         showSosSheet = false
                         viewModel.generateMedicalReport()
                     },
-                    onDismiss = {
-                        showSosSheet = false
+                    onDismiss = { showSosSheet = false }
+                )
+            }
+
+            // Modal "Observaciones de Lumi"
+            if (uiState.activeSheet == InsightsSheetType.OBSERVATIONS) {
+                ObservationsSheet(
+                    observations = uiState.observations,
+                    onDismiss = { viewModel.closeSheet() },
+                    onOpenConsult = {
+                        viewModel.closeSheet()
+                        showSosSheet = true
                     }
                 )
+            }
+
+            // Modal "Cómo leer Insights"
+            if (uiState.activeSheet == InsightsSheetType.INFO) {
+                InfoExplanationSheet(onDismiss = { viewModel.closeSheet() })
             }
         }
     }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  TARJETA 1 â€” Estadísticas históricas de ciclos
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
+//  COMPONENTE: RESUMEN ESTADÍSTICO (Hero Card)
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun CycleStatsCard(stats: HistoricalCycleStats) {
-    val primary = MaterialTheme.colorScheme.primary
+private fun SectionHeroCard(
+    stats: HistoricalCycleStats?,
+    observationsCount: Int,
+    onViewObservations: () -> Unit
+) {
+    val tokens = LumiThemeTokens.current
 
-    Card(
-        modifier  = Modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(24.dp),
-        colors    = CardDefaults.cardColors(MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            SectionHeader(
-                icon  = Icons.Rounded.AutoGraph,
-                title = stringResource(R.string.insights_section_cycle)
-            )
-
-            // Grid 2×2 de métricas
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                MetricChip(
-                    label = stringResource(R.string.insights_avg_cycle),
-                    value = "${stats.avgCycleLength.toInt()}",
-                    unit  = stringResource(R.string.insights_days_suffix),
-                    color = primary,
-                    modifier = Modifier.weight(1f)
+    Column {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(tokens.glow, Color.Transparent),
+                        center = Offset(Float.POSITIVE_INFINITY, 0f),
+                        radius = 350f
+                    ),
+                    shape = RoundedCornerShape(20.dp)
                 )
-                MetricChip(
-                    label = stringResource(R.string.insights_avg_period),
-                    value = "${stats.avgPeriodLength.toInt()}",
-                    unit  = stringResource(R.string.insights_days_suffix),
-                    color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                MetricChip(
-                    label = stringResource(R.string.insights_shortest),
-                    value = "${stats.shortestCycle}",
-                    unit  = stringResource(R.string.insights_days_suffix),
-                    color = primary.copy(alpha = 0.75f),
-                    modifier = Modifier.weight(1f)
-                )
-                MetricChip(
-                    label = stringResource(R.string.insights_longest),
-                    value = "${stats.longestCycle}",
-                    unit  = stringResource(R.string.insights_days_suffix),
-                    color = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier.weight(1f)
-                )
-            }
+                .background(tokens.panel)
+                .border(1.dp, tokens.line, RoundedCornerShape(20.dp))
+                .padding(22.dp)
+        ) {
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Duración media de tus ciclos",
+                        fontSize = 11.sp,
+                        color = tokens.muted
+                    )
+                    Icon(
+                        imageVector = Icons.Rounded.Timeline,
+                        contentDescription = null,
+                        tint = tokens.accent,
+                        modifier = Modifier.size(17.dp)
+                    )
+                }
 
-            // Fase lútea personal
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(primary.copy(alpha = 0.07f))
-                    .padding(12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment     = Alignment.CenterVertically
-            ) {
-                Text(
-                    text      = "Fase lútea personal",
-                    fontSize  = 13.sp,
-                    color     = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                )
-                Text(
-                    text       = "${stats.personalLutealLength} días",
-                    fontWeight = FontWeight.Bold,
-                    fontSize   = 14.sp,
-                    color      = primary
-                )
-            }
-        }
-    }
-}
+                Spacer(Modifier.height(10.dp))
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  TARJETA 2 â€” Gráfico de barras de ciclos recientes (Canvas propio)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        text = if (stats != null) "${stats.avgCycleLength.roundToInt()}" else "--",
+                        fontSize = 72.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = (-4).sp,
+                        color = tokens.text,
+                        lineHeight = 72.sp
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "días",
+                        fontSize = 14.sp,
+                        color = tokens.muted,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                }
 
-@Composable
-private fun RecentCyclesBarChart(cycles: List<CycleStats>) {
-    val primary   = MaterialTheme.colorScheme.primary
-    val secondary = MaterialTheme.colorScheme.secondary
-    val maxDur    = cycles.maxOf { it.durationDays }.toFloat().coerceAtLeast(1f)
+                Spacer(Modifier.height(14.dp))
+                HorizontalDivider(color = tokens.line, thickness = 1.dp)
+                Spacer(Modifier.height(14.dp))
 
-    // Animación de entrada de barras
-    val barProgress = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        barProgress.animateTo(1f, tween(900, easing = FastOutSlowInEasing))
-    }
-
-    Card(
-        modifier  = Modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(24.dp),
-        colors    = CardDefaults.cardColors(MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            SectionHeader(
-                icon  = Icons.Rounded.Analytics,
-                title = "Últimos ${cycles.size} ciclos"
-            )
-
-            Row(
-                modifier              = Modifier.fillMaxWidth().height(120.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment     = Alignment.Bottom
-            ) {
-                cycles.forEachIndexed { index, cycle ->
-                    val heightFraction = (cycle.durationDays / maxDur) * barProgress.value
-                    val barColor = when (cycle.cycleType) {
-                        CycleType.SHORT  -> secondary
-                        CycleType.NORMAL -> primary
-                        CycleType.LONG   -> MaterialTheme.colorScheme.tertiary
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = "DÍAS DE PERIODO",
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp,
+                            color = tokens.dim
+                        )
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(
+                                text = if (stats != null) "${stats.avgPeriodLength.roundToInt()}" else "--",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = tokens.text
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = "días",
+                                fontSize = 10.sp,
+                                color = tokens.muted,
+                                modifier = Modifier.padding(bottom = 3.dp)
+                            )
+                        }
                     }
+
                     Column(
-                        modifier            = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Bottom
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text     = "${cycle.durationDays}",
-                            fontSize = 10.sp,
-                            color    = barColor,
-                            fontWeight = FontWeight.SemiBold
+                            text = "RANGO OBSERVADO",
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp,
+                            color = tokens.dim
                         )
-                        Spacer(Modifier.height(2.dp))
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .fillMaxHeight(heightFraction)
-                                .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
-                                .background(
-                                    Brush.verticalGradient(
-                                        listOf(barColor, barColor.copy(alpha = 0.5f))
-                                    )
-                                )
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text     = "C${index + 1}",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium,
-                            color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                        )
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(
+                                text = if (stats != null) "${stats.shortestCycle}–${stats.longestCycle}" else "--",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = tokens.text
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = "días",
+                                fontSize = 10.sp,
+                                color = tokens.muted,
+                                modifier = Modifier.padding(bottom = 3.dp)
+                            )
+                        }
                     }
                 }
             }
+        }
 
-            // Leyenda
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                LegendDot(primary,   "Normal")
-                LegendDot(secondary, "Corto")
-                LegendDot(MaterialTheme.colorScheme.tertiary, "Largo")
+        // Flagline contextual
+        val hasVariation = stats != null && (stats.longestCycle - stats.shortestCycle > 9)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp, start = 4.dp, end = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(30.dp))
+                    .background(if (hasVariation) Color(0x28ECC78F) else tokens.panel2)
+                    .border(1.dp, if (hasVariation) Color(0x60ECC78F) else tokens.line, RoundedCornerShape(30.dp))
+                    .padding(horizontal = 9.dp, vertical = 5.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Icon(
+                        imageVector = if (hasVariation) Icons.Rounded.WarningAmber else Icons.Rounded.Check,
+                        contentDescription = null,
+                        tint = if (hasVariation) Color(0xFFECC78F) else tokens.accent,
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Text(
+                        text = if (hasVariation) "Variación a revisar" else "Ritmo constante",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (hasVariation) Color(0xFFECC78F) else tokens.accent
+                    )
+                }
+            }
+
+            TextButton(
+                onClick = onViewObservations,
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+            ) {
+                Text(
+                    text = "Ver $observationsCount observaciones →",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = tokens.accent
+                )
             }
         }
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  SECCIÓN 01 / EVOLUCIÓN: Así han cambiado
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun SymptomCorrelationCard(correlations: List<SymptomCorrelation>) {
-    Card(
-        modifier  = Modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(24.dp),
-        colors    = CardDefaults.cardColors(MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SectionHeader(
-                icon  = Icons.Rounded.WaterDrop,
-                title = "Heatmap de Síntomas"
+private fun SectionEvolucion(
+    stats: HistoricalCycleStats?,
+    cycleBars: List<PuntoBarraCiclo>,
+    selectedCycleIndex: Int?,
+    onSelectBar: (Int) -> Unit,
+    onOpenObservations: () -> Unit,
+    isPhaseExpanded: Boolean,
+    onTogglePhaseExpanded: () -> Unit
+) {
+    val tokens = LumiThemeTokens.current
+    val phaseColors = LocalPhaseColors.current
+
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column {
+            Text(
+                text = "01 / EVOLUCIÓN",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.sp,
+                color = tokens.dim
             )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Así han cambiado",
+                fontSize = 21.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = (-0.8).sp,
+                color = tokens.text
+            )
+            Text(
+                text = "Duración de cada ciclo registrado.",
+                fontSize = 11.sp,
+                color = tokens.muted
+            )
+        }
 
-            // Leyenda de columnas para el heatmap
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("M", fontSize = 10.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.5f), modifier = Modifier.width(24.dp), textAlign = TextAlign.Center)
-                    Text("F", fontSize = 10.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.5f), modifier = Modifier.width(24.dp), textAlign = TextAlign.Center)
-                    Text("O", fontSize = 10.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.5f), modifier = Modifier.width(24.dp), textAlign = TextAlign.Center)
-                    Text("L", fontSize = 10.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha=0.5f), modifier = Modifier.width(24.dp), textAlign = TextAlign.Center)
+        // Contenedor de la gráfica interactiva de barras
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .background(tokens.panel)
+                .border(1.dp, tokens.line, RoundedCornerShape(20.dp))
+                .padding(18.dp)
+        ) {
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column {
+                        Text(
+                            text = "Historial de ciclos",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = tokens.text
+                        )
+                        Text(
+                            text = "Selecciona una barra para explorarla",
+                            fontSize = 10.sp,
+                            color = tokens.muted
+                        )
+                    }
+                    Text(
+                        text = if (stats != null) "Ø ${stats.avgCycleLength.roundToInt()} d" else "Ø -- d",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = tokens.accent
+                    )
                 }
-            }
 
-            correlations.forEach { corr ->
-                SymptomCorrelationRow(corr)
+                Spacer(Modifier.height(20.dp))
+
+                // Área de dibujo de barras
+                if (cycleBars.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(150.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Aún no hay ciclos registrados suficientes.",
+                            fontSize = 11.sp,
+                            color = tokens.muted,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                } else {
+                    val maxDays = cycleBars.maxOfOrNull { it.duracionDias }?.toFloat()?.coerceAtLeast(45f) ?: 50f
+                    val selectedIdx = selectedCycleIndex ?: (cycleBars.size - 1)
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(170.dp),
+                        horizontalArrangement = Arrangement.SpaceAround,
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        cycleBars.forEachIndexed { index, bar ->
+                            val isSelected = selectedIdx == index
+                            val barHeightFraction = (bar.duracionDias / maxDays).coerceIn(0.12f, 1f)
+
+                            val color1 = when (bar.tipoCiclo) {
+                                CycleType.LONG -> Color(0xFFAAA5B4)
+                                CycleType.SHORT -> Color(0xFFE6A8C6)
+                                CycleType.NORMAL -> tokens.rose
+                            }
+                            val color2 = when (bar.tipoCiclo) {
+                                CycleType.LONG -> Color(0xFF777381)
+                                CycleType.SHORT -> Color(0xFF7B6382)
+                                CycleType.NORMAL -> tokens.rose.copy(alpha = 0.35f)
+                            }
+
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { onSelectBar(index) }
+                                    .padding(horizontal = 2.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Bottom
+                            ) {
+                                Text(
+                                    text = "${bar.duracionDias}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSelected) tokens.text else tokens.muted
+                                )
+                                Spacer(Modifier.height(5.dp))
+
+                                Box(
+                                    modifier = Modifier
+                                        .width(28.dp)
+                                        .height((barHeightFraction * 115).dp)
+                                        .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 4.dp, bottomEnd = 4.dp))
+                                        .background(Brush.verticalGradient(listOf(color1, color2)))
+                                        .then(
+                                            if (isSelected) Modifier.border(
+                                                1.5.dp,
+                                                tokens.accent,
+                                                RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 4.dp, bottomEnd = 4.dp)
+                                            ) else Modifier
+                                        )
+                                )
+
+                                Spacer(Modifier.height(6.dp))
+                                Text(
+                                    text = bar.etiqueta,
+                                    fontSize = 9.sp,
+                                    color = if (isSelected) tokens.text else tokens.dim,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(14.dp))
+                    HorizontalDivider(color = tokens.line, thickness = 1.dp)
+                    Spacer(Modifier.height(10.dp))
+
+                    val activeBar = cycleBars.getOrNull(selectedIdx) ?: cycleBars.last()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Ciclo ${activeBar.etiqueta}: ${activeBar.duracionDias} días · Media ${stats?.avgCycleLength?.roundToInt() ?: 0} d",
+                            fontSize = 10.sp,
+                            color = tokens.text
+                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(tokens.panel2)
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = "${cycleBars.size} registros",
+                                fontSize = 9.sp,
+                                color = tokens.muted
+                            )
+                        }
+                    }
+                }
             }
         }
-    }
-}
 
-@Composable
-private fun SymptomCorrelationRow(corr: SymptomCorrelation) {
-    val phaseColors = com.jeremy.lumi.ui.theme.LocalPhaseColors.current
-
-    Row(
-        Modifier.fillMaxWidth().padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(corr.symptomName, fontSize = 13.sp, fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
-            
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            val phases = listOf(
-                CyclePhase.MENSTRUAL to phaseColors.menstrual,
-                CyclePhase.FOLLICULAR to phaseColors.follicular,
-                CyclePhase.OVULATION to phaseColors.ovulation,
-                CyclePhase.LUTEAL to phaseColors.luteal
-            )
-            
-            phases.forEach { (phase, baseColor) ->
-                val ratio = if (corr.totalOccurrences == 0) 0f else (corr.occurrenceByPhase[phase] ?: 0) / corr.totalOccurrences.toFloat()
-                
-                // Animación de opacidad para el Heatmap
-                val alphaAnim = remember { Animatable(0.02f) }
-                LaunchedEffect(corr.symptomName) {
-                    alphaAnim.animateTo(ratio.coerceAtLeast(0.05f), tween(800, easing = FastOutSlowInEasing))
-                }
-                
-                // La fase dominante se determina buscando el máximo (no comparando floats con ==)
-                val dominantPhase = corr.occurrenceByPhase.maxByOrNull { it.value }?.key
-                val isDominant = dominantPhase == phase && ratio > 0f
-                
+        // Tarjeta de observación contextual
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(Brush.horizontalGradient(listOf(Color(0x28ECC78F), tokens.panel)))
+                .border(1.dp, tokens.line, RoundedCornerShape(16.dp))
+                .padding(15.dp)
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.Top
+            ) {
                 Box(
                     modifier = Modifier
-                        .size(24.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(baseColor.copy(alpha = alphaAnim.value))
+                        .size(30.dp)
+                        .clip(CircleShape)
+                        .background(Color(0x35ECC78F)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    if (isDominant) {
+                    Icon(
+                        imageVector = Icons.Rounded.Timeline,
+                        contentDescription = null,
+                        tint = Color(0xFFECC78F),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+
+                Column {
+                    Text(
+                        text = "Una variación que merece contexto",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = tokens.text
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        text = if (stats != null)
+                            "Tus ciclos recientes van de ${stats.shortestCycle} a ${stats.longestCycle} días. La variación, por sí sola, no permite establecer una causa."
+                        else "Registra tus ciclos para analizar su variación temporal con perspectiva.",
+                        fontSize = 11.sp,
+                        color = tokens.muted,
+                        lineHeight = 16.sp
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = "Entender esta observación ↗",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = tokens.accent,
+                        modifier = Modifier.clickable { onOpenObservations() }
+                    )
+                }
+            }
+        }
+
+        // Acordeón: Distribución ilustrativa de fases
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onTogglePhaseExpanded() }
+                    .padding(vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Ver distribución ilustrativa de fases",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = tokens.text
+                )
+                Icon(
+                    imageVector = if (isPhaseExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = tokens.muted,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+
+            AnimatedVisibility(
+                visible = isPhaseExpanded,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Column(modifier = Modifier.padding(top = 10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(18.dp)
+                    ) {
+                        // Donut en Canvas
                         Box(
-                            Modifier
-                                .align(Alignment.Center)
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary)
-                        )
+                            modifier = Modifier.size(100.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Canvas(modifier = Modifier.fillMaxSize()) {
+                                val strokeWidth = 14.dp.toPx()
+                                val segments = listOf(
+                                    Pair(5f, phaseColors.menstrual),
+                                    Pair(10f, Color(0xFFECC78F)),
+                                    Pair(3f, phaseColors.ovulation),
+                                    Pair(14f, tokens.accent)
+                                )
+                                val totalDays = 32f
+                                var currentAngle = -90f
+
+                                segments.forEach { (days, color) ->
+                                    val sweep = (days / totalDays) * 360f
+                                    drawArc(
+                                        color = color,
+                                        startAngle = currentAngle,
+                                        sweepAngle = sweep,
+                                        useCenter = false,
+                                        style = Stroke(width = strokeWidth)
+                                    )
+                                    currentAngle += sweep
+                                }
+                            }
+
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "${stats?.avgCycleLength?.roundToInt() ?: 32}",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = tokens.text
+                                )
+                                Text(
+                                    text = "días",
+                                    fontSize = 9.sp,
+                                    color = tokens.muted
+                                )
+                            }
+                        }
+
+                        // Leyenda de fases
+                        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                            LegendRow(color = phaseColors.menstrual, text = "Menstruación · 5 d")
+                            LegendRow(color = Color(0xFFECC78F), text = "Folicular · 10 d")
+                            LegendRow(color = phaseColors.ovulation, text = "Ventana ovulatoria ilustrativa · 3 d")
+                            LegendRow(color = tokens.accent, text = "Lútea · 14 d")
+                        }
                     }
+
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        text = "Ejemplo visual para explorar la composición de un ciclo; no mide fases biológicas reales ni confirma ovulación. La ventana ilustrada no es la duración biológica de la ovulación.",
+                        fontSize = 10.sp,
+                        color = tokens.muted,
+                        lineHeight = 15.sp
+                    )
                 }
             }
         }
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  SECCIÓN 02 / BIENESTAR: Lo que registras
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun MoodDistributionCard(mood: MoodDistribution) {
-    val primary = MaterialTheme.colorScheme.primary
+private fun SectionBienestar(
+    symptomCorrelations: List<com.jeremy.lumi.domain.model.SymptomCorrelation>,
+    selectedSymptomNote: String?,
+    onSelectSymptomCell: (String, CyclePhase, Int, Int) -> Unit,
+    moodDistribution: com.jeremy.lumi.domain.model.MoodDistribution?,
+    showAllMoods: Boolean,
+    onToggleShowAllMoods: () -> Unit,
+    bbtPoints: List<PuntoBbt>,
+    hayDatosBbt: Boolean,
+    onAddDemoTemp: (Int, Float) -> Unit,
+    onClearDemoTemp: () -> Unit
+) {
+    val tokens = LumiThemeTokens.current
+    var demoDay by remember { mutableIntStateOf(12) }
+    var demoTemp by remember { mutableFloatStateOf(36.5f) }
 
-    Card(
-        modifier  = Modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(24.dp),
-        colors    = CardDefaults.cardColors(MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SectionHeader(
-                icon  = Icons.Rounded.Favorite,
-                title = stringResource(R.string.insights_section_mood)
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column {
+            Text(
+                text = "02 / BIENESTAR",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.sp,
+                color = tokens.dim
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Lo que registras",
+                fontSize = 21.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = (-0.8).sp,
+                color = tokens.text
+            )
+            Text(
+                text = "Frecuencias observadas, no probabilidades.",
+                fontSize = 11.sp,
+                color = tokens.muted
+            )
+        }
+
+        // Matriz Síntomas × Fase Estimada
+        Text(
+            text = "SÍNTOMAS SEGÚN FASE ESTIMADA",
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.4.sp,
+            color = tokens.dim
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(17.dp))
+                .background(tokens.panel)
+                .border(1.dp, tokens.line, RoundedCornerShape(17.dp))
+                .padding(16.dp)
+        ) {
+            Column {
+                if (symptomCorrelations.isEmpty()) {
+                    Text(
+                        text = "Aún no hay síntomas registrados en el historial para mapear.",
+                        fontSize = 11.sp,
+                        color = tokens.muted,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
+                } else {
+                    // Encabezado de columnas
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Spacer(Modifier.weight(1f))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("M", "F", "O", "L").forEach {
+                                Text(
+                                    text = it,
+                                    fontSize = 9.sp,
+                                    color = tokens.dim,
+                                    modifier = Modifier.width(27.dp),
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    // Filas de síntomas
+                    val phases = listOf(CyclePhase.MENSTRUAL, CyclePhase.FOLLICULAR, CyclePhase.OVULATION, CyclePhase.LUTEAL)
+                    symptomCorrelations.take(5).forEach { sym ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = sym.symptomName,
+                                fontSize = 11.sp,
+                                color = tokens.text,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                phases.forEach { phase ->
+                                    val count = sym.occurrenceByPhase[phase] ?: 0
+                                    val level = when {
+                                        count == 0 -> 0
+                                        count in 1..2 -> 1
+                                        count in 3..4 -> 2
+                                        else -> 3
+                                    }
+
+                                    val cellBg = when (level) {
+                                        1 -> tokens.rose.copy(alpha = 0.25f)
+                                        2 -> tokens.mint.copy(alpha = 0.45f)
+                                        3 -> tokens.accent.copy(alpha = 0.70f)
+                                        else -> tokens.panel2
+                                    }
+
+                                    Box(
+                                        modifier = Modifier
+                                            .size(27.dp)
+                                            .clip(RoundedCornerShape(7.dp))
+                                            .background(cellBg)
+                                            .clickable { onSelectSymptomCell(sym.symptomName, phase, level, count) },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (level == 3) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(5.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color(0xFF724B99))
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+                    HorizontalDivider(color = tokens.line, thickness = 1.dp)
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        text = selectedSymptomNote ?: "Selecciona una celda para entender qué representa.",
+                        fontSize = 10.sp,
+                        color = tokens.muted,
+                        lineHeight = 15.sp
+                    )
+                }
+            }
+        }
+
+        // Estados de Ánimo
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "ESTADOS DE ÁNIMO REGISTRADOS",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.4.sp,
+                color = tokens.dim
             )
 
-            mood.distribution.entries
-                .sortedByDescending { it.value }
-                .forEach { (moodLabel, count) ->
-                    val ratio   = mood.ratioOf(moodLabel)
-                    val barAnim = remember(moodLabel) { Animatable(0f) }
-                    LaunchedEffect(moodLabel) {
-                        barAnim.animateTo(ratio, tween(700, easing = FastOutSlowInEasing))
-                    }
+            Text(
+                text = if (showAllMoods) "Ver menos ↑" else "Ver todos ↓",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = tokens.accent,
+                modifier = Modifier.clickable { onToggleShowAllMoods() }
+            )
+        }
+
+        if (moodDistribution == null || moodDistribution.totalDays == 0) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(17.dp))
+                    .background(tokens.panel)
+                    .border(1.dp, tokens.line, RoundedCornerShape(17.dp))
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = "Aún no has registrado estados de ánimo suficientes.",
+                    fontSize = 11.sp,
+                    color = tokens.muted
+                )
+            }
+        } else {
+            val moodList = moodDistribution.distribution.toList()
+                .sortedByDescending { it.second }
+            val visibleMoods = if (showAllMoods) moodList else moodList.take(4)
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                visibleMoods.forEach { (moodName, count) ->
+                    val percentage = ((count.toFloat() / moodDistribution.totalDays) * 100).roundToInt()
                     Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment     = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Text(
-                            text     = moodLabel,
-                            fontSize = 13.sp,
-                            color    = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.width(80.dp)
+                            text = moodName,
+                            fontSize = 11.sp,
+                            color = tokens.text,
+                            modifier = Modifier.width(90.dp)
                         )
+
                         Box(
-                            Modifier
+                            modifier = Modifier
                                 .weight(1f)
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(50.dp))
-                                .background(primary.copy(alpha = 0.12f))
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(tokens.line)
                         ) {
                             Box(
-                                Modifier
-                                    .fillMaxWidth(barAnim.value)
-                                    .fillMaxHeight()
-                                    .clip(RoundedCornerShape(50.dp))
-                                    .background(primary)
+                                modifier = Modifier
+                                    .fillMaxWidth(percentage / 100f)
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(tokens.rose)
                             )
                         }
+
                         Text(
-                            text     = "${(ratio * 100).toInt()}%",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color    = primary,
-                            modifier = Modifier.width(32.dp)
+                            text = "$percentage%",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = tokens.rose,
+                            modifier = Modifier.width(36.dp),
+                            textAlign = TextAlign.End
                         )
                     }
                 }
+
+                Text(
+                    text = "Porcentajes aproximados de registros; no describen cómo te sentirás en una fase concreta.",
+                    fontSize = 10.sp,
+                    color = tokens.muted,
+                    lineHeight = 15.sp,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+        }
+
+        // Temperatura Basal (BBT)
+        Text(
+            text = "TEMPERATURA BASAL",
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.4.sp,
+            color = tokens.dim,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(17.dp))
+                .background(tokens.panel)
+                .border(1.dp, tokens.line, RoundedCornerShape(17.dp))
+                .padding(17.dp)
+        ) {
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Tu curva térmica",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = tokens.text
+                    )
+                    Icon(
+                        imageVector = Icons.Rounded.Thermostat,
+                        contentDescription = null,
+                        tint = tokens.accent,
+                        modifier = Modifier.size(17.dp)
+                    )
+                }
+
+                Spacer(Modifier.height(14.dp))
+
+                if (!hayDatosBbt) {
+                    // Estado vacío aprobado
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(13.dp))
+                            .border(1.dp, tokens.line, RoundedCornerShape(13.dp))
+                            .padding(16.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(13.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(RoundedCornerShape(13.dp))
+                                    .background(tokens.panel2),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Thermostat,
+                                    contentDescription = null,
+                                    tint = tokens.accent,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Column {
+                                Text(
+                                    text = "Aún no hay mediciones",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = tokens.text
+                                )
+                                Spacer(Modifier.height(2.dp))
+                                Text(
+                                    text = "Registra valores para visualizar tendencias. La temperatura sola no confirma una fecha de ovulación.",
+                                    fontSize = 10.5.sp,
+                                    color = tokens.muted,
+                                    lineHeight = 15.sp
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // Curva de temperatura dibujada en Canvas
+                    val hasThermalShift = bbtPoints.any { it.esOvulacion }
+                    if (hasThermalShift) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(tokens.accentSoft)
+                                .border(1.dp, tokens.line, RoundedCornerShape(20.dp))
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = "✦ Posible cambio térmico observado",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = tokens.accent
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                    }
+
+                    Canvas(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp)
+                    ) {
+                        val width = size.width
+                        val height = size.height
+                        val minTemp = 36.0f
+                        val maxTemp = 37.5f
+
+                        // Línea base 36.5°C
+                        val yBase = height - ((36.5f - minTemp) / (maxTemp - minTemp)) * height
+                        drawLine(
+                            color = Color(0x40FFFFFF),
+                            start = Offset(0f, yBase),
+                            end = Offset(width, yBase),
+                            strokeWidth = 1.dp.toPx(),
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f))
+                        )
+
+                        if (bbtPoints.size >= 2) {
+                            val sorted = bbtPoints.sortedBy { it.diaCiclo }
+                            val minX = sorted.first().diaCiclo
+                            val maxX = sorted.last().diaCiclo.coerceAtLeast(minX + 1)
+
+                            val path = Path()
+                            sorted.forEachIndexed { i, p ->
+                                val x = ((p.diaCiclo - minX).toFloat() / (maxX - minX)) * width
+                                val y = height - ((p.temperaturaC - minTemp) / (maxTemp - minTemp)) * height
+                                if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+
+                                drawCircle(
+                                    color = tokens.accent,
+                                    radius = if (p.esOvulacion) 6.dp.toPx() else 4.dp.toPx(),
+                                    center = Offset(x, y)
+                                )
+                            }
+                            drawPath(
+                                path = path,
+                                color = tokens.accent,
+                                style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                            )
+                        }
+                    }
+                }
+
+                // Controles de prueba interactiva (fieles al HTML)
+                Spacer(Modifier.height(14.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = "Día del ciclo", fontSize = 10.sp, color = tokens.muted)
+                        Spacer(Modifier.height(4.dp))
+                        OutlinedTextField(
+                            value = "$demoDay",
+                            onValueChange = { demoDay = it.toIntOrNull()?.coerceIn(1, 90) ?: 1 },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = tokens.panel2,
+                                unfocusedContainerColor = tokens.panel2,
+                                focusedBorderColor = tokens.accent,
+                                unfocusedBorderColor = tokens.line,
+                                focusedTextColor = tokens.text,
+                                unfocusedTextColor = tokens.text
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = "Temperatura °C", fontSize = 10.sp, color = tokens.muted)
+                        Spacer(Modifier.height(4.dp))
+                        OutlinedTextField(
+                            value = "%.1f".format(demoTemp),
+                            onValueChange = { demoTemp = it.toFloatOrNull()?.coerceIn(35f, 39f) ?: 36.5f },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = tokens.panel2,
+                                unfocusedContainerColor = tokens.panel2,
+                                focusedBorderColor = tokens.accent,
+                                unfocusedBorderColor = tokens.line,
+                                focusedTextColor = tokens.text,
+                                unfocusedTextColor = tokens.text
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                    }
+
+                    Button(
+                        onClick = { onAddDemoTemp(demoDay, demoTemp) },
+                        colors = ButtonDefaults.buttonColors(containerColor = tokens.accent, contentColor = tokens.bg),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.height(52.dp)
+                    ) {
+                        Text("Añadir", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    if (hayDatosBbt) {
+                        Button(
+                            onClick = onClearDemoTemp,
+                            colors = ButtonDefaults.buttonColors(containerColor = tokens.panel2, contentColor = tokens.muted),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.height(52.dp)
+                        ) {
+                            Text("Borrar", fontSize = 11.sp)
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Prueba interactiva: La temperatura sola no confirma una fecha exacta de ovulación ni debe usarse como método anticonceptivo.",
+                    fontSize = 9.5.sp,
+                    color = tokens.muted,
+                    lineHeight = 14.sp
+                )
+            }
         }
     }
 }
 
-//  EMPTY STATE
+// ─────────────────────────────────────────────────────────────────────────────
+//  SECCIÓN 03 / INTERPRETACIÓN: Mirar con calma
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun InsightsEmptyState(modifier: Modifier = Modifier) {
-    // Estado vacío unificado de Lumi: halo animado + mensaje que explica
-    // qué se desbloquea aquí cuando haya registros suficientes.
-    Box(modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-        com.jeremy.lumi.ui.components.LumiEmptyState(
-            icon = Icons.Rounded.Analytics,
-            title = stringResource(R.string.empty_insights_title),
-            description = stringResource(R.string.empty_insights_desc)
+private fun SectionInterpretacion(
+    bivariableInsights: List<com.jeremy.lumi.domain.model.BivariableInsight>,
+    onOpenObservations: () -> Unit
+) {
+    val tokens = LumiThemeTokens.current
+
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column {
+            Text(
+                text = "03 / INTERPRETACIÓN",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.sp,
+                color = tokens.dim
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Mirar con calma",
+                fontSize = 21.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = (-0.8).sp,
+                color = tokens.text
+            )
+            Text(
+                text = "Observaciones útiles, sin afirmaciones definitivas.",
+                fontSize = 11.sp,
+                color = tokens.muted
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(17.dp))
+                .background(Brush.linearGradient(listOf(tokens.panel, tokens.panel2)))
+                .border(1.dp, tokens.line, RoundedCornerShape(17.dp))
+                .padding(20.dp)
+        ) {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .size(37.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(tokens.accentSoft),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.AutoAwesome,
+                        contentDescription = null,
+                        tint = tokens.accent,
+                        modifier = Modifier.size(19.dp)
+                    )
+                }
+
+                Spacer(Modifier.height(14.dp))
+
+                Text(
+                    text = "Descubrimientos Lumi",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = tokens.text
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "Con registros de sueño, síntomas y ciclo a lo largo del tiempo, Lumi puede ayudarte a explorar coincidencias. Sin suficientes observaciones no es posible concluir una relación causal entre ellos.",
+                    fontSize = 11.sp,
+                    color = tokens.muted,
+                    lineHeight = 17.sp
+                )
+
+                if (bivariableInsights.isNotEmpty()) {
+                    Spacer(Modifier.height(12.dp))
+                    bivariableInsights.take(2).forEach { insight ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(tokens.panel)
+                                .border(1.dp, tokens.line, RoundedCornerShape(10.dp))
+                                .padding(10.dp)
+                        ) {
+                            Column {
+                                Text(insight.title, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = tokens.text)
+                                Text(insight.message, fontSize = 10.sp, color = tokens.muted, lineHeight = 14.sp)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    text = "Ver observaciones disponibles →",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = tokens.accent,
+                    modifier = Modifier.clickable { onOpenObservations() }
+                )
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  SECCIÓN 04 / ACOMPAÑAMIENTO: Cuando quieras hablarlo
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun SectionAcompanamiento(
+    onOpenConsult: () -> Unit,
+    onExportPdf: () -> Unit,
+    isGeneratingPdf: Boolean
+) {
+    val tokens = LumiThemeTokens.current
+
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column {
+            Text(
+                text = "04 / ACOMPAÑAMIENTO",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.sp,
+                color = tokens.dim
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Cuando quieras hablarlo",
+                fontSize = 21.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = (-0.8).sp,
+                color = tokens.text
+            )
+            Text(
+                text = "Tu información, preparada para una consulta.",
+                fontSize = 11.sp,
+                color = tokens.muted
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(19.dp))
+                .background(Brush.radialGradient(listOf(tokens.glow, Color.Transparent), radius = 350f))
+                .background(tokens.panel)
+                .border(1.dp, tokens.line, RoundedCornerShape(19.dp))
+                .padding(20.dp)
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(tokens.panel2),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.VolunteerActivism,
+                        contentDescription = null,
+                        tint = tokens.accent,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+
+                Column {
+                    Text(
+                        text = "Prepara tu visita médica",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = tokens.text
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "Un resumen claro con tus ciclos, síntomas y preguntas que quieras conversar con un profesional.",
+                        fontSize = 11.sp,
+                        color = tokens.muted,
+                        lineHeight = 16.sp
+                    )
+                    Spacer(Modifier.height(14.dp))
+
+                    Button(
+                        onClick = onOpenConsult,
+                        colors = ButtonDefaults.buttonColors(containerColor = tokens.accent, contentColor = tokens.bg),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("Preparar mi visita", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Icon(Icons.Rounded.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(14.dp))
+                        }
+                    }
+                }
+            }
+        }
+
+        // Botón Exportar PDF
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(13.dp))
+                .background(tokens.panel)
+                .border(1.dp, tokens.line, RoundedCornerShape(13.dp))
+                .clickable { onExportPdf() }
+                .padding(14.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (isGeneratingPdf) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = tokens.accent, strokeWidth = 2.dp)
+                        Text("Generando resumen...", fontSize = 11.sp, color = tokens.text)
+                    } else {
+                        Icon(imageVector = Icons.Rounded.PictureAsPdf, contentDescription = null, tint = tokens.accent, modifier = Modifier.size(16.dp))
+                        Text("Guardar resumen como PDF", fontSize = 11.sp, color = tokens.text)
+                    }
+                }
+                Icon(imageVector = Icons.Rounded.KeyboardArrowRight, contentDescription = null, tint = tokens.muted, modifier = Modifier.size(15.dp))
+            }
+        }
+
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = "PROTOTIPO DE DISEÑO · Las estimaciones no sustituyen orientación médica.",
+            fontSize = 9.sp,
+            color = tokens.dim,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }
 
-//  HELPERS VISUALES
+// ─────────────────────────────────────────────────────────────────────────────
+//  HOJAS MODALES: Observaciones e Información
+// ─────────────────────────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun InsightsFadeIn(visible: Boolean, delayMs: Int, content: @Composable () -> Unit) {
-    val alpha  = remember { Animatable(0f) }
-    val offset = remember { Animatable(14f) }
-    LaunchedEffect(visible) {
-        if (visible) {
-            delay(delayMs.toLong())
-            val j1 = launch { alpha.animateTo(1f, tween(420, easing = FastOutSlowInEasing)) }
-            val j2 = launch { offset.animateTo(0f,
-                spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow)) }
-            j1.join(); j2.join()
-        }
-    }
-    Box(Modifier.alpha(alpha.value).graphicsLayer { translationY = offset.value.dp.toPx() }) {
-        content()
-    }
-}
-
-@Composable
-private fun SectionHeader(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, Modifier.size(18.dp), MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.width(8.dp))
-        Text(title, fontWeight = FontWeight.SemiBold, fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onBackground)
-    }
-}
-
-@Composable
-private fun MetricChip(
-    label    : String,
-    value    : String,
-    unit     : String,
-    color    : androidx.compose.ui.graphics.Color,
-    modifier : Modifier = Modifier
+private fun ObservationsSheet(
+    observations: List<LumiObservation>,
+    onDismiss: () -> Unit,
+    onOpenConsult: () -> Unit
 ) {
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(color.copy(alpha = 0.08f))
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp)
+    val tokens = LumiThemeTokens.current
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = tokens.panel,
+        shape = RoundedCornerShape(topStart = 25.dp, topEnd = 25.dp)
     ) {
-        Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f))
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(value, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = color)
-            Spacer(Modifier.width(3.dp))
-            Text(unit, fontSize = 12.sp, color = color.copy(alpha = 0.7f),
-                modifier = Modifier.padding(bottom = 4.dp))
-        }
-    }
-}
-
-@Composable
-private fun LegendDot(color: androidx.compose.ui.graphics.Color, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(8.dp).clip(CircleShape).background(color))
-        Spacer(Modifier.width(4.dp))
-        Text(label, fontSize = 10.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
-    }
-}
-
-@Composable
-private fun phaseColor(phase: com.jeremy.lumi.domain.model.CyclePhase): androidx.compose.ui.graphics.Color {
-    val phaseColors = com.jeremy.lumi.ui.theme.LocalPhaseColors.current
-    return when (phase) {
-        com.jeremy.lumi.domain.model.CyclePhase.MENSTRUAL  -> phaseColors.menstrual
-        com.jeremy.lumi.domain.model.CyclePhase.FOLLICULAR -> phaseColors.follicular
-        com.jeremy.lumi.domain.model.CyclePhase.OVULATION  -> phaseColors.ovulation
-        com.jeremy.lumi.domain.model.CyclePhase.LUTEAL     -> phaseColors.luteal
-        else -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f)
-    }
-}
-
-private fun phaseName(phase: com.jeremy.lumi.domain.model.CyclePhase): String = when (phase) {
-    com.jeremy.lumi.domain.model.CyclePhase.MENSTRUAL  -> "Menstrual"
-    com.jeremy.lumi.domain.model.CyclePhase.FOLLICULAR -> "Folicular"
-    com.jeremy.lumi.domain.model.CyclePhase.OVULATION  -> "Ovulación"
-    com.jeremy.lumi.domain.model.CyclePhase.LUTEAL     -> "Lútea"
-    else -> ""
-}
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  TARJETA 5 â€” Donut Chart: Distribución Promedio de Fases (Canvas)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-@Composable
-private fun PhaseDistributionDonutCard(stats: HistoricalCycleStats) {
-    val phaseColors = com.jeremy.lumi.ui.theme.LocalPhaseColors.current
-    
-    // Cálculo de duraciones promedio
-    val total = stats.avgCycleLength.coerceAtLeast(15f)
-    val menstrual = stats.avgPeriodLength
-    val luteal = stats.personalLutealLength.toFloat()
-    val ovulation = 3f // Consistente con los 3 días de la ventana fértil en Home
-    val follicular = (total - menstrual - luteal - ovulation).coerceAtLeast(1f)
-    
-    // Animación de llenado del donut
-    val sweepAnim = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        sweepAnim.animateTo(360f, tween(1200, easing = FastOutSlowInEasing))
-    }
-
-    Card(
-        modifier  = Modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(24.dp),
-        colors    = CardDefaults.cardColors(MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
-            SectionHeader(
-                icon  = Icons.Rounded.Analytics, 
-                title = "Distribución Promedio"
-            )
-
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 8.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // â”€â”€ Donut en Canvas â”€â”€
-                Box(contentAlignment = Alignment.Center) {
-                    androidx.compose.foundation.Canvas(modifier = Modifier.size(160.dp)) {
-                        val strokeWidth = 24.dp.toPx()
-                        
-                        var currentStartAngle = -90f // Empezamos en las 12 en punto
-                        
-                        // Lista de segmentos ordenados lógicamente
-                        val segments = listOf(
-                            Pair(menstrual, phaseColors.menstrual),
-                            Pair(follicular, phaseColors.follicular),
-                            Pair(ovulation, phaseColors.ovulation),
-                            Pair(luteal, phaseColors.luteal)
-                        )
-                        val actualTotal = menstrual + follicular + ovulation + luteal
-                        
-                        segments.forEach { (days, color) ->
-                            val sweepAngle = (days / actualTotal) * sweepAnim.value
-                            drawArc(
-                                color = color,
-                                startAngle = currentStartAngle,
-                                sweepAngle = sweepAngle,
-                                useCenter = false,
-                                style = androidx.compose.ui.graphics.drawscope.Stroke(
-                                    width = strokeWidth,
-                                    cap = androidx.compose.ui.graphics.StrokeCap.Butt
-                                )
-                            )
-                            currentStartAngle += sweepAngle
-                        }
-                    }
-                    
-                    // Texto en el centro
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "${total.toInt()}",
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Text(
-                            text = "días",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-                        )
-                    }
-                }
-            }
-            
-            // Leyenda de 4 columnas
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                LegendDot(phaseColors.menstrual, "Mens.")
-                LegendDot(phaseColors.follicular, "Folíc.")
-                LegendDot(phaseColors.ovulation, "Ovul.")
-                LegendDot(phaseColors.luteal, "Lútea")
-            }
-        }
-    }
-}
-
-
-
-// -----------------------------------------------------------------------------
-//  TARJETA: DESCUBRIMIENTOS OCULTOS (Bivariables)
-// -----------------------------------------------------------------------------
-
-@Composable
-fun BivariableInsightsCard(insights: List<com.jeremy.lumi.domain.model.BivariableInsight>) {
-    val primary = MaterialTheme.colorScheme.primary
-    val secondary = MaterialTheme.colorScheme.secondary
-    val tertiary = MaterialTheme.colorScheme.tertiary
-
-    androidx.compose.material3.Card(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = androidx.compose.material3.CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(
-                            androidx.compose.ui.graphics.Brush.linearGradient(
-                                listOf(primary.copy(alpha = 0.2f), secondary.copy(alpha = 0.2f))
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Star,
-                        contentDescription = null,
-                        tint = primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                Spacer(Modifier.width(12.dp))
                 Text(
-                    text = stringResource(R.string.insights_lumi_discoveries),
-                    fontSize = 17.sp,
+                    text = "Observaciones de Lumi",
+                    fontSize = 19.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = tokens.text
                 )
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Rounded.Close, contentDescription = "Cerrar", tint = tokens.muted)
+                }
             }
+
+            Text(
+                text = "Estas observaciones reúnen patrones detectados a partir de tus registros reales. No son diagnósticos clínicos ni evaluaciones definitivas.",
+                fontSize = 11.sp,
+                color = tokens.muted,
+                lineHeight = 16.sp,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            if (observations.isEmpty()) {
+                Text(
+                    text = "No hay observaciones particulares en tus registros recientes.",
+                    fontSize = 12.sp,
+                    color = tokens.muted,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            } else {
+                observations.forEach { obs ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp)
+                    ) {
+                        Text(
+                            text = obs.tag.uppercase(),
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp,
+                            color = Color(0xFFECC78F)
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = obs.title,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = tokens.text
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = obs.description,
+                            fontSize = 11.sp,
+                            color = tokens.muted,
+                            lineHeight = 16.sp
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "• Límites: ${obs.limitsText}",
+                            fontSize = 10.sp,
+                            color = tokens.dim,
+                            lineHeight = 14.sp
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = "• Recomendación: ${obs.recommendationText}",
+                            fontSize = 10.5.sp,
+                            color = tokens.muted,
+                            lineHeight = 15.sp
+                        )
+                    }
+                    HorizontalDivider(color = tokens.line, thickness = 1.dp)
+                }
+            }
+
             Spacer(Modifier.height(16.dp))
 
-            insights.forEachIndexed { index, insight ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(
-                            androidx.compose.ui.graphics.Brush.linearGradient(
-                                colors = listOf(
-                                    primary.copy(alpha = 0.12f),
-                                    secondary.copy(alpha = 0.04f)
-                                )
-                            )
-                        )
-                        .then(
-                            Modifier.border(
-                                1.dp,
-                                androidx.compose.ui.graphics.Brush.linearGradient(
-                                    listOf(primary.copy(alpha = 0.3f), Color.Transparent)
-                                ),
-                                RoundedCornerShape(16.dp)
-                            )
-                        )
-                        .padding(16.dp)
-                ) {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(6.dp)
-                                    .clip(CircleShape)
-                                    .background(tertiary)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                text = insight.title,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp,
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
-                        }
-                        Spacer(Modifier.height(6.dp))
-                        Text(
-                            text = insight.message,
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f),
-                            lineHeight = 20.sp
-                        )
-                    }
-                }
-                if (index < insights.size - 1) {
-                    Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = onOpenConsult,
+                colors = ButtonDefaults.buttonColors(containerColor = tokens.accent, contentColor = tokens.bg),
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+            ) {
+                Text("Preparar preguntas para consulta →", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun InfoExplanationSheet(onDismiss: () -> Unit) {
+    val tokens = LumiThemeTokens.current
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = tokens.panel,
+        shape = RoundedCornerShape(topStart = 25.dp, topEnd = 25.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 8.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Cómo leer Insights",
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = tokens.text
+                )
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Rounded.Close, contentDescription = "Cerrar", tint = tokens.muted)
                 }
             }
+
+            Text(
+                text = "Insights reúne métricas calculadas a partir de tus registros en el dispositivo.",
+                fontSize = 11.sp,
+                color = tokens.muted,
+                lineHeight = 16.sp,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            InfoItem(
+                title = "Qué significan los números",
+                description = "Una media es un resumen matemático, no la duración garantizada de tu próximo ciclo. Los valores mínimos y máximos corresponden al conjunto de ciclos seleccionado."
+            )
+
+            InfoItem(
+                title = "Sobre síntomas y emociones",
+                description = "La concentración de registros durante una fase no equivale a una probabilidad de experimentar un síntoma. Las fases son estimadas y algunos días pueden no tener registros."
+            )
+
+            InfoItem(
+                title = "Sobre predicciones y temperatura",
+                description = "No se debe inferir un diagnóstico ni confirmar ovulación a partir de un solo cambio térmico. La temperatura basal no debe emplearse como método anticonceptivo."
+            )
+
+            Spacer(Modifier.height(24.dp))
         }
     }
 }
 
 @Composable
-fun MedicalAlertCard(
-    alert: MedicalAlert,
-    onDismiss: () -> Unit
-) {
-    val containerColor = if (alert.severity == AlertSeverity.CRITICAL) {
-        Color(0xFFFFEBEE) // Rojo muy suave
-    } else {
-        Color(0xFFFFF8E1) // Ámbar muy suave
-    }
-    
-    val contentColor = if (alert.severity == AlertSeverity.CRITICAL) {
-        Color(0xFFB71C1C) // Rojo oscuro
-    } else {
-        Color(0xFFF57F17) // Ámbar oscuro
-    }
-
-    Box(
+private fun InfoItem(title: String, description: String) {
+    val tokens = LumiThemeTokens.current
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(containerColor)
-            .border(1.dp, contentColor.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
-            .clickable(onClick = onDismiss)
-            .padding(16.dp)
+            .padding(vertical = 10.dp)
     ) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Rounded.MonitorHeart,
-                    contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = stringResource(alert.titleRes),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = contentColor
-                )
-            }
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = stringResource(alert.descriptionRes),
-                fontSize = 13.sp,
-                lineHeight = 18.sp,
-                color = contentColor.copy(alpha = 0.85f)
-            )
-            if (alert.requiresDisclaimer) {
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = stringResource(R.string.alert_medical_disclaimer_short),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = contentColor.copy(alpha = 0.6f)
-                )
-            }
-        }
+        Text(text = title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = tokens.text)
+        Spacer(Modifier.height(4.dp))
+        Text(text = description, fontSize = 11.sp, color = tokens.muted, lineHeight = 16.sp)
     }
 }
 
+@Composable
+private fun LegendRow(color: Color, text: String) {
+    val tokens = LumiThemeTokens.current
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Box(
+            modifier = Modifier
+                .size(7.dp)
+                .clip(CircleShape)
+                .background(color)
+        )
+        Text(text = text, fontSize = 9.5.sp, color = tokens.muted)
+    }
+}

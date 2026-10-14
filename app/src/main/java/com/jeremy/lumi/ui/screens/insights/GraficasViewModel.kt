@@ -44,7 +44,13 @@ class GraficasViewModel @Inject constructor(
     private val formatoCorto = DateTimeFormatter.ofPattern("d MMM", java.util.Locale("es"))
     private val formatoDia   = DateTimeFormatter.ofPattern("EEE d", java.util.Locale("es"))
 
-    init { cargarDatos() }
+    init {
+        viewModelScope.launch {
+            dao.getAllCycles().collect {
+                cargarDatos()
+            }
+        }
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     //  PUNTO DE ENTRADA — lanza las tres cargas en paralelo
@@ -60,8 +66,8 @@ class GraficasViewModel @Inject constructor(
                 // ── 1. Gráfica de barras: últimos 6 ciclos cerrados ──────────
                 val barras = construirBarrasCiclos(ciclosCerrados.take(6))
 
-                // Promedio ponderado simple para la línea de referencia
-                val promedio = if (ciclosCerrados.isEmpty()) 28f
+                // Promedio ponderado simple para la línea de referencia (0f si no hay ciclos)
+                val promedio = if (ciclosCerrados.isEmpty()) 0f
                 else ciclosCerrados.take(12).map { c ->
                     val dur = c.closedLengthDays() ?: c.cycleLength
                     dur.coerceIn(15, 90)
@@ -195,26 +201,27 @@ class GraficasViewModel @Inject constructor(
      * (primer día de la subida confirmada).
      */
     private fun detectarOvulacion(puntos: List<PuntoBbt>): List<PuntoBbt> {
-        if (puntos.size < 4) return puntos
+        val puntosOrdenados = puntos.sortedBy { it.diaCiclo }
+        if (puntosOrdenados.size < 4) return puntosOrdenados
 
-        val umbralSubida = 0.18f // 0.18°C de subida para detectar el spike
+        val umbralSubida = 0.18f // 0.18°C de subida para detectar el posible cambio térmico
 
-        // Ventana deslizante: buscamos nadir → subida confirmada
+        // Ventana deslizante: buscamos nadir → subida térmica
         var indicePicoOvulacion = -1
 
-        for (i in 1 until puntos.size - 1) {
-            val prevTemp  = puntos[i - 1].temperaturaC
-            val currTemp  = puntos[i].temperaturaC
-            val nextTemp  = if (i + 1 < puntos.size) puntos[i + 1].temperaturaC else currTemp
+        for (i in 1 until puntosOrdenados.size - 1) {
+            val prevTemp  = puntosOrdenados[i - 1].temperaturaC
+            val currTemp  = puntosOrdenados[i].temperaturaC
+            val nextTemp  = if (i + 1 < puntosOrdenados.size) puntosOrdenados[i + 1].temperaturaC else currTemp
 
             // El nadir es más frío que los vecinos y la subida posterior es significativa
             if (currTemp < prevTemp && nextTemp - currTemp >= umbralSubida) {
-                indicePicoOvulacion = i + 1 // El spike es el día siguiente al nadir
+                indicePicoOvulacion = i + 1 // El cambio es el día posterior al nadir
                 break
             }
         }
 
-        return puntos.mapIndexed { indice, punto ->
+        return puntosOrdenados.mapIndexed { indice, punto ->
             punto.copy(esOvulacion = indice == indicePicoOvulacion)
         }
     }

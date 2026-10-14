@@ -783,6 +783,14 @@ private fun TemperaturaBasalGrafica(
                         )
                     }
                 }
+
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.graficas_bbt_prudent_note),
+                    fontSize = 10.sp,
+                    color = colorOnBg.copy(alpha = 0.5f),
+                    lineHeight = 14.sp
+                )
             }
         }
     }

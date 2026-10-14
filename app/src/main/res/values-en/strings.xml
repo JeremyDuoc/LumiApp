@@ -330,7 +330,8 @@
     <string name="graficas_dias_ciclo">Days of current cycle</string>
     <string name="graficas_sin_datos_bbt">Log your daily temperature to view the ovulation curve</string>
     <string name="graficas_sin_datos_sintomas">Log your symptoms to see pain and stress trends</string>
-    <string name="graficas_ovulacion_detectada">Probable ovulation</string>
+    <string name="graficas_ovulacion_detectada">Possible thermal shift</string>
+    <string name="graficas_bbt_prudent_note">Temperature alone does not confirm an exact ovulation date and must not be used as contraception.</string>
 
     <!-- Insights Diarios (Lumi Chat) -->
     <string-array name="insight_late">

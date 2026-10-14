@@ -330,7 +330,8 @@
     <string name="graficas_dias_ciclo">Dias del ciclo actual</string>
     <string name="graficas_sin_datos_bbt">Registra tu temperatura diaria para ver la curva de ovulacion</string>
     <string name="graficas_sin_datos_sintomas">Registra tus sintomas para ver las tendencias de dolor y estres</string>
-    <string name="graficas_ovulacion_detectada">Probable ovulacion</string>
+    <string name="graficas_ovulacion_detectada">Posible cambio térmico</string>
+    <string name="graficas_bbt_prudent_note">La temperatura sola no confirma una fecha exacta de ovulación ni debe usarse como método anticonceptivo.</string>
 
     <!-- Insights Diarios (Lumi Chat) -->
     <string-array name="insight_late">

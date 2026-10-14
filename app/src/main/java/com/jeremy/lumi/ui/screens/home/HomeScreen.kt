@@ -251,7 +251,6 @@ fun HomeScreen(
                             titleNormal = "Hola, ",
                             titleSerifItalic = "$displayUserName.",
                             subtitle = "Un día a tu ritmo.",
-                            description = "Tu cuerpo cambia, y está bien. Aquí tienes lo importante de hoy.",
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 24.dp)
