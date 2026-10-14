@@ -7,22 +7,21 @@ import com.jeremy.lumi.data.local.entity.DailyLogWithSymptoms
 import com.jeremy.lumi.data.local.entity.ReminderEntity
 import com.jeremy.lumi.data.local.entity.SymptomEntity
 import com.jeremy.lumi.domain.repository.LumiRepository
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 
 class LumiRepositoryImpl(
-    private val dao: LumiDao
+    private val dao: LumiDao,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : LumiRepository {
 
     override fun getAllCycles(): Flow<List<CycleEntity>> {
         return dao.getAllCycles()
     }
 
-    override suspend fun startNewCycle(startDate: Long, cycleLength: Int, periodLength: Int) {
-        // FIX: Reemplazar suma fija de ms (falla en Daylight Saving Time) por java.time
-        // FIX (bug de zona horaria): [startDate] llega normalizado a medianoche UTC
-        // (convención de toda la app: QuickLog, Calendar, Onboarding). Interpretarlo
-        // con la zona local corría la fecha un día hacia atrás en zonas UTC- (p. ej.
-        // Chile), desplazando la ovulación predicha. Usamos UTC de forma consistente.
+    override suspend fun startNewCycle(startDate: Long, cycleLength: Int, periodLength: Int) = withContext(ioDispatcher) {
         val zone = java.time.ZoneId.of("UTC")
         val startLocalDate = java.time.Instant.ofEpochMilli(startDate).atZone(zone).toLocalDate()
 
@@ -43,47 +42,40 @@ class LumiRepositoryImpl(
         )
     }
 
-    override suspend fun endCurrentCycle(endDate: Long, realCycleLength: Int) {
-        val currentCycle = dao.getCurrentActiveCycle() ?: return
-        // Guardar la duración REAL del ciclo en la entidad para que el historial sea correcto.
-        dao.insertCycle(
-            currentCycle.copy(
-                endDate     = endDate,
-                cycleLength = realCycleLength
-            )
-        )
+    override suspend fun endCurrentCycle(endDate: Long, realCycleLength: Int) = withContext(ioDispatcher) {
+        dao.closeActiveCycle(endDate, realCycleLength)
     }
 
-    override suspend fun getCurrentActiveCycle(): CycleEntity? {
-        return dao.getCurrentActiveCycle()
+    override suspend fun getCurrentActiveCycle(): CycleEntity? = withContext(ioDispatcher) {
+        dao.getCurrentActiveCycle()
     }
 
-    override suspend fun getClosedCycles(): List<CycleEntity> {
-        return dao.getClosedCycles()
+    override suspend fun getClosedCycles(): List<CycleEntity> = withContext(ioDispatcher) {
+        dao.getClosedCycles()
     }
 
-    override suspend fun getCycleForDate(dateMs: Long): CycleEntity? {
-        return dao.getCycleForDate(dateMs)
+    override suspend fun getCycleForDate(dateMs: Long): CycleEntity? = withContext(ioDispatcher) {
+        dao.getCycleForDate(dateMs)
     }
 
-    override suspend fun updateCycle(cycle: CycleEntity) {
+    override suspend fun updateCycle(cycle: CycleEntity) = withContext(ioDispatcher) {
         dao.updateCycle(cycle)
     }
 
-    override suspend fun deleteCycle(cycleId: Int) {
+    override suspend fun deleteCycle(cycleId: Int) = withContext(ioDispatcher) {
         dao.deleteCycleById(cycleId)
     }
 
-    override suspend fun undoLastPeriodStart(): Boolean {
-        return dao.undoLastPeriodStart()
+    override suspend fun undoLastPeriodStart(): Boolean = withContext(ioDispatcher) {
+        dao.undoLastPeriodStart()
     }
 
-    override suspend fun saveDailyLogWithSymptoms(dailyLog: DailyLogEntity, symptoms: List<SymptomEntity>) {
+    override suspend fun saveDailyLogWithSymptoms(dailyLog: DailyLogEntity, symptoms: List<SymptomEntity>) = withContext(ioDispatcher) {
         dao.upsertDailyLogWithSymptoms(dailyLog, symptoms)
     }
 
-    override suspend fun getDailyLog(date: Long): DailyLogWithSymptoms? {
-        return dao.getDailyLogWithSymptoms(date)
+    override suspend fun getDailyLog(date: Long): DailyLogWithSymptoms? = withContext(ioDispatcher) {
+        dao.getDailyLogWithSymptoms(date)
     }
 
     override fun getAllLogs(descending: Boolean): Flow<List<DailyLogWithSymptoms>> {
@@ -91,31 +83,31 @@ class LumiRepositoryImpl(
     }
 
     // --- RECORDATORIOS ---
-    override suspend fun saveReminder(reminder: ReminderEntity): Long {
-        return dao.insertReminder(reminder)
+    override suspend fun saveReminder(reminder: ReminderEntity): Long = withContext(ioDispatcher) {
+        dao.insertReminder(reminder)
     }
 
     override fun getActiveReminders(): Flow<List<ReminderEntity>> {
         return dao.getActiveReminders()
     }
 
-    override suspend fun getReminderById(id: Int): ReminderEntity? {
-        return dao.getReminderById(id)
+    override suspend fun getReminderById(id: Int): ReminderEntity? = withContext(ioDispatcher) {
+        dao.getReminderById(id)
     }
 
-    override suspend fun deactivateReminder(id: Int) {
+    override suspend fun deactivateReminder(id: Int) = withContext(ioDispatcher) {
         dao.deactivateReminder(id)
     }
 
-    override suspend fun updateNextTrigger(id: Int, nextTriggerAt: Long) {
+    override suspend fun updateNextTrigger(id: Int, nextTriggerAt: Long) = withContext(ioDispatcher) {
         dao.updateNextTrigger(id, nextTriggerAt)
     }
 
-    override suspend fun deleteReminder(reminder: ReminderEntity) {
+    override suspend fun deleteReminder(reminder: ReminderEntity) = withContext(ioDispatcher) {
         dao.deleteReminder(reminder)
     }
 
-    override suspend fun deleteAllData() {
+    override suspend fun deleteAllData() = withContext(ioDispatcher) {
         dao.clearAllDataForDev()
     }
 }
