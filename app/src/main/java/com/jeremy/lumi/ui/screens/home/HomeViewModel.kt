@@ -37,6 +37,9 @@ import java.time.temporal.ChronoUnit
 import java.time.format.TextStyle
 import com.jeremy.lumi.utils.LumiClock
 import java.util.Locale
+import android.content.Context
+import com.jeremy.lumi.R
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 /** Modo de visualización del HomeScreen */
@@ -48,6 +51,7 @@ enum class HomeMode {
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val repository       : LumiRepository,
     private val prefsManager     : OnboardingPreferenceManager,
     private val partnerRepository: com.jeremy.lumi.domain.repository.PartnerRepository,
@@ -438,9 +442,9 @@ class HomeViewModel @Inject constructor(
                     val sympScore = ((daysWithSymptoms.toFloat() / currentDayCoerced) * 100f).coerceIn(25f, 95f).toInt()
 
                     val confLabel = when {
-                        computedActivePrediction.predictionConfidenceIndex >= 0.70f -> "Certeza alta"
-                        computedActivePrediction.predictionConfidenceIndex >= 0.45f -> "Certeza moderada"
-                        else                                                         -> "En calibración"
+                        computedActivePrediction.predictionConfidenceIndex >= 0.70f -> context.getString(R.string.home_confidence_high)
+                        computedActivePrediction.predictionConfidenceIndex >= 0.45f -> context.getString(R.string.home_confidence_moderate)
+                        else                                                         -> context.getString(R.string.home_calibrating)
                     }
 
                     val marginFormatted = if (stdDev <= 0.1f) "±1.5 d" 
@@ -505,15 +509,15 @@ class HomeViewModel @Inject constructor(
                 
                 // Actualizar Widget
                 val phaseName = when (prediction.currentPhase) {
-                    CyclePhase.MENSTRUAL -> "Menstruación"
-                    CyclePhase.FOLLICULAR -> "Fase Folicular"
-                    CyclePhase.OVULATION -> "Ovulación"
-                    CyclePhase.LUTEAL -> "Fase Lútea"
-                    CyclePhase.PREGNANCY -> "Embarazo"
-                    CyclePhase.UNKNOWN -> "Desconocido"
+                    CyclePhase.MENSTRUAL -> context.getString(R.string.pm_phase_menstrual)
+                    CyclePhase.FOLLICULAR -> context.getString(R.string.pm_phase_follicular)
+                    CyclePhase.OVULATION -> context.getString(R.string.pm_phase_ovulation)
+                    CyclePhase.LUTEAL -> context.getString(R.string.pm_phase_luteal)
+                    CyclePhase.PREGNANCY -> context.getString(R.string.phase_pregnancy)
+                    CyclePhase.UNKNOWN -> context.getString(R.string.phase_unknown)
                 }
-                val msg = if (prediction.isLate) "Retraso de ${prediction.delayDays} días" 
-                          else "Próximo en ${prediction.daysUntilNextPeriod} días"
+                val msg = if (prediction.isLate) context.getString(R.string.home_period_delayed_by, prediction.delayDays)
+                          else context.getString(R.string.home_period_next_in, prediction.daysUntilNextPeriod)
                 widgetUpdater.updateWidget(prediction.currentDayOfCycle, phaseName, msg, "#9B72C0")
                 // FIX P2-3: Re-sincronizar Health Connect en cada carga del ciclo
                 // para mantener los datos de sueño/BBT actualizados durante la sesión.
@@ -581,7 +585,7 @@ class HomeViewModel @Inject constructor(
             )
             prefsManager.resetDelayBannerDismiss()
             loadCurrentCycle()
-            _eventFlow.emit(HomeEvent.CycleStarted("Ciclo iniciado"))
+            _eventFlow.emit(HomeEvent.CycleStarted(context.getString(R.string.home_cycle_started_toast)))
         }
     }
 
@@ -593,7 +597,7 @@ class HomeViewModel @Inject constructor(
             val restored = repository.undoLastPeriodStart()
             if (restored) {
                 loadCurrentCycle()
-                _eventFlow.emit(HomeEvent.CycleRestored("Ciclo previo restaurado"))
+                _eventFlow.emit(HomeEvent.CycleRestored(context.getString(R.string.home_cycle_restored_toast)))
             }
         }
     }

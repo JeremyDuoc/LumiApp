@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "demo-lumi-bonds",
+    "local": "demo-lumi-bonds",
+    "prod": "lumi-7c924"
+  }
+}

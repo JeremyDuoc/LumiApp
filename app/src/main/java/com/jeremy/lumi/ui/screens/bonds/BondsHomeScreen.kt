@@ -200,8 +200,8 @@ fun BondsHomeScreen(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = if (selected != null) "Envía un detalle reconfortante a ${selected.displayName}"
-                                   else "Envía un detalle reconfortante a tu círculo",
+                            text = if (selected != null) stringResource(R.string.bonds_comfort_gesture_for_person, selected.displayName)
+                                   else stringResource(R.string.bonds_comfort_gesture_for_circle),
                             fontSize = 12.5.sp,
                             color = BondsTheme.TextSecondary
                         )
@@ -275,7 +275,7 @@ private fun BondsTopHeader(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.AutoAwesome,
-                    contentDescription = if (isDemoMode) "Salir de Modo Demostración" else "Modo Demostración",
+                    contentDescription = if (isDemoMode) stringResource(R.string.bonds_demo_mode_exit) else stringResource(R.string.bonds_demo_mode),
                     tint = if (isDemoMode) BondsTheme.SoftViolet else BondsTheme.DeepNavy.copy(alpha = 0.5f),
                     modifier = Modifier.size(22.dp)
                 )
@@ -513,7 +513,7 @@ private fun BondsAddCircleItem(onClick: () -> Unit) {
         Spacer(modifier = Modifier.height(2.dp))
 
         Text(
-            text = "Vínculo",
+            text = stringResource(R.string.bonds_link),
             fontSize = 11.sp,
             color = BondsTheme.TextTertiary
         )
@@ -729,7 +729,7 @@ private fun BondsEmptyStateView(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Vincular con código o QR",
+                        text = stringResource(R.string.bonds_link_code_qr),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -756,7 +756,7 @@ private fun BondsEmptyStateView(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Explorar modo visual (Demo)",
+                        text = stringResource(R.string.bonds_explore_demo),
                         fontSize = 13.5.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -765,7 +765,7 @@ private fun BondsEmptyStateView(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
-                    text = "Tú decides exactamente qué datos compartir en todo momento.",
+                    text = stringResource(R.string.bonds_privacy_always_control),
                     fontSize = 11.5.sp,
                     color = BondsTheme.TextTertiary,
                     textAlign = TextAlign.Center
@@ -806,13 +806,13 @@ private fun BondsDemoModeBanner(onExitDemo: () -> Unit) {
                 Spacer(modifier = Modifier.width(10.dp))
                 Column {
                     Text(
-                        text = "Modo Demostración activo",
+                        text = stringResource(R.string.bonds_demo_active),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = BondsTheme.DeepNavy
                     )
                     Text(
-                        text = "Explorando perfiles de muestra sin vincular dispositivos",
+                        text = stringResource(R.string.bonds_demo_exploring_desc),
                         fontSize = 11.sp,
                         color = BondsTheme.TextSecondary
                     )
@@ -899,7 +899,7 @@ private fun BondsSharedCalendarBanner(onOpenCalendar: () -> Unit) {
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = "Ver ↗",
+                    text = stringResource(R.string.bonds_view_detail),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = BondsTheme.SoftViolet

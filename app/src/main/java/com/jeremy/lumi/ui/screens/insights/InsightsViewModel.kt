@@ -1,7 +1,9 @@
 package com.jeremy.lumi.ui.screens.insights
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jeremy.lumi.R
 import com.jeremy.lumi.data.local.entity.CycleEntity
 import com.jeremy.lumi.data.local.entity.closedLengthDays
 import com.jeremy.lumi.data.preferences.OnboardingPreferenceManager
@@ -11,6 +13,7 @@ import com.jeremy.lumi.domain.repository.LumiRepository
 import com.jeremy.lumi.domain.usecase.GenerateMedicalReportUseCase
 import com.jeremy.lumi.domain.usecase.MedicalPatternDetector
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -63,6 +66,7 @@ data class InsightsUiState(
 
 @HiltViewModel
 class InsightsViewModel @Inject constructor(
+    @ApplicationContext private val context   : Context,
     private val insightsRepo          : InsightsRepository,
     private val prefsManager          : OnboardingPreferenceManager,
     private val generateReportUseCase : GenerateMedicalReportUseCase,
@@ -74,8 +78,8 @@ class InsightsViewModel @Inject constructor(
     val uiState: StateFlow<InsightsUiState> = _uiState.asStateFlow()
 
     private val zona = ZoneOffset.UTC
-    private val monthFormat = DateTimeFormatter.ofPattern("MMM", Locale("es"))
-    private val dayMonthFormat = DateTimeFormatter.ofPattern("d MMM", Locale("es"))
+    private val monthFormat = DateTimeFormatter.ofPattern("MMM", Locale.getDefault())
+    private val dayMonthFormat = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
 
     init {
         // Observación reactiva de ciclos y logs
@@ -106,16 +110,16 @@ class InsightsViewModel @Inject constructor(
 
     fun selectSymptomCell(symptomName: String, phase: CyclePhase, level: Int, count: Int) {
         val phaseName = when (phase) {
-            CyclePhase.MENSTRUAL -> "Fase menstrual"
-            CyclePhase.FOLLICULAR -> "Fase folicular"
-            CyclePhase.OVULATION -> "Ventana ovulatoria (est.)"
-            CyclePhase.LUTEAL -> "Fase lútea"
-            else -> "Fase estimada"
+            CyclePhase.MENSTRUAL -> context.getString(R.string.insights_phase_menstrual)
+            CyclePhase.FOLLICULAR -> context.getString(R.string.insights_phase_follicular)
+            CyclePhase.OVULATION -> context.getString(R.string.insights_phase_ovulation)
+            CyclePhase.LUTEAL -> context.getString(R.string.insights_phase_luteal)
+            else -> context.getString(R.string.insights_phase_estimated)
         }
         val note = if (level > 0) {
-            "$symptomName · $phaseName. Nivel $level/3 ($count días observados); no es una probabilidad ni una medida clínica."
+            context.getString(R.string.insights_cell_detail_format, symptomName, phaseName, level, count)
         } else {
-            "$symptomName · $phaseName. Sin registros en esta celda. No significa ausencia del síntoma."
+            context.getString(R.string.insights_cell_empty_format, symptomName, phaseName)
         }
         _uiState.update { it.copy(selectedSymptomNote = note) }
     }
@@ -132,7 +136,7 @@ class InsightsViewModel @Inject constructor(
         val newPoint = PuntoBbt(
             diaCiclo = day,
             temperaturaC = temp,
-            fecha = "Día $day"
+            fecha = context.getString(R.string.insights_bbt_day_format, day)
         )
         val currentDemo = _uiState.value.demoBbtPoints.filter { it.diaCiclo != day } + newPoint
         _uiState.update { state ->
@@ -293,12 +297,12 @@ class InsightsViewModel @Inject constructor(
                 result.add(
                     LumiObservation(
                         id = "obs_variation",
-                        tag = "Duración",
-                        title = "Variación entre ciclos",
-                        description = "En los $cycleCount ciclos analizados, la duración va de ${stats.shortestCycle} a ${stats.longestCycle} días. Esto indica una diferencia entre observaciones, pero no identifica una enfermedad ni establece por qué cambian.",
-                        sampleText = "Basado en $cycleCount ciclos cerrados",
-                        limitsText = "La variación, por sí sola, no permite establecer una causa médica ni predecir anomalías.",
-                        recommendationText = "Si la variación se mantiene o supera los 45 días repetidamente, es aconsejable conversarlo en tu próxima visita ginecológica.",
+                        tag = context.getString(R.string.insights_obs_tag_duration),
+                        title = context.getString(R.string.insights_obs_variation_title),
+                        description = context.getString(R.string.insights_obs_variation_desc, cycleCount, stats.shortestCycle, stats.longestCycle),
+                        sampleText = context.getString(R.string.insights_obs_variation_sample, cycleCount),
+                        limitsText = context.getString(R.string.insights_obs_variation_limits),
+                        recommendationText = context.getString(R.string.insights_obs_variation_rec),
                         severity = AlertSeverity.WARNING
                     )
                 )
@@ -306,12 +310,12 @@ class InsightsViewModel @Inject constructor(
                 result.add(
                     LumiObservation(
                         id = "obs_regularity",
-                        tag = "Duración",
-                        title = "Ritmo constante en tus ciclos",
-                        description = "Tus registros muestran una variación moderada de $variation días entre tu ciclo más corto (${stats.shortestCycle} d) y el más largo (${stats.longestCycle} d).",
-                        sampleText = "Basado en $cycleCount ciclos analizados",
-                        limitsText = "La regularidad matemática no confirma ovulación en todos los periodos.",
-                        recommendationText = "Continúa registrando para mantener la precisión de tus predicciones.",
+                        tag = context.getString(R.string.insights_obs_tag_duration),
+                        title = context.getString(R.string.insights_obs_const_rhythm_title),
+                        description = context.getString(R.string.insights_obs_const_rhythm_desc, variation, stats.shortestCycle, stats.longestCycle),
+                        sampleText = context.getString(R.string.insights_obs_const_rhythm_sample, cycleCount),
+                        limitsText = context.getString(R.string.insights_obs_const_rhythm_limits),
+                        recommendationText = context.getString(R.string.insights_obs_const_rhythm_rec),
                         severity = AlertSeverity.WARNING
                     )
                 )
@@ -324,12 +328,12 @@ class InsightsViewModel @Inject constructor(
                     result.add(
                         LumiObservation(
                             id = "obs_endo",
-                            tag = "Síntomas",
-                            title = "Dolor menstrual recurrente registrado",
-                            description = "En tus registros figura una frecuencia reiterada de dolor moderado a intenso asociado a tu periodo.",
-                            sampleText = "Basado en registros de dolor en el diario",
-                            limitsText = "No constituye un diagnóstico de endometriosis ni de dismenorrea secundaria.",
-                            recommendationText = "Si el dolor no cede con analgésicos o dificulta tus tareas cotidianas, es muy recomendable conversarlo con un profesional de la salud.",
+                            tag = context.getString(R.string.insights_obs_tag_symptoms),
+                            title = context.getString(R.string.insights_obs_pain_title),
+                            description = context.getString(R.string.insights_obs_pain_desc),
+                            sampleText = context.getString(R.string.insights_obs_pain_sample),
+                            limitsText = context.getString(R.string.insights_obs_pain_limits),
+                            recommendationText = context.getString(R.string.insights_obs_pain_rec),
                             severity = AlertSeverity.CRITICAL
                         )
                     )
@@ -338,12 +342,12 @@ class InsightsViewModel @Inject constructor(
                     result.add(
                         LumiObservation(
                             id = "obs_pcos",
-                            tag = "Ritmo",
-                            title = "Ciclos con duración prolongada o variable",
-                            description = "Se observan ciclos con duración superior al promedio habitual de la población.",
-                            sampleText = "Basado en las fechas registradas de tus ciclos",
-                            limitsText = "No diagnostica síndrome de ovario poliquístico ni alteraciones hormonales.",
-                            recommendationText = "Un profesional puede solicitar análisis de laboratorio si deseas profundizar en tu patrón ovulatorio.",
+                            tag = context.getString(R.string.insights_obs_tag_rhythm),
+                            title = context.getString(R.string.insights_obs_prolonged_title),
+                            description = context.getString(R.string.insights_obs_prolonged_desc),
+                            sampleText = context.getString(R.string.insights_obs_prolonged_sample),
+                            limitsText = context.getString(R.string.insights_obs_prolonged_limits),
+                            recommendationText = context.getString(R.string.insights_obs_prolonged_rec),
                             severity = AlertSeverity.WARNING
                         )
                     )
@@ -352,12 +356,12 @@ class InsightsViewModel @Inject constructor(
                     result.add(
                         LumiObservation(
                             id = "obs_luteal",
-                            tag = "Fase lútea",
-                            title = "Fase lútea de duración corta observada",
-                            description = "El intervalo estimado entre la posible ovulación y la menstruación se presenta menor a 10 días en los registros.",
-                            sampleText = "Basado en estimaciones de fase y registros",
-                            limitsText = "Las estimaciones de fase son aproximadas y no reemplazan mediciones hormonales en sangre.",
-                            recommendationText = "Conversa con tu especialista si buscas concebir o si observas sangrado intermenstrual.",
+                            tag = context.getString(R.string.insights_obs_tag_luteal),
+                            title = context.getString(R.string.insights_obs_short_luteal_title),
+                            description = context.getString(R.string.insights_obs_short_luteal_desc),
+                            sampleText = context.getString(R.string.insights_obs_short_luteal_sample),
+                            limitsText = context.getString(R.string.insights_obs_short_luteal_limits),
+                            recommendationText = context.getString(R.string.insights_obs_short_luteal_rec),
                             severity = AlertSeverity.WARNING
                         )
                     )
@@ -366,12 +370,12 @@ class InsightsViewModel @Inject constructor(
                     result.add(
                         LumiObservation(
                             id = "obs_${alert.type.name}",
-                            tag = "Bienestar",
-                            title = "Patrón identificado en registros",
-                            description = "Tus registros indican un patrón que conviene revisar con tranquilidad.",
-                            sampleText = "Basado en observaciones registradas",
-                            limitsText = "Lumi genera observaciones basadas en datos; no realiza diagnósticos clínicos.",
-                            recommendationText = "Comparte este resumen en tu próxima consulta médica.",
+                            tag = context.getString(R.string.insights_obs_tag_wellness),
+                            title = context.getString(R.string.insights_obs_pattern_title),
+                            description = context.getString(R.string.insights_obs_pattern_desc),
+                            sampleText = context.getString(R.string.insights_obs_pattern_sample),
+                            limitsText = context.getString(R.string.insights_obs_pattern_limits),
+                            recommendationText = context.getString(R.string.insights_obs_pattern_rec),
                             severity = alert.severity
                         )
                     )
@@ -395,7 +399,7 @@ class InsightsViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isGeneratingPdf = false,
-                        pdfError = "No se pudo generar el reporte: ${e.localizedMessage}"
+                        pdfError = context.getString(R.string.insights_pdf_error, e.localizedMessage ?: "")
                     )
                 }
             }

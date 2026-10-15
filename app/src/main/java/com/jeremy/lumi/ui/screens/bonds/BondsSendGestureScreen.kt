@@ -235,7 +235,7 @@ fun BondsSendGestureScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Para:",
+                        text = stringResource(R.string.bonds_to_recipient),
                         fontSize = 13.sp,
                         color = BondsTheme.TextSecondary,
                         fontWeight = FontWeight.Medium

@@ -1,661 +1,617 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Welcome Messages -->
-    <string-array name="chat_welcome_base">
-        <item>Welcome to Lumi! ✨ </item>
-        <item>Hello! Great to see you in Lumi. ✨ </item>
-        <item>Hi! I\'m here to help you. ✨ </item>
-        <item>Welcome back to Lumi! ✨ </item>
-        <item>Hello! Ready to accompany you today in Lumi. ✨ </item>
-    </string-array>
-    
-    <string-array name="chat_welcome_pms">
-        <item>You are in your premenstrual window. It is completely normal to %1$s due to the natural drop in progesterone and estrogen. Remember to be compassionate with yourself these days. How can I support you today?</item>
-        <item>I noticed you are in your premenstrual phase. Feeling that %1$s is super common due to shifting hormones. Take things easy. What would you like to know today?</item>
-        <item>I see you are close to your period. It is biologically normal to %1$s right now. Give yourself permission to rest. How can I help you?</item>
-        <item>You are in the days leading up to your period. It is understandable that %1$s due to dropping estrogen. I am here for you. What shall we look at today?</item>
-        <item>The premenstrual window can be tough. It is expected that %1$s. Remember to give yourself a break today. What would you like to talk about?</item>
-    </string-array>
-
-    <string-array name="chat_welcome_pain">
-        <item>I noticed that today you have a pain level of %1$d/10. Remember to apply local heat or consider a pain reliever if it is very intense. 🌸\n\n</item>
-        <item>I saw that you logged a pain level of %1$d/10. Please rest and use local heat if you need it. 🌸\n\n</item>
-        <item>Your log shows a pain level of %1$d/10 today. Take good care of yourself and don\'t hesitate to take a pain reliever if the pain does not subside. 🌸\n\n</item>
-        <item>I saw your pain is at %1$d/10. Your well-being is priority, so apply heat and rest as much as possible. 🌸\n\n</item>
-        <item>You logged a pain level of %1$d/10. I hope you feel better soon; remember that local heat helps a lot. 🌸\n\n</item>
-    </string-array>
-
-    <string-array name="chat_welcome_phase_menstrual">
-        <item>I have noticed you are in your Menstrual phase. Remember to be gentle with your body these days, rest as needed, and stay hydrated. If you have cramps, local heat can help. How can I support you today?</item>
-        <item>You are moving through your Menstrual phase. It is an ideal time to slow down and listen to your body. What would you like to explore today?</item>
-        <item>I see you are in your Menstrual phase. Give priority to your rest and hydration. Do you have any questions for me today?</item>
-        <item>You are in your Menstrual phase. Remember not to demand too much of yourself and take good care. How can I guide you right now?</item>
-        <item>You are right in your Menstrual phase. If you need to lower the intensity of your activities, that is completely fine. What would you like us to talk about?</item>
-    </string-array>
-
-    <string-array name="chat_welcome_phase_follicular">
-        <item>I see you are in your Follicular phase. It is an excellent time to take advantage of the natural increase in energy and plan new goals. Is there anything about your cycle you would like to explore today?</item>
-        <item>You are in your Follicular phase, estrogen is rising! It is a great stage for new projects. What would you like to talk about?</item>
-        <item>You are in the Follicular phase. Your energy will surely start to rebound. How can I help you today?</item>
-        <item>Follicular phase underway! Take advantage of this natural energy boost. Any questions today?</item>
-        <item>You are going through the Follicular phase, a good time to focus and create. What information are you looking for today?</item>
-    </string-array>
-
-    <string-array name="chat_welcome_phase_ovulation">
-        <item>I have noticed you are near or in your Ovulation phase. Your energy and mood levels are usually at their highest point now. Make the most of this moment! Do you have any questions about your current well-being?</item>
-        <item>You are in full Ovulation phase! Hormones are peaking, giving you extra energy. What would you like to know today?</item>
-        <item>You are in your Ovulation stage. It is your biological peak of vitality. How can I support you?</item>
-        <item>I see you are experiencing your Ovulatory phase. Enjoy the surge of energy! Do you have doubts about anything?</item>
-        <item>You are in your Ovulation days. Your body is working intensively. What do you want to explore today?</item>
-    </string-array>
-
-    <string-array name="chat_welcome_phase_luteal">
-        <item>I see you are in your Luteal phase. If you feel lower energy or mood swings, remember that is completely normal due to progesterone. Self-care is key these days. How can I guide you?</item>
-        <item>You are in your Luteal phase. Progesterone can make you feel slower, so take it easy. What shall we talk about today?</item>
-        <item>You are in the Luteal phase, preparing your body for the end of the cycle. Prioritize your peace of mind. How can I help you?</item>
-        <item>You are going through your Luteal phase. It is the perfect moment for gentle activities and rest. What do you want to know today?</item>
-        <item>Luteal phase in progress. If you notice drops in energy, it is pure biology. Do you have any questions?</item>
-    </string-array>
-
-    <string-array name="chat_welcome_phase_unknown">
-        <item>I am here to help you better understand your cycle and your body. You can ask me about your phases, predictions, or any symptom. What would you like to know today?</item>
-        <item>Lumi is ready for you. Let\'s explore together your cycle and how you feel today. What question do you have?</item>
-        <item>Welcome. If you have questions about your symptoms or predictions, let me know. How can I support you?</item>
-        <item>It is always a good time to learn about your body. What would you like to talk about today?</item>
-        <item>Here I am! Ready to analyze your well-being and your logs. What information do you need?</item>
-    </string-array>
-
-    <!-- Tiredness -->
-    <string-array name="chat_tired_menstrual">
-        <item>During menstruation, blood loss can lower your iron levels and cause fatigue. It is completely normal.%1$s 💙</item>
-        <item>It is very common to feel exhausted right now. Your body is working hard to renew the endometrium.%1$s ✨</item>
-        <item>Menstrual tiredness is a natural body response. Listen to your need for rest and do not overdemand of yourself.%1$s 🌱</item>
-        <item>Your energy is low because hormone levels drop during your period. Try eating something rich in iron.%1$s 🌙</item>
-        <item>Feeling drained these days is your body\'s way of asking for a pause.%1$s 💜</item>
-    </string-array>
-    <string-array name="chat_tired_follicular">
-        <item>In the follicular phase, estrogen rises and usually brings more energy. If you feel tired, check your rest and hydration.%1$s 🌱</item>
-        <item>Normally, your energy should start rising now. If not, take it easy for another day.%1$s ✨</item>
-        <item>Although this phase is for recharging energy, stress or lack of sleep can sometimes play against you.%1$s 💙</item>
-        <item>Your estrogen is increasing. If fatigue persists, you might need active rest or better sleep.%1$s 🌙</item>
-        <item>It is a good time to regain vitality, but do not push yourself if you need to go slower today.%1$s 💜</item>
-    </string-array>
-    <string-array name="chat_tired_ovulation">
-        <item>Around ovulation your hormones are at their peak. This surge can make your body ask for a quick breather.%1$s ✨</item>
-        <item>You are at a high point of hormonal activity. A short 20-minute break will do you wonders.%1$s 🌱</item>
-        <item>Ovulation demands a lot of energy from your body. If you feel fatigued, it is a cue for a brief nap.%1$s 💙</item>
-        <item>While ovulation usually brings energy, the sudden hormone shift can sometimes have the opposite effect temporarily.%1$s 🌙</item>
-        <item>Your hormone levels are working at full throttle right now. Rest for a while if your body asks for it.%1$s 💜</item>
-    </string-array>
-    <string-array name="chat_tired_luteal">
-        <item>In the luteal phase, progesterone rises and acts like a natural sedative. It is super common to feel like this!%1$s 🌙</item>
-        <item>Premenstrual fatigue is real and has a name: progesterone. Do not feel guilty about needing extra rest.%1$s 💙</item>
-        <item>Your body is preparing for the next cycle. That energy dip is completely normal.%1$s ✨</item>
-        <item>Feeling heavy or tired is typical of the luteal phase. Prioritize self-care these days.%1$s 🌱</item>
-        <item>The tiredness you feel is your body\'s natural response to the hormonal shifts of these days.%1$s 💜</item>
-    </string-array>
-    <string-array name="chat_tired_unknown">
-        <item>Fatigue can stem from many factors. Make sure to rest and drink plenty of water.%1$s 💙</item>
-        <item>If you feel very tired, try checking your sleep hours or stress level this week.%1$s ✨</item>
-        <item>Tiredness can be a signal to slow down. Listen to your body.%1$s 🌱</item>
-        <item>Getting enough rest is key. If this fatigue persists for several days, discuss it with your doctor.%1$s 🌙</item>
-        <item>Sometimes we just need a pause. Take the day as calmly as possible.%1$s 💜</item>
-    </string-array>
-
-    <!-- Next Period -->
-    <string-array name="chat_next_period_late">
-        <item>Your period is %1$d day(s) late compared to your normal cycles. Stress or hormonal changes could be the cause. 💜</item>
-        <item>I noticed a delay of %1$d day(s). Remember that hormonal fluctuations or stress can affect dates. 🌸</item>
-        <item>You are currently %1$d day(s) late. If it exceeds two weeks, I would suggest speaking with your gynecologist. 💙</item>
-        <item>I recorded a delay of %1$d day(s). Try to relax, as stress can prolong the delay. ✨</item>
-        <item>You have a delay of %1$d day(s) over your average of %2$d days. Stay mindful and log any symptoms. 🌱</item>
-    </string-array>
-    <string-array name="chat_next_period_on_time">
-        <item>Based on your history, your next period %1$s. Remember that biology is not an exact clock. 📅</item>
-        <item>Your period %1$s. Keep in mind this is only an estimate. 🌸</item>
-        <item>According to my calculations, your period %1$s. I will let you know if I detect changes! 💙</item>
-        <item>I expect your menstruation for %1$s. Keep your logs up to date for higher accuracy. ✨</item>
-        <item>Your period %1$s. Don\'t forget that slight advances or delays are common. 🌱</item>
-    </string-array>
-    
-    <!-- Next Period Bases -->
-    <string-array name="chat_next_period_base_0">
-        <item>could arrive today</item>
-        <item>is expected today</item>
-        <item>according to my calculations, should start today</item>
-        <item>today is the expected day</item>
-        <item>is scheduled for today</item>
-    </string-array>
-    <string-array name="chat_next_period_base_1">
-        <item>is expected tomorrow</item>
-        <item>will arrive tomorrow if everything follows its course</item>
-        <item>should start tomorrow</item>
-        <item>tomorrow is the estimated date</item>
-        <item>is expected tomorrow</item>
-    </string-array>
-    <string-array name="chat_next_period_base_n">
-        <item>is expected in %1$d days</item>
-        <item>is about %1$d days away</item>
-        <item>will arrive in about %1$d days</item>
-        <item>I estimate in %1$d days</item>
-        <item>is expected in %1$d days</item>
-    </string-array>
-
-    <!-- Fertile Window -->
-    <string-array name="chat_fertile_contraceptive">
-        <item>With hormonal contraception, ovulation is suppressed, so the concept of a fertile window does not apply the same way. If you have questions, consult your gynecologist. 💜</item>
-        <item>Since you take contraceptives, your body does not ovulate normally, so there is no traditional fertile window. Talk to your doctor if you want more details. 🌸</item>
-        <item>Using contraception suppresses ovulation, hence I do not calculate your fertile window. For any concerns, do not hesitate to ask your doctor. 💙</item>
-        <item>Being on a hormonal contraceptive method, your fertile window is not active like in a natural cycle. It is best to discuss it with a healthcare professional if you want to switch methods. ✨</item>
-        <item>Contraceptive pills prevent ovulation. Because of this, there are no fertile days to calculate right now. It is always good to keep your gynecologist informed. 🌱</item>
-    </string-array>
-    <string-array name="chat_fertile_now">
-        <item>You are in your fertile window right now! The days around ovulation carry the highest probability of conception. 🌸</item>
-        <item>You are in your fertile days. Right now is the highest likelihood of pregnancy in the cycle. 💙</item>
-        <item>It is your fertile window! These days are key if you are trying to conceive. ✨</item>
-        <item>You are currently passing through your most fertile days. Remember ovulation is the peak phase to conceive. 🌱</item>
-        <item>You are right in the fertility window of this cycle. Take necessary precautions according to your goals. 💜</item>
-    </string-array>
-    <string-array name="chat_fertile_past">
-        <item>Your fertile window has already passed this cycle. The next one will be approx. %1$d days after your next period. 🌸</item>
-        <item>You have already left your fertile days behind for now. We expect the next window in your upcoming cycle. 💙</item>
-        <item>The fertile window for this cycle is now closed. Stay tuned for my predictions next month. ✨</item>
-        <item>Your most fertile days have passed. If you are trying to conceive, the next cycle will be your new opportunity. 🌱</item>
-        <item>Ovulation for this cycle is behind you. Time to prepare for the next one in a couple of weeks. 💜</item>
-    </string-array>
-    <string-array name="chat_fertile_future">
-        <item>Your next fertile window is estimated in approximately %1$d days. The 5 days before and the day of ovulation are the most fertile. 🌸</item>
-        <item>I estimate about %1$d days left until your fertile window. ✨</item>
-        <item>Expect your fertile window in approx. %1$d days. I will let you know when you get closer! 💙</item>
-        <item>Your fertile days will arrive in %1$d days according to my logs. 🌱</item>
-        <item>About %1$d days remain until your peak fertility days. Keep your logs up to date. 💜</item>
-    </string-array>
-
-    <!-- Mood -->
-    <string-array name="chat_mood_menstrual">
-        <item>During menstruation, estrogen drops and it is normal to feel more sensitive or sad. It is pure biology, don\'t be hard on yourself. 💜</item>
-        <item>The drop in hormones during bleeding often brings emotional sensitivity. Take things calmly. 🌸</item>
-        <item>Menstruation causes estrogen and progesterone to hit rock bottom, directly affecting your mood. It is a good time to prioritize rest. 💙</item>
-        <item>Feeling mood swings right now is super normal; your hormones are at their lowest. Rest and listen to yourself. ✨</item>
-        <item>Your body is going through a sharp hormonal drop, which explains why you might feel susceptible today. 🌱</item>
-    </string-array>
-    <string-array name="chat_mood_follicular">
-        <item>In this phase estrogen rises, which generally boosts mood. If you still feel irritable, sleep or stress may be playing a role. 🌱</item>
-        <item>Mood is normally more stable now. If you feel abrupt shifts, let\'s check your sleep and stress levels. 💙</item>
-        <item>Your hormones are rising and you should feel better. If not, try to relax a bit more. ✨</item>
-        <item>Estrogen is on your side during this phase. Any mood fluctuations might come from external factors like fatigue. 🌸</item>
-        <item>You are in a phase of biological emotional recovery. Give yourself time if stress is weighing on you. 💜</item>
-    </string-array>
-    <string-array name="chat_mood_ovulation">
-        <item>Around ovulation, peak estrogen often brings joy and sociability. If you feel variable, your hormones are simply in high gear! ✨</item>
-        <item>The hormonal cocktail of ovulation sometimes creates small emotional spikes, though it is usually positive energy. 🌸</item>
-        <item>You are in the middle of the ovulatory hormonal roller coaster. Your emotions may feel more intense than usual. 💙</item>
-        <item>With estrogen and LH at their highest, your mood may be very receptive. Enjoy this energy. 🌱</item>
-        <item>Ovulation brings a hormonal surge that can make you feel euphoric or sensitive at times. 💜</item>
-    </string-array>
-    <string-array name="chat_mood_luteal">
-        <item>In the luteal phase progesterone dominates and can trigger PMS: irritability or sadness. It is normal and will pass. 🌙</item>
-        <item>Your mood swings are a byproduct of progesterone preparing your body. Don\'t worry, it will level off with your period. 💙</item>
-        <item>Premenstrual Syndrome often manifests as emotional sensitivity due to dropping estrogen. Be kind to yourself. ✨</item>
-        <item>Feeling this way in this phase is classic PMS. Give your body the self-care it is asking for. 🌱</item>
-        <item>It is completely understandable that your mood fluctuates now. Progesterone has that effect on our emotions. 💜</item>
-    </string-array>
-    <string-array name="chat_mood_unknown">
-        <item>Mood swings across the cycle are normal and have a hormonal basis. Logging how you feel helps me understand your patterns better. 💙</item>
-        <item>Our emotions dance to the rhythm of hormones all month. Keep logging so we can find your personal pattern. ✨</item>
-        <item>Don\'t worry, emotional fluctuations are a natural part of the cycle. Try noting your moods daily. 🌱</item>
-        <item>The menstrual cycle directly affects neurotransmitters. If this affects you deeply, share it with your doctor. 🌸</item>
-        <item>Having emotional ups and downs is very common. Keep logging to know yourself better every day. 💜</item>
-    </string-array>
-
-    <!-- Cramps -->
-    <string-array name="chat_cramps_menstrual">
-        <item>Cramps during menstruation are caused by prostaglandins, which make the uterus contract to shed its lining. %1$s 💙</item>
-        <item>It is normal to feel cramps right now; the uterus is contracting to release the endometrium. %1$s 🌸</item>
-        <item>Prostaglandins are active in your uterus, generating these menstrual aches. %1$s ✨</item>
-        <item>Cramps are how your body clears the uterine lining. %1$s 🌱</item>
-        <item>It is expected to experience pelvic pain during bleeding due to uterine activity. %1$s 💜</item>
-    </string-array>
-    <string-array name="chat_cramps_ovulation">
-        <item>The pain you feel might be mittelschmerz — ovulation pain. It is normal and usually lasts a few hours. %1$s ✨</item>
-        <item>Some women feel a twinge when the follicle releases the egg; it is completely normal. %1$s 💙</item>
-        <item>This type of mid-cycle ache is usually ovulatory pain. %1$s 🌱</item>
-        <item>Feeling pelvic pain now could be your body signaling that you are ovulating. %1$s 🌸</item>
-        <item>Ovulation pain is mild and temporary, caused by the release of the egg. %1$s 💜</item>
-    </string-array>
-    <string-array name="chat_cramps_unknown">
-        <item>Abdominal pain outside your period can have various causes. If it is recurrent and severe, I recommend mentioning it to your gynecologist. %1$s</item>
-        <item>Having cramps without a period sometimes happens due to digestion, early ovulation, or cysts. If it hurts a lot, seek advice. %1$s</item>
-        <item>Pelvic pain in this phase is less common. Monitor it and consult your doctor if it does not subside. %1$s</item>
-        <item>If the pain is persistent and you are not on your period, it is best evaluated by a medical professional. %1$s</item>
-        <item>We will log this pain. If it persists for several days outside menstruation, seek medical advice. %1$s</item>
-    </string-array>
-    
-    <string-array name="chat_cramps_advice_high">
-        <item>For very intense pain, apply local heat (hot water bottle), rest, and if pain does not yield with pain relievers, consult your gynecologist.</item>
-        <item>Since the pain is severe, I suggest applying heat and resting. If a pain reliever does not help, please consult your doctor.</item>
-        <item>The pain is elevated; a heating pad and relaxation are key. If there is no improvement, reach out to your physician.</item>
-        <item>To relieve this level of pain, heat on the pelvic area and rest are fundamental. See a doctor if it persists.</item>
-        <item>Your pain is intense today. Try applying heat and resting; if it continues this strong, it is best to consult a specialist.</item>
-    </string-array>
-    <string-array name="chat_cramps_advice_med">
-        <item>For moderate cramps, local heat and gentle movement (like walking or yoga) can help greatly.</item>
-        <item>With this moderate pain, a warm herbal tea and gentle stretching are usually a great relief.</item>
-        <item>Try applying heat to the area and moving a little if you feel up to it; that usually reduces moderate discomfort.</item>
-        <item>For medium-level cramps, gentle yoga or simply lying down with a heating pad will do you good.</item>
-        <item>A moderate pain level usually responds well to local heat and keeping warm.</item>
-    </string-array>
-    <string-array name="chat_cramps_advice_low">
-        <item>For mild cramps, heat and rest are usually enough.</item>
-        <item>Being mild, you may only need to relax for a while or take a short walk to ease them.</item>
-        <item>The pain is mild, so some warmth and staying calm will help you get through it comfortably.</item>
-        <item>With mild discomfort, continuing your routine at a steady pace and using local heat is typically sufficient.</item>
-        <item>For these soft cramps, simply don\'t overexert yourself today and rest if you feel it is necessary.</item>
-    </string-array>
-
-    <!-- Phase Info -->
-    <string-array name="chat_phase_info">
-        <item>According to my projections, you are on day %1$d of your cycle (probable %3$s phase, day %2$d). %4$s %5$s 📅</item>
-        <item>You are on cycle day %1$d, and I estimate you are in your %3$s phase (day %2$d). %4$s %5$s 🌸</item>
-        <item>According to your history, you would be on day %1$d of your cycle, in a possible %3$s phase. %4$s %5$s 💙</item>
-        <item>Current cycle: day %1$d. Projected phase: %3$s (day %2$d). %4$s %5$s ✨</item>
-        <item>Today is your cycle day %1$d. Mathematically, it is likely that you are in the %3$s phase. %4$s %5$s 🌱</item>
-    </string-array>
-
-    <string-array name="chat_phase_desc_menstrual">
-        <item>Your body is renewing the uterine lining.</item>
-        <item>It is the stage where you shed the endometrium from your uterus.</item>
-        <item>The lining of your uterus is naturally shedding.</item>
-        <item>Your reproductive system is resetting during these days.</item>
-        <item>It is your bleeding stage; your body cleanses the uterus.</item>
-    </string-array>
-    <string-array name="chat_phase_desc_follicular">
-        <item>Ovarian follicles mature and estrogen rises.</item>
-        <item>Your estrogen is increasing while follicles grow.</item>
-        <item>The ovaries prepare to release an egg soon.</item>
-        <item>Your body is nurturing new follicles for ovulation.</item>
-        <item>Estrogen production accelerates at this time.</item>
-    </string-array>
-    <string-array name="chat_phase_desc_ovulation">
-        <item>An egg is being released — active fertile window.</item>
-        <item>It is the moment you release an egg, which means maximum fertility.</item>
-        <item>The egg travels toward the uterus; your fertility is at its peak.</item>
-        <item>The ovary releases an egg ready to be fertilized.</item>
-        <item>Your body is in the middle of the ovulatory process.</item>
-    </string-array>
-    <string-array name="chat_phase_desc_luteal">
-        <item>Progesterone dominates. Prepare for the next cycle.</item>
-        <item>Your body produces progesterone to prepare the uterus.</item>
-        <item>It is the preparation phase; progesterone is at its highest level.</item>
-        <item>The endometrium thickens thanks to progesterone.</item>
-        <item>The cycle nears its end, regulated by progesterone.</item>
-    </string-array>
-
-    <!-- Energy -->
-    <string-array name="chat_energy_menstrual">
-        <item>%1$s During menstruation, prioritize rest over intense exercise. Gentle walks, hydration, and iron-rich foods are your allies. 💙</item>
-        <item>%1$s Your body asks for a pause during bleeding. Do not feel guilty about resting more and eating nutritiously. 🌸</item>
-        <item>%1$s Slow down these days. Prioritize nutritious meals, local heat, and calm activities. ✨</item>
-        <item>%1$s Your period consumes a lot of energy. Replenish it with good rest and avoiding extreme exertion. 🌱</item>
-        <item>%1$s Listen to your body: if today calls for sofa and movies, give it rest. Rest is productive in this phase. 💜</item>
-    </string-array>
-    <string-array name="chat_energy_follicular">
-        <item>%1$s In the follicular phase you have more energy available. It is a good time for more intense workouts and social activities. 🌱</item>
-        <item>%1$s You are recharging batteries! Estrogen gives you extra vitality. Use it for your pending tasks. 💙</item>
-        <item>%1$s This phase is excellent for starting new things. You have the hormonal boost on your side. ✨</item>
-        <item>%1$s Your physical and mental energy is on the rise. It is the ideal week to get moving. 🌸</item>
-        <item>%1$s With estrogen rising, you should feel more agile. Take advantage to exercise or tackle complex tasks. 💜</item>
-    </string-array>
-    <string-array name="chat_energy_ovulation">
-        <item>You are at your cycle\'s energy peak.%1$s Take advantage for demanding activities — your body is at its best. ✨</item>
-        <item>Vitality at its maximum!%1$s Ovulation is the perfect time to challenge yourself physically and mentally. 💙</item>
-        <item>Your body is full of energy right now.%1$s If you can, channel it into exercise or important projects. 🌱</item>
-        <item>You have the perfect hormonal cocktail to feel unstoppable today.%1$s Enjoy your energy. 🌸</item>
-        <item>Ovulation gives you a great energetic push.%1$s It is the biological peak of your cycle. 💜</item>
-    </string-array>
-    <string-array name="chat_energy_luteal">
-        <item>%1$s In the luteal phase energy naturally drops. Prefer yoga, pilates, or walks. Reduce sugar to minimize crashes. 🌙</item>
-        <item>%1$s Progesterone slows things down. It is normal to want to be quieter and at home. 💙</item>
-        <item>%1$s Your body enters nesting mode. Conserve your energy and do not overload yourself with tasks. ✨</item>
-        <item>%1$s It is time to dial down the gears. Rest and gentle activities are ideal right now. 🌱</item>
-        <item>%1$s If you feel heavier or slower, it is due to the Luteal phase. Take care of yourself and get the rest you need. 💜</item>
-    </string-array>
-    <string-array name="chat_energy_unknown">
-        <item>%1$s Keep regular sleep schedules, stay well-hydrated, and move for at least 20 minutes a day. 💙</item>
-        <item>%1$s Sometimes a big glass of water, a short nap, or a walk outside can revitalize you. ✨</item>
-        <item>%1$s Resting and eating well is the best foundation for any lack of energy. 🌱</item>
-        <item>%1$s Listen to your body and do not push it if it asks for a break today. 🌸</item>
-        <item>%1$s Review your sleep and nutrition habits, they are usually the key to improving daily energy. 💜</item>
-    </string-array>
-
-    <string-array name="chat_energy_sleep_tip">
-        <item> First, try to rest: you only slept %1$sh and the body needs 7-9h.</item>
-        <item> I noticed your sleep was %1$sh; trying to sleep better will help you immensely.</item>
-        <item> With %1$sh of sleep it is normal to feel fatigue. Prioritize your rest today.</item>
-        <item> You have slept only %1$sh, so sleep deprivation is part of the problem.</item>
-        <item> Try to recover sleep hours (you only slept %1$sh); it will be your best medicine.</item>
-    </string-array>
-
-    <!-- Sleep and Cycle -->
-    <string-array name="chat_sleep_cycle">
-        <item>Sleep and the menstrual cycle are deeply connected.%1$s Lack of sleep elevates cortisol (stress hormone), which can delay or disrupt ovulation. Sleeping 7-9 hours improves cycle regularity and reduces PMS symptom intensity. 🌙</item>
-        <item>Sleeping well is essential for your hormones.%1$s If you don\'t rest, stress disrupts your ovulation and worsens cramps. Aim for 7 to 9 hours of sleep. 💙</item>
-        <item>Your hormones need you to sleep in order to balance out.%1$s Short sleep raises cortisol and unbalances your cycle. Prioritize good rest. ✨</item>
-        <item>Your sleep quality directly impacts your period.%1$s Less sleep means more stress and irregular cycles. Good rest prevents severe PMS symptoms. 🌱</item>
-        <item>Resting 7-9 hours helps your hormones work in harmony.%1$s Insomnia, in contrast, disrupts your dates and worsens mood. 💜</item>
-    </string-array>
-
-    <string-array name="chat_sleep_note_low">
-        <item> Today you slept %1$sh — with less than 6h, the body can delay ovulation.</item>
-        <item> I see you rested %1$sh; that sleep deficit significantly affects your hormones.</item>
-        <item> With your %1$sh of sleep today, your body hasn\'t had enough time to fully recover.</item>
-        <item> Sleeping %1$sh is very little and physiological stress builds up.</item>
-        <item> Your log indicates %1$sh of rest; it is crucial to try to increase that number.</item>
-    </string-array>
-
-    <!-- Stress and Cycle -->
-    <string-array name="chat_stress_cycle">
-        <item>Yes, stress can delay your period.%1$s Cortisol (stress hormone) inhibits GnRH production, the hormone triggering ovulation. Without ovulation, the cycle lengthens. Deep breathing, moderate exercise, and regular sleep are most effective to reduce this effect. 💆</item>
-        <item>Definitely, stress delays periods.%1$s Your body in "alert mode" pauses ovulation to protect you. Relaxing is key for your cycle to return to normal. 💙</item>
-        <item>Elevated cortisol from stress blocks reproductive hormones.%1$s If you are very stressed, your period will take longer. Try something relaxing today. ✨</item>
-        <item>Stress and your cycle are big foes.%1$s Chronic stress halts ovulation. Yoga, meditation, or walking can help restore balance. 🌱</item>
-        <item>When you get very stressed, your body postpones ovulation, lengthening your cycle.%1$s Finding ways to lower stress is the best medicine. 💜</item>
-    </string-array>
-
-    <string-array name="chat_stress_note_high">
-        <item> I logged that today your stress is at %1$d/10 — that is high.</item>
-        <item> Your stress reached %1$d/10 today, a notably high level.</item>
-        <item> I see a stress level of %1$d/10 in your logs, which carries strong influence.</item>
-        <item> With your stress at %1$d/10, the hormonal impact is direct.</item>
-        <item> Today you reported a stress level of %1$d/10; keep it in mind if your period is delayed.</item>
-    </string-array>
-
-    <!-- Exercise -->
-    <string-array name="chat_exercise_menstrual">
-        <item>Today I recommend gentle movement: restorative yoga, pilates, or an easy walk. Avoid high-intensity workouts if you have cramps. Gentle movement reduces prostaglandins and eases pain. 💙</item>
-        <item>It is a day for low-intensity activities. Light stretches or gentle yoga will help with cramps without draining your energy. 🌸</item>
-        <item>Walk a little or do light pilates. During bleeding, pushing yourself too hard can be counterproductive. ✨</item>
-        <item>Listen to your body: breathing exercises or joint mobility are enough if you feel discomfort. 🌱</item>
-        <item>Light movement is ideal today. It helps oxygenate blood and reduces inflammation without overtiring you. 💜</item>
-    </string-array>
-    <string-array name="chat_exercise_follicular">
-        <item>Excellent phase to train with intensity! Estrogen enhances strength and endurance. Cardio, weights, or HIIT are ideal these days. 🌱</item>
-        <item>Your muscles recover faster now. It is the perfect time to lift heavier or run faster. 💙</item>
-        <item>Take advantage of the estrogen surge for demanding workouts or trying a new sport. ✨</item>
-        <item>Your body is ready for impact and endurance. Push hard on your favorite routines! 🌸</item>
-        <item>The Follicular phase gives you extra energy. Strength training and high intensity are highly recommended today. 💜</item>
-    </string-array>
-    <string-array name="chat_exercise_ovulation">
-        <item>You are at your athletic peak. Train hard — your body can perform at its maximum. Intense cardio, group classes, or strength training are perfect today. ✨</item>
-        <item>It is your time of greatest strength! Break your personal records and leverage your biological endurance. 💙</item>
-        <item>Your hormones support peak physical effort right now. Enjoy an intense workout session. 🌱</item>
-        <item>Bring out your most athletic side. Ovulation gives you that extra push for any tough workout. 🌸</item>
-        <item>You are at the top of your monthly physical performance. Any high-intensity sport will feel great. 💜</item>
-    </string-array>
-    <string-array name="chat_exercise_luteal">
-        <item>In the luteal phase energy drops. Opt for yoga, pilates, swimming, or walks. Listen to your body — if one day you don\'t feel like it, doing less is fine. 🌙</item>
-        <item>Your body prefers more moderate routines right now. Walking or swimming are great options. 💙</item>
-        <item>It is a good time to slow the pace. Light cardio and maintaining mobility is enough. ✨</item>
-        <item>Progesterone relaxes you, so low-impact exercises or flexibility work are ideal. 🌱</item>
-        <item>Don\'t push yourself too hard. Medium- or low-intensity activities are the best way to care for your body in the Luteal phase. 💜</item>
-    </string-array>
-    <string-array name="chat_exercise_unknown">
-        <item>Regular exercise (150 min/week of moderate activity) improves cycle regularity and reduces PMS symptoms. 💙</item>
-        <item>Moving a little each day is great for your hormones. Find an activity you enjoy. ✨</item>
-        <item>Any exercise you like doing is good. It helps release endorphins and regulate your cycle. 🌱</item>
-        <item>Consistency is key. Try mixing cardio with stretching during the week. 🌸</item>
-        <item>Moderate exercise is the best ally of a healthy menstrual cycle. Get moving today! 💜</item>
-    </string-array>
-
-    <!-- Late Period Normal -->
-    <string-array name="chat_late_normal">
-        <item>Your cycle is within the expected range. If you feel something is different, log your symptoms so I can help you better. 📅</item>
-        <item>For now, I don\'t see delays. Everything is proceeding according to your usual calendar. 💙</item>
-        <item>Your dates are in order. Keep logging daily so my predictions improve. ✨</item>
-        <item>Everything looks on time in your cycle! Nothing to worry about for now. 🌱</item>
-        <item>Your period does not appear to be late. Let\'s keep your log up to date. 🌸</item>
-    </string-array>
-    <!-- Late Delayed -->
-    <string-array name="chat_late_delayed">
-        <item>Your period is %1$d day(s) late. Common causes include: high stress, routine changes, sudden weight loss or gain, or hormonal variations. %2$s</item>
-        <item>There is a delay of %1$d day(s). Stress, travel, or a spike in physical activity can affect your date. %2$s</item>
-        <item>I count %1$d day(s) of delay. Sometimes our body pauses ovulation due to stress and the cycle lengthens. %2$s</item>
-        <item>You are %1$d day(s) late. Normal hormonal fluctuations can cause these slight adjustments. %2$s</item>
-        <item>I noticed %1$d day(s) of delay. Try to stay calm, as extra stress can prolong it further. %2$s</item>
-    </string-array>
-    <string-array name="chat_late_delayed_advice_long">
-        <item>With %1$d days of delay, I recommend taking a pregnancy test and/or consulting your gynecologist to rule out other causes. 💜</item>
-        <item>It has been %1$d days of delay, so it is a good time for a doctor\'s visit or a test if applicable. 🌸</item>
-        <item>Having such a prolonged delay (%1$d days), it is best to seek professional advice. 💙</item>
-        <item>It is a noticeable delay of %1$d days. Consult your doctor to see what is going on. ✨</item>
-        <item>I strongly suggest visiting your gynecologist since the delay is already %1$d days. 🌱</item>
-    </string-array>
-    <string-array name="chat_late_delayed_advice_short">
-        <item>If the delay exceeds 2 weeks or is recurrent, consider consulting your gynecologist. 💜</item>
-        <item>If this delay extends for more days, it would be good to speak with your doctor. 🌸</item>
-        <item>Keep it monitored; if a couple of weeks pass, visit your doctor. 💙</item>
-        <item>Short delays are sometimes normal. Consult if it exceeds two weeks. ✨</item>
-        <item>Give your body a few more days, but if it does not arrive within two weeks, seek medical guidance. 🌱</item>
-    </string-array>
-
-    <!-- Spotting -->
-    <string-array name="chat_spotting">
-        <item>Spotting between periods can be normal at certain times of the cycle, especially around ovulation (approx. day %1$d). It can also happen due to hormonal shifts, starting contraceptives, or stress. If spotting is frequent, heavy, or accompanied by pain, I recommend mentioning it to your gynecologist. 💜</item>
-        <item>Sometimes the body produces spotting from ovulatory hormonal fluctuations (near day %1$d). If it concerns you, hurts, or happens frequently, see your doctor. 🌸</item>
-        <item>Spotting is common when using new contraceptives or from stress. If it happens often or with unusual pain, please consult your gynecologist. 💙</item>
-        <item>Light spotting mid-cycle is usually harmless. However, if bleeding is heavy or there is severe pain, report it to your doctor. ✨</item>
-        <item>Spotting can be a sign that your body is adjusting hormones. As long as it is light and sporadic it is usually not serious, but when in doubt, see your doctor. 🌱</item>
-    </string-array>
-
-    <!-- UI General Chat -->
-    <string name="chat_search_placeholder">Search history…</string>
-    <string name="chat_search_cd">Search</string>
-    <string name="chat_search_empty">No results found</string>
-    <string name="chat_filter_recommended">Recommended</string>
-    <string name="chat_title_reminders">Reminders</string>
-    <string name="chat_subtitle_history">History</string>
-    <string name="chat_day_today">Today</string>
-    <string name="chat_day_yesterday">Yesterday</string>
-    <string name="chat_conv_lumi_placeholder">Tap here to view your daily summaries.</string>
-    <string name="chat_conv_reminders_empty">No recent reminders.</string>
     <string name="chat_avatar_cd">Lumi Avatar</string>
-
-    <!-- Categorías de Preguntas -->
     <string name="chat_cat_cycle">My Cycle</string>
-    <string name="chat_cat_symptoms">Pain &amp; Symptoms</string>
     <string name="chat_cat_fertility">Fertility &amp; Methods</string>
     <string name="chat_cat_patterns">My Patterns</string>
+    <string name="chat_cat_symptoms">Pain &amp; Symptoms</string>
     <string name="chat_cat_wellbeing">Nutrition &amp; Habits</string>
-
-    <!-- Preguntas Predefinidas (ChatQuestion) -->
-    <string name="chat_q_when_next_period">When is my next period due?</string>
-    <string name="chat_q_what_phase_am_i">What phase of the cycle am I in?</string>
-    <string name="chat_q_why_late_period">Why is my period late?</string>
-    <string name="chat_q_spotting_explanation">I have spotting outside my period, is it normal?</string>
-    <string name="chat_q_why_cramps">How can I relieve menstrual cramps?</string>
-    <string name="chat_q_headache_relief">Why do I have a headache or migraine?</string>
-    <string name="chat_q_digestive_relief">Why do I feel nauseous or bloated?</string>
-    <string name="chat_q_why_feel_tired">Why do I feel so tired today?</string>
-    <string name="chat_q_why_mood_changes">Why do I have so many mood swings?</string>
-    <string name="chat_q_when_fertile_window">When is my next fertile window?</string>
-    <string name="chat_q_unprotected_sex">I had unprotected sex, what should I do?</string>
-    <string name="chat_q_contraception_info">How does my contraceptive method work?</string>
-    <string name="chat_q_bio_patterns">What are my patterns and insights?</string>
-    <string name="chat_q_sleep_and_cycle">How does sleep affect my cycle?</string>
-    <string name="chat_q_stress_and_cycle">Does stress delay my period?</string>
-    <string name="chat_q_nutrition_recommendation">What nutrition is best for my phase?</string>
-    <string name="chat_q_exercise_recommendation">What kind of exercise do you recommend today?</string>
-    <string name="chat_q_how_improve_energy">How can I boost my energy today?</string>
-
-    <!-- Nombres de Fases del Ciclo -->
-    <string name="phase_menstrual_name">Menstrual Phase</string>
-    <string name="phase_follicular_name">Follicular Phase</string>
-    <string name="phase_ovulation_name">Ovulatory Phase</string>
-    <string name="phase_luteal_name">Luteal Phase</string>
-    <string name="phase_pregnancy_name">Pregnancy</string>
-    <string name="phase_unknown_name">Cycle</string>
-
-    <!-- periodos de Bienvenida (LumiRulesEngine) -->
-    <string name="chat_welcome_follicular_tired">I notice you feel low on energy despite being in your follicular phase. Normally estrogen would give you a boost right now, so make sure to get good rest and eat nutritious meals today.</string>
-    <string name="chat_welcome_follicular_energy">Follicular phase underway! ✨ It is very common to feel high energy today. Your estrogen levels are rising, making it a great time for your projects or physical activity.</string>
-    <string name="chat_welcome_luteal_symptoms">You are in the luteal phase and progesterone is taking over 🍵 It is completely understandable to feel a slower pace or have cravings. Listen to what your body asks without pushing yourself too hard.</string>
+    <string name="chat_cd_back">Back</string>
+    <string name="chat_conv_lumi_placeholder">Tap here to view your daily summaries.</string>
+    <string name="chat_conv_reminders_empty">No recent reminders.</string>
+    <string name="chat_day_today">Today</string>
+    <string name="chat_day_yesterday">Yesterday</string>
+    <string name="chat_filter_recommended">Recommended</string>
     <string name="chat_phase_info_until_period">Your next period is estimated in %1$d days.</string>
-
-    <!-- Respuestas Inteligentes LumiSmartChatEngine -->
-    <string name="chat_smart_cramps_today_pain">Today you logged a pain level of %1$d/10. </string>
+    <string name="chat_q_bio_patterns">What are my patterns and insights?</string>
+    <string name="chat_q_contraception_info">How does my contraceptive method work?</string>
+    <string name="chat_q_digestive_relief">Why do I feel nauseous or bloated?</string>
+    <string name="chat_q_exercise_recommendation">What kind of exercise do you recommend today?</string>
+    <string name="chat_q_headache_relief">Why do I have a headache or migraine?</string>
+    <string name="chat_q_how_improve_energy">How can I boost my energy today?</string>
+    <string name="chat_q_nutrition_recommendation">What nutrition is best for my phase?</string>
+    <string name="chat_q_sleep_and_cycle">How does sleep affect my cycle?</string>
+    <string name="chat_q_spotting_explanation">I have spotting outside my period, is it normal?</string>
+    <string name="chat_q_stress_and_cycle">Does stress delay my period?</string>
+    <string name="chat_q_unprotected_sex">I had unprotected sex, what should I do?</string>
+    <string name="chat_q_what_phase_am_i">What phase of the cycle am I in?</string>
+    <string name="chat_q_when_fertile_window">When is my next fertile window?</string>
+    <string name="chat_q_when_next_period">When is my next period due?</string>
+    <string name="chat_q_why_cramps">How can I relieve menstrual cramps?</string>
+    <string name="chat_q_why_feel_tired">Why do I feel so tired today?</string>
+    <string name="chat_q_why_late_period">Why is my period late?</string>
+    <string name="chat_q_why_mood_changes">Why do I have so many mood swings?</string>
+    <string name="chat_search_cd">Search</string>
+    <string name="chat_search_empty">No results found</string>
+    <string name="chat_smart_contraception_active">About your contraceptive method 🌿\n\nYour hormonal contraception primarily works by inhibiting ovulation and thickening cervical mucus to prevent sperm entry.\n\nIt is essential to take or apply your method on schedule to sustain over 99%% effectiveness.</string>
+    <string name="chat_smart_contraception_natural">Contraceptive methods 🌿\n\nYou currently have natural cycle tracking configured. If you are considering starting contraception (pill, IUD, implant, patch, injection, or condoms), schedule a medical consultation to choose the best option for your health and lifestyle.</string>
     <string name="chat_smart_cramps_body">Relief for menstrual cramps and pelvic pain 🤍\n\n%1$sCramps stem from prostaglandins, natural substances that trigger uterine contractions to help shed the endometrium.\n\nHelpful recommendations:\n• Continuous local heat: Applying a warm compress or heating pad for 15 to 20 minutes to the pelvic area relaxes uterine muscles and provides effective relief.\n• Magnesium glycinate: Helps relax smooth muscle tissue and reduces inflammation.\n• Gentle movement: Mild yoga poses (such as child\'s pose or hip stretches) ease pelvic and lower back tension.\n• Consistent hydration: Staying well-hydrated helps reduce water retention that can heighten pelvic pressure.\n\nWhen to consult a doctor:\nIf pain does not ease with standard pain relievers, prevents you from daily activities, or intensifies over time, consult a medical professional to rule out conditions such as endometriosis.</string>
-
+    <string name="chat_smart_cramps_today_pain">Today you logged a pain level of %1$d/10. </string>
+    <string name="chat_smart_current_phase_body">Current cycle phase 🌿\n\nToday you are on day %1$d of your cycle, in the %2$s (day %3$d of this phase).\n\nApproximately %4$d days remain until the estimated start of your next period.</string>
+    <string name="chat_smart_current_phase_no_ctx">We do not have sufficient cycle data yet to identify your current phase 🌿</string>
+    <string name="chat_smart_digestive_body">Relief for nausea, bloating, and digestion 🍵\n\nIn the second half of the cycle, progesterone relaxes gastrointestinal smooth muscle, slowing transit and contributing to gas and bloating. When menstruation starts, prostaglandins can stimulate the bowels, causing frequent bowel movements or nausea.\n\nPractical tips:\n• Ginger tea: Ginger is an effective natural remedy for easing nausea and settling gastric upset.\n• Smaller meals: Dividing food into smaller portions every 3 to 4 hours eases the burden on digestion.\n• Moderate sodium: Cutting back on high-sodium foods during the luteal phase reduces fluid retention.\n• Gentle walk: A 15-minute gentle stroll after eating stimulates natural digestive motility.</string>
+    <string name="chat_smart_discharge_body">Guide to cervical fluid and spotting 🌸\n\nDischarge characteristics shift naturally through the cycle:\n• Clear &amp; stretchy (egg white): Characteristic of fertile days and ovulation; facilitates sperm motility.\n• Creamy white: Common at the start of the follicular phase and during the luteal phase under progesterone.\n• Brown or pink spotting: May represent residual blood at the start/end of menstruation, or light ovulation/implantation bleeding.\n\nWarning signs requiring medical care:\nFoul-smelling fluid, greenish or bright yellow color, cottage cheese-like texture, or fluid accompanied by itching, pain when urinating, or burning.</string>
+    <string name="chat_smart_energy_body">How to optimize your energy levels ☀️\n\n• Align with your phase: In follicular and ovulatory phases your energy is typically higher; in luteal and menstrual phases it is natural to move at a slower tempo.\n• Hydration &amp; electrolytes: Mild dehydration frequently presents as lethargy or brain fog.\n• Restorative sleep: Maintain consistent bed and wake times.\n• Balanced meals: Include protein and healthy fats to prevent sharp energy drops.</string>
+    <string name="chat_smart_exercise_follicular">Physical activity: Follicular Phase 🌿\n\n• Rising estrogen boosts strength, work capacity, and muscle recovery.\n• Recommended: Progressive resistance training, running sessions, or dynamic sports.</string>
+    <string name="chat_smart_exercise_general">Physical activity &amp; wellness 🌿\n\nTailor exercise intensity to how your body responds each day, alternating workouts with sufficient rest.</string>
+    <string name="chat_smart_exercise_luteal">Physical activity: Luteal Phase ☁️\n\n• Progesterone dominance raises body temperature and increases fatigue.\n• Recommended: Control pilates, moderate weight exercises, swimming, and steady walks. Scale back intensity in the days just before your period.</string>
+    <string name="chat_smart_exercise_menstrual">Physical activity: Menstrual Phase 🤍\n\n• Your body focuses energy on endometrial shedding.\n• Recommended: Gentle yoga, light stretching, leisurely walks, or active rest if experiencing noticeable cramps. Listening to your body is essential.</string>
+    <string name="chat_smart_exercise_ovulation">Physical activity: Ovulatory Phase ✨\n\n• Represents the highest point of vitality and physical power in the cycle.\n• Recommended: High-intensity interval training (HIIT), moderate to heavy lifting, or agility sports. Include thorough joint warm-ups.</string>
+    <string name="chat_smart_fallback_body">%1$s\n\nTo provide clinically backed and accurate information, please select one of the health and wellness topics in the categories below.</string>
+    <string name="chat_smart_fallback_ctx">You are currently on day %1$d of your cycle (%2$s), approximately %3$d days from your next period.</string>
+    <string name="chat_smart_fallback_no_ctx">I am ready to guide you on your health and cycle.</string>
+    <string name="chat_smart_fertility_after">Your fertile window has closed for this cycle.</string>
+    <string name="chat_smart_fertility_before">Your fertile window has not started yet (estimated from cycle day %1$d).</string>
+    <string name="chat_smart_fertility_body">Fertility &amp; ovulation status (Day %1$d of %2$d) ✨\n\n%3$s\n\nCycle breakdown:\n• Ovulation: Estimated day %4$d (%5$s).\n• Biological fertile window: From day %6$d to day %7$d.\n• Key indicators: Clear, stretchy cervical mucus (egg-white consistency) and a basal temperature rise following ovulation.\n\nPlease note calendar projections are statistical estimates and should not be used as sole contraception.</string>
+    <string name="chat_smart_fertility_contraceptive">Contraceptive mode active 🌿\n\nYou have hormonal contraception logged. Its primary mechanism is inhibiting ovulation and thickening cervical mucus to block sperm.\n\nWith consistent, correct use, pregnancy risk is under 1%%, so a traditional fertile window is not calculated.</string>
+    <string name="chat_smart_fertility_in_window">You are inside your estimated fertile window. Sperm can survive up to 5 days in the presence of fertile mucus.</string>
+    <string name="chat_smart_fertility_no_ctx">Fertile window &amp; ovulation ✨\n\nThe fertile window spans the 5 days preceding ovulation plus the day the egg is released. Calculations depend on historical cycle regularity.</string>
+    <string name="chat_smart_fertility_ovulation_today">Today is your estimated ovulation day. This represents the peak biological probability of conception for this cycle.</string>
+    <string name="chat_smart_fertility_timing_future">Approximately %1$d days remain until your estimated ovulation.</string>
+    <string name="chat_smart_fertility_timing_past">Your estimated ovulation occurred %1$d days ago.</string>
+    <string name="chat_smart_fertility_timing_today">Today is your estimated ovulation day.</string>
+    <string name="chat_smart_greeting_body">Hello 🤍 %1$s\n\nYou can explore topics using the buttons below:\n• Questions about your period and current phase\n• Cramp, headache, or digestive symptom relief\n• Fertility, ovulation, and sexual health\n• Your personal bio-statistical patterns\n• Nutrition and workout recommendations</string>
+    <string name="chat_smart_greeting_ctx">Today you are on day %1$d (%2$s).</string>
+    <string name="chat_smart_greeting_no_ctx">I am ready to guide you.</string>
+    <string name="chat_smart_headache_body">Managing headaches and hormonal migraines 🌿\n\n%1$s\n\nEstrogen directly influences serotonin and blood vessel dilation in the brain. A rapid dip in its levels can cause cranial arteries to dilate, leading to throbbing pain and sensitivity to light or sound.\n\nPractical tips:\n• Dim room: Dim your screen exposure and bright lights for 20 to 30 minutes.\n• Cold compresses: Placing a cool cloth on your forehead or neck constricts blood vessels and soothes throbbing.\n• Hydration &amp; magnesium: Regular water intake and maintaining magnesium levels support vascular stability.\n• Prioritize rest: Irregular sleep is one of the leading triggers for recurring headaches.</string>
+    <string name="chat_smart_headache_general">You are in %1$s.</string>
     <string name="chat_smart_headache_luteal">You are in the luteal phase (%1$d days away from your period). Dropping estrogen frequently triggers hormonal migraines.</string>
     <string name="chat_smart_headache_menstrual">You are in the menstrual phase. Hormone levels are at their lowest baseline, which can heighten pain sensitivity.</string>
-    <string name="chat_smart_headache_general">You are in %1$s.</string>
-    <string name="chat_smart_headache_body">Managing headaches and hormonal migraines 🌿\n\n%1$s\n\nEstrogen directly influences serotonin and blood vessel dilation in the brain. A rapid dip in its levels can cause cranial arteries to dilate, leading to throbbing pain and sensitivity to light or sound.\n\nPractical tips:\n• Dim room: Dim your screen exposure and bright lights for 20 to 30 minutes.\n• Cold compresses: Placing a cool cloth on your forehead or neck constricts blood vessels and soothes throbbing.\n• Hydration &amp; magnesium: Regular water intake and maintaining magnesium levels support vascular stability.\n• Prioritize rest: Irregular sleep is one of the leading triggers for recurring headaches.</string>
-
+    <string name="chat_smart_late_delayed">Analysis of your delay (%1$d days) 🗓️\n\nYour current cycle is at %2$d days (your usual average is %3$d days).\n\nCommon causes:\n• Delayed ovulation: The first cycle phase varies. If ovulation was delayed by stress, late nights, travel, or illness, the period will shift accordingly.\n• Stress &amp; cortisol: High cortisol temporarily disrupts the hormonal axis, postponing ovulation.\n• Pregnancy possibility: If you had unprotected sex in the past three weeks, take a urine pregnancy test (preferably with first morning urine).\n• Prolonged delay: If the delay exceeds 14 days and tests are negative, schedule a consultation with your gynecologist.</string>
     <string name="chat_smart_late_no_ctx">Menstrual delay analysis 🗓️\n\nA variation of a few days is common and often related to changes in rest, stress, or natural ovulation delays. If the delay exceeds 2 weeks, consult your doctor.</string>
     <string name="chat_smart_late_on_time">Your cycle is within expected range 🗓️\n\nToday you are on day %1$d of an estimated %2$d-day cycle. Approximately %3$d days remain until your next period.\n\nA fluctuation of 2 to 4 days is biologically normal and not considered a clinical delay.</string>
-    <string name="chat_smart_late_delayed">Analysis of your delay (%1$d days) 🗓️\n\nYour current cycle is at %2$d days (your usual average is %3$d days).\n\nCommon causes:\n• Delayed ovulation: The first cycle phase varies. If ovulation was delayed by stress, late nights, travel, or illness, the period will shift accordingly.\n• Stress &amp; cortisol: High cortisol temporarily disrupts the hormonal axis, postponing ovulation.\n• Pregnancy possibility: If you had unprotected sex in the past three weeks, take a urine pregnancy test (preferably with first morning urine).\n• Prolonged delay: If the delay exceeds 14 days and tests are negative, schedule a consultation with your gynecologist.</string>
-
-    <string name="chat_smart_unprotected_sex">Guidance after unprotected sexual intercourse 🤍\n\nAny penetrative intercourse without barrier contraception carries a chance of pregnancy, as the exact moment of ovulation can shift with natural hormonal variations.\n\nPriority steps:\n• Emergency contraception: If pregnancy is not planned, Levonorgestrel is most effective taken within 72 hours (3 days). Ulipristal acetate provides coverage up to 120 hours (5 days). The earlier it is taken, the higher its efficacy.\n• Timely testing: For a dependable result, take a home pregnancy test between 14 and 19 days after intercourse.\n• Infection prevention: Emergency contraception does not protect against STIs. If there is concern about exposure, visit a healthcare center for assessment and timely prophylaxis.</string>
-
-    <string name="chat_smart_fertility_no_ctx">Fertile window &amp; ovulation ✨\n\nThe fertile window spans the 5 days preceding ovulation plus the day the egg is released. Calculations depend on historical cycle regularity.</string>
-    <string name="chat_smart_fertility_contraceptive">Contraceptive mode active 🌿\n\nYou have hormonal contraception logged. Its primary mechanism is inhibiting ovulation and thickening cervical mucus to block sperm.\n\nWith consistent, correct use, pregnancy risk is under 1%%, so a traditional fertile window is not calculated.</string>
-    <string name="chat_smart_fertility_ovulation_today">Today is your estimated ovulation day. This represents the peak biological probability of conception for this cycle.</string>
-    <string name="chat_smart_fertility_in_window">You are inside your estimated fertile window. Sperm can survive up to 5 days in the presence of fertile mucus.</string>
-    <string name="chat_smart_fertility_before">Your fertile window has not started yet (estimated from cycle day %1$d).</string>
-    <string name="chat_smart_fertility_after">Your fertile window has closed for this cycle.</string>
-    <string name="chat_smart_fertility_timing_future">Approximately %1$d days remain until your estimated ovulation.</string>
-    <string name="chat_smart_fertility_timing_today">Today is your estimated ovulation day.</string>
-    <string name="chat_smart_fertility_timing_past">Your estimated ovulation occurred %1$d days ago.</string>
-    <string name="chat_smart_fertility_body">Fertility &amp; ovulation status (Day %1$d of %2$d) ✨\n\n%3$s\n\nCycle breakdown:\n• Ovulation: Estimated day %4$d (%5$s).\n• Biological fertile window: From day %6$d to day %7$d.\n• Key indicators: Clear, stretchy cervical mucus (egg-white consistency) and a basal temperature rise following ovulation.\n\nPlease note calendar projections are statistical estimates and should not be used as sole contraception.</string>
-
-    <string name="chat_smart_mood_luteal">You are in the luteal phase (day %1$d). The drop in progesterone reduces GABA synthesis (calming neurotransmitter) and serotonin.</string>
-    <string name="chat_smart_mood_general">You are in %1$s.</string>
     <string name="chat_smart_mood_body">Understanding your mood and your hormones 🌿\n\n%1$s\n\nEmotional shifts before menstruation stem from real chemical changes in brain receptors, not lack of willpower.\n\nWellness strategies:\n• Glucose stability: Sharp blood sugar drops heighten irritability. Prefer complex carbs (oats, legumes, nuts) and avoid refined sugar spikes.\n• Breathing pauses: A few minutes of slow, deep breathing stimulates the parasympathetic nervous system to ease feelings of overwhelm.\n• Gentle activity: A brisk walk boosts endorphins without adding physiological strain.\n• Premenstrual Dysphoric Disorder (PMDD): If you experience deep sadness, hopelessness, or severe irritability that lifts once bleeding starts, speak with a specialist for a clinical evaluation.</string>
-
-    <string name="chat_smart_sleep_today">Today you logged %1$s hours of sleep. </string>
-    <string name="chat_smart_sleep_body">Sleep, body temperature, and rest ☁️\n\n%1$sIn the luteal phase, progesterone elevates basal body temperature by 0.3 to 0.5 °C. To reach deep sleep, the body needs to cool its core temperature, which explains frequent night wakings or feeling overheated before your period.\n\nRest tips:\n• Cool bedroom: Keep the room between 18 °C and 20 °C (64–68 °F) with breathable cotton bedding.\n• Light dinner: Foods with tryptophan (bananas, oats, seeds) eaten two hours before sleep aid melatonin production.\n• Blue light filter: Avoid screens at least 30 minutes before bedtime to encourage natural melatonin release.\n• Impact on pain: Sleeping under 6 hours increases pain sensitivity and next-day cramp severity.</string>
-
-    <string name="chat_smart_digestive_body">Relief for nausea, bloating, and digestion 🍵\n\nIn the second half of the cycle, progesterone relaxes gastrointestinal smooth muscle, slowing transit and contributing to gas and bloating. When menstruation starts, prostaglandins can stimulate the bowels, causing frequent bowel movements or nausea.\n\nPractical tips:\n• Ginger tea: Ginger is an effective natural remedy for easing nausea and settling gastric upset.\n• Smaller meals: Dividing food into smaller portions every 3 to 4 hours eases the burden on digestion.\n• Moderate sodium: Cutting back on high-sodium foods during the luteal phase reduces fluid retention.\n• Gentle walk: A 15-minute gentle stroll after eating stimulates natural digestive motility.</string>
-
-    <string name="chat_smart_patterns_empty">Bio-statistical insights for your profile 🤍\n\nWe do not have enough logged entries yet to calculate correlations. As you log sleep, pain, and symptoms across a couple of cycles, Lumi will automatically and privately discover your unique patterns on your device.</string>
+    <string name="chat_smart_mood_general">You are in %1$s.</string>
+    <string name="chat_smart_mood_luteal">You are in the luteal phase (day %1$d). The drop in progesterone reduces GABA synthesis (calming neurotransmitter) and serotonin.</string>
+    <string name="chat_smart_next_period_estimate">Your next period is estimated in approximately %1$d days (Day %2$d of %3$d) 🗓️</string>
+    <string name="chat_smart_next_period_late">Your period shows a delay of %1$d days over your typical %2$d-day cycle 🗓️</string>
+    <string name="chat_smart_next_period_no_ctx">Your next period is calculated based on your historical cycle lengths 🗓️</string>
+    <string name="chat_smart_nutrition_follicular">Recommended nutrition: Follicular Phase 🌿\n\n• Priority: Sustained energy, fresh foods, and metabolic support.\n• Key foods: Leafy greens, avocado, omega-3 rich fish, eggs, and fermented foods (yogurt or kefir) aiding hepatic estrogen metabolism.\n• Carbohydrates: Higher insulin sensitivity; enjoy oats, quinoa, and fresh fruit.</string>
+    <string name="chat_smart_nutrition_general">Nutrition &amp; cycle 🌿\n\nPrioritize whole fresh foods, adequate protein, healthy fats, and drinking at least two liters of water each day.</string>
+    <string name="chat_smart_nutrition_luteal">Recommended nutrition: Luteal Phase 🍵\n\n• Priority: Magnesium, B-complex, and steady satiety.\n• Key foods: Sweet potatoes, brown rice, sunflower seeds, bananas, and legumes.\n• Tip: Maintain steady meal timing to avoid glucose drops that worsen premenstrual irritability.</string>
+    <string name="chat_smart_nutrition_menstrual">Recommended nutrition: Menstrual Phase 🩸\n\n• Priority: Replenish iron and support anti-inflammatory recovery.\n• Key foods: Spinach, lentils, lean meats, pumpkin seeds, and dark chocolate over 70%% cacao.\n• Absorption tip: Pair plant-based iron with vitamin C (lemon, bell peppers, citrus) to maximize absorption.\n• Recommended teas: Chamomile or cinnamon infusions.</string>
+    <string name="chat_smart_nutrition_ovulation">Recommended nutrition: Ovulatory Phase ✨\n\n• Priority: Fiber for estrogen clearance and hydration.\n• Key foods: Broccoli, cauliflower, berries, walnuts, and chia or flax seeds.\n• Hydration: At least 2 liters of water daily to maintain optimal cervical fluid consistency.</string>
     <string name="chat_smart_patterns_body">Bio-statistical insights for your profile 🌿\n\nAnalyzing your history in Lumi:\n\n%1$s\n%2$s\n\nLumi updates these analyses continuously and confidentially on your device as you log new days.</string>
-    <string name="chat_smart_patterns_insight_item">• %1$s correlates %2$s with %3$s (correlation strength: %4$d%%)%5$s.</string>
-    <string name="chat_smart_patterns_insight_stable">• Your logged physiological indicators show general stability with no significant deviations.</string>
     <string name="chat_smart_patterns_cluster_item">• Cluster detected: Your symptoms %1$s and %2$s tend to appear together (similarity: %3$d%%).</string>
     <string name="chat_smart_patterns_dir_direct">directly</string>
     <string name="chat_smart_patterns_dir_inverse">inversely</string>
+    <string name="chat_smart_patterns_empty">Bio-statistical insights for your profile 🤍\n\nWe do not have enough logged entries yet to calculate correlations. As you log sleep, pain, and symptoms across a couple of cycles, Lumi will automatically and privately discover your unique patterns on your device.</string>
+    <string name="chat_smart_patterns_insight_item">• %1$s correlates %2$s with %3$s (correlation strength: %4$d%%)%5$s.</string>
+    <string name="chat_smart_patterns_insight_stable">• Your logged physiological indicators show general stability with no significant deviations.</string>
     <string name="chat_smart_patterns_lag"> (lagged effect across consecutive days)</string>
-
-    <string name="chat_smart_nutrition_menstrual">Recommended nutrition: Menstrual Phase 🩸\n\n• Priority: Replenish iron and support anti-inflammatory recovery.\n• Key foods: Spinach, lentils, lean meats, pumpkin seeds, and dark chocolate over 70%% cacao.\n• Absorption tip: Pair plant-based iron with vitamin C (lemon, bell peppers, citrus) to maximize absorption.\n• Recommended teas: Chamomile or cinnamon infusions.</string>
-    <string name="chat_smart_nutrition_follicular">Recommended nutrition: Follicular Phase 🌿\n\n• Priority: Sustained energy, fresh foods, and metabolic support.\n• Key foods: Leafy greens, avocado, omega-3 rich fish, eggs, and fermented foods (yogurt or kefir) aiding hepatic estrogen metabolism.\n• Carbohydrates: Higher insulin sensitivity; enjoy oats, quinoa, and fresh fruit.</string>
-    <string name="chat_smart_nutrition_ovulation">Recommended nutrition: Ovulatory Phase ✨\n\n• Priority: Fiber for estrogen clearance and hydration.\n• Key foods: Broccoli, cauliflower, berries, walnuts, and chia or flax seeds.\n• Hydration: At least 2 liters of water daily to maintain optimal cervical fluid consistency.</string>
-    <string name="chat_smart_nutrition_luteal">Recommended nutrition: Luteal Phase 🍵\n\n• Priority: Magnesium, B-complex, and steady satiety.\n• Key foods: Sweet potatoes, brown rice, sunflower seeds, bananas, and legumes.\n• Tip: Maintain steady meal timing to avoid glucose drops that worsen premenstrual irritability.</string>
-    <string name="chat_smart_nutrition_general">Nutrition &amp; cycle 🌿\n\nPrioritize whole fresh foods, adequate protein, healthy fats, and drinking at least two liters of water each day.</string>
-
-    <string name="chat_smart_exercise_menstrual">Physical activity: Menstrual Phase 🤍\n\n• Your body focuses energy on endometrial shedding.\n• Recommended: Gentle yoga, light stretching, leisurely walks, or active rest if experiencing noticeable cramps. Listening to your body is essential.</string>
-    <string name="chat_smart_exercise_follicular">Physical activity: Follicular Phase 🌿\n\n• Rising estrogen boosts strength, work capacity, and muscle recovery.\n• Recommended: Progressive resistance training, running sessions, or dynamic sports.</string>
-    <string name="chat_smart_exercise_ovulation">Physical activity: Ovulatory Phase ✨\n\n• Represents the highest point of vitality and physical power in the cycle.\n• Recommended: High-intensity interval training (HIIT), moderate to heavy lifting, or agility sports. Include thorough joint warm-ups.</string>
-    <string name="chat_smart_exercise_luteal">Physical activity: Luteal Phase ☁️\n\n• Progesterone dominance raises body temperature and increases fatigue.\n• Recommended: Control pilates, moderate weight exercises, swimming, and steady walks. Scale back intensity in the days just before your period.</string>
-    <string name="chat_smart_exercise_general">Physical activity &amp; wellness 🌿\n\nTailor exercise intensity to how your body responds each day, alternating workouts with sufficient rest.</string>
-
-    <string name="chat_smart_discharge_body">Guide to cervical fluid and spotting 🌸\n\nDischarge characteristics shift naturally through the cycle:\n• Clear &amp; stretchy (egg white): Characteristic of fertile days and ovulation; facilitates sperm motility.\n• Creamy white: Common at the start of the follicular phase and during the luteal phase under progesterone.\n• Brown or pink spotting: May represent residual blood at the start/end of menstruation, or light ovulation/implantation bleeding.\n\nWarning signs requiring medical care:\nFoul-smelling fluid, greenish or bright yellow color, cottage cheese-like texture, or fluid accompanied by itching, pain when urinating, or burning.</string>
-
-    <string name="chat_smart_next_period_no_ctx">Your next period is calculated based on your historical cycle lengths 🗓️</string>
-    <string name="chat_smart_next_period_late">Your period shows a delay of %1$d days over your typical %2$d-day cycle 🗓️</string>
-    <string name="chat_smart_next_period_estimate">Your next period is estimated in approximately %1$d days (Day %2$d of %3$d) 🗓️</string>
-
-    <string name="chat_smart_current_phase_no_ctx">We do not have sufficient cycle data yet to identify your current phase 🌿</string>
-    <string name="chat_smart_current_phase_body">Current cycle phase 🌿\n\nToday you are on day %1$d of your cycle, in the %2$s (day %3$d of this phase).\n\nApproximately %4$d days remain until the estimated start of your next period.</string>
-
-    <string name="chat_smart_contraception_active">About your contraceptive method 🌿\n\nYour hormonal contraception primarily works by inhibiting ovulation and thickening cervical mucus to prevent sperm entry.\n\nIt is essential to take or apply your method on schedule to sustain over 99%% effectiveness.</string>
-    <string name="chat_smart_contraception_natural">Contraceptive methods 🌿\n\nYou currently have natural cycle tracking configured. If you are considering starting contraception (pill, IUD, implant, patch, injection, or condoms), schedule a medical consultation to choose the best option for your health and lifestyle.</string>
-
+    <string name="chat_smart_sleep_body">Sleep, body temperature, and rest ☁️\n\n%1$sIn the luteal phase, progesterone elevates basal body temperature by 0.3 to 0.5 °C. To reach deep sleep, the body needs to cool its core temperature, which explains frequent night wakings or feeling overheated before your period.\n\nRest tips:\n• Cool bedroom: Keep the room between 18 °C and 20 °C (64–68 °F) with breathable cotton bedding.\n• Light dinner: Foods with tryptophan (bananas, oats, seeds) eaten two hours before sleep aid melatonin production.\n• Blue light filter: Avoid screens at least 30 minutes before bedtime to encourage natural melatonin release.\n• Impact on pain: Sleeping under 6 hours increases pain sensitivity and next-day cramp severity.</string>
+    <string name="chat_smart_sleep_today">Today you logged %1$s hours of sleep. </string>
     <string name="chat_smart_stress_body">Impact of stress on your menstrual cycle 🌿\n\nAcute or prolonged stress triggers cortisol release via the neurohormonal axis. High cortisol temporarily suppresses GnRH release, which can postpone ovulation by several days or lead to a missed period.\n\nOnce stressors subside and the body regains balance, the hormonal axis typically resets itself.</string>
-
-    <string name="chat_smart_energy_body">How to optimize your energy levels ☀️\n\n• Align with your phase: In follicular and ovulatory phases your energy is typically higher; in luteal and menstrual phases it is natural to move at a slower tempo.\n• Hydration &amp; electrolytes: Mild dehydration frequently presents as lethargy or brain fog.\n• Restorative sleep: Maintain consistent bed and wake times.\n• Balanced meals: Include protein and healthy fats to prevent sharp energy drops.</string>
-
-    <string name="chat_smart_greeting_ctx">Today you are on day %1$d (%2$s).</string>
-    <string name="chat_smart_greeting_no_ctx">I am ready to guide you.</string>
-    <string name="chat_smart_greeting_body">Hello 🤍 %1$s\n\nYou can explore topics using the buttons below:\n• Questions about your period and current phase\n• Cramp, headache, or digestive symptom relief\n• Fertility, ovulation, and sexual health\n• Your personal bio-statistical patterns\n• Nutrition and workout recommendations</string>
-
-    <string name="chat_smart_fallback_ctx">You are currently on day %1$d of your cycle (%2$s), approximately %3$d days from your next period.</string>
-    <string name="chat_smart_fallback_no_ctx">I am ready to guide you on your health and cycle.</string>
-    <string name="chat_smart_fallback_body">%1$s\n\nTo provide clinically backed and accurate information, please select one of the health and wellness topics in the categories below.</string>
-
-    <!-- Chat common cd -->
-    <string name="chat_cd_back">Back</string>
-
-    <!-- Consulta Médica / SOS Mode Sheet -->
-    <string name="insights_btn_prep_doctor">Prepare doctor visit 🩺</string>
+    <string name="chat_smart_unprotected_sex">Guidance after unprotected sexual intercourse 🤍\n\nAny penetrative intercourse without barrier contraception carries a chance of pregnancy, as the exact moment of ovulation can shift with natural hormonal variations.\n\nPriority steps:\n• Emergency contraception: If pregnancy is not planned, Levonorgestrel is most effective taken within 72 hours (3 days). Ulipristal acetate provides coverage up to 120 hours (5 days). The earlier it is taken, the higher its efficacy.\n• Timely testing: For a dependable result, take a home pregnancy test between 14 and 19 days after intercourse.\n• Infection prevention: Emergency contraception does not protect against STIs. If there is concern about exposure, visit a healthcare center for assessment and timely prophylaxis.</string>
+    <string name="chat_subtitle_history">History</string>
+    <string name="chat_title_reminders">Reminders</string>
+    <string-array name="chat_welcome_base">
+                                    <item>Welcome to Lumi! ✨ </item>
+                                    <item>Hello! Great to see you in Lumi. ✨ </item>
+                                    <item>Hi! I\'m here to help you. ✨ </item>
+                                    <item>Welcome back to Lumi! ✨ </item>
+                                    <item>Hello! Ready to accompany you today in Lumi. ✨ </item>
+                                </string-array>
+    
+                                <string-array name="chat_welcome_pms">
+                                    <item>You are in your premenstrual window. It is completely normal to %1$s due to the natural drop in progesterone and estrogen. Remember to be compassionate with yourself these days. How can I support you today?</item>
+                                    <item>I noticed you are in your premenstrual phase. Feeling that %1$s is super common due to shifting hormones. Take things easy. What would you like to know today?</item>
+                                    <item>I see you are close to your period. It is biologically normal to %1$s right now. Give yourself permission to rest. How can I help you?</item>
+                                    <item>You are in the days leading up to your period. It is understandable that %1$s due to dropping estrogen. I am here for you. What shall we look at today?</item>
+                                    <item>The premenstrual window can be tough. It is expected that %1$s. Remember to give yourself a break today. What would you like to talk about?</item>
+                                </string-array>
+    
+                                <string-array name="chat_welcome_pain">
+                                    <item>I noticed that today you have a pain level of %1$d/10. Remember to apply local heat or consider a pain reliever if it is very intense. 🌸\n\n</item>
+                                    <item>I saw that you logged a pain level of %1$d/10. Please rest and use local heat if you need it. 🌸\n\n</item>
+                                    <item>Your log shows a pain level of %1$d/10 today. Take good care of yourself and don\'t hesitate to take a pain reliever if the pain does not subside. 🌸\n\n</item>
+                                    <item>I saw your pain is at %1$d/10. Your well-being is priority, so apply heat and rest as much as possible. 🌸\n\n</item>
+                                    <item>You logged a pain level of %1$d/10. I hope you feel better soon; remember that local heat helps a lot. 🌸\n\n</item>
+                                </string-array>
+    
+                                <string-array name="chat_welcome_phase_menstrual">
+                                    <item>I have noticed you are in your Menstrual phase. Remember to be gentle with your body these days, rest as needed, and stay hydrated. If you have cramps, local heat can help. How can I support you today?</item>
+                                    <item>You are moving through your Menstrual phase. It is an ideal time to slow down and listen to your body. What would you like to explore today?</item>
+                                    <item>I see you are in your Menstrual phase. Give priority to your rest and hydration. Do you have any questions for me today?</item>
+                                    <item>You are in your Menstrual phase. Remember not to demand too much of yourself and take good care. How can I guide you right now?</item>
+                                    <item>You are right in your Menstrual phase. If you need to lower the intensity of your activities, that is completely fine. What would you like us to talk about?</item>
+                                </string-array>
+    
+                                <string-array name="chat_welcome_phase_follicular">
+                                    <item>I see you are in your Follicular phase. It is an excellent time to take advantage of the natural increase in energy and plan new goals. Is there anything about your cycle you would like to explore today?</item>
+                                    <item>You are in your Follicular phase, estrogen is rising! It is a great stage for new projects. What would you like to talk about?</item>
+                                    <item>You are in the Follicular phase. Your energy will surely start to rebound. How can I help you today?</item>
+                                    <item>Follicular phase underway! Take advantage of this natural energy boost. Any questions today?</item>
+                                    <item>You are going through the Follicular phase, a good time to focus and create. What information are you looking for today?</item>
+                                </string-array>
+    
+                                <string-array name="chat_welcome_phase_ovulation">
+                                    <item>I have noticed you are near or in your Ovulation phase. Your energy and mood levels are usually at their highest point now. Make the most of this moment! Do you have any questions about your current well-being?</item>
+                                    <item>You are in full Ovulation phase! Hormones are peaking, giving you extra energy. What would you like to know today?</item>
+                                    <item>You are in your Ovulation stage. It is your biological peak of vitality. How can I support you?</item>
+                                    <item>I see you are experiencing your Ovulatory phase. Enjoy the surge of energy! Do you have doubts about anything?</item>
+                                    <item>You are in your Ovulation days. Your body is working intensively. What do you want to explore today?</item>
+                                </string-array>
+    
+                                <string-array name="chat_welcome_phase_luteal">
+                                    <item>I see you are in your Luteal phase. If you feel lower energy or mood swings, remember that is completely normal due to progesterone. Self-care is key these days. How can I guide you?</item>
+                                    <item>You are in your Luteal phase. Progesterone can make you feel slower, so take it easy. What shall we talk about today?</item>
+                                    <item>You are in the Luteal phase, preparing your body for the end of the cycle. Prioritize your peace of mind. How can I help you?</item>
+                                    <item>You are going through your Luteal phase. It is the perfect moment for gentle activities and rest. What do you want to know today?</item>
+                                    <item>Luteal phase in progress. If you notice drops in energy, it is pure biology. Do you have any questions?</item>
+                                </string-array>
+    
+                                <string-array name="chat_welcome_phase_unknown">
+                                    <item>I am here to help you better understand your cycle and your body. You can ask me about your phases, predictions, or any symptom. What would you like to know today?</item>
+                                    <item>Lumi is ready for you. Let\'s explore together your cycle and how you feel today. What question do you have?</item>
+                                    <item>Welcome. If you have questions about your symptoms or predictions, let me know. How can I support you?</item>
+                                    <item>It is always a good time to learn about your body. What would you like to talk about today?</item>
+                                    <item>Here I am! Ready to analyze your well-being and your logs. What information do you need?</item>
+                                </string-array>
+    
+                                <!-- Tiredness -->
+                                <string-array name="chat_tired_menstrual">
+                                    <item>During menstruation, blood loss can lower your iron levels and cause fatigue. It is completely normal.%1$s 💙</item>
+                                    <item>It is very common to feel exhausted right now. Your body is working hard to renew the endometrium.%1$s ✨</item>
+                                    <item>Menstrual tiredness is a natural body response. Listen to your need for rest and do not overdemand of yourself.%1$s 🌱</item>
+                                    <item>Your energy is low because hormone levels drop during your period. Try eating something rich in iron.%1$s 🌙</item>
+                                    <item>Feeling drained these days is your body\'s way of asking for a pause.%1$s 💜</item>
+                                </string-array>
+                                <string-array name="chat_tired_follicular">
+                                    <item>In the follicular phase, estrogen rises and usually brings more energy. If you feel tired, check your rest and hydration.%1$s 🌱</item>
+                                    <item>Normally, your energy should start rising now. If not, take it easy for another day.%1$s ✨</item>
+                                    <item>Although this phase is for recharging energy, stress or lack of sleep can sometimes play against you.%1$s 💙</item>
+                                    <item>Your estrogen is increasing. If fatigue persists, you might need active rest or better sleep.%1$s 🌙</item>
+                                    <item>It is a good time to regain vitality, but do not push yourself if you need to go slower today.%1$s 💜</item>
+                                </string-array>
+                                <string-array name="chat_tired_ovulation">
+                                    <item>Around ovulation your hormones are at their peak. This surge can make your body ask for a quick breather.%1$s ✨</item>
+                                    <item>You are at a high point of hormonal activity. A short 20-minute break will do you wonders.%1$s 🌱</item>
+                                    <item>Ovulation demands a lot of energy from your body. If you feel fatigued, it is a cue for a brief nap.%1$s 💙</item>
+                                    <item>While ovulation usually brings energy, the sudden hormone shift can sometimes have the opposite effect temporarily.%1$s 🌙</item>
+                                    <item>Your hormone levels are working at full throttle right now. Rest for a while if your body asks for it.%1$s 💜</item>
+                                </string-array>
+                                <string-array name="chat_tired_luteal">
+                                    <item>In the luteal phase, progesterone rises and acts like a natural sedative. It is super common to feel like this!%1$s 🌙</item>
+                                    <item>Premenstrual fatigue is real and has a name: progesterone. Do not feel guilty about needing extra rest.%1$s 💙</item>
+                                    <item>Your body is preparing for the next cycle. That energy dip is completely normal.%1$s ✨</item>
+                                    <item>Feeling heavy or tired is typical of the luteal phase. Prioritize self-care these days.%1$s 🌱</item>
+                                    <item>The tiredness you feel is your body\'s natural response to the hormonal shifts of these days.%1$s 💜</item>
+                                </string-array>
+                                <string-array name="chat_tired_unknown">
+                                    <item>Fatigue can stem from many factors. Make sure to rest and drink plenty of water.%1$s 💙</item>
+                                    <item>If you feel very tired, try checking your sleep hours or stress level this week.%1$s ✨</item>
+                                    <item>Tiredness can be a signal to slow down. Listen to your body.%1$s 🌱</item>
+                                    <item>Getting enough rest is key. If this fatigue persists for several days, discuss it with your doctor.%1$s 🌙</item>
+                                    <item>Sometimes we just need a pause. Take the day as calmly as possible.%1$s 💜</item>
+                                </string-array>
+    
+                                <!-- Next Period -->
+                                <string-array name="chat_next_period_late">
+                                    <item>Your period is %1$d day(s) late compared to your normal cycles. Stress or hormonal changes could be the cause. 💜</item>
+                                    <item>I noticed a delay of %1$d day(s). Remember that hormonal fluctuations or stress can affect dates. 🌸</item>
+                                    <item>You are currently %1$d day(s) late. If it exceeds two weeks, I would suggest speaking with your gynecologist. 💙</item>
+                                    <item>I recorded a delay of %1$d day(s). Try to relax, as stress can prolong the delay. ✨</item>
+                                    <item>You have a delay of %1$d day(s) over your average of %2$d days. Stay mindful and log any symptoms. 🌱</item>
+                                </string-array>
+                                <string-array name="chat_next_period_on_time">
+                                    <item>Based on your history, your next period %1$s. Remember that biology is not an exact clock. 📅</item>
+                                    <item>Your period %1$s. Keep in mind this is only an estimate. 🌸</item>
+                                    <item>According to my calculations, your period %1$s. I will let you know if I detect changes! 💙</item>
+                                    <item>I expect your menstruation for %1$s. Keep your logs up to date for higher accuracy. ✨</item>
+                                    <item>Your period %1$s. Don\'t forget that slight advances or delays are common. 🌱</item>
+                                </string-array>
+    
+                                <!-- Next Period Bases -->
+                                <string-array name="chat_next_period_base_0">
+                                    <item>could arrive today</item>
+                                    <item>is expected today</item>
+                                    <item>according to my calculations, should start today</item>
+                                    <item>today is the expected day</item>
+                                    <item>is scheduled for today</item>
+                                </string-array>
+                                <string-array name="chat_next_period_base_1">
+                                    <item>is expected tomorrow</item>
+                                    <item>will arrive tomorrow if everything follows its course</item>
+                                    <item>should start tomorrow</item>
+                                    <item>tomorrow is the estimated date</item>
+                                    <item>is expected tomorrow</item>
+                                </string-array>
+                                <string-array name="chat_next_period_base_n">
+                                    <item>is expected in %1$d days</item>
+                                    <item>is about %1$d days away</item>
+                                    <item>will arrive in about %1$d days</item>
+                                    <item>I estimate in %1$d days</item>
+                                    <item>is expected in %1$d days</item>
+                                </string-array>
+    
+                                <!-- Fertile Window -->
+                                <string-array name="chat_fertile_contraceptive">
+                                    <item>With hormonal contraception, ovulation is suppressed, so the concept of a fertile window does not apply the same way. If you have questions, consult your gynecologist. 💜</item>
+                                    <item>Since you take contraceptives, your body does not ovulate normally, so there is no traditional fertile window. Talk to your doctor if you want more details. 🌸</item>
+                                    <item>Using contraception suppresses ovulation, hence I do not calculate your fertile window. For any concerns, do not hesitate to ask your doctor. 💙</item>
+                                    <item>Being on a hormonal contraceptive method, your fertile window is not active like in a natural cycle. It is best to discuss it with a healthcare professional if you want to switch methods. ✨</item>
+                                    <item>Contraceptive pills prevent ovulation. Because of this, there are no fertile days to calculate right now. It is always good to keep your gynecologist informed. 🌱</item>
+                                </string-array>
+                                <string-array name="chat_fertile_now">
+                                    <item>You are in your fertile window right now! The days around ovulation carry the highest probability of conception. 🌸</item>
+                                    <item>You are in your fertile days. Right now is the highest likelihood of pregnancy in the cycle. 💙</item>
+                                    <item>It is your fertile window! These days are key if you are trying to conceive. ✨</item>
+                                    <item>You are currently passing through your most fertile days. Remember ovulation is the peak phase to conceive. 🌱</item>
+                                    <item>You are right in the fertility window of this cycle. Take necessary precautions according to your goals. 💜</item>
+                                </string-array>
+                                <string-array name="chat_fertile_past">
+                                    <item>Your fertile window has already passed this cycle. The next one will be approx. %1$d days after your next period. 🌸</item>
+                                    <item>You have already left your fertile days behind for now. We expect the next window in your upcoming cycle. 💙</item>
+                                    <item>The fertile window for this cycle is now closed. Stay tuned for my predictions next month. ✨</item>
+                                    <item>Your most fertile days have passed. If you are trying to conceive, the next cycle will be your new opportunity. 🌱</item>
+                                    <item>Ovulation for this cycle is behind you. Time to prepare for the next one in a couple of weeks. 💜</item>
+                                </string-array>
+                                <string-array name="chat_fertile_future">
+                                    <item>Your next fertile window is estimated in approximately %1$d days. The 5 days before and the day of ovulation are the most fertile. 🌸</item>
+                                    <item>I estimate about %1$d days left until your fertile window. ✨</item>
+                                    <item>Expect your fertile window in approx. %1$d days. I will let you know when you get closer! 💙</item>
+                                    <item>Your fertile days will arrive in %1$d days according to my logs. 🌱</item>
+                                    <item>About %1$d days remain until your peak fertility days. Keep your logs up to date. 💜</item>
+                                </string-array>
+    
+                                <!-- Mood -->
+                                <string-array name="chat_mood_menstrual">
+                                    <item>During menstruation, estrogen drops and it is normal to feel more sensitive or sad. It is pure biology, don\'t be hard on yourself. 💜</item>
+                                    <item>The drop in hormones during bleeding often brings emotional sensitivity. Take things calmly. 🌸</item>
+                                    <item>Menstruation causes estrogen and progesterone to hit rock bottom, directly affecting your mood. It is a good time to prioritize rest. 💙</item>
+                                    <item>Feeling mood swings right now is super normal; your hormones are at their lowest. Rest and listen to yourself. ✨</item>
+                                    <item>Your body is going through a sharp hormonal drop, which explains why you might feel susceptible today. 🌱</item>
+                                </string-array>
+                                <string-array name="chat_mood_follicular">
+                                    <item>In this phase estrogen rises, which generally boosts mood. If you still feel irritable, sleep or stress may be playing a role. 🌱</item>
+                                    <item>Mood is normally more stable now. If you feel abrupt shifts, let\'s check your sleep and stress levels. 💙</item>
+                                    <item>Your hormones are rising and you should feel better. If not, try to relax a bit more. ✨</item>
+                                    <item>Estrogen is on your side during this phase. Any mood fluctuations might come from external factors like fatigue. 🌸</item>
+                                    <item>You are in a phase of biological emotional recovery. Give yourself time if stress is weighing on you. 💜</item>
+                                </string-array>
+                                <string-array name="chat_mood_ovulation">
+                                    <item>Around ovulation, peak estrogen often brings joy and sociability. If you feel variable, your hormones are simply in high gear! ✨</item>
+                                    <item>The hormonal cocktail of ovulation sometimes creates small emotional spikes, though it is usually positive energy. 🌸</item>
+                                    <item>You are in the middle of the ovulatory hormonal roller coaster. Your emotions may feel more intense than usual. 💙</item>
+                                    <item>With estrogen and LH at their highest, your mood may be very receptive. Enjoy this energy. 🌱</item>
+                                    <item>Ovulation brings a hormonal surge that can make you feel euphoric or sensitive at times. 💜</item>
+                                </string-array>
+                                <string-array name="chat_mood_luteal">
+                                    <item>In the luteal phase progesterone dominates and can trigger PMS: irritability or sadness. It is normal and will pass. 🌙</item>
+                                    <item>Your mood swings are a byproduct of progesterone preparing your body. Don\'t worry, it will level off with your period. 💙</item>
+                                    <item>Premenstrual Syndrome often manifests as emotional sensitivity due to dropping estrogen. Be kind to yourself. ✨</item>
+                                    <item>Feeling this way in this phase is classic PMS. Give your body the self-care it is asking for. 🌱</item>
+                                    <item>It is completely understandable that your mood fluctuates now. Progesterone has that effect on our emotions. 💜</item>
+                                </string-array>
+                                <string-array name="chat_mood_unknown">
+                                    <item>Mood swings across the cycle are normal and have a hormonal basis. Logging how you feel helps me understand your patterns better. 💙</item>
+                                    <item>Our emotions dance to the rhythm of hormones all month. Keep logging so we can find your personal pattern. ✨</item>
+                                    <item>Don\'t worry, emotional fluctuations are a natural part of the cycle. Try noting your moods daily. 🌱</item>
+                                    <item>The menstrual cycle directly affects neurotransmitters. If this affects you deeply, share it with your doctor. 🌸</item>
+                                    <item>Having emotional ups and downs is very common. Keep logging to know yourself better every day. 💜</item>
+                                </string-array>
+    
+                                <!-- Cramps -->
+                                <string-array name="chat_cramps_menstrual">
+                                    <item>Cramps during menstruation are caused by prostaglandins, which make the uterus contract to shed its lining. %1$s 💙</item>
+                                    <item>It is normal to feel cramps right now; the uterus is contracting to release the endometrium. %1$s 🌸</item>
+                                    <item>Prostaglandins are active in your uterus, generating these menstrual aches. %1$s ✨</item>
+                                    <item>Cramps are how your body clears the uterine lining. %1$s 🌱</item>
+                                    <item>It is expected to experience pelvic pain during bleeding due to uterine activity. %1$s 💜</item>
+                                </string-array>
+                                <string-array name="chat_cramps_ovulation">
+                                    <item>The pain you feel might be mittelschmerz — ovulation pain. It is normal and usually lasts a few hours. %1$s ✨</item>
+                                    <item>Some women feel a twinge when the follicle releases the egg; it is completely normal. %1$s 💙</item>
+                                    <item>This type of mid-cycle ache is usually ovulatory pain. %1$s 🌱</item>
+                                    <item>Feeling pelvic pain now could be your body signaling that you are ovulating. %1$s 🌸</item>
+                                    <item>Ovulation pain is mild and temporary, caused by the release of the egg. %1$s 💜</item>
+                                </string-array>
+                                <string-array name="chat_cramps_unknown">
+                                    <item>Abdominal pain outside your period can have various causes. If it is recurrent and severe, I recommend mentioning it to your gynecologist. %1$s</item>
+                                    <item>Having cramps without a period sometimes happens due to digestion, early ovulation, or cysts. If it hurts a lot, seek advice. %1$s</item>
+                                    <item>Pelvic pain in this phase is less common. Monitor it and consult your doctor if it does not subside. %1$s</item>
+                                    <item>If the pain is persistent and you are not on your period, it is best evaluated by a medical professional. %1$s</item>
+                                    <item>We will log this pain. If it persists for several days outside menstruation, seek medical advice. %1$s</item>
+                                </string-array>
+    
+                                <string-array name="chat_cramps_advice_high">
+                                    <item>For very intense pain, apply local heat (hot water bottle), rest, and if pain does not yield with pain relievers, consult your gynecologist.</item>
+                                    <item>Since the pain is severe, I suggest applying heat and resting. If a pain reliever does not help, please consult your doctor.</item>
+                                    <item>The pain is elevated; a heating pad and relaxation are key. If there is no improvement, reach out to your physician.</item>
+                                    <item>To relieve this level of pain, heat on the pelvic area and rest are fundamental. See a doctor if it persists.</item>
+                                    <item>Your pain is intense today. Try applying heat and resting; if it continues this strong, it is best to consult a specialist.</item>
+                                </string-array>
+                                <string-array name="chat_cramps_advice_med">
+                                    <item>For moderate cramps, local heat and gentle movement (like walking or yoga) can help greatly.</item>
+                                    <item>With this moderate pain, a warm herbal tea and gentle stretching are usually a great relief.</item>
+                                    <item>Try applying heat to the area and moving a little if you feel up to it; that usually reduces moderate discomfort.</item>
+                                    <item>For medium-level cramps, gentle yoga or simply lying down with a heating pad will do you good.</item>
+                                    <item>A moderate pain level usually responds well to local heat and keeping warm.</item>
+                                </string-array>
+                                <string-array name="chat_cramps_advice_low">
+                                    <item>For mild cramps, heat and rest are usually enough.</item>
+                                    <item>Being mild, you may only need to relax for a while or take a short walk to ease them.</item>
+                                    <item>The pain is mild, so some warmth and staying calm will help you get through it comfortably.</item>
+                                    <item>With mild discomfort, continuing your routine at a steady pace and using local heat is typically sufficient.</item>
+                                    <item>For these soft cramps, simply don\'t overexert yourself today and rest if you feel it is necessary.</item>
+                                </string-array>
+    
+                                <!-- Phase Info -->
+                                <string-array name="chat_phase_info">
+                                    <item>According to my projections, you are on day %1$d of your cycle (probable %3$s phase, day %2$d). %4$s %5$s 📅</item>
+                                    <item>You are on cycle day %1$d, and I estimate you are in your %3$s phase (day %2$d). %4$s %5$s 🌸</item>
+                                    <item>According to your history, you would be on day %1$d of your cycle, in a possible %3$s phase. %4$s %5$s 💙</item>
+                                    <item>Current cycle: day %1$d. Projected phase: %3$s (day %2$d). %4$s %5$s ✨</item>
+                                    <item>Today is your cycle day %1$d. Mathematically, it is likely that you are in the %3$s phase. %4$s %5$s 🌱</item>
+                                </string-array>
+    
+                                <string-array name="chat_phase_desc_menstrual">
+                                    <item>Your body is renewing the uterine lining.</item>
+                                    <item>It is the stage where you shed the endometrium from your uterus.</item>
+                                    <item>The lining of your uterus is naturally shedding.</item>
+                                    <item>Your reproductive system is resetting during these days.</item>
+                                    <item>It is your bleeding stage; your body cleanses the uterus.</item>
+                                </string-array>
+                                <string-array name="chat_phase_desc_follicular">
+                                    <item>Ovarian follicles mature and estrogen rises.</item>
+                                    <item>Your estrogen is increasing while follicles grow.</item>
+                                    <item>The ovaries prepare to release an egg soon.</item>
+                                    <item>Your body is nurturing new follicles for ovulation.</item>
+                                    <item>Estrogen production accelerates at this time.</item>
+                                </string-array>
+                                <string-array name="chat_phase_desc_ovulation">
+                                    <item>An egg is being released — active fertile window.</item>
+                                    <item>It is the moment you release an egg, which means maximum fertility.</item>
+                                    <item>The egg travels toward the uterus; your fertility is at its peak.</item>
+                                    <item>The ovary releases an egg ready to be fertilized.</item>
+                                    <item>Your body is in the middle of the ovulatory process.</item>
+                                </string-array>
+                                <string-array name="chat_phase_desc_luteal">
+                                    <item>Progesterone dominates. Prepare for the next cycle.</item>
+                                    <item>Your body produces progesterone to prepare the uterus.</item>
+                                    <item>It is the preparation phase; progesterone is at its highest level.</item>
+                                    <item>The endometrium thickens thanks to progesterone.</item>
+                                    <item>The cycle nears its end, regulated by progesterone.</item>
+                                </string-array>
+    
+                                <!-- Energy -->
+                                <string-array name="chat_energy_menstrual">
+                                    <item>%1$s During menstruation, prioritize rest over intense exercise. Gentle walks, hydration, and iron-rich foods are your allies. 💙</item>
+                                    <item>%1$s Your body asks for a pause during bleeding. Do not feel guilty about resting more and eating nutritiously. 🌸</item>
+                                    <item>%1$s Slow down these days. Prioritize nutritious meals, local heat, and calm activities. ✨</item>
+                                    <item>%1$s Your period consumes a lot of energy. Replenish it with good rest and avoiding extreme exertion. 🌱</item>
+                                    <item>%1$s Listen to your body: if today calls for sofa and movies, give it rest. Rest is productive in this phase. 💜</item>
+                                </string-array>
+                                <string-array name="chat_energy_follicular">
+                                    <item>%1$s In the follicular phase you have more energy available. It is a good time for more intense workouts and social activities. 🌱</item>
+                                    <item>%1$s You are recharging batteries! Estrogen gives you extra vitality. Use it for your pending tasks. 💙</item>
+                                    <item>%1$s This phase is excellent for starting new things. You have the hormonal boost on your side. ✨</item>
+                                    <item>%1$s Your physical and mental energy is on the rise. It is the ideal week to get moving. 🌸</item>
+                                    <item>%1$s With estrogen rising, you should feel more agile. Take advantage to exercise or tackle complex tasks. 💜</item>
+                                </string-array>
+                                <string-array name="chat_energy_ovulation">
+                                    <item>You are at your cycle\'s energy peak.%1$s Take advantage for demanding activities — your body is at its best. ✨</item>
+                                    <item>Vitality at its maximum!%1$s Ovulation is the perfect time to challenge yourself physically and mentally. 💙</item>
+                                    <item>Your body is full of energy right now.%1$s If you can, channel it into exercise or important projects. 🌱</item>
+                                    <item>You have the perfect hormonal cocktail to feel unstoppable today.%1$s Enjoy your energy. 🌸</item>
+                                    <item>Ovulation gives you a great energetic push.%1$s It is the biological peak of your cycle. 💜</item>
+                                </string-array>
+                                <string-array name="chat_energy_luteal">
+                                    <item>%1$s In the luteal phase energy naturally drops. Prefer yoga, pilates, or walks. Reduce sugar to minimize crashes. 🌙</item>
+                                    <item>%1$s Progesterone slows things down. It is normal to want to be quieter and at home. 💙</item>
+                                    <item>%1$s Your body enters nesting mode. Conserve your energy and do not overload yourself with tasks. ✨</item>
+                                    <item>%1$s It is time to dial down the gears. Rest and gentle activities are ideal right now. 🌱</item>
+                                    <item>%1$s If you feel heavier or slower, it is due to the Luteal phase. Take care of yourself and get the rest you need. 💜</item>
+                                </string-array>
+                                <string-array name="chat_energy_unknown">
+                                    <item>%1$s Keep regular sleep schedules, stay well-hydrated, and move for at least 20 minutes a day. 💙</item>
+                                    <item>%1$s Sometimes a big glass of water, a short nap, or a walk outside can revitalize you. ✨</item>
+                                    <item>%1$s Resting and eating well is the best foundation for any lack of energy. 🌱</item>
+                                    <item>%1$s Listen to your body and do not push it if it asks for a break today. 🌸</item>
+                                    <item>%1$s Review your sleep and nutrition habits, they are usually the key to improving daily energy. 💜</item>
+                                </string-array>
+    
+                                <string-array name="chat_energy_sleep_tip">
+                                    <item> First, try to rest: you only slept %1$sh and the body needs 7-9h.</item>
+                                    <item> I noticed your sleep was %1$sh; trying to sleep better will help you immensely.</item>
+                                    <item> With %1$sh of sleep it is normal to feel fatigue. Prioritize your rest today.</item>
+                                    <item> You have slept only %1$sh, so sleep deprivation is part of the problem.</item>
+                                    <item> Try to recover sleep hours (you only slept %1$sh); it will be your best medicine.</item>
+                                </string-array>
+    
+                                <!-- Sleep and Cycle -->
+                                <string-array name="chat_sleep_cycle">
+                                    <item>Sleep and the menstrual cycle are deeply connected.%1$s Lack of sleep elevates cortisol (stress hormone), which can delay or disrupt ovulation. Sleeping 7-9 hours improves cycle regularity and reduces PMS symptom intensity. 🌙</item>
+                                    <item>Sleeping well is essential for your hormones.%1$s If you don\'t rest, stress disrupts your ovulation and worsens cramps. Aim for 7 to 9 hours of sleep. 💙</item>
+                                    <item>Your hormones need you to sleep in order to balance out.%1$s Short sleep raises cortisol and unbalances your cycle. Prioritize good rest. ✨</item>
+                                    <item>Your sleep quality directly impacts your period.%1$s Less sleep means more stress and irregular cycles. Good rest prevents severe PMS symptoms. 🌱</item>
+                                    <item>Resting 7-9 hours helps your hormones work in harmony.%1$s Insomnia, in contrast, disrupts your dates and worsens mood. 💜</item>
+                                </string-array>
+    
+                                <string-array name="chat_sleep_note_low">
+                                    <item> Today you slept %1$sh — with less than 6h, the body can delay ovulation.</item>
+                                    <item> I see you rested %1$sh; that sleep deficit significantly affects your hormones.</item>
+                                    <item> With your %1$sh of sleep today, your body hasn\'t had enough time to fully recover.</item>
+                                    <item> Sleeping %1$sh is very little and physiological stress builds up.</item>
+                                    <item> Your log indicates %1$sh of rest; it is crucial to try to increase that number.</item>
+                                </string-array>
+    
+                                <!-- Stress and Cycle -->
+                                <string-array name="chat_stress_cycle">
+                                    <item>Yes, stress can delay your period.%1$s Cortisol (stress hormone) inhibits GnRH production, the hormone triggering ovulation. Without ovulation, the cycle lengthens. Deep breathing, moderate exercise, and regular sleep are most effective to reduce this effect. 💆</item>
+                                    <item>Definitely, stress delays periods.%1$s Your body in "alert mode" pauses ovulation to protect you. Relaxing is key for your cycle to return to normal. 💙</item>
+                                    <item>Elevated cortisol from stress blocks reproductive hormones.%1$s If you are very stressed, your period will take longer. Try something relaxing today. ✨</item>
+                                    <item>Stress and your cycle are big foes.%1$s Chronic stress halts ovulation. Yoga, meditation, or walking can help restore balance. 🌱</item>
+                                    <item>When you get very stressed, your body postpones ovulation, lengthening your cycle.%1$s Finding ways to lower stress is the best medicine. 💜</item>
+                                </string-array>
+    
+                                <string-array name="chat_stress_note_high">
+                                    <item> I logged that today your stress is at %1$d/10 — that is high.</item>
+                                    <item> Your stress reached %1$d/10 today, a notably high level.</item>
+                                    <item> I see a stress level of %1$d/10 in your logs, which carries strong influence.</item>
+                                    <item> With your stress at %1$d/10, the hormonal impact is direct.</item>
+                                    <item> Today you reported a stress level of %1$d/10; keep it in mind if your period is delayed.</item>
+                                </string-array>
+    
+                                <!-- Exercise -->
+                                <string-array name="chat_exercise_menstrual">
+                                    <item>Today I recommend gentle movement: restorative yoga, pilates, or an easy walk. Avoid high-intensity workouts if you have cramps. Gentle movement reduces prostaglandins and eases pain. 💙</item>
+                                    <item>It is a day for low-intensity activities. Light stretches or gentle yoga will help with cramps without draining your energy. 🌸</item>
+                                    <item>Walk a little or do light pilates. During bleeding, pushing yourself too hard can be counterproductive. ✨</item>
+                                    <item>Listen to your body: breathing exercises or joint mobility are enough if you feel discomfort. 🌱</item>
+                                    <item>Light movement is ideal today. It helps oxygenate blood and reduces inflammation without overtiring you. 💜</item>
+                                </string-array>
+                                <string-array name="chat_exercise_follicular">
+                                    <item>Excellent phase to train with intensity! Estrogen enhances strength and endurance. Cardio, weights, or HIIT are ideal these days. 🌱</item>
+                                    <item>Your muscles recover faster now. It is the perfect time to lift heavier or run faster. 💙</item>
+                                    <item>Take advantage of the estrogen surge for demanding workouts or trying a new sport. ✨</item>
+                                    <item>Your body is ready for impact and endurance. Push hard on your favorite routines! 🌸</item>
+                                    <item>The Follicular phase gives you extra energy. Strength training and high intensity are highly recommended today. 💜</item>
+                                </string-array>
+                                <string-array name="chat_exercise_ovulation">
+                                    <item>You are at your athletic peak. Train hard — your body can perform at its maximum. Intense cardio, group classes, or strength training are perfect today. ✨</item>
+                                    <item>It is your time of greatest strength! Break your personal records and leverage your biological endurance. 💙</item>
+                                    <item>Your hormones support peak physical effort right now. Enjoy an intense workout session. 🌱</item>
+                                    <item>Bring out your most athletic side. Ovulation gives you that extra push for any tough workout. 🌸</item>
+                                    <item>You are at the top of your monthly physical performance. Any high-intensity sport will feel great. 💜</item>
+                                </string-array>
+                                <string-array name="chat_exercise_luteal">
+                                    <item>In the luteal phase energy drops. Opt for yoga, pilates, swimming, or walks. Listen to your body — if one day you don\'t feel like it, doing less is fine. 🌙</item>
+                                    <item>Your body prefers more moderate routines right now. Walking or swimming are great options. 💙</item>
+                                    <item>It is a good time to slow the pace. Light cardio and maintaining mobility is enough. ✨</item>
+                                    <item>Progesterone relaxes you, so low-impact exercises or flexibility work are ideal. 🌱</item>
+                                    <item>Don\'t push yourself too hard. Medium- or low-intensity activities are the best way to care for your body in the Luteal phase. 💜</item>
+                                </string-array>
+                                <string-array name="chat_exercise_unknown">
+                                    <item>Regular exercise (150 min/week of moderate activity) improves cycle regularity and reduces PMS symptoms. 💙</item>
+                                    <item>Moving a little each day is great for your hormones. Find an activity you enjoy. ✨</item>
+                                    <item>Any exercise you like doing is good. It helps release endorphins and regulate your cycle. 🌱</item>
+                                    <item>Consistency is key. Try mixing cardio with stretching during the week. 🌸</item>
+                                    <item>Moderate exercise is the best ally of a healthy menstrual cycle. Get moving today! 💜</item>
+                                </string-array>
+    
+                                <!-- Late Period Normal -->
+                                <string-array name="chat_late_normal">
+                                    <item>Your cycle is within the expected range. If you feel something is different, log your symptoms so I can help you better. 📅</item>
+                                    <item>For now, I don\'t see delays. Everything is proceeding according to your usual calendar. 💙</item>
+                                    <item>Your dates are in order. Keep logging daily so my predictions improve. ✨</item>
+                                    <item>Everything looks on time in your cycle! Nothing to worry about for now. 🌱</item>
+                                    <item>Your period does not appear to be late. Let\'s keep your log up to date. 🌸</item>
+                                </string-array>
+                                <!-- Late Delayed -->
+                                <string-array name="chat_late_delayed">
+                                    <item>Your period is %1$d day(s) late. Common causes include: high stress, routine changes, sudden weight loss or gain, or hormonal variations. %2$s</item>
+                                    <item>There is a delay of %1$d day(s). Stress, travel, or a spike in physical activity can affect your date. %2$s</item>
+                                    <item>I count %1$d day(s) of delay. Sometimes our body pauses ovulation due to stress and the cycle lengthens. %2$s</item>
+                                    <item>You are %1$d day(s) late. Normal hormonal fluctuations can cause these slight adjustments. %2$s</item>
+                                    <item>I noticed %1$d day(s) of delay. Try to stay calm, as extra stress can prolong it further. %2$s</item>
+                                </string-array>
+                                <string-array name="chat_late_delayed_advice_long">
+                                    <item>With %1$d days of delay, I recommend taking a pregnancy test and/or consulting your gynecologist to rule out other causes. 💜</item>
+                                    <item>It has been %1$d days of delay, so it is a good time for a doctor\'s visit or a test if applicable. 🌸</item>
+                                    <item>Having such a prolonged delay (%1$d days), it is best to seek professional advice. 💙</item>
+                                    <item>It is a noticeable delay of %1$d days. Consult your doctor to see what is going on. ✨</item>
+                                    <item>I strongly suggest visiting your gynecologist since the delay is already %1$d days. 🌱</item>
+                                </string-array>
+                                <string-array name="chat_late_delayed_advice_short">
+                                    <item>If the delay exceeds 2 weeks or is recurrent, consider consulting your gynecologist. 💜</item>
+                                    <item>If this delay extends for more days, it would be good to speak with your doctor. 🌸</item>
+                                    <item>Keep it monitored; if a couple of weeks pass, visit your doctor. 💙</item>
+                                    <item>Short delays are sometimes normal. Consult if it exceeds two weeks. ✨</item>
+                                    <item>Give your body a few more days, but if it does not arrive within two weeks, seek medical guidance. 🌱</item>
+                                </string-array>
+    
+                                <!-- Spotting -->
+                                <string-array name="chat_spotting">
+                                    <item>Spotting between periods can be normal at certain times of the cycle, especially around ovulation (approx. day %1$d). It can also happen due to hormonal shifts, starting contraceptives, or stress. If spotting is frequent, heavy, or accompanied by pain, I recommend mentioning it to your gynecologist. 💜</item>
+                                    <item>Sometimes the body produces spotting from ovulatory hormonal fluctuations (near day %1$d). If it concerns you, hurts, or happens frequently, see your doctor. 🌸</item>
+                                    <item>Spotting is common when using new contraceptives or from stress. If it happens often or with unusual pain, please consult your gynecologist. 💙</item>
+                                    <item>Light spotting mid-cycle is usually harmless. However, if bleeding is heavy or there is severe pain, report it to your doctor. ✨</item>
+                                    <item>Spotting can be a sign that your body is adjusting hormones. As long as it is light and sporadic it is usually not serious, but when in doubt, see your doctor. 🌱</item>
+                                </string-array>
+    
+                                <!-- UI General Chat -->
+                                <string name="chat_search_placeholder">Search history…</string>
+    <string name="chat_welcome_follicular_energy">Follicular phase underway! ✨ It is very common to feel high energy today. Your estrogen levels are rising, making it a great time for your projects or physical activity.</string>
+    <string name="chat_welcome_follicular_tired">I notice you feel low on energy despite being in your follicular phase. Normally estrogen would give you a boost right now, so make sure to get good rest and eat nutritious meals today.</string>
+    <string name="chat_welcome_luteal_symptoms">You are in the luteal phase and progesterone is taking over 🍵 It is completely understandable to feel a slower pace or have cravings. Listen to what your body asks without pushing yourself too hard.</string>
     <string name="insights_btn_export_pdf">Export doctor report</string>
-    <string name="insights_pdf_generating">Preparing your report…</string>
+    <string name="insights_btn_prep_doctor">Prepare doctor visit 🩺</string>
     <string name="insights_pdf_desc">Clinical PDF document ready to print or share</string>
-
-    <string name="sos_sheet_title">Prepare doctor visit 🩺</string>
-    <string name="sos_sheet_subtitle">Structured, clear summary for your consultation</string>
-    <string name="sos_header_intro">Preparing your gynecological consultation allows you to talk with clarity and peace of mind. Here is your cycle summary, ready for your healthcare provider.</string>
+    <string name="insights_pdf_generating">Preparing your report…</string>
+    <string name="phase_follicular_name">Follicular Phase</string>
+    <string name="phase_luteal_name">Luteal Phase</string>
+    <string name="phase_menstrual_name">Menstrual Phase</string>
+    <string name="phase_ovulation_name">Ovulatory Phase</string>
+    <string name="phase_pregnancy_name">Pregnancy</string>
+    <string name="phase_unknown_name">Cycle</string>
+    <string name="sos_ans_cycle">Every %1$d days approximately · %2$s</string>
+    <string name="sos_ans_period">Around %1$d days on average · %2$s</string>
+    <string name="sos_btn_export_pdf">Generate clinical PDF report 📄</string>
     <string name="sos_cd_close">Close</string>
     <string name="sos_cd_copy">Copy summary</string>
-
-    <string name="sos_script_card_title">Suggested script to open the consultation 💬</string>
-    <string name="sos_script_copy_toast">Summary copied. You can paste it into your notes.</string>
-    <string name="sos_script_copy_tip">Tip: Copy this summary to keep it handy or read it during your appointment.</string>
-
-    <string name="sos_script_intro">Hello doctor, the first day of my last period was %1$s (%2$s).</string>
-    <string name="sos_script_cycle_length">My cycles typically last about %1$d days,</string>
-    <string name="sos_script_regular">with slight variations up to %1$d days (fairly regular).</string>
-    <string name="sos_script_variable">but vary by about %1$d days between cycles.</string>
-    <string name="sos_script_period_duration">Bleeding usually lasts around %1$d days.</string>
-    <string name="sos_script_pain">I have experienced cramps up to %1$d/10 intensity and would like to evaluate this together.</string>
-    <string name="sos_script_contraceptive_yes">I currently use contraception.</string>
-    <string name="sos_script_contraceptive_no">I do not take hormonal contraception.</string>
-    <string name="sos_script_outro">I brought this report with my logs and charts to review if helpful.</string>
-
-    <string name="sos_lmp_not_registered">Not logged yet</string>
-    <string name="sos_days_elapsed">%1$d days ago (you are on day %2$d of your cycle)</string>
-    <string name="sos_days_elapsed_pending">pending date</string>
-    <string name="sos_empty_history">Once you log your first complete cycle, an automatic summary for your doctor will appear here.</string>
-
-    <string name="sos_sec_doctor_questions">Common consultation questions</string>
-    <string name="sos_tag_lmp">Last period 🗓️</string>
-    <string name="sos_q_lmp">When was the first day of your last period?</string>
-    <string name="sos_expl_lmp_days">Known clinically as LMP (Last Menstrual Period). You are on day %1$d of your current cycle (%2$d days ago).</string>
-    <string name="sos_expl_lmp_pending">Log your last period start date to keep it handy for your appointment.</string>
-
-    <string name="sos_tag_cycle">Cycle rhythm 🌿</string>
-    <string name="sos_q_cycle">How often does it occur and how regular is it?</string>
-    <string name="sos_ans_cycle">Every %1$d days approximately · %2$s</string>
-    <string name="sos_regularity_regular">Fairly regular (%1$d-day variation)</string>
-    <string name="sos_regularity_variable">Variable (shifts by %1$d days between cycles)</string>
-    <string name="sos_expl_cycle">Your cycles range between %1$d and %2$d days. Slight variability is normal; if it changes by more than a week month-to-month, discuss it in your visit.</string>
-
-    <string name="sos_tag_period">Bleeding 🩸</string>
-    <string name="sos_q_period">How many days does bleeding usually last?</string>
-    <string name="sos_ans_period">Around %1$d days on average · %2$s</string>
-    <string name="sos_duration_normal">Within typical range (up to 8 days)</string>
-    <string name="sos_duration_long">Over a week (worth evaluating)</string>
-    <string name="sos_expl_period">Typical range is 3 to 8 days. If you experience very heavy bleeding, frequent product changes, or mid-cycle spotting, mention it during your visit.</string>
-
-    <string name="sos_tag_pain">Cramps &amp; pain 🩺</string>
-    <string name="sos_q_pain">Do you experience cramps and how intense are they?</string>
-    <string name="sos_pain_high">Severe pain limiting activities (%1$d/10)</string>
-    <string name="sos_pain_moderate">Moderate pain (%1$d/10)</string>
-    <string name="sos_pain_mild">Mild or tolerable discomfort (%1$d/10)</string>
-    <string name="sos_expl_pain">Severe menstrual pain should not be normalized if it interferes with your daily life. Your doctor will assess whether to rule out causes like endometriosis and suggest timely care.</string>
-
-    <string name="sos_sec_key_notes">Key points for your appointment 📋</string>
-    <string name="sos_notes_box_title">Suggested topics for discussion:</string>
-    <string name="sos_notes_box_subtitle">Points identified from your logs that may guide clinical evaluation:</string>
-    <string name="sos_note_pain">• Notable cramps (%1$d/10): Mention how they impact daily activities and ask whether a pelvic ultrasound is indicated.</string>
-    <string name="sos_note_variation">• Cycle variability (%1$d-day spread): You can ask if a thyroid or hormonal panel is advised.</string>
-    <string name="sos_note_period">• Bleeding over 8 days: Worth checking to rule out iron depletion.</string>
-
-    <string name="sos_sec_checklist_title">Questions to bring with you 📝</string>
     <string name="sos_checklist_q1">Do you recommend a pelvic ultrasound to examine the uterus and ovaries?</string>
     <string name="sos_checklist_q2">Would a blood test checking thyroid, iron, and hormone profile be helpful?</string>
     <string name="sos_checklist_q3">Given my cramp severity, should we rule out specific conditions or adjust pain management?</string>
     <string name="sos_checklist_q4">Is my current contraceptive method still the best fit for my health and lifestyle?</string>
     <string name="sos_checklist_q5">What pain relief protocol do you suggest at the first sign of discomfort?</string>
-
-    <string name="sos_btn_export_pdf">Generate clinical PDF report 📄</string>
+    <string name="sos_days_elapsed">%1$d days ago (you are on day %2$d of your cycle)</string>
+    <string name="sos_days_elapsed_pending">pending date</string>
+    <string name="sos_duration_long">Over a week (worth evaluating)</string>
+    <string name="sos_duration_normal">Within typical range (up to 8 days)</string>
+    <string name="sos_empty_history">Once you log your first complete cycle, an automatic summary for your doctor will appear here.</string>
+    <string name="sos_expl_cycle">Your cycles range between %1$d and %2$d days. Slight variability is normal; if it changes by more than a week month-to-month, discuss it in your visit.</string>
+    <string name="sos_expl_lmp_days">Known clinically as LMP (Last Menstrual Period). You are on day %1$d of your current cycle (%2$d days ago).</string>
+    <string name="sos_expl_lmp_pending">Log your last period start date to keep it handy for your appointment.</string>
+    <string name="sos_expl_pain">Severe menstrual pain should not be normalized if it interferes with your daily life. Your doctor will assess whether to rule out causes like endometriosis and suggest timely care.</string>
+    <string name="sos_expl_period">Typical range is 3 to 8 days. If you experience very heavy bleeding, frequent product changes, or mid-cycle spotting, mention it during your visit.</string>
+    <string name="sos_header_intro">Preparing your gynecological consultation allows you to talk with clarity and peace of mind. Here is your cycle summary, ready for your healthcare provider.</string>
+    <string name="sos_lmp_not_registered">Not logged yet</string>
+    <string name="sos_note_pain">• Notable cramps (%1$d/10): Mention how they impact daily activities and ask whether a pelvic ultrasound is indicated.</string>
+    <string name="sos_note_period">• Bleeding over 8 days: Worth checking to rule out iron depletion.</string>
+    <string name="sos_note_variation">• Cycle variability (%1$d-day spread): You can ask if a thyroid or hormonal panel is advised.</string>
+    <string name="sos_notes_box_subtitle">Points identified from your logs that may guide clinical evaluation:</string>
+    <string name="sos_notes_box_title">Suggested topics for discussion:</string>
+    <string name="sos_pain_high">Severe pain limiting activities (%1$d/10)</string>
+    <string name="sos_pain_mild">Mild or tolerable discomfort (%1$d/10)</string>
+    <string name="sos_pain_moderate">Moderate pain (%1$d/10)</string>
     <string name="sos_pdf_footer_note">Generates a formal 2-page PDF report with basal body temperature curves, FIGO classification, and space for doctor notes.</string>
+    <string name="sos_q_cycle">How often does it occur and how regular is it?</string>
+    <string name="sos_q_lmp">When was the first day of your last period?</string>
+    <string name="sos_q_pain">Do you experience cramps and how intense are they?</string>
+    <string name="sos_q_period">How many days does bleeding usually last?</string>
+    <string name="sos_regularity_regular">Fairly regular (%1$d-day variation)</string>
+    <string name="sos_regularity_variable">Variable (shifts by %1$d days between cycles)</string>
+    <string name="sos_script_card_title">Suggested script to open the consultation 💬</string>
+    <string name="sos_script_contraceptive_no">I do not take hormonal contraception.</string>
+    <string name="sos_script_contraceptive_yes">I currently use contraception.</string>
+    <string name="sos_script_copy_tip">Tip: Copy this summary to keep it handy or read it during your appointment.</string>
+    <string name="sos_script_copy_toast">Summary copied. You can paste it into your notes.</string>
+    <string name="sos_script_cycle_length">My cycles typically last about %1$d days,</string>
+    <string name="sos_script_intro">Hello doctor, the first day of my last period was %1$s (%2$s).</string>
+    <string name="sos_script_outro">I brought this report with my logs and charts to review if helpful.</string>
+    <string name="sos_script_pain">I have experienced cramps up to %1$d/10 intensity and would like to evaluate this together.</string>
+    <string name="sos_script_period_duration">Bleeding usually lasts around %1$d days.</string>
+    <string name="sos_script_regular">with slight variations up to %1$d days (fairly regular).</string>
+    <string name="sos_script_variable">but vary by about %1$d days between cycles.</string>
+    <string name="sos_sec_checklist_title">Questions to bring with you 📝</string>
+    <string name="sos_sec_doctor_questions">Common consultation questions</string>
+    <string name="sos_sec_key_notes">Key points for your appointment 📋</string>
+    <string name="sos_sheet_subtitle">Structured, clear summary for your consultation</string>
+    <string name="sos_sheet_title">Prepare doctor visit 🩺</string>
+    <string name="sos_tag_cycle">Cycle rhythm 🌿</string>
+    <string name="sos_tag_lmp">Last period 🗓️</string>
+    <string name="sos_tag_pain">Cramps &amp; pain 🩺</string>
+    <string name="sos_tag_period">Bleeding 🩸</string>
 </resources>

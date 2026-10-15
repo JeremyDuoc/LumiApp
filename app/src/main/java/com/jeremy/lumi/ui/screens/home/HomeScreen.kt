@@ -230,21 +230,22 @@ fun HomeScreen(
                     FadeSlideIn(screenReady, 0) {
                         val todayDate = com.jeremy.lumi.utils.LumiClock.today()
                         val dateFmt = remember {
-                            DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Locale("es"))
+                            val pattern = if (Locale.getDefault().language == "en") "EEEE, MMMM d" else "EEEE, d 'de' MMMM"
+                            DateTimeFormatter.ofPattern(pattern, Locale.getDefault())
                         }
                         val dateEyebrow = remember(todayDate) { todayDate.format(dateFmt) }
                         val rawName = uiState.userName?.trim()?.takeIf { it.isNotBlank() }
                         val (titleNormal, titleItalic) = if (rawName != null) {
-                            "Hola, " to "$rawName."
+                            stringResource(R.string.home_greeting_hello) to "$rawName."
                         } else {
-                            "Hola." to ""
+                            stringResource(R.string.onboarding_hello_simple) to ""
                         }
 
                         LumiEditorialHeading(
                             eyebrow = dateEyebrow,
                             titleNormal = titleNormal,
                             titleSerifItalic = titleItalic,
-                            subtitle = "Un día a tu ritmo.",
+                            subtitle = stringResource(R.string.home_day_at_your_pace),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 24.dp)
@@ -278,22 +279,22 @@ fun HomeScreen(
                     // Aro de Visualización del Ciclo Aprobado
                     FadeSlideIn(screenReady, STAGGER_MS) {
                         val phaseName = when (uiState.currentPhase) {
-                            CyclePhase.MENSTRUAL -> "Fase menstrual"
-                            CyclePhase.FOLLICULAR -> "Fase folicular"
-                            CyclePhase.OVULATION -> "Ovulación"
-                            CyclePhase.LUTEAL -> "Fase lútea"
-                            else -> "Fase activa"
+                            CyclePhase.MENSTRUAL -> stringResource(R.string.pm_phase_menstrual)
+                            CyclePhase.FOLLICULAR -> stringResource(R.string.pm_phase_follicular)
+                            CyclePhase.OVULATION -> stringResource(R.string.pm_phase_ovulation)
+                            CyclePhase.LUTEAL -> stringResource(R.string.pm_phase_luteal)
+                            else -> stringResource(R.string.phase_unknown)
                         }
 
                         val estimatedDaysText = if (uiState.prediction != null) {
                             val daysUntil = uiState.prediction!!.daysUntilNextPeriod
-                            if (daysUntil > 0) "Periodo estimado en ~$daysUntil días"
-                            else if (daysUntil == 0) "Periodo estimado hoy"
-                            else "Periodo en retraso de ${-daysUntil} días"
-                        } else "Periodo estimado en ~12 días"
+                            if (daysUntil > 0) stringResource(R.string.home_period_estimated_in_days, daysUntil)
+                            else if (daysUntil == 0) stringResource(R.string.home_period_estimated_today)
+                            else stringResource(R.string.home_period_late_in_days, -daysUntil)
+                        } else stringResource(R.string.home_period_estimated_approx)
 
                         val confidenceLabel = uiState.predictionFactors?.confidenceLabel
-                            ?: "Fase estimada · certeza moderada"
+                            ?: stringResource(R.string.cycle_ring_confidence_moderate)
 
                         LumiCycleRing(
                             currentDay = uiState.currentDayOfCycle,
@@ -320,11 +321,11 @@ fun HomeScreen(
                     // Tarjeta de Registro Diario ("Un momento para ti")
                     FadeSlideIn(screenReady, STAGGER_MS * 3) {
                         val entrySubtitle = if (hasEntry && !todayLog?.dailyLog?.mood.isNullOrBlank()) {
-                            "Hoy te sientes ${todayLog?.dailyLog?.mood?.lowercase()}."
+                            stringResource(R.string.home_today_mood_status, todayLog?.dailyLog?.mood?.lowercase() ?: "")
                         } else if (hasEntry) {
-                            "Tu registro del día está guardado."
+                            stringResource(R.string.home_log_saved)
                         } else {
-                            "Todavía no has registrado cómo te sientes."
+                            stringResource(R.string.home_log_pending)
                         }
 
                         LumiTodayCard(
@@ -1387,7 +1388,7 @@ fun CycleRingCard(
             )
         }
         daysLeft in 1..4 && prediction != null && prediction.earliestPeriodDate != LocalDate.MAX -> {
-            val dateFmt = DateTimeFormatter.ofPattern("d MMM", Locale("es"))
+            val dateFmt = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
             val earliestStr = prediction.earliestPeriodDate.format(dateFmt)
             val latestStr = prediction.latestPeriodDate.format(dateFmt)
             val windowRange = if (prediction.earliestPeriodDate == prediction.latestPeriodDate) {

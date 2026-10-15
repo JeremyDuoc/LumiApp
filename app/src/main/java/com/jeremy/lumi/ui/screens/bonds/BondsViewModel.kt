@@ -1,9 +1,12 @@
 package com.jeremy.lumi.ui.screens.bonds
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jeremy.lumi.R
 import com.jeremy.lumi.data.preferences.OnboardingPreferenceManager
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.jeremy.lumi.domain.model.CareAction
 import com.jeremy.lumi.domain.model.CareActionStatus
 import com.jeremy.lumi.domain.model.CyclePhase
@@ -92,6 +95,7 @@ data class BondsUiState(
 
 @HiltViewModel
 class BondsViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val partnerRepository: PartnerRepository,
     private val lumiRepository: LumiRepository,
     private val prefsManager: OnboardingPreferenceManager
@@ -293,7 +297,7 @@ class BondsViewModel @Inject constructor(
         }
 
         if (_uiState.value.isCooldownActive) {
-            _uiState.update { it.copy(errorMessage = "Debes esperar a que termine el tiempo de enfriamiento.") }
+            _uiState.update { it.copy(errorMessage = context.getString(R.string.bonds_cooldown_wait_error)) }
             return
         }
 
@@ -316,7 +320,7 @@ class BondsViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isSendingGesture = false,
-                        errorMessage = "No se pudo enviar el detalle. Revisa tu conexión."
+                        errorMessage = context.getString(R.string.bonds_send_failed_network)
                     )
                 }
             }
@@ -387,12 +391,12 @@ class BondsViewModel @Inject constructor(
                 if (link != null) {
                     onComplete(true)
                 } else {
-                    _uiState.update { it.copy(errorMessage = "Código inválido o ya utilizado.") }
+                    _uiState.update { it.copy(errorMessage = context.getString(R.string.bonds_code_invalid_used)) }
                     onComplete(false)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error al unirse al vínculo: ${e.message}", e)
-                _uiState.update { it.copy(errorMessage = "Error de red al verificar el código.") }
+                _uiState.update { it.copy(errorMessage = context.getString(R.string.bonds_code_verify_network_error)) }
                 onComplete(false)
             }
         }

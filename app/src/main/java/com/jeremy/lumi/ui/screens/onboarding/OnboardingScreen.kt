@@ -42,21 +42,23 @@ import com.jeremy.lumi.ui.components.LumiBrandLockup
 import com.jeremy.lumi.ui.screens.settings.SettingsViewModel
 import com.jeremy.lumi.ui.theme.AppThemePalette
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
+import androidx.compose.ui.res.stringResource
+import com.jeremy.lumi.R
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val STEP_TITLES = listOf(
-    "BIENVENIDA",
-    "SEGURIDAD",
-    "TU NOMBRE",
-    "TU CICLO",
-    "ÚLTIMO PERIODO",
-    "PREFERENCIAS",
-    "PERSONALIZACIÓN",
-    "LISTO"
+private val STEP_TITLE_RES = listOf(
+    R.string.onboarding_step_welcome,
+    R.string.onboarding_step_security,
+    R.string.onboarding_step_name,
+    R.string.onboarding_step_cycle,
+    R.string.onboarding_step_last_period,
+    R.string.onboarding_step_preferences,
+    R.string.onboarding_step_customization,
+    R.string.onboarding_step_ready
 )
 
 /**
@@ -157,7 +159,7 @@ fun OnboardingScreen(
                         .padding(horizontal = 12.dp, vertical = 7.dp)
                 ) {
                     Text(
-                        text = if (isBlush) "◑ Tema: Blush" else "◐ Tema: Noir",
+                        text = if (isBlush) stringResource(R.string.onboarding_theme_blush) else stringResource(R.string.onboarding_theme_noir),
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.Medium,
                         color = tokens.muted
@@ -178,7 +180,7 @@ fun OnboardingScreen(
                 ) {
                     val stepIndex = uiState.currentStepIndex + 1
                     val totalSteps = uiState.totalStepsCount
-                    val title = STEP_TITLES.getOrElse(stepNumber) { "" }
+                    val title = STEP_TITLE_RES.getOrNull(stepNumber)?.let { stringResource(it) } ?: ""
 
                     Text(
                         text = "${stepIndex.toString().padStart(2, '0')} / ${totalSteps.toString().padStart(2, '0')} · $title",
@@ -318,10 +320,10 @@ fun OnboardingScreen(
                     .navigationBarsPadding()
             ) {
                 val primaryText = when {
-                    isFirstStep -> "Empezar →"
-                    isFinalStep -> "Ver mi inicio"
-                    stepNumber == 6 -> "Terminar →"
-                    else -> "Continuar →"
+                    isFirstStep -> stringResource(R.string.onboarding_btn_start)
+                    isFinalStep -> stringResource(R.string.onboarding_btn_view_home)
+                    stepNumber == 6 -> stringResource(R.string.onboarding_btn_finish_arrow)
+                    else -> stringResource(R.string.onboarding_btn_continue_arrow)
                 }
 
                 Button(
@@ -382,7 +384,7 @@ fun OnboardingScreen(
                             contentPadding = PaddingValues(horizontal = 4.dp)
                         ) {
                             Text(
-                                text = "← Volver",
+                                text = stringResource(R.string.onboarding_btn_back_arrow),
                                 fontSize = 12.sp,
                                 color = tokens.muted
                             )
@@ -397,14 +399,14 @@ fun OnboardingScreen(
                             contentPadding = PaddingValues(horizontal = 4.dp)
                         ) {
                             Text(
-                                text = "Omitir",
+                                text = stringResource(R.string.onboarding_omit),
                                 fontSize = 12.sp,
                                 color = tokens.muted
                             )
                         }
                     } else if (isFinalStep) {
                         Text(
-                            text = "Tus datos se guardan de forma local",
+                            text = stringResource(R.string.onboarding_data_stored_locally),
                             fontSize = 10.5.sp,
                             color = tokens.muted
                         )
@@ -422,7 +424,7 @@ fun OnboardingScreen(
             shape = RoundedCornerShape(24.dp),
             title = {
                 Text(
-                    text = "Política de privacidad",
+                    text = stringResource(R.string.onboarding_privacy_dialog_title),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = tokens.text
@@ -431,23 +433,23 @@ fun OnboardingScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        text = "En Lumi, tu intimidad y privacidad son absolutas:",
+                        text = stringResource(R.string.onboarding_privacy_absolute_intro),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                         color = tokens.text
                     )
                     Text(
-                        text = "• Todos tus registros menstruales, notas y parámetros fisiológicos se almacenan de manera local y cifrada en tu dispositivo.",
+                        text = stringResource(R.string.onboarding_privacy_point_1),
                         fontSize = 12.sp,
                         color = tokens.muted
                     )
                     Text(
-                        text = "• No vendemos tus datos a anunciantes ni terceros.",
+                        text = stringResource(R.string.onboarding_privacy_point_2),
                         fontSize = 12.sp,
                         color = tokens.muted
                     )
                     Text(
-                        text = "• En cualquier momento puedes exportar tus datos en PDF/ZIP o eliminarlos de manera irreversible.",
+                        text = stringResource(R.string.onboarding_privacy_point_3),
                         fontSize = 12.sp,
                         color = tokens.muted
                     )
@@ -459,7 +461,7 @@ fun OnboardingScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = tokens.accent),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Entendido", color = tokens.bg, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.onboarding_dialog_understood), color = tokens.bg, fontWeight = FontWeight.Bold)
                 }
             }
         )
@@ -482,12 +484,12 @@ fun OnboardingScreen(
                         showDatePicker = false
                     }
                 ) {
-                    Text("Guardar", color = tokens.accent, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.onboarding_dialog_save), color = tokens.accent, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancelar", color = tokens.muted)
+                    Text(stringResource(R.string.onboarding_dialog_cancel), color = tokens.muted)
                 }
             },
             colors = DatePickerDefaults.colors(containerColor = tokens.panel)
@@ -539,25 +541,25 @@ private fun StepWelcome(
     }
 
     EditorialHeading(
-        normalText = "Tu ciclo, ",
-        italicText = "a tu manera.",
-        desc = "Elige cómo quieres usar Lumi."
+        normalText = stringResource(R.string.onboarding_welcome_normal),
+        italicText = stringResource(R.string.onboarding_welcome_italic),
+        desc = stringResource(R.string.onboarding_welcome_desc)
     )
 
     Spacer(modifier = Modifier.height(20.dp))
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ChoiceCard(
-            title = "Seguir mi ciclo",
-            subtitle = "Registros y estimaciones personales.",
+            title = stringResource(R.string.onboarding_mode_track_title),
+            subtitle = stringResource(R.string.onboarding_mode_track_subtitle),
             icon = Icons.Rounded.CalendarToday,
             selected = mode == "track",
             onClick = { onSelectMode("track") }
         )
 
         ChoiceCard(
-            title = "Acompañar a alguien",
-            subtitle = "Conectar con una persona de confianza.",
+            title = stringResource(R.string.onboarding_mode_support_title),
+            subtitle = stringResource(R.string.onboarding_mode_support_subtitle),
             icon = Icons.Rounded.People,
             selected = mode == "support",
             onClick = { onSelectMode("support") }
@@ -580,9 +582,9 @@ private fun StepSafety(
     val tokens = LumiThemeTokens.current
 
     EditorialHeading(
-        normalText = "Tu bienestar, ",
-        italicText = "con claridad.",
-        desc = "Antes de comenzar."
+        normalText = stringResource(R.string.onboarding_safety_normal),
+        italicText = stringResource(R.string.onboarding_safety_italic),
+        desc = stringResource(R.string.onboarding_safety_desc)
     )
 
     Spacer(modifier = Modifier.height(18.dp))
@@ -608,7 +610,7 @@ private fun StepSafety(
                     modifier = Modifier.size(20.dp)
                 )
                 Text(
-                    text = "Lumi acompaña, no diagnostica",
+                    text = stringResource(R.string.onboarding_safety_card_title),
                     fontSize = 14.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = tokens.text
@@ -618,9 +620,9 @@ private fun StepSafety(
             Spacer(modifier = Modifier.height(12.dp))
 
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                BulletText("Las predicciones son estimaciones, no certezas.")
-                BulletText("No utilices Lumi como anticonceptivo.")
-                BulletText("Si algo te preocupa o tienes síntomas intensos, busca atención profesional.")
+                BulletText(stringResource(R.string.onboarding_safety_bullet_1))
+                BulletText(stringResource(R.string.onboarding_safety_bullet_2))
+                BulletText(stringResource(R.string.onboarding_safety_bullet_3))
             }
         }
     }
@@ -631,11 +633,11 @@ private fun StepSafety(
     ConsentCheckbox(
         checked = medicalAccepted,
         onCheckedChange = { onToggleMedical() },
-        boldText = "Entiendo estas limitaciones.",
+        boldText = stringResource(R.string.onboarding_safety_understand_bold),
         subText = if (mode == "support") {
-            " Como acompañante, solo veré información que me autoricen a compartir."
+            stringResource(R.string.onboarding_safety_support_note)
         } else {
-            " Puedo cambiar mis preferencias más adelante."
+            stringResource(R.string.onboarding_safety_change_later_note)
         }
     )
 
@@ -645,9 +647,9 @@ private fun StepSafety(
     ConsentCheckbox(
         checked = privacyAccepted,
         onCheckedChange = { onTogglePrivacy() },
-        boldText = "Acepto la política de privacidad",
-        subText = " y autorizo el tratamiento de mis datos para prestar el servicio. ",
-        actionText = "Consultar política",
+        boldText = stringResource(R.string.onboarding_safety_privacy_bold),
+        subText = stringResource(R.string.onboarding_safety_privacy_sub),
+        actionText = stringResource(R.string.onboarding_safety_consult_policy),
         onActionClick = onOpenPrivacyInfo
     )
 }
@@ -663,15 +665,15 @@ private fun StepName(
     val tokens = LumiThemeTokens.current
 
     EditorialHeading(
-        normalText = "¿Cómo te gustaría ",
-        italicText = "que te saludemos?",
-        desc = "Puedes usar un apodo o dejarlo vacío."
+        normalText = stringResource(R.string.onboarding_name_normal),
+        italicText = stringResource(R.string.onboarding_name_italic),
+        desc = stringResource(R.string.onboarding_name_desc)
     )
 
     Spacer(modifier = Modifier.height(20.dp))
 
     Text(
-        text = "Nombre o apodo · opcional",
+        text = stringResource(R.string.onboarding_name_field_label),
         fontSize = 11.5.sp,
         fontWeight = FontWeight.SemiBold,
         color = tokens.muted
@@ -682,7 +684,7 @@ private fun StepName(
     OutlinedTextField(
         value = name,
         onValueChange = { if (it.length <= 32) onNameChange(it) },
-        placeholder = { Text("Tu apodo", color = tokens.muted) },
+        placeholder = { Text(stringResource(R.string.onboarding_name_placeholder), color = tokens.muted) },
         singleLine = true,
         shape = RoundedCornerShape(15.dp),
         colors = OutlinedTextFieldDefaults.colors(
@@ -709,7 +711,7 @@ private fun StepName(
     ) {
         Column {
             Text(
-                text = "Así aparecerá en Inicio",
+                text = stringResource(R.string.onboarding_name_preview_label),
                 fontSize = 11.sp,
                 color = tokens.muted
             )
@@ -719,7 +721,7 @@ private fun StepName(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (cleanName.isNotBlank()) {
                     Text(
-                        text = "Hola, ",
+                        text = stringResource(R.string.home_greeting_hello),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = tokens.text
@@ -734,7 +736,7 @@ private fun StepName(
                     )
                 } else {
                     Text(
-                        text = "Hola.",
+                        text = stringResource(R.string.onboarding_hello_simple),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = tokens.text
@@ -746,7 +748,7 @@ private fun StepName(
 
     Spacer(modifier = Modifier.height(14.dp))
     Text(
-        text = "Puedes cambiarlo más adelante.",
+        text = stringResource(R.string.onboarding_can_change_later),
         fontSize = 11.5.sp,
         color = tokens.muted
     )
@@ -767,33 +769,33 @@ private fun StepCycle(
     val tokens = LumiThemeTokens.current
 
     EditorialHeading(
-        normalText = "¿Cómo suelen ser ",
-        italicText = "tus ciclos?",
-        desc = "No necesitas saberlo con exactitud."
+        normalText = stringResource(R.string.onboarding_cycle_normal),
+        italicText = stringResource(R.string.onboarding_cycle_italic),
+        desc = stringResource(R.string.onboarding_cycle_desc)
     )
 
     Spacer(modifier = Modifier.height(18.dp))
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         ChoiceCard(
-            title = "Bastante regulares",
-            subtitle = "Suelen llegar con intervalos parecidos.",
+            title = stringResource(R.string.onboarding_reg_regular_title),
+            subtitle = stringResource(R.string.onboarding_reg_regular_subtitle),
             icon = Icons.Rounded.Check,
             selected = regularityChoice == "yes",
             onClick = { onSelectRegularity("yes") }
         )
 
         ChoiceCard(
-            title = "Varían bastante",
-            subtitle = "No siempre llegan cuando los espero.",
+            title = stringResource(R.string.onboarding_reg_irregular_title),
+            subtitle = stringResource(R.string.onboarding_reg_irregular_subtitle),
             icon = Icons.Rounded.Waves,
             selected = regularityChoice == "no",
             onClick = { onSelectRegularity("no") }
         )
 
         ChoiceCard(
-            title = "No estoy segura",
-            subtitle = "Prefiero empezar sin suponer.",
+            title = stringResource(R.string.onboarding_reg_unsure_title),
+            subtitle = stringResource(R.string.onboarding_reg_unsure_subtitle),
             icon = Icons.AutoMirrored.Rounded.HelpOutline,
             selected = regularityChoice == "unknown",
             onClick = { onSelectRegularity("unknown") }
@@ -819,13 +821,13 @@ private fun StepCycle(
             ) {
                 Column {
                     Text(
-                        text = "Duración aproximada",
+                        text = stringResource(R.string.onboarding_approx_duration),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = tokens.text
                     )
                     Text(
-                        text = "De un inicio de periodo al siguiente.",
+                        text = stringResource(R.string.onboarding_approx_duration_desc),
                         fontSize = 11.sp,
                         color = tokens.muted
                     )
@@ -836,7 +838,7 @@ private fun StepCycle(
                     contentPadding = PaddingValues(horizontal = 4.dp)
                 ) {
                     Text(
-                        text = if (cycleKnown) "No lo sé" else "Estimar duración",
+                        text = if (cycleKnown) stringResource(R.string.onboarding_dont_know) else stringResource(R.string.onboarding_estimate_duration),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = tokens.accent
@@ -860,7 +862,7 @@ private fun StepCycle(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "días",
+                            text = stringResource(R.string.onboarding_days_unit),
                             fontSize = 14.sp,
                             color = tokens.muted,
                             modifier = Modifier.padding(bottom = 8.dp)
@@ -884,14 +886,14 @@ private fun StepCycle(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("21 días", fontSize = 11.sp, color = tokens.muted)
-                        Text("45 días", fontSize = 11.sp, color = tokens.muted)
+                        Text(stringResource(R.string.onboarding_range_21_days), fontSize = 11.sp, color = tokens.muted)
+                        Text(stringResource(R.string.onboarding_range_45_days), fontSize = 11.sp, color = tokens.muted)
                     }
                 }
             } else {
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = "Todavía no conozco mi duración habitual.",
+                    text = stringResource(R.string.onboarding_not_know_habitual),
                     fontSize = 12.sp,
                     color = tokens.muted
                 )
@@ -913,9 +915,9 @@ private fun StepDate(
     val tokens = LumiThemeTokens.current
 
     EditorialHeading(
-        normalText = "¿Cuándo empezó ",
-        italicText = "tu último periodo?",
-        desc = "La fecha ayuda a iniciar tus estimaciones."
+        normalText = stringResource(R.string.onboarding_last_period_normal),
+        italicText = stringResource(R.string.onboarding_last_period_italic),
+        desc = stringResource(R.string.onboarding_last_period_desc)
     )
 
     Spacer(modifier = Modifier.height(18.dp))
@@ -923,12 +925,12 @@ private fun StepDate(
     // Selector micro-pills
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         MicroPill(
-            label = "Elegir fecha",
+            label = stringResource(R.string.onboarding_choose_date),
             selected = dateKnown,
             onClick = { onToggleDateKnown(true) }
         )
         MicroPill(
-            label = "No lo recuerdo",
+            label = stringResource(R.string.onboarding_dont_remember_btn),
             selected = !dateKnown,
             onClick = { onToggleDateKnown(false) }
         )
@@ -936,15 +938,17 @@ private fun StepDate(
 
     Spacer(modifier = Modifier.height(16.dp))
 
+    val tapSelectDateText = stringResource(R.string.onboarding_tap_select_date)
     if (dateKnown) {
-        val formattedDate = remember(dateEpoch) {
+        val formattedDate = remember(dateEpoch, tapSelectDateText) {
             if (dateEpoch > 0) {
+                val pattern = if (Locale.getDefault().language == "en") "EEEE, MMMM d, yyyy" else "EEEE, d 'de' MMMM yyyy"
                 Instant.ofEpochMilli(dateEpoch)
                     .atZone(ZoneId.systemDefault())
                     .toLocalDate()
-                    .format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM yyyy", Locale("es")))
+                    .format(DateTimeFormatter.ofPattern(pattern, Locale.getDefault()))
             } else {
-                "Toca para seleccionar fecha"
+                tapSelectDateText
             }
         }
 
@@ -959,7 +963,7 @@ private fun StepDate(
         ) {
             Column {
                 Text(
-                    text = "Primer día de sangrado",
+                    text = stringResource(R.string.onboarding_first_day_bleeding),
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = tokens.muted
@@ -985,7 +989,7 @@ private fun StepDate(
                 }
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = "Puedes corregirlo desde Calendario en cualquier momento.",
+                    text = stringResource(R.string.onboarding_correct_calendar_note),
                     fontSize = 11.sp,
                     color = tokens.muted
                 )
@@ -1009,14 +1013,14 @@ private fun StepDate(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Puedes empezar sin una fecha.",
+                    text = stringResource(R.string.onboarding_start_without_date_title),
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = tokens.text
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Lumi esperará a tu primer registro para iniciar un ciclo. No mostrará un periodo ficticio.",
+                    text = stringResource(R.string.onboarding_start_without_date_desc),
                     fontSize = 11.5.sp,
                     color = tokens.muted,
                     lineHeight = 16.sp
@@ -1040,9 +1044,9 @@ private fun StepPreferences(
     val tokens = LumiThemeTokens.current
 
     EditorialHeading(
-        normalText = "¿Qué te gustaría ",
-        italicText = "hacer con Lumi?",
-        desc = "Para organizar tu experiencia inicial."
+        normalText = stringResource(R.string.onboarding_goals_normal),
+        italicText = stringResource(R.string.onboarding_goals_italic),
+        desc = stringResource(R.string.onboarding_goals_desc)
     )
 
     Spacer(modifier = Modifier.height(18.dp))
@@ -1053,14 +1057,14 @@ private fun StepPreferences(
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         GoalCard(
-            title = "Entender mi ciclo",
+            title = stringResource(R.string.onboarding_goal_understand_cycle),
             icon = Icons.Rounded.CalendarToday,
             selected = selectedGoal == UserGoal.TRACK_CYCLE,
             onClick = { onSelectGoal(UserGoal.TRACK_CYCLE) },
             modifier = Modifier.weight(1f)
         )
         GoalCard(
-            title = "Conocer mi bienestar",
+            title = stringResource(R.string.onboarding_goal_track_wellness),
             icon = Icons.Rounded.Favorite,
             selected = selectedGoal == UserGoal.HEALTH_MONITORING,
             onClick = { onSelectGoal(UserGoal.HEALTH_MONITORING) },
@@ -1075,14 +1079,14 @@ private fun StepPreferences(
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         GoalCard(
-            title = "Buscar embarazo",
+            title = stringResource(R.string.onboarding_goal_seek_pregnancy),
             icon = Icons.Rounded.Eco,
             selected = selectedGoal == UserGoal.SEEK_PREGNANCY,
             onClick = { onSelectGoal(UserGoal.SEEK_PREGNANCY) },
             modifier = Modifier.weight(1f)
         )
         GoalCard(
-            title = "Evitar embarazo",
+            title = stringResource(R.string.onboarding_goal_avoid_pregnancy),
             icon = Icons.Rounded.Shield,
             selected = selectedGoal == UserGoal.AVOID_PREGNANCY,
             onClick = { onSelectGoal(UserGoal.AVOID_PREGNANCY) },
@@ -1101,7 +1105,7 @@ private fun StepPreferences(
                 .padding(12.dp)
         ) {
             Text(
-                text = "Importante: las predicciones del ciclo no sirven para evitar un embarazo. Lumi no ofrece protección anticonceptiva.",
+                text = stringResource(R.string.onboarding_avoid_pregnancy_warning),
                 fontSize = 11.sp,
                 lineHeight = 15.sp,
                 color = tokens.text
@@ -1115,13 +1119,13 @@ private fun StepPreferences(
 
     // Pregunta sobre anticoncepción hormonal
     Text(
-        text = "¿Usas anticoncepción hormonal?",
+        text = stringResource(R.string.onboarding_contraceptives_question),
         fontSize = 14.sp,
         fontWeight = FontWeight.Bold,
         color = tokens.text
     )
     Text(
-        text = "Puede afectar el sangrado y las predicciones.",
+        text = stringResource(R.string.onboarding_contraceptives_question_desc),
         fontSize = 11.5.sp,
         color = tokens.muted
     )
@@ -1130,17 +1134,17 @@ private fun StepPreferences(
 
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         MicroPill(
-            label = "Sí",
+            label = stringResource(R.string.onboarding_contraceptives_yes),
             selected = contraceptionChoice == "yes",
             onClick = { onSelectContraception("yes") }
         )
         MicroPill(
-            label = "No",
+            label = stringResource(R.string.onboarding_contraceptives_no),
             selected = contraceptionChoice == "no",
             onClick = { onSelectContraception("no") }
         )
         MicroPill(
-            label = "Prefiero no decir",
+            label = stringResource(R.string.onboarding_contraceptives_prefer_not),
             selected = contraceptionChoice == "unsure",
             onClick = { onSelectContraception("unsure") }
         )
@@ -1149,7 +1153,7 @@ private fun StepPreferences(
     if (mode == "support") {
         Spacer(modifier = Modifier.height(10.dp))
         Text(
-            text = "La persona acompañante no necesita proporcionar información menstrual.",
+            text = stringResource(R.string.onboarding_companion_no_menstrual_note),
             fontSize = 11.sp,
             color = tokens.muted
         )
@@ -1176,9 +1180,9 @@ private fun StepPersonalize(
     var isPhysicalExpanded by remember { mutableStateOf(false) }
 
     EditorialHeading(
-        normalText = "Últimos ",
-        italicText = "detalles.",
-        desc = "Todo esto es opcional y podrás cambiarlo."
+        normalText = stringResource(R.string.onboarding_final_details_normal),
+        italicText = stringResource(R.string.onboarding_final_details_italic),
+        desc = stringResource(R.string.onboarding_final_details_optional_desc)
     )
 
     Spacer(modifier = Modifier.height(16.dp))
@@ -1200,13 +1204,13 @@ private fun StepPersonalize(
             ) {
                 Column {
                     Text(
-                        text = "Duración del sangrado",
+                        text = stringResource(R.string.onboarding_period_duration_title),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = tokens.text
                     )
                     Text(
-                        text = "Si conoces tu promedio.",
+                        text = stringResource(R.string.onboarding_period_duration_desc),
                         fontSize = 11.sp,
                         color = tokens.muted
                     )
@@ -1217,7 +1221,7 @@ private fun StepPersonalize(
                     contentPadding = PaddingValues(horizontal = 4.dp)
                 ) {
                     Text(
-                        text = if (periodKnown) "No lo sé" else "Elegir",
+                        text = if (periodKnown) stringResource(R.string.onboarding_dont_know) else stringResource(R.string.onboarding_choose_action),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = tokens.accent
@@ -1241,7 +1245,7 @@ private fun StepPersonalize(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "días",
+                            text = stringResource(R.string.onboarding_days_unit),
                             fontSize = 14.sp,
                             color = tokens.muted,
                             modifier = Modifier.padding(bottom = 8.dp)
@@ -1265,14 +1269,14 @@ private fun StepPersonalize(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("1 día", fontSize = 11.sp, color = tokens.muted)
-                        Text("10 días", fontSize = 11.sp, color = tokens.muted)
+                        Text(stringResource(R.string.onboarding_range_one_day), fontSize = 11.sp, color = tokens.muted)
+                        Text(stringResource(R.string.onboarding_range_ten_days), fontSize = 11.sp, color = tokens.muted)
                     }
                 }
             } else {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Sin promedio por ahora.",
+                    text = stringResource(R.string.onboarding_no_average_yet),
                     fontSize = 11.5.sp,
                     color = tokens.muted
                 )
@@ -1283,7 +1287,7 @@ private fun StepPersonalize(
     Spacer(modifier = Modifier.height(20.dp))
 
     Text(
-        text = "Quiero prestar atención a...",
+        text = stringResource(R.string.onboarding_pay_attention_to),
         fontSize = 14.sp,
         fontWeight = FontWeight.Bold,
         color = tokens.text
@@ -1293,11 +1297,11 @@ private fun StepPersonalize(
 
     // Cuadrícula de síntomas / bienestar
     val symptomTiles = listOf(
-        Triple(SecondaryGoal.MANAGE_CRAMPS, "Cólicos", Icons.Rounded.Favorite),
-        Triple(SecondaryGoal.IMPROVE_SLEEP, "Sueño", Icons.Rounded.Bedtime),
-        Triple(SecondaryGoal.UNDERSTAND_MOOD, "Estado de ánimo", Icons.Rounded.AutoAwesome),
-        Triple(SecondaryGoal.TRACK_FERTILITY, "Fertilidad", Icons.Rounded.Eco),
-        Triple(SecondaryGoal.REDUCE_STRESS, "Estrés", Icons.Rounded.Waves)
+        Triple(SecondaryGoal.MANAGE_CRAMPS, stringResource(R.string.onboarding_goal_cramps_label), Icons.Rounded.Favorite),
+        Triple(SecondaryGoal.IMPROVE_SLEEP, stringResource(R.string.onboarding_goal_sleep_label), Icons.Rounded.Bedtime),
+        Triple(SecondaryGoal.UNDERSTAND_MOOD, stringResource(R.string.onboarding_goal_mood_label), Icons.Rounded.AutoAwesome),
+        Triple(SecondaryGoal.TRACK_FERTILITY, stringResource(R.string.onboarding_goal_fertility_label), Icons.Rounded.Eco),
+        Triple(SecondaryGoal.REDUCE_STRESS, stringResource(R.string.onboarding_goal_stress_label), Icons.Rounded.Waves)
     )
 
     Row(
@@ -1353,7 +1357,7 @@ private fun StepPersonalize(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Perfil físico (opcional)",
+                    text = stringResource(R.string.onboarding_physical_profile_title),
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = tokens.text
@@ -1381,7 +1385,7 @@ private fun StepPersonalize(
                                 ageStr = it
                                 onUpdatePhysical(it.toIntOrNull(), heightStr.toFloatOrNull(), weightStr.toFloatOrNull())
                             },
-                            label = { Text("Edad", fontSize = 10.sp) },
+                            label = { Text(stringResource(R.string.onboarding_field_age_label), fontSize = 10.sp) },
                             singleLine = true,
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(10.dp)
@@ -1392,7 +1396,7 @@ private fun StepPersonalize(
                                 heightStr = it
                                 onUpdatePhysical(ageStr.toIntOrNull(), it.toFloatOrNull(), weightStr.toFloatOrNull())
                             },
-                            label = { Text("Altura (cm)", fontSize = 10.sp) },
+                            label = { Text(stringResource(R.string.onboarding_field_height_label), fontSize = 10.sp) },
                             singleLine = true,
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(10.dp)
@@ -1403,7 +1407,7 @@ private fun StepPersonalize(
                                 weightStr = it
                                 onUpdatePhysical(ageStr.toIntOrNull(), heightStr.toFloatOrNull(), it.toFloatOrNull())
                             },
-                            label = { Text("Peso (kg)", fontSize = 10.sp) },
+                            label = { Text(stringResource(R.string.onboarding_field_weight_label), fontSize = 10.sp) },
                             singleLine = true,
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(10.dp)
@@ -1412,7 +1416,7 @@ private fun StepPersonalize(
 
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Solo si quieres añadirlos para calibrar predicciones.",
+                        text = stringResource(R.string.onboarding_physical_calibrate_desc),
                         fontSize = 11.sp,
                         color = tokens.muted
                     )
@@ -1450,9 +1454,9 @@ private fun StepFinish(
     }
 
     EditorialHeading(
-        normalText = "Todo listo",
-        italicText = if (cleanName.isNotBlank()) ", $cleanName." else ".",
-        desc = "Puedes cambiar tus elecciones cuando quieras."
+        normalText = stringResource(R.string.onboarding_ready_title_normal),
+        italicText = if (cleanName.isNotBlank()) stringResource(R.string.onboarding_ready_title_with_name, cleanName) else ".",
+        desc = stringResource(R.string.onboarding_ready_change_choices_desc)
     )
 
     Spacer(modifier = Modifier.height(18.dp))
@@ -1468,20 +1472,20 @@ private fun StepFinish(
         ) {
             Column {
                 Text(
-                    text = "Tu próximo paso",
+                    text = stringResource(R.string.onboarding_support_next_step),
                     fontSize = 11.sp,
                     color = tokens.muted
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Conectar con confianza.",
+                    text = stringResource(R.string.onboarding_support_connect_conf),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = tokens.text
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Pide un código de Bonds. No verás registros hasta que la otra persona autorice qué compartir.",
+                    text = stringResource(R.string.onboarding_support_instructions),
                     fontSize = 12.sp,
                     color = tokens.muted,
                     lineHeight = 17.sp
@@ -1495,14 +1499,14 @@ private fun StepFinish(
             horizontalArrangement = Arrangement.spacedBy(9.dp)
         ) {
             SummaryBox(
-                title = "Tu saludo",
-                value = if (cleanName.isNotBlank()) "Hola, $cleanName." else "Hola.",
+                title = stringResource(R.string.onboarding_summary_greeting),
+                value = if (cleanName.isNotBlank()) stringResource(R.string.onboarding_hello_format, cleanName) else stringResource(R.string.onboarding_hello_simple),
                 onEdit = { onEditStep(2) },
                 modifier = Modifier.weight(1f)
             )
             SummaryBox(
-                title = "Tu ciclo",
-                value = if (data.cycleLengthKnown) "${data.cycleLength} días · aprox." else "Por conocer",
+                title = stringResource(R.string.onboarding_summary_cycle),
+                value = if (data.cycleLengthKnown) stringResource(R.string.onboarding_summary_cycle_val, data.cycleLength) else stringResource(R.string.onboarding_summary_cycle_unknown),
                 onEdit = { onEditStep(3) },
                 modifier = Modifier.weight(1f)
             )
@@ -1515,30 +1519,31 @@ private fun StepFinish(
             horizontalArrangement = Arrangement.spacedBy(9.dp)
         ) {
             val dateLabel = if (data.lastPeriodKnown && data.lastPeriodDate > 0) {
+                val pattern = if (Locale.getDefault().language == "en") "MMM d" else "d 'de' MMM"
                 Instant.ofEpochMilli(data.lastPeriodDate)
                     .atZone(ZoneId.systemDefault())
                     .toLocalDate()
-                    .format(DateTimeFormatter.ofPattern("d 'de' MMM", Locale("es")))
+                    .format(DateTimeFormatter.ofPattern(pattern, Locale.getDefault()))
             } else {
-                "Sin registrar"
+                stringResource(R.string.onboarding_summary_not_logged)
             }
 
             val goalLabel = when (data.userGoal) {
-                UserGoal.TRACK_CYCLE -> "Entender mi ciclo"
-                UserGoal.HEALTH_MONITORING -> "Conocer mi bienestar"
-                UserGoal.SEEK_PREGNANCY -> "Buscar embarazo"
-                UserGoal.AVOID_PREGNANCY -> "Evitar embarazo"
-                null -> "Sin seleccionar"
+                UserGoal.TRACK_CYCLE -> stringResource(R.string.onboarding_goal_understand_cycle)
+                UserGoal.HEALTH_MONITORING -> stringResource(R.string.onboarding_goal_track_wellness)
+                UserGoal.SEEK_PREGNANCY -> stringResource(R.string.onboarding_goal_seek_pregnancy)
+                UserGoal.AVOID_PREGNANCY -> stringResource(R.string.onboarding_goal_avoid_pregnancy)
+                null -> stringResource(R.string.onboarding_summary_not_selected)
             }
 
             SummaryBox(
-                title = "Último periodo",
+                title = stringResource(R.string.onboarding_summary_last_period),
                 value = dateLabel,
                 onEdit = { onEditStep(4) },
                 modifier = Modifier.weight(1f)
             )
             SummaryBox(
-                title = "Tu objetivo",
+                title = stringResource(R.string.onboarding_summary_goal),
                 value = goalLabel,
                 onEdit = { onEditStep(5) },
                 modifier = Modifier.weight(1f)
@@ -1821,7 +1826,7 @@ private fun SummaryBox(
                     color = tokens.muted
                 )
                 Text(
-                    text = "Editar",
+                    text = stringResource(R.string.btn_edit),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = tokens.accent,

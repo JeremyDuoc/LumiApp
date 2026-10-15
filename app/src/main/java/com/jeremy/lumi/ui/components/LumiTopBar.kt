@@ -30,6 +30,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.res.stringResource
+import com.jeremy.lumi.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -284,7 +286,7 @@ fun LumiTopBar(
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.ChatBubbleOutline,
-                        contentDescription = "Chat",
+                        contentDescription = stringResource(R.string.nav_chat),
                         tint = tokens.muted,
                         modifier = Modifier.size(20.dp)
                     )
@@ -301,7 +303,7 @@ fun LumiTopBar(
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Palette,
-                    contentDescription = "Cambiar tema",
+                    contentDescription = stringResource(R.string.cd_change_theme),
                     tint = tokens.muted,
                     modifier = Modifier.size(20.dp)
                 )
@@ -317,7 +319,7 @@ fun LumiTopBar(
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Notifications,
-                    contentDescription = "Notificaciones",
+                    contentDescription = stringResource(R.string.cd_notifications),
                     tint = tokens.muted,
                     modifier = Modifier.size(20.dp)
                 )
@@ -344,7 +346,7 @@ fun LumiTopBar(
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Settings,
-                        contentDescription = "Ajustes",
+                        contentDescription = stringResource(R.string.nav_settings),
                         tint = tokens.muted,
                         modifier = Modifier.size(20.dp)
                     )

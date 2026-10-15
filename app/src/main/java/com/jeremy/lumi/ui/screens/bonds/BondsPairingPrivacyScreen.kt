@@ -191,7 +191,7 @@ fun BondsPairingPrivacyScreen(
                 activeCode = newCode
                 qrBitmap = generateQrCode(buildQrContent(newCode), 320)
             } catch (_: Exception) {
-                Toast.makeText(context, "No se pudo generar código. Comprueba la red.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.bonds_error_network_code), Toast.LENGTH_SHORT).show()
             } finally {
                 isGeneratingCode = false
             }
@@ -208,7 +208,7 @@ fun BondsPairingPrivacyScreen(
                     qrBitmap = generateQrCode(buildQrContent(newCode), 320)
                     Toast.makeText(context, context.getString(R.string.bonds_code_regenerated), Toast.LENGTH_SHORT).show()
                 } catch (_: Exception) {
-                    Toast.makeText(context, "Error al generar nuevo código", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.bonds_error_new_code), Toast.LENGTH_SHORT).show()
                 } finally {
                     isGeneratingCode = false
                 }
@@ -325,7 +325,7 @@ fun BondsPairingPrivacyScreen(
                                 if (qrBitmap != null) {
                                     Image(
                                         bitmap = qrBitmap!!.asImageBitmap(),
-                                        contentDescription = "QR Code",
+                                        contentDescription = stringResource(R.string.bonds_qr_code_cd),
                                         modifier = Modifier.fillMaxSize()
                                     )
                                 } else {
@@ -408,7 +408,7 @@ fun BondsPairingPrivacyScreen(
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Rounded.ContentCopy,
-                                                    contentDescription = "Copiar",
+                                                    contentDescription = stringResource(R.string.bonds_copy),
                                                     tint = BondsTheme.DeepNavy,
                                                     modifier = Modifier.size(18.dp)
                                                 )
@@ -475,7 +475,7 @@ fun BondsPairingPrivacyScreen(
                         .height(48.dp)
                 ) {
                     Text(
-                        text = if (isJoinExpanded) "Ocultar código" else "Ingresar código",
+                        text = if (isJoinExpanded) stringResource(R.string.bonds_hide_code) else stringResource(R.string.bonds_enter_code_action),
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -512,12 +512,12 @@ fun BondsPairingPrivacyScreen(
                                 onJoinWithCode(inputJoinCode, privacy) { success ->
                                     isJoining = false
                                     if (success) {
-                                        Toast.makeText(context, "¡Vínculo conectado con éxito!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, context.getString(R.string.bonds_connected_success), Toast.LENGTH_SHORT).show()
                                         onNavigateBack()
                                     } else {
                                         Toast.makeText(
                                             context,
-                                            "No se pudo conectar. Verifica que el código sea correcto y que el servicio esté disponible.",
+                                            context.getString(R.string.bonds_connection_error_desc),
                                             Toast.LENGTH_LONG
                                         ).show()
                                     }

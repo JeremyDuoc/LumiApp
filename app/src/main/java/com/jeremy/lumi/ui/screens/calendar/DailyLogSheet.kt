@@ -164,44 +164,44 @@ fun DailyLogSheet(
             SymptomCatalogItem("Migraña", R.string.symp_migraine, "Dolor"),
             SymptomCatalogItem("Pecho sensible", R.string.symp_breast_tenderness, "Dolor"),
             SymptomCatalogItem("Dolor pélvico", R.string.symp_pelvic_pain, "Dolor"),
-            SymptomCatalogItem("Dolor muscular", null, "Dolor"),
-            SymptomCatalogItem("Calambres", null, "Dolor"),
+            SymptomCatalogItem("Dolor muscular", R.string.symp_muscle_pain, "Dolor"),
+            SymptomCatalogItem("Calambres", R.string.symp_spasms, "Dolor"),
 
             // Digestivo
             SymptomCatalogItem("Hinchazón", R.string.symp_bloating, "Digestivo"),
             SymptomCatalogItem("Náuseas", R.string.symp_nausea, "Digestivo"),
             SymptomCatalogItem("Estreñimiento", R.string.symp_constipation, "Digestivo"),
             SymptomCatalogItem("Diarrea", R.string.symp_diarrhea, "Digestivo"),
-            SymptomCatalogItem("Gases", null, "Digestivo"),
-            SymptomCatalogItem("Acidez", null, "Digestivo"),
-            SymptomCatalogItem("Antojos", null, "Digestivo"),
+            SymptomCatalogItem("Gases", R.string.symp_gas, "Digestivo"),
+            SymptomCatalogItem("Acidez", R.string.symp_heartburn, "Digestivo"),
+            SymptomCatalogItem("Antojos", R.string.symp_cravings, "Digestivo"),
 
             // Cuerpo
             SymptomCatalogItem("Fatiga / Cansancio", R.string.symp_fatigue, "Cuerpo"),
             SymptomCatalogItem("Mareos", R.string.symp_dizziness, "Cuerpo"),
             SymptomCatalogItem("Sofocos", R.string.symp_hot_flashes, "Cuerpo"),
             SymptomCatalogItem("Fiebre", R.string.symp_fever, "Cuerpo"),
-            SymptomCatalogItem("Escalofríos", null, "Cuerpo"),
-            SymptomCatalogItem("Retención de líquidos", null, "Cuerpo"),
+            SymptomCatalogItem("Escalofríos", R.string.symp_chills, "Cuerpo"),
+            SymptomCatalogItem("Retención de líquidos", R.string.symp_fluid_retention, "Cuerpo"),
 
             // Piel
             SymptomCatalogItem("Acné", R.string.symp_acne, "Piel"),
-            SymptomCatalogItem("Piel seca", null, "Piel"),
-            SymptomCatalogItem("Piel grasa", null, "Piel"),
+            SymptomCatalogItem("Piel seca", R.string.symp_dry_skin, "Piel"),
+            SymptomCatalogItem("Piel grasa", R.string.symp_oily_skin, "Piel"),
 
             // Urinario e Íntimo
-            SymptomCatalogItem("Orinar frecuente", null, "Urinario"),
-            SymptomCatalogItem("Ardor al orinar", null, "Urinario"),
-            SymptomCatalogItem("Picazón vaginal", null, "Íntimo"),
-            SymptomCatalogItem("Sequedad vaginal", null, "Íntimo"),
-            SymptomCatalogItem("Dolor en relaciones", null, "Íntimo"),
+            SymptomCatalogItem("Orinar frecuente", R.string.symp_frequent_urination, "Urinario"),
+            SymptomCatalogItem("Ardor al orinar", R.string.symp_burning_urination, "Urinario"),
+            SymptomCatalogItem("Picazón vaginal", R.string.symp_vaginal_itching, "Íntimo"),
+            SymptomCatalogItem("Sequedad vaginal", R.string.symp_vaginal_dryness, "Íntimo"),
+            SymptomCatalogItem("Dolor en relaciones", R.string.symp_pain_intercourse, "Íntimo"),
 
             // Sueño y mente
             SymptomCatalogItem("Insomnio", R.string.symp_insomnia, "Sueño y mente"),
             SymptomCatalogItem("Deseo sexual alto", R.string.symp_libido_high, "Sueño y mente"),
             SymptomCatalogItem("Deseo sexual bajo", R.string.symp_libido_low, "Sueño y mente"),
-            SymptomCatalogItem("Cambios de humor", null, "Sueño y mente"),
-            SymptomCatalogItem("Ansiedad", null, "Sueño y mente"),
+            SymptomCatalogItem("Cambios de humor", R.string.symp_mood_swings, "Sueño y mente"),
+            SymptomCatalogItem("Ansiedad", R.string.symp_anxiety, "Sueño y mente"),
 
             // Clínico
             SymptomCatalogItem("Test ovulación LH (+)", R.string.symp_lh_positive, "Clínico"),
@@ -321,12 +321,17 @@ fun DailyLogSheet(
     // ── Navegación por pestañas ──────────────────────────────────────────────
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { 4 })
     val tabs = listOf(
-        TabInfo("Hoy", Icons.Rounded.Favorite),
-        TabInfo("Síntomas", Icons.Rounded.AutoAwesome),
-        TabInfo("Bienestar", Icons.Rounded.Nightlight),
-        TabInfo("Notas", Icons.Rounded.Edit)
+        TabInfo(stringResource(R.string.log_tab_today), Icons.Rounded.Favorite),
+        TabInfo(stringResource(R.string.log_tab_symptoms), Icons.Rounded.AutoAwesome),
+        TabInfo(stringResource(R.string.log_tab_wellbeing), Icons.Rounded.Nightlight),
+        TabInfo(stringResource(R.string.log_tab_notes), Icons.Rounded.Edit)
     )
-    val stepLabels = listOf("Lo esencial", "Tus síntomas", "Bienestar", "Notas y ajustes")
+    val stepLabels = listOf(
+        stringResource(R.string.log_step_essential),
+        stringResource(R.string.log_step_symptoms),
+        stringResource(R.string.log_step_wellbeing),
+        stringResource(R.string.log_step_notes)
+    )
 
     // Estados de modales
     var showReviewModal by remember { mutableStateOf(false) }
@@ -665,8 +670,9 @@ private fun DailyLogHeader(
     onClose: () -> Unit
 ) {
     val monthName = remember(month, year) {
+        val pattern = if (Locale.getDefault().language == "en") "MMMM d" else "d 'de' MMMM"
         LocalDate.of(year, month, day)
-            .format(DateTimeFormatter.ofPattern("d 'de' MMMM", Locale("es")))
+            .format(DateTimeFormatter.ofPattern(pattern, Locale.getDefault()))
     }
 
     Column(
@@ -719,7 +725,7 @@ private fun DailyLogHeader(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Close,
-                    contentDescription = "Cerrar",
+                    contentDescription = stringResource(R.string.btn_close),
                     modifier = Modifier.size(18.dp),
                     tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                 )
@@ -735,14 +741,14 @@ private fun DailyLogHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "0${currentStep + 1} · $stepLabel",
+                text = stringResource(R.string.log_step_progress, currentStep + 1, stepLabel),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,
                 letterSpacing = 0.5.sp
             )
             Text(
-                text = "${currentStep + 1} de 4",
+                text = stringResource(R.string.log_step_of, currentStep + 1, 4),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -878,8 +884,8 @@ private fun TabHoyContent(
     ) {
         // 1. SANGRADO Y PERIODO
         CardSection(
-            title = "¿Cómo va tu periodo?",
-            subtitle = "Marca el nivel de sangrado o indica si no hubo."
+            title = stringResource(R.string.log_period_status_question),
+            subtitle = stringResource(R.string.log_period_status_desc)
         ) {
             FlowSelectorWithNone(
                 options = listOf(R.string.flow_light, R.string.flow_medium, R.string.flow_heavy),
@@ -929,8 +935,8 @@ private fun TabHoyContent(
 
         // 2. ¿CÓMO TE ENCUENTRAS? (ESTADO DE ÁNIMO)
         CardSection(
-            title = "¿Cómo te encuentras?",
-            subtitle = "Un toque es suficiente para registrar tu ánimo."
+            title = stringResource(R.string.log_how_feeling_question),
+            subtitle = stringResource(R.string.log_how_feeling_desc)
         ) {
             MoodGridSelector(
                 options = moodOptions,
@@ -944,9 +950,9 @@ private fun TabHoyContent(
 
         // 3. NIVEL DE DOLOR
         CardSection(
-            title = "¿Has tenido dolor?",
-            subtitle = "Intensidad general de hoy · 0 a 10",
-            actionText = if (painLevel > 0f) "Sin dolor" else null,
+            title = stringResource(R.string.log_pain_question),
+            subtitle = stringResource(R.string.log_pain_intensity_range),
+            actionText = if (painLevel > 0f) stringResource(R.string.log_no_pain) else null,
             onActionClick = {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onPainChange(0f)
@@ -960,9 +966,9 @@ private fun TabHoyContent(
 
         // 4. SÍNTOMAS HABITUALES A UN TOQUE
         CardSection(
-            title = "Síntomas frecuentes",
-            subtitle = "Tus molestias habituales en un toque rápido.",
-            actionText = "Ver todos ›",
+            title = stringResource(R.string.log_frequent_symptoms),
+            subtitle = stringResource(R.string.log_frequent_symptoms_desc),
+            actionText = stringResource(R.string.log_view_all_arrow),
             onActionClick = onNavigateToAllSymptoms
         ) {
             Row(
@@ -1244,11 +1250,11 @@ private fun PainSliderCard(
     val animColor by animateColorAsState(rawColor, tween(250), label = "pain_color")
 
     val painText = when (painLevel.toInt()) {
-        0 -> "Sin dolor"
-        in 1..3 -> "Dolor leve"
-        in 4..6 -> "Dolor moderado"
-        in 7..8 -> "Dolor intenso"
-        else -> "Dolor muy intenso"
+        0 -> stringResource(R.string.log_no_pain)
+        in 1..3 -> stringResource(R.string.log_pain_mild)
+        in 4..6 -> stringResource(R.string.log_pain_moderate)
+        in 7..8 -> stringResource(R.string.log_pain_severe)
+        else -> stringResource(R.string.log_pain_very_severe)
     }
 
     Column(
@@ -1305,9 +1311,9 @@ private fun PainSliderCard(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("0 · Nada", fontSize = 10.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f))
-            Text("5 · Moderado", fontSize = 10.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f))
-            Text("10 · Intenso", fontSize = 10.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f))
+            Text(stringResource(R.string.log_pain_scale_none), fontSize = 10.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f))
+            Text(stringResource(R.string.log_pain_scale_mod), fontSize = 10.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f))
+            Text(stringResource(R.string.log_pain_scale_intense), fontSize = 10.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f))
         }
 
         if (painLevel >= 8f) {
@@ -1320,7 +1326,7 @@ private fun PainSliderCard(
                     .padding(10.dp)
             ) {
                 Text(
-                    text = "Un dolor muy intenso o incapacitante merece una valoración profesional.",
+                    text = stringResource(R.string.log_pain_warning),
                     fontSize = 11.5.sp,
                     color = MaterialTheme.colorScheme.error,
                     lineHeight = 16.sp
@@ -1450,7 +1456,7 @@ private fun IntimacyInteractiveCard(
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Text(
-                        text = "Actividad sexual",
+                        text = stringResource(R.string.log_intimacy_title),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
                     )
@@ -1459,9 +1465,9 @@ private fun IntimacyInteractiveCard(
 
             // Estado pequeño a la derecha
             val statusText = when {
-                hadIntercourse -> "Registrado: Sí"
-                answeredNo -> "Registrado: No"
-                else -> "Sin registrar"
+                hadIntercourse -> stringResource(R.string.log_intimacy_yes)
+                answeredNo -> stringResource(R.string.log_intimacy_no)
+                else -> stringResource(R.string.log_intimacy_none)
             }
             Text(
                 text = statusText,
@@ -1643,7 +1649,7 @@ private fun IntimacyInteractiveCard(
         if (hadIntercourse || answeredNo) {
             Spacer(Modifier.height(6.dp))
             Text(
-                text = "Quitar respuesta",
+                text = stringResource(R.string.log_clear_answer),
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
@@ -1657,6 +1663,20 @@ private fun IntimacyInteractiveCard(
 // ─────────────────────────────────────────────────────────────────────────────
 //  PESTAÑA 1: CATÁLOGO COMPLETO DE SÍNTOMAS CON BÚSQUEDA Y CATEGORÍAS
 // ─────────────────────────────────────────────────────────────────────────────
+
+private fun symptomCategoryRes(cat: String): Int = when (cat) {
+    "Todos" -> R.string.log_cat_all
+    "Dolor" -> R.string.log_cat_pain
+    "Digestivo" -> R.string.log_cat_digestive_filter
+    "Cuerpo" -> R.string.log_cat_body
+    "Piel" -> R.string.log_cat_skin
+    "Urinario" -> R.string.log_cat_urinary
+    "Íntimo" -> R.string.log_cat_intimate
+    "Sueño y mente" -> R.string.log_cat_sleep_mind
+    "Clínico" -> R.string.log_cat_clinical
+    "Propios" -> R.string.log_cat_custom
+    else -> R.string.log_cat_all
+}
 
 @Composable
 private fun TabSintomasContent(
@@ -1701,7 +1721,7 @@ private fun TabSintomasContent(
             value = query,
             onValueChange = onQueryChange,
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Buscar cólicos, acné, mareos…", fontSize = 13.sp) },
+            placeholder = { Text(stringResource(R.string.log_search_placeholder), fontSize = 13.sp) },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Rounded.Search,
@@ -1744,7 +1764,7 @@ private fun TabSintomasContent(
                         .clickable { onFilterChange(cat) }
                         .padding(horizontal = 14.dp, vertical = 8.dp)
                 ) {
-                    Text(cat, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = fg)
+                    Text(stringResource(symptomCategoryRes(cat)), fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, color = fg)
                 }
             }
         }
@@ -1758,7 +1778,7 @@ private fun TabSintomasContent(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "No encontramos ese síntoma. Puedes añadirlo abajo.",
+                    text = stringResource(R.string.log_symptom_not_found),
                     fontSize = 12.5.sp,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
                 )
@@ -1792,6 +1812,8 @@ private fun TabSintomasContent(
                                 Modifier.border(1.2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(14.dp))
                             } else Modifier
 
+                            val displayName = if (item.resId != null) stringResource(item.resId) else item.name
+
                             Row(
                                 modifier = Modifier
                                     .weight(1f)
@@ -1805,7 +1827,7 @@ private fun TabSintomasContent(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = item.name,
+                                    text = displayName,
                                     fontSize = 12.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                     color = fg,
@@ -1845,7 +1867,7 @@ private fun TabSintomasContent(
         ) {
             Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(Modifier.width(6.dp))
-            Text("Añadir síntoma personalizado", fontSize = 12.5.sp)
+            Text(stringResource(R.string.log_add_custom_symptom), fontSize = 12.5.sp)
         }
 
         // Sección de síntomas seleccionados con botón de ajuste de intensidad
@@ -1860,17 +1882,18 @@ private fun TabSintomasContent(
         if (totalSelectedNames.isNotEmpty()) {
             Spacer(Modifier.height(6.dp))
             CardSection(
-                title = "Síntomas seleccionados (${totalSelectedNames.size})",
-                subtitle = "Toca «Intensidad» para ajustar cada uno."
+                title = stringResource(R.string.log_selected_symptoms_count, totalSelectedNames.size),
+                subtitle = stringResource(R.string.log_adjust_intensity_desc)
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     totalSelectedNames.forEach { sName ->
                         val intensity = symptomIntensities[sName] ?: 2
                         val intensityLabel = when (intensity) {
-                            1 -> "Leve"
-                            2 -> "Moderada"
-                            else -> "Intensa"
+                            1 -> stringResource(R.string.log_intensity_mild)
+                            2 -> stringResource(R.string.log_intensity_moderate)
+                            else -> stringResource(R.string.log_intensity_severe)
                         }
+                        val sDisplayName = catalog.firstOrNull { it.name == sName }?.resId?.let { stringResource(it) } ?: sName
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1881,7 +1904,7 @@ private fun TabSintomasContent(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "✓ $sName",
+                                text = "✓ $sDisplayName",
                                 fontSize = 12.5.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onBackground
@@ -1936,8 +1959,8 @@ private fun TabBienestarContent(
     ) {
         // Horas de sueño con Stepper
         HabitStepperRow(
-            title = "Horas de sueño",
-            subtitle = "Puedes sumar o restar medias horas.",
+            title = stringResource(R.string.log_sleep_hours_title),
+            subtitle = stringResource(R.string.log_sleep_hours_desc),
             displayValue = sleepHours?.let { String.format(Locale.US, "%.1f h", it) } ?: "—",
             onDecrement = {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -1955,8 +1978,8 @@ private fun TabBienestarContent(
 
         // Nivel de energía (1 a 5)
         SegmentMeterRow(
-            title = "Nivel de energía",
-            subtitle = "1 muy baja · 5 muy alta",
+            title = stringResource(R.string.log_energy_title),
+            subtitle = stringResource(R.string.log_energy_desc),
             currentValue = energyLevel,
             onValueSelect = {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -1966,8 +1989,8 @@ private fun TabBienestarContent(
 
         // Nivel de estrés (1 a 5)
         SegmentMeterRow(
-            title = "Nivel de estrés",
-            subtitle = "1 bajo · 5 muy alto",
+            title = stringResource(R.string.log_stress_title),
+            subtitle = stringResource(R.string.log_stress_desc),
             currentValue = stressLevel,
             onValueSelect = {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -1977,8 +2000,8 @@ private fun TabBienestarContent(
 
         // Agua que bebiste con Stepper
         HabitStepperRow(
-            title = "Agua que bebiste",
-            subtitle = "En litros (pasos de 0.25 L).",
+            title = stringResource(R.string.log_water_title),
+            subtitle = stringResource(R.string.log_water_desc),
             displayValue = waterIntake?.let { String.format(Locale.US, "%.2f L", it) } ?: "—",
             onDecrement = {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -2001,7 +2024,7 @@ private fun TabBienestarContent(
 
         // Señales corporales
         Text(
-            text = "Señales corporales",
+            text = stringResource(R.string.log_body_signals),
             fontSize = 15.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
@@ -2010,7 +2033,7 @@ private fun TabBienestarContent(
         // Temperatura basal (°C)
         Column {
             Text(
-                text = "Temperatura basal corporal (°C)",
+                text = stringResource(R.string.log_bbt_celsius),
                 fontSize = 12.5.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground
@@ -2020,13 +2043,13 @@ private fun TabBienestarContent(
                 value = basalBodyTemp,
                 onValueChange = onBasalBodyTempChange,
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Ej. 36.45 (si la mediste)", fontSize = 12.5.sp) },
+                placeholder = { Text(stringResource(R.string.log_bbt_placeholder), fontSize = 12.5.sp) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 shape = RoundedCornerShape(14.dp),
                 singleLine = true
             )
             Text(
-                text = "Opcional. Una medición aislada no confirma ovulación.",
+                text = stringResource(R.string.log_bbt_disclaimer),
                 fontSize = 10.5.sp,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
                 modifier = Modifier.padding(top = 4.dp, start = 4.dp)
@@ -2093,8 +2116,8 @@ private fun TabNotasContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         CardSection(
-            title = "Nota privada del día",
-            subtitle = "Si quieres recordar algún detalle especial de hoy."
+            title = stringResource(R.string.log_private_note_title),
+            subtitle = stringResource(R.string.log_private_note_desc)
         ) {
             OutlinedTextField(
                 value = notes,
@@ -2112,7 +2135,7 @@ private fun TabNotasContent(
                 shape = RoundedCornerShape(16.dp)
             )
             Text(
-                text = "${notes.length} / 1000 caracteres",
+                text = stringResource(R.string.log_char_count, notes.length, 1000),
                 fontSize = 10.5.sp,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
                 modifier = Modifier
@@ -2127,8 +2150,8 @@ private fun TabNotasContent(
         )
 
         CardSection(
-            title = "Personalizar tu registro",
-            subtitle = "Elige qué categorías quieres mantener activas."
+            title = stringResource(R.string.log_customize_title),
+            subtitle = stringResource(R.string.log_customize_desc)
         ) {
             val categories = listOf(
                 "physical" to stringResource(R.string.category_physical),
@@ -2186,14 +2209,14 @@ private fun TabNotasContent(
                 Spacer(Modifier.width(10.dp))
                 Column {
                     Text(
-                        text = "100% privado y seguro",
+                        text = stringResource(R.string.log_privacy_banner_title),
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Spacer(Modifier.height(3.dp))
                     Text(
-                        text = "Tus registros se guardan exclusivamente en tu teléfono. Sin cuentas obligatorias ni venta de datos.",
+                        text = stringResource(R.string.log_privacy_banner_desc),
                         fontSize = 11.5.sp,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f),
                         lineHeight = 16.sp
@@ -2231,9 +2254,13 @@ private fun DailyLogStickyFooter(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val markedText = when (loggedCount) {
+                0 -> stringResource(R.string.log_nothing_marked)
+                1 -> stringResource(R.string.log_items_marked_one)
+                else -> stringResource(R.string.log_items_marked_other, loggedCount)
+            }
             Text(
-                text = if (loggedCount == 0) "Todavía no has marcado nada"
-                       else "$loggedCount ${if (loggedCount == 1) "dato marcado" else "datos marcados"}",
+                text = markedText,
                 fontSize = 11.5.sp,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
@@ -2244,7 +2271,7 @@ private fun DailyLogStickyFooter(
                 contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
             ) {
                 Text(
-                    text = "Ver resumen ›",
+                    text = stringResource(R.string.log_view_summary),
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -2444,7 +2471,7 @@ private fun SegmentMeterRow(
                 Text(subtitle, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
             }
             Text(
-                text = currentValue?.let { "$it de 5" } ?: "Sin registrar",
+                text = currentValue?.let { stringResource(R.string.log_meter_of_five, it) } ?: stringResource(R.string.log_meter_unrecorded),
                 fontSize = 11.5.sp,
                 fontWeight = FontWeight.Bold,
                 color = if (currentValue != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f)
@@ -2512,13 +2539,13 @@ private fun ReviewSummarySheet(
                 .verticalScroll(rememberScrollState())
         ) {
             Text(
-                text = "Resumen de tu día",
+                text = stringResource(R.string.log_summary_title),
                 fontSize = 19.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Revisa lo que marcaste antes de guardar.",
+                text = stringResource(R.string.log_summary_subtitle),
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
             )
@@ -2526,31 +2553,31 @@ private fun ReviewSummarySheet(
             Spacer(Modifier.height(16.dp))
 
             val items = buildList {
-                if (flow != null) add("Sangrado" to flow)
-                if (spotting) add("Manchado intermenstrual" to "Sí")
-                if (pain > 0) add("Dolor" to "$pain / 10")
-                if (mood != null) add("Estado de ánimo" to mood)
-                if (symptoms.isNotEmpty()) add("Síntomas (${symptoms.size})" to symptoms.joinToString(", "))
+                if (flow != null) add(stringResource(R.string.log_flow) to flow)
+                if (spotting) add(stringResource(R.string.log_spotting_intermenstrual) to stringResource(R.string.protection_yes))
+                if (pain > 0) add(stringResource(R.string.log_cat_pain) to "$pain / 10")
+                if (mood != null) add(stringResource(R.string.log_mood) to mood)
+                if (symptoms.isNotEmpty()) add(stringResource(R.string.log_selected_symptoms_count, symptoms.size) to symptoms.joinToString(", "))
                 if (hadIntercourse) {
                     val prot = when (protectionUsed) {
-                        true -> "Con protección" + (method?.let { " ($it)" } ?: "")
-                        false -> "Sin protección"
-                        null -> "Sin especificar"
+                        true -> if (method != null) stringResource(R.string.log_protected_with_method, method) else stringResource(R.string.log_protected_general)
+                        false -> stringResource(R.string.log_unprotected)
+                        null -> stringResource(R.string.log_unspecified)
                     }
-                    add("Actividad sexual" to prot)
+                    add(stringResource(R.string.log_intimacy_title) to prot)
                 }
-                if (sleepHours != null) add("Sueño" to String.format(Locale.US, "%.1f h", sleepHours))
-                if (energyLevel != null) add("Energía" to "$energyLevel / 5")
-                if (stressLevel != null) add("Estrés" to "$stressLevel / 5")
-                if (waterIntake != null) add("Agua" to String.format(Locale.US, "%.2f L", waterIntake))
-                if (bbt.isNotBlank()) add("Temperatura basal" to "$bbt °C")
-                if (mucus != null) add("Moco cervical" to mucus)
-                if (notes.isNotBlank()) add("Nota" to notes)
+                if (sleepHours != null) add(stringResource(R.string.log_sleep_hours) to String.format(Locale.US, "%.1f h", sleepHours))
+                if (energyLevel != null) add(stringResource(R.string.log_energy_level) to "$energyLevel / 5")
+                if (stressLevel != null) add(stringResource(R.string.log_stress_level) to "$stressLevel / 5")
+                if (waterIntake != null) add(stringResource(R.string.log_water_liters) to String.format(Locale.US, "%.2f L", waterIntake))
+                if (bbt.isNotBlank()) add(stringResource(R.string.log_bbt_label) to "$bbt °C")
+                if (mucus != null) add(stringResource(R.string.log_cervical_mucus) to mucus)
+                if (notes.isNotBlank()) add(stringResource(R.string.log_tab_notes) to notes)
             }
 
             if (items.isEmpty()) {
                 Text(
-                    text = "Aún no has marcado ningún dato. Puedes registrar solo lo que desees.",
+                    text = stringResource(R.string.log_empty_summary),
                     fontSize = 12.5.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                     modifier = Modifier.padding(vertical = 16.dp)
@@ -2600,15 +2627,15 @@ private fun AddCustomSymptomDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Tu propio síntoma", fontWeight = FontWeight.Bold) },
+        title = { Text(stringResource(R.string.log_custom_symptom_title), fontWeight = FontWeight.Bold) },
         text = {
             Column {
-                Text("Agrega un síntoma que no encuentres en el catálogo.", fontSize = 12.sp)
+                Text(stringResource(R.string.log_custom_symptom_desc), fontSize = 12.sp)
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    placeholder = { Text("Nombre del síntoma") },
+                    placeholder = { Text(stringResource(R.string.log_custom_symptom_placeholder)) },
                     shape = RoundedCornerShape(12.dp),
                     singleLine = true
                 )
@@ -2619,11 +2646,11 @@ private fun AddCustomSymptomDialog(
                 onClick = { onAdd(name) },
                 enabled = name.isNotBlank()
             ) {
-                Text("Añadir")
+                Text(stringResource(R.string.btn_add))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) }
         }
     )
 }
@@ -2635,14 +2662,18 @@ private fun SymptomIntensityDialog(
     onSelectIntensity: (Int) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val levels = listOf(1 to "Leve", 2 to "Moderada", 3 to "Intensa")
+    val levels = listOf(
+        1 to stringResource(R.string.log_intensity_mild),
+        2 to stringResource(R.string.log_intensity_moderate),
+        3 to stringResource(R.string.log_intensity_severe)
+    )
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Intensidad de «$symptomName»", fontSize = 16.sp, fontWeight = FontWeight.Bold) },
+        title = { Text(stringResource(R.string.log_symptom_intensity_title, symptomName), fontSize = 16.sp, fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Indica cómo lo sentiste hoy:", fontSize = 12.sp)
+                Text(stringResource(R.string.log_symptom_intensity_subtitle), fontSize = 12.sp)
                 levels.forEach { (level, label) ->
                     val isSelected = currentIntensity == level
                     Button(
@@ -2658,7 +2689,7 @@ private fun SymptomIntensityDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Cerrar") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_close)) }
         }
     )
 }

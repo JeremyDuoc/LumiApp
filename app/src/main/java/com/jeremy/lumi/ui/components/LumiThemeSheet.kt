@@ -29,6 +29,8 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.jeremy.lumi.R
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -89,14 +91,14 @@ fun LumiThemeSheet(
             ) {
                 Column {
                     Text(
-                        text = "Elige tu atmósfera",
+                        text = stringResource(R.string.theme_sheet_title),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = tokens.text
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "La interfaz mantiene su estructura; cambia su personalidad.",
+                        text = stringResource(R.string.theme_sheet_subtitle),
                         fontSize = 11.5.sp,
                         color = tokens.muted
                     )
@@ -111,7 +113,7 @@ fun LumiThemeSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = "Cerrar",
+                        contentDescription = stringResource(R.string.btn_close),
                         tint = tokens.text,
                         modifier = Modifier.size(16.dp)
                     )
@@ -174,7 +176,7 @@ fun LumiThemeSheet(
             Spacer(modifier = Modifier.height(18.dp))
 
             Text(
-                text = "Lumi respeta todas tus paletas y personalizaciones previas. Puedes alternar libremente sin alterar tus registros.",
+                text = stringResource(R.string.theme_sheet_footer),
                 fontSize = 10.5.sp,
                 lineHeight = 15.sp,
                 color = tokens.muted

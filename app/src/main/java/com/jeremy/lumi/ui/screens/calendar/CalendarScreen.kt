@@ -117,7 +117,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                         IconButton(onClick = { showCycleHistory = true }) {
                             Icon(
                                 imageVector = Icons.Rounded.DateRange,
-                                contentDescription = "Historial de Ciclos",
+                                contentDescription = stringResource(R.string.cycle_history_title),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }

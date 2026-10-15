@@ -145,7 +145,7 @@ fun InsightsScreen(
             context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
         }
         viewModel.clearPdfBytes()
-        Toast.makeText(context, "Reporte PDF guardado correctamente", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.insights_pdf_saved), Toast.LENGTH_SHORT).show()
     }
 
     LaunchedEffect(uiState.pdfBytes) {
@@ -201,7 +201,7 @@ fun InsightsScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Palette,
-                                contentDescription = "Cambiar atmósfera de diseño",
+                                contentDescription = stringResource(R.string.insights_cd_atmosphere),
                                 tint = tokens.muted,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -213,7 +213,7 @@ fun InsightsScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Info,
-                                contentDescription = "Acerca de estos datos",
+                                contentDescription = stringResource(R.string.insights_cd_about_data),
                                 tint = tokens.muted,
                                 modifier = Modifier.size(19.dp)
                             )
@@ -269,7 +269,7 @@ fun InsightsScreen(
                                     modifier = Modifier.size(13.dp)
                                 )
                                 Text(
-                                    text = "Últimos ${uiState.cycleRange} ciclos",
+                                    text = stringResource(R.string.insights_last_n_cycles, uiState.cycleRange),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = tokens.text
@@ -285,8 +285,8 @@ fun InsightsScreen(
 
                         Text(
                             text = if (uiState.availableCyclesCount > 0)
-                                "${uiState.availableCyclesCount.coerceAtMost(uiState.cycleRange)} registros analizados"
-                            else "Sin registros",
+                                stringResource(R.string.insights_n_records_analyzed, uiState.availableCyclesCount.coerceAtMost(uiState.cycleRange))
+                            else stringResource(R.string.insights_no_records),
                             fontSize = 10.sp,
                             color = tokens.dim
                         )
@@ -502,7 +502,7 @@ private fun SectionHeroCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Duración media de tus ciclos",
+                        text = stringResource(R.string.insights_avg_cycle_length),
                         fontSize = 11.sp,
                         color = tokens.muted
                     )
@@ -527,7 +527,7 @@ private fun SectionHeroCard(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "días",
+                        text = stringResource(R.string.insights_days_unit),
                         fontSize = 14.sp,
                         color = tokens.muted,
                         modifier = Modifier.padding(bottom = 12.dp)
@@ -545,7 +545,7 @@ private fun SectionHeroCard(
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
-                            text = "DÍAS DE PERIODO",
+                            text = stringResource(R.string.insights_period_days_caps),
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp,
@@ -560,7 +560,7 @@ private fun SectionHeroCard(
                             )
                             Spacer(Modifier.width(4.dp))
                             Text(
-                                text = "días",
+                                text = stringResource(R.string.insights_days_unit),
                                 fontSize = 10.sp,
                                 color = tokens.muted,
                                 modifier = Modifier.padding(bottom = 3.dp)
@@ -573,7 +573,7 @@ private fun SectionHeroCard(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = "RANGO OBSERVADO",
+                            text = stringResource(R.string.insights_observed_range_caps),
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp,
@@ -588,7 +588,7 @@ private fun SectionHeroCard(
                             )
                             Spacer(Modifier.width(4.dp))
                             Text(
-                                text = "días",
+                                text = stringResource(R.string.insights_days_unit),
                                 fontSize = 10.sp,
                                 color = tokens.muted,
                                 modifier = Modifier.padding(bottom = 3.dp)
@@ -623,7 +623,7 @@ private fun SectionHeroCard(
                         modifier = Modifier.size(13.dp)
                     )
                     Text(
-                        text = if (hasVariation) "Variación a revisar" else "Ritmo constante",
+                        text = if (hasVariation) stringResource(R.string.insights_variation_to_review) else stringResource(R.string.insights_steady_rhythm),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (hasVariation) Color(0xFFECC78F) else tokens.accent
@@ -636,7 +636,7 @@ private fun SectionHeroCard(
                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
             ) {
                 Text(
-                    text = "Ver $observationsCount observaciones →",
+                    text = stringResource(R.string.insights_view_n_observations, observationsCount),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = tokens.accent
@@ -666,7 +666,7 @@ private fun SectionEvolucion(
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Column {
             Text(
-                text = "01 / EVOLUCIÓN",
+                text = stringResource(R.string.insights_badge_evolution),
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 2.sp,
@@ -674,14 +674,14 @@ private fun SectionEvolucion(
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "Así han cambiado",
+                text = stringResource(R.string.insights_evolution_title),
                 fontSize = 21.sp,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = (-0.8).sp,
                 color = tokens.text
             )
             Text(
-                text = "Duración de cada ciclo registrado.",
+                text = stringResource(R.string.insights_evolution_desc),
                 fontSize = 11.sp,
                 color = tokens.muted
             )
@@ -704,19 +704,19 @@ private fun SectionEvolucion(
                 ) {
                     Column {
                         Text(
-                            text = "Historial de ciclos",
+                            text = stringResource(R.string.insights_cycle_history_title),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = tokens.text
                         )
                         Text(
-                            text = "Selecciona una barra para explorarla",
+                            text = stringResource(R.string.insights_select_bar_hint),
                             fontSize = 10.sp,
                             color = tokens.muted
                         )
                     }
                     Text(
-                        text = if (stats != null) "Ø ${stats.avgCycleLength.roundToInt()} d" else "Ø -- d",
+                        text = if (stats != null) stringResource(R.string.insights_avg_cycle_days_format, stats.avgCycleLength.roundToInt()) else stringResource(R.string.insights_avg_cycle_empty),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = tokens.accent
@@ -734,7 +734,7 @@ private fun SectionEvolucion(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Aún no hay ciclos registrados suficientes.",
+                            text = stringResource(R.string.insights_not_enough_cycles),
                             fontSize = 11.sp,
                             color = tokens.muted,
                             textAlign = TextAlign.Center
@@ -819,7 +819,7 @@ private fun SectionEvolucion(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Ciclo ${activeBar.etiqueta}: ${activeBar.duracionDias} días · Media ${stats?.avgCycleLength?.roundToInt() ?: 0} d",
+                            text = stringResource(R.string.insights_active_bar_info, activeBar.etiqueta, activeBar.duracionDias, stats?.avgCycleLength?.roundToInt() ?: 0),
                             fontSize = 10.sp,
                             color = tokens.text
                         )
@@ -830,7 +830,7 @@ private fun SectionEvolucion(
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = "${cycleBars.size} registros",
+                                text = stringResource(R.string.insights_n_records, cycleBars.size),
                                 fontSize = 9.sp,
                                 color = tokens.muted
                             )
@@ -870,7 +870,7 @@ private fun SectionEvolucion(
 
                 Column {
                     Text(
-                        text = "Una variación que merece contexto",
+                        text = stringResource(R.string.insights_variation_context_title),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = tokens.text
@@ -878,15 +878,15 @@ private fun SectionEvolucion(
                     Spacer(Modifier.height(3.dp))
                     Text(
                         text = if (stats != null)
-                            "Tus ciclos recientes van de ${stats.shortestCycle} a ${stats.longestCycle} días. La variación, por sí sola, no permite establecer una causa."
-                        else "Registra tus ciclos para analizar su variación temporal con perspectiva.",
+                            stringResource(R.string.insights_variation_context_desc, stats.shortestCycle, stats.longestCycle)
+                        else stringResource(R.string.insights_variation_empty_desc),
                         fontSize = 11.sp,
                         color = tokens.muted,
                         lineHeight = 16.sp
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        text = "Entender esta observación ↗",
+                        text = stringResource(R.string.insights_understand_observation),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = tokens.accent,
@@ -911,7 +911,7 @@ private fun SectionEvolucion(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Ver distribución ilustrativa de fases",
+                    text = stringResource(R.string.insights_view_phase_distribution),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = tokens.text
@@ -972,7 +972,7 @@ private fun SectionEvolucion(
                                     color = tokens.text
                                 )
                                 Text(
-                                    text = "días",
+                                    text = stringResource(R.string.unit_days),
                                     fontSize = 9.sp,
                                     color = tokens.muted
                                 )
@@ -981,16 +981,16 @@ private fun SectionEvolucion(
 
                         // Leyenda de fases
                         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                            LegendRow(color = phaseColors.menstrual, text = "Menstruación · 5 d")
-                            LegendRow(color = Color(0xFFECC78F), text = "Folicular · 10 d")
-                            LegendRow(color = phaseColors.ovulation, text = "Ventana ovulatoria ilustrativa · 3 d")
-                            LegendRow(color = tokens.accent, text = "Lútea · 14 d")
+                            LegendRow(color = phaseColors.menstrual, text = stringResource(R.string.insights_legend_menstrual))
+                            LegendRow(color = Color(0xFFECC78F), text = stringResource(R.string.insights_legend_follicular))
+                            LegendRow(color = phaseColors.ovulation, text = stringResource(R.string.insights_legend_ovulation))
+                            LegendRow(color = tokens.accent, text = stringResource(R.string.insights_legend_luteal))
                         }
                     }
 
                     Spacer(Modifier.height(10.dp))
                     Text(
-                        text = "Ejemplo visual para explorar la composición de un ciclo; no mide fases biológicas reales ni confirma ovulación. La ventana ilustrada no es la duración biológica de la ovulación.",
+                        text = stringResource(R.string.insights_phase_distribution_note),
                         fontSize = 10.sp,
                         color = tokens.muted,
                         lineHeight = 15.sp
@@ -1025,7 +1025,7 @@ private fun SectionBienestar(
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Column {
             Text(
-                text = "02 / BIENESTAR",
+                text = stringResource(R.string.insights_badge_wellbeing),
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 2.sp,
@@ -1033,14 +1033,14 @@ private fun SectionBienestar(
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "Lo que registras",
+                text = stringResource(R.string.insights_wellbeing_title),
                 fontSize = 21.sp,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = (-0.8).sp,
                 color = tokens.text
             )
             Text(
-                text = "Frecuencias observadas, no probabilidades.",
+                text = stringResource(R.string.insights_wellbeing_desc),
                 fontSize = 11.sp,
                 color = tokens.muted
             )
@@ -1048,7 +1048,7 @@ private fun SectionBienestar(
 
         // Matriz Síntomas × Fase Estimada
         Text(
-            text = "SÍNTOMAS SEGÚN FASE ESTIMADA",
+            text = stringResource(R.string.insights_symptoms_by_phase_caps),
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.4.sp,
@@ -1066,7 +1066,7 @@ private fun SectionBienestar(
             Column {
                 if (symptomCorrelations.isEmpty()) {
                     Text(
-                        text = "Aún no hay síntomas registrados en el historial para mapear.",
+                        text = stringResource(R.string.insights_no_symptoms_to_map),
                         fontSize = 11.sp,
                         color = tokens.muted,
                         modifier = Modifier.padding(vertical = 12.dp)
@@ -1157,7 +1157,7 @@ private fun SectionBienestar(
                     Spacer(Modifier.height(8.dp))
 
                     Text(
-                        text = selectedSymptomNote ?: "Selecciona una celda para entender qué representa.",
+                        text = selectedSymptomNote ?: stringResource(R.string.insights_select_cell_hint),
                         fontSize = 10.sp,
                         color = tokens.muted,
                         lineHeight = 15.sp
@@ -1173,7 +1173,7 @@ private fun SectionBienestar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "ESTADOS DE ÁNIMO REGISTRADOS",
+                text = stringResource(R.string.insights_moods_caps),
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.4.sp,
@@ -1181,7 +1181,7 @@ private fun SectionBienestar(
             )
 
             Text(
-                text = if (showAllMoods) "Ver menos ↑" else "Ver todos ↓",
+                text = if (showAllMoods) stringResource(R.string.insights_view_less) else stringResource(R.string.insights_view_all),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = tokens.accent,
@@ -1199,7 +1199,7 @@ private fun SectionBienestar(
                     .padding(16.dp)
             ) {
                 Text(
-                    text = "Aún no has registrado estados de ánimo suficientes.",
+                    text = stringResource(R.string.insights_not_enough_moods),
                     fontSize = 11.sp,
                     color = tokens.muted
                 )
@@ -1252,7 +1252,7 @@ private fun SectionBienestar(
                 }
 
                 Text(
-                    text = "Porcentajes aproximados de registros; no describen cómo te sentirás en una fase concreta.",
+                    text = stringResource(R.string.insights_mood_percentage_note),
                     fontSize = 10.sp,
                     color = tokens.muted,
                     lineHeight = 15.sp,
@@ -1263,7 +1263,7 @@ private fun SectionBienestar(
 
         // Temperatura Basal (BBT)
         Text(
-            text = "TEMPERATURA BASAL",
+            text = stringResource(R.string.insights_bbt_caps),
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.4.sp,
@@ -1286,7 +1286,7 @@ private fun SectionBienestar(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Tu curva térmica",
+                        text = stringResource(R.string.insights_thermal_curve_title),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = tokens.text
@@ -1330,14 +1330,14 @@ private fun SectionBienestar(
                             }
                             Column {
                                 Text(
-                                    text = "Aún no hay mediciones",
+                                    text = stringResource(R.string.insights_no_bbt_measurements),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = tokens.text
                                 )
                                 Spacer(Modifier.height(2.dp))
                                 Text(
-                                    text = "Registra valores para visualizar tendencias. La temperatura sola no confirma una fecha de ovulación.",
+                                    text = stringResource(R.string.insights_bbt_empty_desc),
                                     fontSize = 10.5.sp,
                                     color = tokens.muted,
                                     lineHeight = 15.sp
@@ -1357,7 +1357,7 @@ private fun SectionBienestar(
                                 .padding(horizontal = 10.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = "✦ Posible cambio térmico observado",
+                                text = stringResource(R.string.insights_possible_thermal_shift),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = tokens.accent
@@ -1420,7 +1420,7 @@ private fun SectionBienestar(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Día del ciclo", fontSize = 10.sp, color = tokens.muted)
+                        Text(text = stringResource(R.string.insights_cycle_day_label), fontSize = 10.sp, color = tokens.muted)
                         Spacer(Modifier.height(4.dp))
                         OutlinedTextField(
                             value = "$demoDay",
@@ -1440,7 +1440,7 @@ private fun SectionBienestar(
                     }
 
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Temperatura °C", fontSize = 10.sp, color = tokens.muted)
+                        Text(text = stringResource(R.string.insights_temperature_celsius_label), fontSize = 10.sp, color = tokens.muted)
                         Spacer(Modifier.height(4.dp))
                         OutlinedTextField(
                             value = "%.1f".format(demoTemp),
@@ -1465,7 +1465,7 @@ private fun SectionBienestar(
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.height(52.dp)
                     ) {
-                        Text("Añadir", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.btn_add), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
 
                     if (hayDatosBbt) {
@@ -1475,14 +1475,14 @@ private fun SectionBienestar(
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.height(52.dp)
                         ) {
-                            Text("Borrar", fontSize = 11.sp)
+                            Text(stringResource(R.string.btn_clear), fontSize = 11.sp)
                         }
                     }
                 }
 
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "Prueba interactiva: La temperatura sola no confirma una fecha exacta de ovulación ni debe usarse como método anticonceptivo.",
+                    text = stringResource(R.string.insights_interactive_bbt_notice),
                     fontSize = 9.5.sp,
                     color = tokens.muted,
                     lineHeight = 14.sp
@@ -1506,7 +1506,7 @@ private fun SectionInterpretacion(
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Column {
             Text(
-                text = "03 / INTERPRETACIÓN",
+                text = stringResource(R.string.insights_badge_interpretation),
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 2.sp,
@@ -1514,14 +1514,14 @@ private fun SectionInterpretacion(
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "Mirar con calma",
+                text = stringResource(R.string.insights_interpretation_title),
                 fontSize = 21.sp,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = (-0.8).sp,
                 color = tokens.text
             )
             Text(
-                text = "Observaciones útiles, sin afirmaciones definitivas.",
+                text = stringResource(R.string.insights_interpretation_desc),
                 fontSize = 11.sp,
                 color = tokens.muted
             )
@@ -1554,14 +1554,14 @@ private fun SectionInterpretacion(
                 Spacer(Modifier.height(14.dp))
 
                 Text(
-                    text = "Descubrimientos Lumi",
+                    text = stringResource(R.string.insights_lumi_discoveries),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = tokens.text
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = "Con registros de sueño, síntomas y ciclo a lo largo del tiempo, Lumi puede ayudarte a explorar coincidencias. Sin suficientes observaciones no es posible concluir una relación causal entre ellos.",
+                    text = stringResource(R.string.insights_lumi_discoveries_desc),
                     fontSize = 11.sp,
                     color = tokens.muted,
                     lineHeight = 17.sp
@@ -1589,7 +1589,7 @@ private fun SectionInterpretacion(
 
                 Spacer(Modifier.height(14.dp))
                 Text(
-                    text = "Ver observaciones disponibles →",
+                    text = stringResource(R.string.insights_view_available_obs),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = tokens.accent,
@@ -1615,7 +1615,7 @@ private fun SectionAcompanamiento(
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Column {
             Text(
-                text = "04 / ACOMPAÑAMIENTO",
+                text = stringResource(R.string.insights_badge_accompaniment),
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 2.sp,
@@ -1623,14 +1623,14 @@ private fun SectionAcompanamiento(
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "Cuando quieras hablarlo",
+                text = stringResource(R.string.insights_accompaniment_title),
                 fontSize = 21.sp,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = (-0.8).sp,
                 color = tokens.text
             )
             Text(
-                text = "Tu información, preparada para una consulta.",
+                text = stringResource(R.string.insights_accompaniment_desc),
                 fontSize = 11.sp,
                 color = tokens.muted
             )
@@ -1666,14 +1666,14 @@ private fun SectionAcompanamiento(
 
                 Column {
                     Text(
-                        text = "Prepara tu visita médica",
+                        text = stringResource(R.string.insights_prepare_visit_title),
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = tokens.text
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "Un resumen claro con tus ciclos, síntomas y preguntas que quieras conversar con un profesional.",
+                        text = stringResource(R.string.insights_prepare_visit_desc),
                         fontSize = 11.sp,
                         color = tokens.muted,
                         lineHeight = 16.sp
@@ -1686,7 +1686,7 @@ private fun SectionAcompanamiento(
                         shape = RoundedCornerShape(10.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text("Preparar mi visita", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.insights_prepare_visit_btn), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(14.dp))
                         }
                     }
@@ -1712,10 +1712,10 @@ private fun SectionAcompanamiento(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (isGeneratingPdf) {
                         CircularProgressIndicator(modifier = Modifier.size(16.dp), color = tokens.accent, strokeWidth = 2.dp)
-                        Text("Generando resumen...", fontSize = 11.sp, color = tokens.text)
+                        Text(stringResource(R.string.insights_generating_summary), fontSize = 11.sp, color = tokens.text)
                     } else {
                         Icon(imageVector = Icons.Rounded.PictureAsPdf, contentDescription = null, tint = tokens.accent, modifier = Modifier.size(16.dp))
-                        Text("Guardar resumen como PDF", fontSize = 11.sp, color = tokens.text)
+                        Text(stringResource(R.string.insights_save_pdf_btn), fontSize = 11.sp, color = tokens.text)
                     }
                 }
                 Icon(imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = tokens.muted, modifier = Modifier.size(15.dp))
@@ -1724,7 +1724,7 @@ private fun SectionAcompanamiento(
 
         Spacer(Modifier.height(6.dp))
         Text(
-            text = "PROTOTIPO DE DISEÑO · Las estimaciones no sustituyen orientación médica.",
+            text = stringResource(R.string.insights_prototype_disclaimer),
             fontSize = 9.sp,
             color = tokens.dim,
             textAlign = TextAlign.Center,
@@ -1764,18 +1764,18 @@ private fun ObservationsSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Observaciones de Lumi",
+                    text = stringResource(R.string.insights_observations_sheet_title),
                     fontSize = 19.sp,
                     fontWeight = FontWeight.Bold,
                     color = tokens.text
                 )
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Rounded.Close, contentDescription = "Cerrar", tint = tokens.muted)
+                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.btn_close), tint = tokens.muted)
                 }
             }
 
             Text(
-                text = "Estas observaciones reúnen patrones detectados a partir de tus registros reales. No son diagnósticos clínicos ni evaluaciones definitivas.",
+                text = stringResource(R.string.insights_observations_sheet_disclaimer),
                 fontSize = 11.sp,
                 color = tokens.muted,
                 lineHeight = 16.sp,
@@ -1786,7 +1786,7 @@ private fun ObservationsSheet(
 
             if (observations.isEmpty()) {
                 Text(
-                    text = "No hay observaciones particulares en tus registros recientes.",
+                    text = stringResource(R.string.insights_no_observations),
                     fontSize = 12.sp,
                     color = tokens.muted,
                     modifier = Modifier.padding(vertical = 16.dp)
@@ -1821,14 +1821,14 @@ private fun ObservationsSheet(
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            text = "• Límites: ${obs.limitsText}",
+                            text = stringResource(R.string.insights_obs_limits_prefix, obs.limitsText),
                             fontSize = 10.sp,
                             color = tokens.dim,
                             lineHeight = 14.sp
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            text = "• Recomendación: ${obs.recommendationText}",
+                            text = stringResource(R.string.insights_obs_recommendation_prefix, obs.recommendationText),
                             fontSize = 10.5.sp,
                             color = tokens.muted,
                             lineHeight = 15.sp
@@ -1848,7 +1848,7 @@ private fun ObservationsSheet(
                     .fillMaxWidth()
                     .height(48.dp)
             ) {
-                Text("Preparar preguntas para consulta →", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.insights_prepare_questions_btn), fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
 
             Spacer(Modifier.height(24.dp))
@@ -1879,18 +1879,18 @@ private fun InfoExplanationSheet(onDismiss: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Cómo leer Insights",
+                    text = stringResource(R.string.insights_how_to_read_title),
                     fontSize = 19.sp,
                     fontWeight = FontWeight.Bold,
                     color = tokens.text
                 )
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Rounded.Close, contentDescription = "Cerrar", tint = tokens.muted)
+                    Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.btn_close), tint = tokens.muted)
                 }
             }
 
             Text(
-                text = "Insights reúne métricas calculadas a partir de tus registros en el dispositivo.",
+                text = stringResource(R.string.insights_how_to_read_desc),
                 fontSize = 11.sp,
                 color = tokens.muted,
                 lineHeight = 16.sp,
@@ -1900,18 +1900,18 @@ private fun InfoExplanationSheet(onDismiss: () -> Unit) {
             Spacer(Modifier.height(8.dp))
 
             InfoItem(
-                title = "Qué significan los números",
-                description = "Una media es un resumen matemático, no la duración garantizada de tu próximo ciclo. Los valores mínimos y máximos corresponden al conjunto de ciclos seleccionado."
+                title = stringResource(R.string.insights_meaning_numbers_title),
+                description = stringResource(R.string.insights_meaning_numbers_desc)
             )
 
             InfoItem(
-                title = "Sobre síntomas y emociones",
-                description = "La concentración de registros durante una fase no equivale a una probabilidad de experimentar un síntoma. Las fases son estimadas y algunos días pueden no tener registros."
+                title = stringResource(R.string.insights_symptoms_emotions_title),
+                description = stringResource(R.string.insights_symptoms_emotions_desc)
             )
 
             InfoItem(
-                title = "Sobre predicciones y temperatura",
-                description = "No se debe inferir un diagnóstico ni confirmar ovulación a partir de un solo cambio térmico. La temperatura basal no debe emplearse como método anticonceptivo."
+                title = stringResource(R.string.insights_predictions_bbt_title),
+                description = stringResource(R.string.insights_predictions_bbt_desc)
             )
 
             Spacer(Modifier.height(24.dp))

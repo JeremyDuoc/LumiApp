@@ -1,94 +1,111 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Bonds Main Module -->
-    <string name="bonds_title">Bonds</string>
-    <string name="bonds_subtitle">Support, share, stay close.</string>
-    <string name="bonds_tagline">Your people. Your moments. Your circle.</string>
-    <string name="bonds_my_circle">My circle</string>
     <string name="bonds_add_connection">Add</string>
+    <string name="bonds_calendar_filter_all">All</string>
+    <string name="bonds_calendar_legend_predicted">Predicted</string>
+    <string name="bonds_calendar_legend_recorded">Recorded</string>
+    <string name="bonds_calendar_no_data">No shared data for this date</string>
+    <string name="bonds_cancel">Cancel</string>
+    <string name="bonds_code_copied">Code copied to clipboard</string>
+    <string name="bonds_code_invalid_used">Invalid or already used code.</string>
+    <string name="bonds_code_regenerated">New 8-digit code generated</string>
+    <string name="bonds_code_verify_network_error">Network error verifying the code.</string>
+    <string name="bonds_comfort_gesture_for_circle">Send a comforting gesture to your circle</string>
+    <string name="bonds_comfort_gesture_for_person">Send a comforting gesture to %1$s</string>
+    <string name="bonds_confirm_unlink">Yes, disconnect</string>
+    <string name="bonds_connected_success">Bond successfully connected!</string>
+    <string name="bonds_connected_to_circle">Connected to your circle</string>
+    <string name="bonds_connection_error_desc">Could not connect. Verify the code is correct and the service is available.</string>
+    <string name="bonds_cooldown_wait_error">You must wait for the cooldown time to finish.</string>
+    <string name="bonds_copy">Copy</string>
+    <string name="bonds_created_by_you">Bond created by you</string>
     <string name="bonds_day_format">Day %1$d</string>
-
-    <!-- Card: How they're feeling today -->
-    <string name="bonds_how_she_feeling_today">How they\'re feeling today</string>
-    <string name="bonds_how_person_feeling_today">How %1$s is feeling today</string>
-    <string name="bonds_feeling_sample_status">A bit sensitive, but still in good spirits. 💜</string>
+    <string name="bonds_demo_active">Demo Mode active</string>
+    <string name="bonds_demo_exploring_desc">Exploring sample profiles without linking devices</string>
+    <string name="bonds_demo_mode">Demo Mode</string>
+    <string name="bonds_demo_mode_exit">Exit Demo Mode</string>
+    <string name="bonds_empty_state_desc">Connect with trusted friends, sisters, or loved ones to share empathy and caring moments.</string>
+    <string name="bonds_empty_state_title">Your circle is waiting</string>
+    <string name="bonds_enter_code_action">Enter code</string>
+    <string name="bonds_enter_code_hint">Enter 8-digit code</string>
+    <string name="bonds_error_network_code">Could not generate code. Check your network.</string>
+    <string name="bonds_error_new_code">Error generating new code</string>
+    <string name="bonds_explore_demo">Explore visual mode (Demo)</string>
     <string name="bonds_feeling_default_quote">A warm hug or a cozy moment can make a big difference today.</string>
-
-    <!-- Gestures Carousel -->
-    <string name="bonds_send_caring_gesture">Send a caring gesture</string>
-    <string name="bonds_gesture_hug_title">Hug</string>
-    <string name="bonds_gesture_hug_desc">Let them know you\'re there</string>
-    <string name="bonds_gesture_tea_title">Tea</string>
-    <string name="bonds_gesture_tea_desc">Warmth &amp; calm</string>
-    <string name="bonds_gesture_coffee_title">Coffee</string>
-    <string name="bonds_gesture_coffee_desc">A little boost</string>
-    <string name="bonds_gesture_chocolate_title">Chocolate</string>
+    <string name="bonds_feeling_sample_status">A bit sensitive, but still in good spirits. 💜</string>
     <string name="bonds_gesture_chocolate_desc">Comfort &amp; joy</string>
-    <string name="bonds_gesture_heating_pad_title">Heating pad</string>
+    <string name="bonds_gesture_chocolate_title">Chocolate</string>
+    <string name="bonds_gesture_coffee_desc">A little boost</string>
+    <string name="bonds_gesture_coffee_title">Coffee</string>
+    <string name="bonds_gesture_cooldown_msg">You can send another detail in %1$s</string>
     <string name="bonds_gesture_heating_pad_desc">Relax muscles</string>
-    <string name="bonds_gesture_pharmacy_title">Pharmacy</string>
+    <string name="bonds_gesture_heating_pad_title">Heating pad</string>
+    <string name="bonds_gesture_hug_desc">Let them know you\'re there</string>
+    <string name="bonds_gesture_hug_title">Hug</string>
     <string name="bonds_gesture_pharmacy_desc">Forgot something?</string>
-
-    <!-- Send Gesture Screen (Phone 2) -->
-    <string name="bonds_send_detail_title">Send a detail</string>
-    <string name="bonds_send_detail_subtitle">Small gestures, big support.</string>
-    <string name="bonds_send_custom_message_hint">Write an optional caring message…</string>
-    <string name="bonds_send_button">Send detail</string>
-    <string name="bonds_sending">Sending…</string>
+    <string name="bonds_gesture_pharmacy_title">Pharmacy</string>
     <string name="bonds_gesture_sent_pill">%1$s sent!</string>
     <string name="bonds_gesture_sent_sub">They\'ll know you\'re thinking of them. 💜</string>
-    <string name="bonds_gesture_cooldown_msg">You can send another detail in %1$s</string>
-
-    <!-- Pairing & Privacy Screen (Phone 3) -->
-    <string name="bonds_pairing_privacy_title">Pairing &amp; privacy</string>
-    <string name="bonds_pairing_privacy_subtitle">You\'re in control. Always.</string>
-    <string name="bonds_link_circles_title">Link your circles</string>
-    <string name="bonds_link_circles_desc">Scan the QR code or enter the code to connect with your circle.</string>
-    <string name="bonds_pairing_code_label">Pairing code</string>
-    <string name="bonds_enter_code_hint">Enter 8-digit code</string>
+    <string name="bonds_gesture_tea_desc">Warmth &amp; calm</string>
+    <string name="bonds_gesture_tea_title">Tea</string>
+    <string name="bonds_hide_code">Hide code</string>
+    <string name="bonds_how_person_feeling_today">How %1$s is feeling today</string>
+    <string name="bonds_how_she_feeling_today">How they\'re feeling today</string>
+    <string name="bonds_invalid_qr">QR code not recognized as a Lumi invitation</string>
     <string name="bonds_join_button">Link with code</string>
+    <string name="bonds_link">Bond</string>
+    <string name="bonds_link_circles_desc">Scan the QR code or enter the code to connect with your circle.</string>
+    <string name="bonds_link_circles_title">Link your circles</string>
+    <string name="bonds_link_code_qr">Link with code or QR</string>
+    <string name="bonds_month_next">Next month</string>
+    <string name="bonds_month_prev">Previous month</string>
+    <string name="bonds_my_circle">My circle</string>
+    <string name="bonds_pairing_code_label">Pairing code</string>
+    <string name="bonds_pairing_privacy_subtitle">You\'re in control. Always.</string>
+    <string name="bonds_pairing_privacy_title">Pairing &amp; privacy</string>
+    <string name="bonds_phase_cycle_day">%1$s • Day %2$d</string>
+    <string name="bonds_privacy_always_control">You decide exactly what data to share at all times.</string>
+    <string name="bonds_privacy_matters_desc">Your data is never shared without authorization. These options set your defaults. Each connection requires explicit mutual consent.</string>
+    <string name="bonds_privacy_matters_title">Your privacy matters</string>
+    <string name="bonds_profile_no_mood_shared">No shared mood today.</string>
+    <string name="bonds_profile_no_phase_shared">This person chose not to share their cycle phase.</string>
+    <string name="bonds_profile_no_symptoms_shared">No shared symptoms today.</string>
+    <string name="bonds_profile_phase_header">Current status</string>
+    <string name="bonds_profile_title">Bond</string>
+    <string name="bonds_profile_unlink_action">Disconnect this bond</string>
+    <string name="bonds_profile_unlink_confirm">Are you sure you want to disconnect? You will no longer share or receive info with each other.</string>
+    <string name="bonds_qr_code_cd">QR Code</string>
+    <string name="bonds_regenerate_code">Regenerate code</string>
     <string name="bonds_scan_qr_button">Scan QR code</string>
     <string name="bonds_scan_qr_prompt">Point your camera at the Lumi QR code</string>
     <string name="bonds_scan_qr_success">Code detected: %1$s</string>
-    <string name="bonds_regenerate_code">Regenerate code</string>
-    <string name="bonds_code_regenerated">New 8-digit code generated</string>
-    <string name="bonds_invalid_qr">QR code not recognized as a Lumi invitation</string>
-    <string name="bonds_what_you_share_title">What you share</string>
-    <string name="bonds_what_you_share_desc">Choose what you\'re comfortable sharing. You can change this anytime.</string>
-    
-    <string name="bonds_toggle_phase_title">Cycle phase</string>
-    <string name="bonds_toggle_phase_desc">Menstrual phase and cycle day</string>
-    <string name="bonds_toggle_mood_title">Mood</string>
-    <string name="bonds_toggle_mood_desc">How they\'re feeling (e.g. calm, energetic)</string>
-    <string name="bonds_toggle_symptoms_title">Symptoms</string>
-    <string name="bonds_toggle_symptoms_desc">Physical and emotional symptoms</string>
-    <string name="bonds_toggle_predictions_title">Predictions</string>
-    <string name="bonds_toggle_predictions_desc">Likely phase, fertile window, reminders</string>
-    
-    <string name="bonds_privacy_matters_title">Your privacy matters</string>
-    <string name="bonds_privacy_matters_desc">Your data is never shared without authorization. These options set your defaults. Each connection requires explicit mutual consent.</string>
-
-    <!-- Shared Calendar Screen -->
-    <string name="bonds_shared_calendar_title">Shared Calendar</string>
+    <string name="bonds_send_button">Send detail</string>
+    <string name="bonds_send_caring_gesture">Send a caring gesture</string>
+    <string name="bonds_send_custom_message_hint">Write an optional caring message…</string>
+    <string name="bonds_send_detail_subtitle">Small gestures, big support.</string>
+    <string name="bonds_send_detail_title">Send a detail</string>
+    <string name="bonds_send_failed_network">Could not send gesture. Check your connection.</string>
+    <string name="bonds_sending">Sending…</string>
     <string name="bonds_shared_calendar_subtitle">Your circle\'s cycles in harmony</string>
-    <string name="bonds_calendar_legend_recorded">Recorded</string>
-    <string name="bonds_calendar_legend_predicted">Predicted</string>
-    <string name="bonds_calendar_filter_all">All</string>
-    <string name="bonds_calendar_no_data">No shared data for this date</string>
-
-    <!-- Profile Detail Screen -->
-    <string name="bonds_profile_title">Bond</string>
-    <string name="bonds_profile_phase_header">Current status</string>
-    <string name="bonds_profile_no_phase_shared">This person chose not to share their cycle phase.</string>
-    <string name="bonds_profile_no_mood_shared">No shared mood today.</string>
-    <string name="bonds_profile_no_symptoms_shared">No shared symptoms today.</string>
-    <string name="bonds_profile_unlink_action">Disconnect this bond</string>
-    <string name="bonds_profile_unlink_confirm">Are you sure you want to disconnect? You will no longer share or receive info with each other.</string>
-    <string name="bonds_confirm_unlink">Yes, disconnect</string>
-    <string name="bonds_cancel">Cancel</string>
-
-    <!-- Feedback & Notifications -->
-    <string name="bonds_code_copied">Code copied to clipboard</string>
-    <string name="bonds_empty_state_title">Your circle is waiting</string>
-    <string name="bonds_empty_state_desc">Connect with trusted friends, sisters, or loved ones to share empathy and caring moments.</string>
+    <string name="bonds_shared_calendar_title">Shared Calendar</string>
+    <string name="bonds_shared_info">Shared information</string>
+    <string name="bonds_subtitle">Support, share, stay close.</string>
+    <string name="bonds_symptoms_today">Today\'s symptoms</string>
+    <string name="bonds_tagline">Your people. Your moments. Your circle.</string>
+    <string name="bonds_title">Bonds</string>
+    <string name="bonds_to_recipient">To:</string>
+    <string name="bonds_toggle_mood_desc">How they\'re feeling (e.g. calm, energetic)</string>
+    <string name="bonds_toggle_mood_title">Mood</string>
+    <string name="bonds_toggle_phase_desc">Menstrual phase and cycle day</string>
+    <string name="bonds_toggle_phase_title">Cycle phase</string>
+    <string name="bonds_toggle_predictions_desc">Likely phase, fertile window, reminders</string>
+    <string name="bonds_toggle_predictions_title">Predictions</string>
+    <string name="bonds_toggle_symptoms_desc">Physical and emotional symptoms</string>
+    <string name="bonds_toggle_symptoms_title">Symptoms</string>
+    <string name="bonds_unlink_member_title">Unlink %1$s?</string>
+    <string name="bonds_view_calendar">View calendar</string>
+    <string name="bonds_view_detail">View ↗</string>
+    <string name="bonds_what_you_share_desc">Choose what you\'re comfortable sharing. You can change this anytime.</string>
+    <string name="bonds_what_you_share_title">What you share</string>
+    <string name="bonds_what_you_share_with">What you share with %1$s</string>
 </resources>

@@ -34,9 +34,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jeremy.lumi.R
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
 import kotlin.math.cos
 import kotlin.math.sin
@@ -62,7 +64,7 @@ fun LumiCycleRing(
     cycleLength: Int = 28,
     phaseName: String,
     estimatedDaysText: String,
-    confidenceLabel: String = "Fase estimada · certeza moderada",
+    confidenceLabel: String = stringResource(R.string.cycle_ring_confidence_moderate),
     ringSize: Dp = 238.dp,
     strokeWidth: Dp = 9.dp
 ) {
@@ -160,7 +162,7 @@ fun LumiCycleRing(
                 )
                 Spacer(modifier = Modifier.height(3.dp))
                 Text(
-                    text = "DÍA DEL CICLO",
+                    text = stringResource(R.string.day_of_cycle_caps),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp,
@@ -223,7 +225,7 @@ fun LumiCycleRing(
 
         // Nota orientativa inferior
         Text(
-            text = "Los ciclos varían; esto es una estimación.",
+            text = stringResource(R.string.cycle_variation_estimation),
             fontSize = 10.sp,
             color = tokens.dim
         )

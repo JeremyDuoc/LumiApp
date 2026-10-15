@@ -24,9 +24,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jeremy.lumi.R
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
 
 /**
@@ -50,12 +52,12 @@ fun LumiTodayCard(
     val tokens = LumiThemeTokens.current
 
     val subtitle = entrySubtitle ?: if (hasEntry) {
-        "Tu registro del día está guardado."
+        stringResource(R.string.home_log_saved)
     } else {
-        "Todavía no has registrado cómo te sientes."
+        stringResource(R.string.home_log_pending)
     }
 
-    val buttonText = if (hasEntry) "Ver mi registro" else "Registrar mi día"
+    val buttonText = if (hasEntry) stringResource(R.string.view_my_log) else stringResource(R.string.log_my_day)
     val cardGradient = remember(tokens.panel, tokens.panel2) {
         Brush.linearGradient(listOf(tokens.panel, tokens.panel2))
     }
@@ -104,7 +106,7 @@ fun LumiTodayCard(
 
                 Column {
                     Text(
-                        text = "Un momento para ti",
+                        text = stringResource(R.string.today_card_title),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = tokens.text
@@ -177,14 +179,14 @@ fun LumiPredictionFootnote(
         )
         Column {
             Text(
-                text = "Las predicciones se basan en tus registros y pueden cambiar.",
+                text = stringResource(R.string.predictions_notice),
                 fontSize = 11.sp,
                 lineHeight = 16.sp,
                 color = tokens.muted
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = "Cómo lo calcula Lumi ↗",
+                text = stringResource(R.string.how_lumi_calculates),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = tokens.accent,

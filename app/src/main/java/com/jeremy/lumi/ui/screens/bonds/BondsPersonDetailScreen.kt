@@ -194,7 +194,7 @@ fun BondsPersonDetailScreen(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = if (member.isOwner) "Vínculo creado por ti" else "Conectada a tu círculo",
+                    text = if (member.isOwner) stringResource(R.string.bonds_created_by_you) else stringResource(R.string.bonds_connected_to_circle),
                     fontSize = 13.sp,
                     color = BondsTheme.TextSecondary
                 )
@@ -220,7 +220,7 @@ fun BondsPersonDetailScreen(
                 ) {
                     Icon(imageVector = Icons.Rounded.Favorite, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Enviar detalle", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.bonds_send_button), fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)
                 }
 
                 OutlinedButton(
@@ -236,7 +236,7 @@ fun BondsPersonDetailScreen(
                 ) {
                     Icon(imageVector = Icons.Rounded.CalendarMonth, contentDescription = null, modifier = Modifier.size(16.dp), tint = BondsTheme.DeepNavy)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Ver calendario", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = BondsTheme.DeepNavy)
+                    Text(stringResource(R.string.bonds_view_calendar), fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = BondsTheme.DeepNavy)
                 }
             }
 
@@ -244,7 +244,7 @@ fun BondsPersonDetailScreen(
 
             // ── Estado Compartido por la otra persona ────────────────────────────
             Text(
-                text = "Información compartida",
+                text = stringResource(R.string.bonds_shared_info),
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = BondsTheme.DeepNavy
@@ -262,13 +262,13 @@ fun BondsPersonDetailScreen(
                     // Fase del ciclo
                     if (member.otherSharePrefs.phase && member.phase != null) {
                         DetailInfoRow(
-                            label = "Fase del ciclo",
-                            value = "${phaseLocalized(member.phase)} • Día ${member.cycleDay ?: 1}",
+                            label = stringResource(R.string.bonds_toggle_phase_title),
+                            value = stringResource(R.string.bonds_phase_cycle_day, phaseLocalized(member.phase), member.cycleDay ?: 1),
                             color = phaseColor(member.phase)
                         )
                     } else {
                         DetailInfoRow(
-                            label = "Fase del ciclo",
+                            label = stringResource(R.string.bonds_toggle_phase_title),
                             value = stringResource(R.string.bonds_profile_no_phase_shared),
                             color = BondsTheme.TextTertiary
                         )
@@ -279,13 +279,13 @@ fun BondsPersonDetailScreen(
                     // Estado anímico
                     if (member.otherSharePrefs.mood && member.mood != null) {
                         DetailInfoRow(
-                            label = "Estado de ánimo",
+                            label = stringResource(R.string.bonds_toggle_mood_title),
                             value = member.mood,
                             color = BondsTheme.DeepNavy
                         )
                     } else {
                         DetailInfoRow(
-                            label = "Estado de ánimo",
+                            label = stringResource(R.string.bonds_toggle_mood_title),
                             value = stringResource(R.string.bonds_profile_no_mood_shared),
                             color = BondsTheme.TextTertiary
                         )
@@ -296,13 +296,13 @@ fun BondsPersonDetailScreen(
                     // Síntomas
                     if (member.otherSharePrefs.symptoms && member.symptoms.isNotEmpty()) {
                         DetailInfoRow(
-                            label = "Síntomas hoy",
+                            label = stringResource(R.string.bonds_symptoms_today),
                             value = member.symptoms.joinToString(", "),
                             color = BondsTheme.DeepNavy
                         )
                     } else {
                         DetailInfoRow(
-                            label = "Síntomas",
+                            label = stringResource(R.string.bonds_toggle_symptoms_title),
                             value = stringResource(R.string.bonds_profile_no_symptoms_shared),
                             color = BondsTheme.TextTertiary
                         )
@@ -314,7 +314,7 @@ fun BondsPersonDetailScreen(
 
             // ── Mi Privacidad con esta persona específica ────────────────────────
             Text(
-                text = "Lo que compartes con ${member.displayName}",
+                text = stringResource(R.string.bonds_what_you_share_with, member.displayName),
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = BondsTheme.DeepNavy
@@ -334,7 +334,7 @@ fun BondsPersonDetailScreen(
                 ) {
                     IndividualPrivacyToggle(
                         icon = Icons.Rounded.DonutLarge,
-                        title = "Fase del ciclo",
+                        title = stringResource(R.string.bonds_toggle_phase_title),
                         checked = myPhase,
                         onChecked = {
                             myPhase = it
@@ -343,7 +343,7 @@ fun BondsPersonDetailScreen(
                     )
                     IndividualPrivacyToggle(
                         icon = Icons.Rounded.Mood,
-                        title = "Estado de ánimo",
+                        title = stringResource(R.string.bonds_toggle_mood_title),
                         checked = myMood,
                         onChecked = {
                             myMood = it
@@ -352,7 +352,7 @@ fun BondsPersonDetailScreen(
                     )
                     IndividualPrivacyToggle(
                         icon = Icons.Rounded.FlashOn,
-                        title = "Síntomas",
+                        title = stringResource(R.string.bonds_toggle_symptoms_title),
                         checked = mySymptoms,
                         onChecked = {
                             mySymptoms = it
@@ -361,7 +361,7 @@ fun BondsPersonDetailScreen(
                     )
                     IndividualPrivacyToggle(
                         icon = Icons.Rounded.AutoAwesome,
-                        title = "Predicciones",
+                        title = stringResource(R.string.bonds_toggle_predictions_title),
                         checked = myPredictions,
                         onChecked = {
                             myPredictions = it
@@ -402,7 +402,7 @@ fun BondsPersonDetailScreen(
             containerColor = BondsTheme.WarmWhite,
             title = {
                 Text(
-                    text = "¿Desvincular a ${member.displayName}?",
+                    text = stringResource(R.string.bonds_unlink_member_title, member.displayName),
                     fontWeight = FontWeight.Bold,
                     color = BondsTheme.DeepNavy
                 )
@@ -508,11 +508,12 @@ private fun phaseColor(phase: CyclePhase): Color = when (phase) {
     else -> BondsTheme.TextSecondary
 }
 
+@Composable
 private fun phaseLocalized(phase: CyclePhase): String = when (phase) {
-    CyclePhase.MENSTRUAL -> "Menstruación"
-    CyclePhase.FOLLICULAR -> "Fase folicular"
-    CyclePhase.OVULATION -> "Ovulación"
-    CyclePhase.LUTEAL -> "Fase lútea"
-    CyclePhase.PREGNANCY -> "Embarazo"
-    CyclePhase.UNKNOWN -> "Sin datos"
+    CyclePhase.MENSTRUAL -> stringResource(R.string.pm_phase_menstrual)
+    CyclePhase.FOLLICULAR -> stringResource(R.string.pm_phase_follicular)
+    CyclePhase.OVULATION -> stringResource(R.string.pm_phase_ovulation)
+    CyclePhase.LUTEAL -> stringResource(R.string.pm_phase_luteal)
+    CyclePhase.PREGNANCY -> stringResource(R.string.pm_phase_pregnancy)
+    CyclePhase.UNKNOWN -> stringResource(R.string.pm_phase_unknown)
 }

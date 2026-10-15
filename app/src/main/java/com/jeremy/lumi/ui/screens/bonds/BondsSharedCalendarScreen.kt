@@ -171,7 +171,7 @@ fun BondsSharedCalendarScreen(
                 IconButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) {
                     Icon(
                         imageVector = Icons.Rounded.ChevronLeft,
-                        contentDescription = "Mes anterior",
+                        contentDescription = stringResource(R.string.bonds_month_prev),
                         tint = BondsTheme.DeepNavy
                     )
                 }
@@ -186,7 +186,7 @@ fun BondsSharedCalendarScreen(
                 IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
                     Icon(
                         imageVector = Icons.Rounded.ChevronRight,
-                        contentDescription = "Mes siguiente",
+                        contentDescription = stringResource(R.string.bonds_month_next),
                         tint = BondsTheme.DeepNavy
                     )
                 }
@@ -409,10 +409,10 @@ private fun CalendarLegendSection(modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        LegendDot(color = BondsTheme.DotMenstrual, label = "Menstruación")
-        LegendDot(color = BondsTheme.DotFollicular, label = "Folicular")
-        LegendDot(color = BondsTheme.DotOvulation, label = "Ovulación")
-        LegendDot(color = BondsTheme.DotLuteal, label = "Lútea")
+        LegendDot(color = BondsTheme.DotMenstrual, label = stringResource(R.string.pm_phase_menstrual))
+        LegendDot(color = BondsTheme.DotFollicular, label = stringResource(R.string.phase_follicular))
+        LegendDot(color = BondsTheme.DotOvulation, label = stringResource(R.string.pm_phase_ovulation))
+        LegendDot(color = BondsTheme.DotLuteal, label = stringResource(R.string.phase_luteal))
     }
 }
 
@@ -541,11 +541,12 @@ private fun phaseColor(phase: CyclePhase): Color = when (phase) {
     else -> BondsTheme.TextSecondary
 }
 
+@Composable
 private fun phaseLocalized(phase: CyclePhase): String = when (phase) {
-    CyclePhase.MENSTRUAL -> "Menstruación"
-    CyclePhase.FOLLICULAR -> "Fase folicular"
-    CyclePhase.OVULATION -> "Ovulación"
-    CyclePhase.LUTEAL -> "Fase lútea"
-    CyclePhase.PREGNANCY -> "Embarazo"
-    CyclePhase.UNKNOWN -> "Sin datos"
+    CyclePhase.MENSTRUAL -> stringResource(R.string.pm_phase_menstrual)
+    CyclePhase.FOLLICULAR -> stringResource(R.string.pm_phase_follicular)
+    CyclePhase.OVULATION -> stringResource(R.string.pm_phase_ovulation)
+    CyclePhase.LUTEAL -> stringResource(R.string.pm_phase_luteal)
+    CyclePhase.PREGNANCY -> stringResource(R.string.pm_phase_pregnancy)
+    CyclePhase.UNKNOWN -> stringResource(R.string.pm_phase_unknown)
 }

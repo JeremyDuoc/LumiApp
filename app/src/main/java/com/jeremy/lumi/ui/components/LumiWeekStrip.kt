@@ -25,6 +25,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.res.stringResource
+import com.jeremy.lumi.R
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -136,7 +138,7 @@ fun LumiWeekStrip(
         ) {
             Column {
                 Text(
-                    text = "Tu semana",
+                    text = stringResource(R.string.week_strip_title),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = (-0.4).sp,
@@ -170,7 +172,7 @@ fun LumiWeekStrip(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Hoy ↺",
+                            text = stringResource(R.string.week_strip_today),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = tokens.accent
@@ -192,7 +194,7 @@ fun LumiWeekStrip(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.ChevronLeft,
-                        contentDescription = "Semana anterior",
+                        contentDescription = stringResource(R.string.week_strip_prev),
                         tint = if (pagerState.currentPage > 0) tokens.text else tokens.dim.copy(alpha = 0.3f),
                         modifier = Modifier.size(18.dp)
                     )
@@ -212,7 +214,7 @@ fun LumiWeekStrip(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.ChevronRight,
-                        contentDescription = "Semana siguiente",
+                        contentDescription = stringResource(R.string.week_strip_next),
                         tint = if (pagerState.currentPage < weeks.size - 1) tokens.text else tokens.dim.copy(alpha = 0.3f),
                         modifier = Modifier.size(18.dp)
                     )
@@ -229,7 +231,7 @@ fun LumiWeekStrip(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Ver calendario ↗",
+                        text = stringResource(R.string.week_strip_view_calendar),
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = tokens.accent
@@ -320,13 +322,13 @@ fun LumiWeekStrip(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            PhaseLegendItem(label = "Menstrual", color = tokens.rose)
+            PhaseLegendItem(label = stringResource(R.string.phase_menstrual), color = tokens.rose)
             Spacer(modifier = Modifier.size(12.dp))
-            PhaseLegendItem(label = "Folicular", color = tokens.gold)
+            PhaseLegendItem(label = stringResource(R.string.phase_follicular), color = tokens.gold)
             Spacer(modifier = Modifier.size(12.dp))
-            PhaseLegendItem(label = "Ovulación", color = tokens.mint)
+            PhaseLegendItem(label = stringResource(R.string.phase_ovulation), color = tokens.mint)
             Spacer(modifier = Modifier.size(12.dp))
-            PhaseLegendItem(label = "Lútea", color = tokens.accent)
+            PhaseLegendItem(label = stringResource(R.string.phase_luteal), color = tokens.accent)
         }
     }
 }

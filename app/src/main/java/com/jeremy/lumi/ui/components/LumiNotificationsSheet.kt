@@ -36,9 +36,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jeremy.lumi.R
 import com.jeremy.lumi.data.local.entity.ReminderEntity
 import com.jeremy.lumi.domain.model.CyclePhase
 import com.jeremy.lumi.domain.usecase.CyclePrediction
@@ -96,14 +98,14 @@ fun LumiNotificationsSheet(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Avisos y recordatorios",
+                        text = stringResource(R.string.notif_sheet_title),
                         fontSize = 19.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = tokens.text
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Notificaciones activas de tu salud y ciclo",
+                        text = stringResource(R.string.notif_sheet_subtitle),
                         fontSize = 11.5.sp,
                         color = tokens.muted
                     )
@@ -118,7 +120,7 @@ fun LumiNotificationsSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = "Cerrar",
+                        contentDescription = stringResource(R.string.btn_close),
                         tint = tokens.text,
                         modifier = Modifier.size(16.dp)
                     )
@@ -132,8 +134,12 @@ fun LumiNotificationsSheet(
                 NotificationAlertCard(
                     icon = Icons.Rounded.Warning,
                     iconColor = tokens.rose,
-                    title = "Retraso de $delayDays ${if (delayDays == 1) "día" else "días"}",
-                    description = "Tu periodo está demorado respecto a la estimación habitual. Si persiste, realiza un seguimiento de síntomas o consulta a tu especialista.",
+                    title = stringResource(
+                        R.string.notif_delay_days,
+                        delayDays,
+                        if (delayDays == 1) stringResource(R.string.unit_day) else stringResource(R.string.unit_days)
+                    ),
+                    description = stringResource(R.string.notif_delay_desc),
                     backgroundColor = tokens.rose.copy(alpha = 0.12f),
                     borderColor = tokens.rose.copy(alpha = 0.35f)
                 )
@@ -144,15 +150,15 @@ fun LumiNotificationsSheet(
             val daysUntil = prediction?.daysUntilNextPeriod ?: -1
             if (!isLate && daysUntil in 0..3) {
                 val periodNotice = when (daysUntil) {
-                    0 -> "Tu periodo está estimado para hoy."
-                    1 -> "Tu periodo está estimado para mañana."
-                    else -> "Tu periodo está estimado en ~$daysUntil días."
+                    0 -> stringResource(R.string.notif_period_estimated_today)
+                    1 -> stringResource(R.string.notif_period_estimated_tomorrow)
+                    else -> stringResource(R.string.notif_period_estimated_days, daysUntil)
                 }
                 NotificationAlertCard(
                     icon = Icons.Rounded.DateRange,
                     iconColor = tokens.rose,
-                    title = "Periodo próximo",
-                    description = "$periodNotice Recuerda tener a mano tus productos de cuidado habituales.",
+                    title = stringResource(R.string.notif_period_next_title),
+                    description = stringResource(R.string.notif_period_next_desc, periodNotice),
                     backgroundColor = tokens.panel2,
                     borderColor = tokens.line
                 )
@@ -164,8 +170,8 @@ fun LumiNotificationsSheet(
                 NotificationAlertCard(
                     icon = Icons.Rounded.CheckCircle,
                     iconColor = tokens.mint,
-                    title = "Ventana fértil y ovulación activa",
-                    description = "Estás en los días de mayor probabilidad de concepción del ciclo.",
+                    title = stringResource(R.string.notif_fertile_active_title),
+                    description = stringResource(R.string.notif_fertile_active_desc),
                     backgroundColor = tokens.panel2,
                     borderColor = tokens.line
                 )
@@ -177,11 +183,11 @@ fun LumiNotificationsSheet(
                 NotificationAlertCard(
                     icon = Icons.Rounded.EditCalendar,
                     iconColor = tokens.accent,
-                    title = "Registro de hoy pendiente",
-                    description = "Tómate 30 segundos para registrar cómo te sientes y mantener la calibración de Lumi precisa.",
+                    title = stringResource(R.string.notif_pending_log_title),
+                    description = stringResource(R.string.notif_pending_log_desc),
                     backgroundColor = tokens.panel2,
                     borderColor = tokens.accent.copy(alpha = 0.4f),
-                    actionLabel = "Registrar ahora →",
+                    actionLabel = stringResource(R.string.notif_register_now),
                     onActionClick = {
                         onDismiss()
                         onQuickLogClick()
@@ -192,8 +198,8 @@ fun LumiNotificationsSheet(
                 NotificationAlertCard(
                     icon = Icons.Rounded.CheckCircle,
                     iconColor = tokens.accent,
-                    title = "Registro de hoy al día",
-                    description = "Tus síntomas y sensaciones de hoy ya están guardados en tu historial.",
+                    title = stringResource(R.string.notif_log_uptodate_title),
+                    description = stringResource(R.string.notif_log_uptodate_desc),
                     backgroundColor = tokens.panel2,
                     borderColor = tokens.line
                 )
@@ -203,7 +209,7 @@ fun LumiNotificationsSheet(
             // 5. Recordatorios activos de la usuaria
             if (activeReminders.isNotEmpty()) {
                 Text(
-                    text = "Recordatorios programados",
+                    text = stringResource(R.string.notif_scheduled_title),
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = tokens.text
@@ -217,7 +223,7 @@ fun LumiNotificationsSheet(
                         icon = Icons.Rounded.Notifications,
                         iconColor = tokens.accent,
                         title = reminder.type.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() },
-                        description = "Programado diariamente a las $timeFormatted$labelSuffix",
+                        description = stringResource(R.string.notif_scheduled_desc, timeFormatted, labelSuffix),
                         backgroundColor = tokens.panel2,
                         borderColor = tokens.line
                     )
@@ -238,7 +244,7 @@ fun LumiNotificationsSheet(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Entendido",
+                    text = stringResource(R.string.btn_understood),
                     fontSize = 12.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (tokens.isDark) tokens.bg else Color.White

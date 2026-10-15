@@ -1,6 +1,7 @@
 package com.jeremy.lumi.ui.widget
 
 import android.content.Context
+import com.jeremy.lumi.R
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,7 +36,6 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.jeremy.lumi.MainActivity
-import com.jeremy.lumi.R
 
 object LumiWidgetPrefs {
     val CYCLE_DAY = intPreferencesKey("cycle_day")
@@ -53,8 +53,8 @@ class LumiWidget : GlanceAppWidget() {
             GlanceTheme {
                 val prefs = currentState<Preferences>()
                 val cycleDay = prefs[LumiWidgetPrefs.CYCLE_DAY] ?: 0
-                val phase = prefs[LumiWidgetPrefs.CYCLE_PHASE] ?: "Sincronizando..."
-                val message = prefs[LumiWidgetPrefs.MESSAGE] ?: "Abre la app para actualizar."
+                val phase = prefs[LumiWidgetPrefs.CYCLE_PHASE] ?: context.getString(R.string.widget_syncing)
+                val message = prefs[LumiWidgetPrefs.MESSAGE] ?: context.getString(R.string.widget_open_app_to_update)
                 val colorHex = prefs[LumiWidgetPrefs.PHASE_COLOR] ?: "#9B72C0" // Default Lumi color
 
                 val primaryColor = try {
@@ -78,7 +78,7 @@ class LumiWidget : GlanceAppWidget() {
                     ) {
                         // Día actual
                         Text(
-                            text = if (cycleDay > 0) "Día $cycleDay" else "—",
+                            text = if (cycleDay > 0) context.getString(R.string.home_greeting_day, cycleDay) else "—",
                             style = TextStyle(
                                 fontSize = 32.sp,
                                 fontWeight = FontWeight.Bold,

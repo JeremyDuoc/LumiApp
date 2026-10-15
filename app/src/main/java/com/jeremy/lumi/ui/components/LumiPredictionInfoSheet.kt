@@ -34,9 +34,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jeremy.lumi.R
 import com.jeremy.lumi.domain.usecase.CyclePrediction
 import com.jeremy.lumi.ui.screens.home.PredictionFactorsUi
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
@@ -83,14 +85,14 @@ fun LumiPredictionInfoSheet(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Cómo interpreta Lumi tu ciclo",
+                        text = stringResource(R.string.pred_info_title),
                         fontSize = 19.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = tokens.text
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Transparencia clínica y calibración basada en tus datos",
+                        text = stringResource(R.string.pred_info_subtitle),
                         fontSize = 11.5.sp,
                         color = tokens.muted
                     )
@@ -105,7 +107,7 @@ fun LumiPredictionInfoSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = "Cerrar",
+                        contentDescription = stringResource(R.string.btn_close),
                         tint = tokens.text,
                         modifier = Modifier.size(16.dp)
                     )
@@ -131,7 +133,7 @@ fun LumiPredictionInfoSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Certeza del modelo",
+                            text = stringResource(R.string.pred_info_model_certainty),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = tokens.text
@@ -165,7 +167,7 @@ fun LumiPredictionInfoSheet(
 
                     // Barras de progreso de los 3 pilares
                     FactorProgressRow(
-                        label = "Regularidad de ciclos",
+                        label = stringResource(R.string.pred_info_regularity),
                         score = predictionFactors.regularityScore,
                         barColor = tokens.accent,
                         trackColor = tokens.pill
@@ -174,7 +176,7 @@ fun LumiPredictionInfoSheet(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     FactorProgressRow(
-                        label = "Historial acumulado (${predictionFactors.cycleCount} ciclos)",
+                        label = stringResource(R.string.pred_info_history_cycles, predictionFactors.cycleCount),
                         score = predictionFactors.historyScore,
                         barColor = tokens.accent,
                         trackColor = tokens.pill
@@ -183,7 +185,7 @@ fun LumiPredictionInfoSheet(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     FactorProgressRow(
-                        label = "Registro de síntomas y estado",
+                        label = stringResource(R.string.pred_info_symptom_tracking),
                         score = predictionFactors.symptomsScore,
                         barColor = tokens.accent,
                         trackColor = tokens.pill
@@ -212,7 +214,7 @@ fun LumiPredictionInfoSheet(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Margen de variabilidad: ${predictionFactors.marginDaysText} · ${predictionFactors.cycleCount} ciclos completados",
+                            text = stringResource(R.string.pred_info_margin_summary, predictionFactors.marginDaysText, predictionFactors.cycleCount),
                             fontSize = 11.sp,
                             color = tokens.muted
                         )
@@ -224,14 +226,14 @@ fun LumiPredictionInfoSheet(
 
             // Explicación metodológica
             Text(
-                text = "Metodología honesta",
+                text = stringResource(R.string.pred_info_methodology_title),
                 fontSize = 13.5.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = tokens.text
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "En Lumi tu fecha estimada de periodo y fases se determinan mediante una media ponderada que da mayor peso a tus ciclos más recientes, calibrada con tus síntomas físicos diarios.\n\nNo utilizamos cajas negras ni inventamos certezas: cuando hay pocos ciclos registrados, Lumi te lo indica con honestidad hasta que tu patrón biológico se consolide.",
+                text = stringResource(R.string.pred_info_methodology_desc),
                 fontSize = 12.sp,
                 lineHeight = 18.sp,
                 color = tokens.muted
@@ -248,7 +250,7 @@ fun LumiPredictionInfoSheet(
                     .padding(14.dp)
             ) {
                 Text(
-                    text = "Aviso médico importante: Estas estimaciones tienen propósitos informativos y de bienestar. No constituyen un método anticonceptivo ni reemplazan el asesoramiento ginecológico profesional.",
+                    text = stringResource(R.string.pred_info_medical_disclaimer),
                     fontSize = 11.sp,
                     lineHeight = 16.sp,
                     color = tokens.dim
@@ -268,7 +270,7 @@ fun LumiPredictionInfoSheet(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Entendido",
+                    text = stringResource(R.string.btn_understood),
                     fontSize = 12.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (tokens.isDark) tokens.bg else Color.White

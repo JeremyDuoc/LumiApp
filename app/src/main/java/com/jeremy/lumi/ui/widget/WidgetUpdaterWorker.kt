@@ -1,6 +1,7 @@
 package com.jeremy.lumi.ui.widget
 
 import android.content.Context
+import com.jeremy.lumi.R
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import dagger.hilt.android.EntryPointAccessors
@@ -49,17 +50,21 @@ class WidgetUpdaterWorker(
                 val phaseEnum = CyclePredictor.phaseForDay(day, mathCycleLen, cycle.periodLength, isPregnant = false, isOnContraceptive = false)
                 
                 val phaseName = when (phaseEnum) {
-                    com.jeremy.lumi.domain.model.CyclePhase.MENSTRUAL -> "Menstruación"
-                    com.jeremy.lumi.domain.model.CyclePhase.FOLLICULAR -> "Fase Folicular"
-                    com.jeremy.lumi.domain.model.CyclePhase.OVULATION -> "Ovulación"
-                    com.jeremy.lumi.domain.model.CyclePhase.LUTEAL -> "Fase Lútea"
-                    com.jeremy.lumi.domain.model.CyclePhase.PREGNANCY -> "Embarazo"
-                    com.jeremy.lumi.domain.model.CyclePhase.UNKNOWN -> "Desconocido"
+                    com.jeremy.lumi.domain.model.CyclePhase.MENSTRUAL -> context.getString(R.string.pm_phase_menstrual)
+                    com.jeremy.lumi.domain.model.CyclePhase.FOLLICULAR -> context.getString(R.string.pm_phase_follicular)
+                    com.jeremy.lumi.domain.model.CyclePhase.OVULATION -> context.getString(R.string.pm_phase_ovulation)
+                    com.jeremy.lumi.domain.model.CyclePhase.LUTEAL -> context.getString(R.string.pm_phase_luteal)
+                    com.jeremy.lumi.domain.model.CyclePhase.PREGNANCY -> context.getString(R.string.phase_pregnancy)
+                    com.jeremy.lumi.domain.model.CyclePhase.UNKNOWN -> context.getString(R.string.phase_unknown)
                 }
                 
                 // For a simpler prediction message in background
                 val nextPeriodDays = mathCycleLen - day
-                val msg = if (nextPeriodDays < 0) "Retraso de ${-nextPeriodDays} días" else "Próximo en $nextPeriodDays días"
+                val msg = if (nextPeriodDays < 0) {
+                    context.getString(R.string.home_period_delayed_by, -nextPeriodDays)
+                } else {
+                    context.getString(R.string.home_period_next_in, nextPeriodDays)
+                }
                 
                 updater.updateWidget(day, phaseName, msg, "#9B72C0")
             }
