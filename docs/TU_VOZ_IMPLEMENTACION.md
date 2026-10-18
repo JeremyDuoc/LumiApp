@@ -29,3 +29,20 @@ Referencia visual aprobada: Lumi_Tu_Voz_Animaciones_v3.html. Encabezado Home: Lu
 - Ejecutar **:app:assembleDebug** y **:app:testDebugUnitTest** en Android Studio o CI. En esta sesión no había SDK Android disponible para compilar ni emulador para comparar frames. La revisión sintáctica no sustituye esa compilación.
 
 La rama no debe fusionarse a main ni distribuirse como un foro público funcional sin completar las verificaciones y dependencias indicadas.
+
+
+## Correcciones tras la grabación del emulador (18 oct 2026)
+
+Inspección visual de los 38 segundos de navegación y las capturas comparadas con Lumi_Tu_Voz_Animaciones_v3.html:
+
+- El foro no mostraba la cabecera de marca; ahora reutiliza LumiTopBar real y AmbientBackgroundLayer. El botón de temas comparte el sistema de revelado del Home.
+- Los iconos de menú del Home se superponían como una raya en estado abierto; las tres barras se dibujan ahora con un Canvas único que interpola sus extremos para formar una X visible.
+- La cápsula y opciones del Home sincronizan mejor la apertura (menores esperas escalonadas).
+- «Lo que estamos creando» aparecía incorrectamente en En camino y Mis votos; se limita a Ideas, con progreso y enlace de detalle.
+- El HTML v3 tenía 5 posts ilustrativos que no aparecían en Android. Ahora se usan SOLO con BuildConfig.DEBUG; cada muestra está identificada y sus cambios nunca se escriben en SharedPreferences. Una build release no muestra esos datos.
+- Voto: nuevo pulso reversible que retorna al tamaño normal, con halo pastel radial más suave y check blanco.
+- Tarjetas: mínimo 116 dp, estado/categoría/comentarios juntos, divisor y textos más cercanos al HTML.
+- Formulario: textos y categorías del HTML v3; evita prometer publicación pública y guarda de forma local.
+
+### Aspectos que la grabación NO permite certificar
+La grabación enseña navegación entre pestañas, el menú y comparaciones con Chrome, pero no cubre por completo comentarios, publicación, reportes, interacción administrativa ni sincronización multiusuaria. No hay backend comunitario, moderación remota o permisos verificados de equipo. Las opciones reales de administración siguen restringidas por diseño. No se ejecutó un emulador ni build Gradle en este entorno; compilación, TalkBack, temas claros/oscuro, tamaños 320–420dp, ciclo de vida y rendimiento requieren nueva pasada en Android Studio.
