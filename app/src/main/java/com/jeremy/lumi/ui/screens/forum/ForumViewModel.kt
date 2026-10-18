@@ -1,6 +1,7 @@
 package com.jeremy.lumi.ui.screens.forum
 
 import android.content.Context
+import com.jeremy.lumi.BuildConfig
 import androidx.lifecycle.ViewModel
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -47,12 +48,50 @@ class ForumViewModel @Inject constructor(
     private val gson = Gson()
     private val type = object : TypeToken<List<VoiceProposal>>() {}.type
 
-    private val _proposals = MutableStateFlow(readLocal())
+    private val _proposals = MutableStateFlow(if (BuildConfig.DEBUG) examples() + readLocal() else readLocal())
     val proposals: StateFlow<List<VoiceProposal>> = _proposals.asStateFlow()
 
     // Sin identidad administrativa verificada por servidor NO existe modo admin.
     val isVerifiedAdmin: Boolean = false
     val isCommunityConnected: Boolean = false
+
+    /**
+     * The five examples below come from the APPROVED HTML v3 and are visible in
+     * DEBUG builds ONLY. They are clearly labeled previews, never official data.
+     * Sample votes are in-memory so they cannot pollute the private local store.
+     */
+    private fun examples(): List<VoiceProposal> {
+        val now = System.currentTimeMillis()
+        fun sample(id: String, title: String, desc: String, category: String,
+                   status: String, votes: Int, comments: List<VoiceComment> = emptyList()) =
+            VoiceProposal("voice-demo-$id", title, desc, category, status,
+                now - 86_400_000L * (id.first().code - 'a'.code + 1),
+                votes, comments = comments, createdByMe = false)
+        return listOf(
+            sample("a", "Un calendario que se pueda deslizar por semanas",
+                "Me ayudaría ver los días siguientes sin entrar al calendario completo. Que también marque claramente el día de hoy.",
+                "Calendario", "En desarrollo", 96,
+                listOf(VoiceComment("example-a1",
+                    "Estamos trabajando en un calendario más fácil de recorrer, sin perder el contexto del día actual.", now, true),
+                    VoiceComment("example-a2", "Sería genial que recordara la semana en la que quedé.", now))),
+            sample("b", "Elegir qué síntomas aparecen primero en mi registro",
+                "Uso siempre los mismos tres síntomas. Quiero poder organizarlos para registrar mi día sin tanto desplazamiento.",
+                "Registro diario", "Aceptada", 74,
+                listOf(VoiceComment("example-b1", "Sí, y que respete nuestro orden al abrir el registro.", now))),
+            sample("c", "Modo negro OLED en todas las pantallas",
+                "Tengo un teléfono AMOLED y me gustaría usar un tema con negro verdadero, sin destellos claros al cambiar de pantalla.",
+                "Apariencia", "En revisión", 58,
+                listOf(VoiceComment("example-c1", "¡También lo usaría para las noches!", now))),
+            sample("d", "Exportar un resumen de mis registros sin compartirlos",
+                "Un archivo que se genere en el dispositivo para guardarlo o mostrarlo durante una consulta, sin enviarlo automáticamente a ningún servidor.",
+                "Privacidad", "Recibida", 42),
+            sample("e", "Recordatorios que permitan elegir varios días",
+                "Quiero seleccionar lunes, miércoles y viernes en un mismo recordatorio, sin tener que crear tres distintos.",
+                "Recordatorios", "Disponible", 31,
+                listOf(VoiceComment("example-e1",
+                    "Esta opción ya se encuentra disponible en esta demostración de hoja de ruta.", now, true)))
+        )
+    }
 
     private fun readLocal(): List<VoiceProposal> {
         val json = prefs.getString("proposals", null) ?: return emptyList()
@@ -63,7 +102,8 @@ class ForumViewModel @Inject constructor(
 
     private fun update(block: (List<VoiceProposal>) -> List<VoiceProposal>) {
         _proposals.update { block(it) }
-        prefs.edit().putString("proposals", gson.toJson(_proposals.value)).apply()
+        // Never persist demo fixtures as if they were community data.
+        prefs.edit().putString("proposals", gson.toJson(_proposals.value.filterNot { it.id.startsWith("voice-demo-") })).apply()
     }
 
     fun publish(title: String, description: String, category: String): Boolean {
