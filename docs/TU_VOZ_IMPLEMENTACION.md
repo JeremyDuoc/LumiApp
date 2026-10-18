@@ -1,3 +1,12 @@
+> ACTUALIZACIÓN — 18/10/2026: la fase local descrita abajo fue sustituida por una
+> implementación de backend REAL aún SIN DESPLEGAR. Firebase Auth anónimo,
+> listeners Firestore, Cloud Functions de creación/voto/comentario/reporte/estado
+> y reglas de seguridad están en la rama. Las antiguas propuestas locales y los
+> ejemplos simulados no se publican ni migran. Ver
+> docs/TU_VOZ_PRUEBA_DOS_DISPOSITIVOS.md para configuración, restricciones de
+> privacidad, pruebas de seguridad y despliegue controlado. No publicar aún
+> sin moderación y pruebas de dos cuentas/dispositivos.
+
 # Tu voz · implementación por fases
 
 Referencia visual aprobada: Lumi_Tu_Voz_Animaciones_v3.html. Encabezado Home: Lumi_Home_Menu_Desplegable_v1.html.
