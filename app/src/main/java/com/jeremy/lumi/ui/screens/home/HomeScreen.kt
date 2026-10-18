@@ -178,11 +178,13 @@ fun HomeScreen(
             var showConfirmPeriod by remember { mutableStateOf(false) }
             var showSuccessLottie by remember { mutableStateOf(false) }
 
+            val isDark = LocalIsDarkTheme.current
             var radialOpen by remember { mutableStateOf(false) }
 
             val blurEased = remember { CubicBezierEasing(0.16f, 1f, 0.3f, 1f) }
+            val targetBlur = if (radialOpen) (if (isDark) 12.dp else 5.dp) else 0.dp
             val blurRadius by animateDpAsState(
-                targetValue = if (radialOpen) 16.dp else 0.dp,
+                targetValue = targetBlur,
                 animationSpec = if (radialOpen) {
                     tween(durationMillis = 420, easing = blurEased)
                 } else {
@@ -387,25 +389,23 @@ fun HomeScreen(
 
         // Capa de difuminado (scrim) animada muy limpia y suave sobre el Home
         if (scrimAlpha > 0.001f) {
-            val isDark = LocalIsDarkTheme.current
-            val scrimBase = if (isDark) {
-                Color(0xFF09070E)
+            val scrimColors = if (isDark) {
+                listOf(
+                    Color(0xFF09070E).copy(alpha = 0.40f),
+                    Color(0xFF09070E).copy(alpha = 0.58f)
+                )
             } else {
-                MaterialTheme.colorScheme.background
+                listOf(
+                    Color(0xFF1E1428).copy(alpha = 0.05f),
+                    Color(0xFF1E1428).copy(alpha = 0.10f)
+                )
             }
 
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer { alpha = scrimAlpha }
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                scrimBase.copy(alpha = if (isDark) 0.44f else 0.50f),
-                                scrimBase.copy(alpha = if (isDark) 0.62f else 0.66f)
-                            )
-                        )
-                    )
+                    .background(Brush.verticalGradient(scrimColors))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
