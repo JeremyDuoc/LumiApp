@@ -45,4 +45,36 @@ class BackupSerializerTest {
         val restored = BackupSerializer.fromJson(BackupSerializer.toJson(emptyList(), emptyList(), emptyList()))
         assertTrue(restored.cycles.isEmpty())
     }
+    @Test fun `legacy cloud payload without profile remains compatible`() {
+        val restored = BackupSerializer.fromJson(validJson())
+        assertNull(restored.profile)
+    }
+
+    @Test fun `new cloud backups restore nickname and cycle profile`() {
+        val profile = ProfileBackup(
+            userName = "Estrella",
+            userGoal = "TRACK_CYCLE",
+            defaultCycleLength = 31,
+            defaultPeriodLength = 5,
+            isPregnant = false,
+            isOnContraceptive = false
+        )
+        val json = BackupSerializer.toJson(emptyList(), emptyList(), emptyList(), profile)
+        val restored = BackupSerializer.fromJson(json)
+        assertEquals("Estrella", restored.profile?.userName)
+        assertEquals(31, restored.profile?.defaultCycleLength)
+    }
+
+    @Test fun `invalid cloud profile rejects whole payload`() {
+        val profile = ProfileBackup(
+            userName = "Estrella",
+            userGoal = "TRACK_CYCLE",
+            defaultCycleLength = 31,
+            defaultPeriodLength = 5,
+            isPregnant = false,
+            isOnContraceptive = false
+        )
+        val json = BackupSerializer.toJson(emptyList(), emptyList(), emptyList(), profile)
+        rejects(json.replace("\"defaultCycleLength\":31", "\"defaultCycleLength\":999"))
+    }
 }
