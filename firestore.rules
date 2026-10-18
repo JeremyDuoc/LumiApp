@@ -1,6 +1,44 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Tu voz: no contiene datos de salud ni identificadores de autores públicos.
+    // Todas las escrituras (incluido voto, comentario, reporte y estado) las realizan
+    // Cloud Functions con Admin SDK y comprobaciones de autenticación/abuso.
+    match /voice_ideas/{ideaId} {
+      allow get: if request.auth != null && resource.data.visible == true;
+      allow list: if request.auth != null
+        && request.query.limit != null && request.query.limit <= 80
+        && resource.data.visible == true;
+      allow create, update, delete: if false;
+
+      match /comments/{commentId} {
+        allow get: if request.auth != null
+          && get(/databases/$(database)/documents/voice_ideas/$(ideaId)).data.visible == true;
+        allow list: if request.auth != null
+          && request.query.limit != null && request.query.limit <= 80
+          && get(/databases/$(database)/documents/voice_ideas/$(ideaId)).data.visible == true;
+        allow create, update, delete: if false;
+      }
+    }
+
+    // El servidor almacena apoyos únicos por identidad técnica.
+    // Solo la persona autenticada puede leer SUS propios apoyos.
+    match /voice_user_votes/{uid} {
+      allow read, write: if false;
+      match /ideas/{ideaId} {
+        allow get: if request.auth != null && request.auth.uid == uid;
+        allow list: if request.auth != null && request.auth.uid == uid
+          && request.query.limit != null && request.query.limit <= 200;
+        allow create, update, delete: if false;
+      }
+    }
+
+    // Datos sensibles de moderación: nunca visibles ni editables por clientes.
+    match /voice_internal_limits/{docId} { allow read, write: if false; }
+    match /voice_internal_owners/{docId} { allow read, write: if false; }
+    match /voice_internal_reports/{docId} { allow read, write: if false; }
+
     
     // Colección partner_links (Vínculos de confianza de Lumi Bonds)
     match /partner_links/{linkId} {
