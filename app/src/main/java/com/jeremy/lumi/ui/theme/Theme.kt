@@ -547,6 +547,9 @@ enum class DialStyle {
 
 val LocalIsDarkTheme = compositionLocalOf { false }
 
+// Tema real de la raíz; evita el falso NOIR inicial de SettingsViewModel en MainScreen.
+val LocalActiveLumiTheme = compositionLocalOf { AppThemePalette.NOIR }
+
 // Expone los colores de fase activos a cualquier composable sin pasarlos como
 // parámetro. Se alimenta en LumiTheme con: preset elegido, o el set custom de
 // la usuaria cuando el preset activo es CUSTOM.
@@ -682,7 +685,7 @@ fun ConnectedThemePulse(
         animProgress.snapTo(0f)
         animProgress.animateTo(
             targetValue = 1f,
-            animationSpec = tween(durationMillis = 720, easing = LinearEasing)
+            animationSpec = tween(durationMillis = 720, easing = CubicBezierEasing(0f, 0f, .58f, 1f))
         )
         animating = false
     }
@@ -865,6 +868,7 @@ fun LumiTheme(
 
     CompositionLocalProvider(
         LocalIsDarkTheme provides isDark,
+        LocalActiveLumiTheme provides selectedTheme,
         LocalLumiTokens provides animatedLumiTokens,
         LocalPhaseColors provides phaseColors,
         LocalSemanticPhaseColors provides semanticPhaseColors,

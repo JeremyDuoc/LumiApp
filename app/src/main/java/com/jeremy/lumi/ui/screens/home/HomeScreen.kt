@@ -346,11 +346,8 @@ fun HomeScreen(
             }
         }
 
-        // HTML v12: pulso temático de 720 ms EXCLUSIVO del Home, sobre el contenido.
-        com.jeremy.lumi.ui.theme.ConnectedThemePulse(
-            accentColor = tokens.accent,
-            pulseKey = currentTheme
-        )
+        // v19: el pulso ahora está en MainScreen para funcionar tanto aquí
+        // como en Settings, sin reiniciarse ni dibujarse dos veces.
 
         // Menú original 20essentials / Uiverse: sin oscurecer Home.
         // Este Box está fuera del Column scrollable y del Scaffold, de modo

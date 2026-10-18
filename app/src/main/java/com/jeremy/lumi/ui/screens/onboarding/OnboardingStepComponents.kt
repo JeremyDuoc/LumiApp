@@ -1,6 +1,13 @@
 package com.jeremy.lumi.ui.screens.onboarding
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.StrokeCap
+import kotlinx.coroutines.isActive
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -356,22 +363,47 @@ fun Step2Nickname(
     val tokens = LumiOnboardingThemeTokens.current
     var isFocused by remember { mutableStateOf(false) }
 
+    val easedFocus = CubicBezierEasing(0.22f, 0.85f, 0.25f, 1f)
+    val borderColor by animateColorAsState(
+        targetValue = if (isFocused) tokens.accent else tokens.line,
+        animationSpec = tween(360, easing = easedFocus), label = "nickname_border"
+    )
+    val focusLift by animateDpAsState(
+        targetValue = if (isFocused) (-2).dp else 0.dp,
+        animationSpec = tween(360, easing = easedFocus), label = "nickname_lift"
+    )
     val underlineScale by animateFloatAsState(
         targetValue = if (isFocused) 1f else 0f,
-        animationSpec = tween(durationMillis = 350, easing = CubicBezierEasing(0.2f, 0.8f, 0.25f, 1f)),
-        label = "name_underline_scale"
+        animationSpec = tween(550, easing = CubicBezierEasing(.25f, .8f, .25f, 1f)),
+        label = "nickname_underline"
     )
-
-    val infiniteTransition = rememberInfiniteTransition(label = "nickname_sparkles")
-    val dotCycle by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2300, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "dot_cycle"
+    val rippleProgress by animateFloatAsState(
+        targetValue = if (isFocused) 1f else 0f,
+        animationSpec = tween(600, easing = easedFocus), label = "nickname_ripple"
     )
+    val ornamentScale by animateFloatAsState(
+        targetValue = if (isFocused) 1.08f else 1f,
+        animationSpec = tween(420, easing = CubicBezierEasing(.23f, 1f, .36f, 1f)),
+        label = "nickname_sparkle_scale"
+    )
+    val ornamentAngle by animateFloatAsState(
+        targetValue = if (isFocused) 13f else 0f,
+        animationSpec = tween(420, easing = easedFocus), label = "nickname_sparkle_rotation"
+    )
+    // CSS: cuatro puntos con retrasos 0/.25/.49/.72s, comenzando al obtener foco.
+    val dotProgress = remember { androidx.compose.animation.core.Animatable(0f) }
+    var dotCycles by remember { mutableIntStateOf(0) }
+    LaunchedEffect(isFocused) {
+        dotCycles = 0
+        dotProgress.snapTo(0f)
+        if (isFocused) {
+            while (isActive) {
+                dotProgress.animateTo(1f, tween(2300, easing = LinearEasing))
+                dotProgress.snapTo(0f)
+                dotCycles++
+            }
+        }
+    }
 
     Column(modifier = modifier.fillMaxWidth()) {
         LumiEditorialHeading(
@@ -393,98 +425,121 @@ fun Step2Nickname(
 
         Spacer(modifier = Modifier.height(9.dp))
 
-        // Input estilizado con subrayado expansivo, destellos vivos y ripple
+        // Campo idéntico al HTML: radio 15px, elevación -2, halo, ripple,
+        // subrayado 550ms, sparkle con giro y partículas desfasadas 2300ms.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .offset(y = focusLift)
+                .shadow(
+                    elevation = if (isFocused) 10.dp else 0.dp,
+                    shape = RoundedCornerShape(15.dp),
+                    clip = false,
+                    ambientColor = tokens.glow,
+                    spotColor = tokens.glow
+                )
                 .height(55.dp)
                 .clip(RoundedCornerShape(15.dp))
                 .background(tokens.panel)
-                .border(
-                    width = if (isFocused) 1.5.dp else 1.dp,
-                    color = if (isFocused) tokens.accent.copy(alpha = 0.55f) else tokens.line,
-                    shape = RoundedCornerShape(15.dp)
-                )
-                .padding(horizontal = 16.dp),
+                .border(1.dp, borderColor, RoundedCornerShape(15.dp)),
             contentAlignment = Alignment.CenterStart
         ) {
-            // Destellos vivos ascendentes (name-dots i) cuando el input tiene foco
-            if (isFocused) {
-                val offsets = listOf(
-                    Triple(0.82f, 0.70f, 0.00f),
-                    Triple(0.90f, 0.20f, 0.11f),
-                    Triple(0.72f, 0.55f, 0.21f),
-                    Triple(0.96f, 0.56f, 0.31f)
-                )
-                androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                    val w = size.width
-                    val h = size.height
-                    offsets.forEach { (relX, relY, delayFraction) ->
-                        val phase = (dotCycle - delayFraction + 1f) % 1f
-                        val liftY = (8f - 29f * phase) * density
-                        val alpha = if (phase < 0.4f) (phase / 0.4f) * 0.55f else ((1f - phase) / 0.6f) * 0.55f
-                        val dotSize = (1.5f + 1.5f * phase) * density
+            // CSS .name-ripple — luz interna que se expande suavemente a 250px.
+            if (rippleProgress > 0f) {
+                androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+                    val radiusPx = 125.dp.toPx() * rippleProgress
+                    if (radiusPx > 0f) {
+                        val c = Offset(size.width * .78f, size.height * .5f)
                         drawCircle(
-                            color = tokens.accent.copy(alpha = alpha.coerceIn(0f, 1f)),
-                            radius = dotSize,
-                            center = Offset(w * relX, h * relY + liftY)
+                            brush = Brush.radialGradient(
+                                colors = listOf(tokens.glow.copy(alpha = .30f), Color.Transparent),
+                                center = c, radius = radiusPx
+                            ),
+                            center = c, radius = radiusPx
                         )
                     }
                 }
             }
 
+            // CSS .name-dots i — movimiento escalonado, no ciclos aleatorios.
+            if (isFocused) {
+                androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+                    val offsets = listOf(
+                        Triple(.82f, .70f, 0f),
+                        Triple(.90f, .20f, 250f),
+                        Triple(.72f, .55f, 490f),
+                        Triple(.96f, .56f, 720f)
+                    )
+                    val elapsed = dotCycles * 2300f + dotProgress.value * 2300f
+                    offsets.forEach { (rx, ry, delayMs) ->
+                        val millis = elapsed - delayMs
+                        if (millis >= 0f) {
+                            val p = ((millis % 2300f) / 2300f).coerceIn(0f, 1f)
+                            val eased = if (p < .5f) 2 * p * p else 1f - (-2 * p + 2) * (-2 * p + 2) / 2f
+                            val alpha = if (p < .4f) .55f * p / .4f else .55f * (1f - p) / .6f
+                            drawCircle(
+                                tokens.accent.copy(alpha = alpha.coerceIn(0f, .55f)),
+                                radius = 1.5.dp.toPx(),
+                                center = Offset(size.width * rx, size.height * ry + (8f - 29f * eased).dp.toPx())
+                            )
+                        }
+                    }
+                }
+            }
+
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxSize().padding(start = 15.dp, end = 9.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 BasicTextField(
                     value = name,
                     onValueChange = { if (it.length <= 32) onNameChange(it) },
                     singleLine = true,
-                    textStyle = TextStyle(
-                        color = tokens.text,
-                        fontSize = 14.5.sp,
-                        fontWeight = FontWeight.Medium
-                    ),
+                    textStyle = TextStyle(color = tokens.text, fontSize = 14.sp, fontWeight = FontWeight.Normal),
                     cursorBrush = SolidColor(tokens.accent),
-                    modifier = Modifier
-                        .weight(1f)
-                        .onFocusChanged { isFocused = it.isFocused },
+                    modifier = Modifier.weight(1f).onFocusChanged { isFocused = it.isFocused },
                     decorationBox = { innerTextField ->
-                        if (name.isEmpty()) {
-                            Text(
-                                text = "Tu apodo",
-                                color = tokens.muted,
-                                fontSize = 14.5.sp
-                            )
+                        Box {
+                            if (name.isEmpty()) Text("Tu apodo", color = tokens.muted, fontSize = 14.sp)
+                            innerTextField()
                         }
-                        innerTextField()
                     }
                 )
-
-                Icon(
-                    imageVector = DefaultOnboardingIconProvider.getVector(OnboardingIconKey.Sparkle),
-                    contentDescription = null,
-                    tint = if (isFocused) tokens.accent else tokens.muted,
+                // Path del SVG #ico-sparkle, no el icono Material aproximado.
+                androidx.compose.foundation.Canvas(
                     modifier = Modifier
+                        .padding(start = 11.dp)
                         .size(19.dp)
-                        .scale(if (isFocused) 1.08f else 1f)
-                )
+                        .graphicsLayer {
+                            rotationZ = ornamentAngle
+                            scaleX = ornamentScale
+                            scaleY = ornamentScale
+                        }
+                ) {
+                    val sx = size.width / 24f
+                    val sy = size.height / 24f
+                    val star = Path().apply {
+                        moveTo(12*sx, 2*sy)
+                        lineTo(14.1f*sx, 9.9f*sy)
+                        lineTo(22*sx, 12*sy)
+                        lineTo(14.1f*sx, 14.1f*sy)
+                        lineTo(12*sx, 22*sy)
+                        lineTo(9.9f*sx, 14.1f*sy)
+                        lineTo(2*sx, 12*sy)
+                        lineTo(9.9f*sx, 9.9f*sy)
+                        close()
+                    }
+                    drawPath(star, color = tokens.accent, style = Stroke(width = 1.6.dp.toPx(), cap = StrokeCap.Round))
+                    drawLine(tokens.accent, Offset(19*sx,2*sy), Offset(19*sx,6*sy), strokeWidth = 1.6.dp.toPx())
+                    drawLine(tokens.accent, Offset(17*sx,4*sy), Offset(21*sx,4*sy), strokeWidth = 1.6.dp.toPx())
+                }
             }
 
-            // Subrayado expansivo en el borde inferior
             if (underlineScale > 0f) {
                 Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth(underlineScale)
-                        .height(2.dp)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(Color.Transparent, tokens.accent, Color.Transparent)
-                            )
-                        )
+                    Modifier.align(Alignment.BottomStart)
+                        .fillMaxWidth(underlineScale).height(2.dp)
+                        .background(Brush.horizontalGradient(listOf(tokens.rose, tokens.accent)))
                 )
             }
         }

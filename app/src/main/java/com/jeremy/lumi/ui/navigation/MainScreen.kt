@@ -503,6 +503,11 @@ fun MainScreen(
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute == "tabs"
 
+    // v19: el pulso debe sobrevivir al cambio de pestaña y al cierre de Settings.
+    // MainScreen (no HomeScreen) es el anfitrión común para toda la navegación interna.
+    val activeAppTheme = com.jeremy.lumi.ui.theme.LocalActiveLumiTheme.current
+    val themePulseAccent = LumiThemeTokens.current.accent
+
     // Retorno suave a la pestaña Inicio si se presiona el botón Back del sistema
     BackHandler(enabled = showBottomBar && pagerState.currentPage != 0) {
         coroutineScope.launch {
@@ -510,6 +515,7 @@ fun MainScreen(
         }
     }
 
+    Box(Modifier.fillMaxSize()) {
     Scaffold(
         bottomBar = {
             AnimatedVisibility(
@@ -648,7 +654,14 @@ fun MainScreen(
                 ForumScreen()
             }
         }
-    }
+    }    // Sobre el Scaffold, nav inferior y pantallas internas: pulso de 720 ms
+    // idéntico al del HTML, sin oscurecer ni bloquear interacciones.
+    com.jeremy.lumi.ui.theme.ConnectedThemePulse(
+        accentColor = themePulseAccent,
+        pulseKey = activeAppTheme
+    )
+    } // Box de la navegación interna
+
 }
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
