@@ -54,7 +54,7 @@ class HomeViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val repository       : LumiRepository,
     private val prefsManager     : OnboardingPreferenceManager,
-    private val partnerRepository: com.jeremy.lumi.domain.repository.PartnerRepository,
+    private val partnerRepositoryProvider: dagger.Lazy<com.jeremy.lumi.domain.repository.PartnerRepository>,
     private val rulesEngine      : LumiRulesEngine,
     private val healthConnectManager: com.jeremy.lumi.data.health.HealthConnectManager,
     private val widgetUpdater    : com.jeremy.lumi.ui.widget.WidgetUpdater,
@@ -64,6 +64,11 @@ class HomeViewModel @Inject constructor(
     sealed interface HomeEvent {
         data class CycleStarted(val message: String) : HomeEvent
         data class CycleRestored(val message: String) : HomeEvent
+    }
+
+    // Avoid initializing Firebase dependencies at all in the local-first release.
+    private val partnerRepository: com.jeremy.lumi.domain.repository.PartnerRepository by lazy {
+        partnerRepositoryProvider.get()
     }
 
     private val _eventFlow = kotlinx.coroutines.flow.MutableSharedFlow<HomeEvent>()
