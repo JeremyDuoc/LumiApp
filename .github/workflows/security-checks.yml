@@ -38,6 +38,6 @@ jobs:
       - name: Build debug and release; run tests
         run: |
           chmod +x ./gradlew
-          ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleRelease --no-daemon --stacktrace
+          ./gradlew :app:testDebugUnitTest :app:assembleDebugAndroidTest :app:assembleDebug :app:assembleRelease --no-daemon --stacktrace
       - name: Verify final merged manifests and release flags
         run: python3 tools/security/verify_release_artifacts.py
