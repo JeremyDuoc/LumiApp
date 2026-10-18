@@ -26,6 +26,14 @@ class BackupManager @Inject constructor(
 ) {
     private val tables = listOf("cycles", "daily_logs", "symptoms", "reminders", "chat_messages")
 
+    // Wipe ByteArrayOutputStream's internal buffer after extracting the plaintext ZIP.
+    private class ErasableZipStream : ByteArrayOutputStream() {
+        fun erase() {
+            buf.fill(0)
+            reset()
+        }
+    }
+
     companion object {
         private const val MAX_ENCRYPTED_ARCHIVE_BYTES = 32L * 1024 * 1024
         private const val MIN_PASSPHRASE_LENGTH = 12
@@ -45,9 +53,13 @@ class BackupManager @Inject constructor(
         var key: BackupCrypto.DerivedKey? = null
         try {
             require(passphrase.size >= MIN_PASSPHRASE_LENGTH) { "Contraseña demasiado corta" }
-            val internalZip = ByteArrayOutputStream()
-            exportDatabaseToZip(internalZip).getOrThrow()
-            val zipBytes = internalZip.toByteArray()
+            val internalZip = ErasableZipStream()
+            val zipBytes = try {
+                exportDatabaseToZip(internalZip).getOrThrow()
+                internalZip.toByteArray()
+            } finally {
+                internalZip.erase()
+            }
             plaintext = zipBytes
             if (zipBytes.size.toLong() > MAX_ENCRYPTED_ARCHIVE_BYTES) {
                 throw CorruptBackupException("El respaldo supera el tamaño máximo")
