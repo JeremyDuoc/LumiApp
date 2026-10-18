@@ -62,7 +62,10 @@ fun OnboardingScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentTheme by settingsViewModel.currentTheme.collectAsStateWithLifecycle()
-    val tokens = LumiThemeTokens.current
+    var onboardingTheme by remember(currentTheme) {
+        mutableStateOf(LumiOnboardingTheme.fromAppTheme(currentTheme))
+    }
+    val tokens = getThemeTokensV7(onboardingTheme)
     val scrollState = rememberScrollState()
 
     var showPrivacyDialog by remember { mutableStateOf(false) }
@@ -79,85 +82,82 @@ fun OnboardingScreen(
         scrollState.scrollTo(0)
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(tokens.bg)
+    CompositionLocalProvider(
+        LocalLumiOnboardingTokens provides tokens
     ) {
-        // Fondo ambiental suave superior
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(340.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            if (tokens.isDark) Color(0x18B884CA) else Color(0x35E4AFDB),
-                            Color.Transparent
-                        ),
-                        radius = 800f
-                    )
-                )
-        )
-
-        Column(
-            modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
+                .background(tokens.bg)
         ) {
-            // ── TOP BAR: Header Brand + Theme Chip ───────────────────────────
-            Row(
+            // Cielo estrellado en 3 capas ascendentes en paralaje (solo temas oscuros)
+            LumiSkyBackground(stepNumber = stepNumber)
+
+            // Fondo ambiental suave superior
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .height(340.dp)
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                if (tokens.isDark) Color(0x18B884CA) else Color(0x35E4AFDB),
+                                Color.Transparent
+                            ),
+                            radius = 800f
+                        )
+                    )
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
             ) {
-                // Header Brand: visible solo en pasos intermedios (1..6)
-                AnimatedVisibility(
-                    visible = showHeaderBrand,
-                    enter = fadeIn(tween(250)) + slideInVertically(tween(250)) { -it / 2 },
-                    exit = fadeOut(tween(200)) + slideOutVertically(tween(200)) { -it / 2 }
-                ) {
-                    LumiBrandLockup(
-                        flowerSize = 21,
-                        fontSize = 22.sp,
-                        starSize = 11.sp,
-                        letterSpacing = (-1.2).sp,
-                        animated = true
-                    )
-                }
-
-                if (!showHeaderBrand) {
-                    Spacer(modifier = Modifier.width(1.dp))
-                }
-
-                // Theme Chip
-                val themeName = when (currentTheme) {
-                    AppThemePalette.NOIR -> "Noir"
-                    AppThemePalette.PETALO -> "Pétalo"
-                    AppThemePalette.LUMI_SAGE, AppThemePalette.LUMI_SAGE_DARK -> "Salvia"
-                    AppThemePalette.LAVANDA, AppThemePalette.LUMI_LAVENDER -> "Lavanda"
-                    else -> currentTheme.name.lowercase().replaceFirstChar { it.uppercase() }
-                }
-
-                Box(
+                // ── TOP BAR: Header Brand + Theme Chip ───────────────────────────
+                Row(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(21.dp))
-                        .background(tokens.panel)
-                        .border(1.dp, tokens.line, RoundedCornerShape(21.dp))
-                        .clickable { showThemeSheet = true }
-                        .padding(horizontal = 13.dp, vertical = 7.dp)
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(horizontal = 24.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "◐ Tema: $themeName",
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = tokens.muted
-                    )
+                    // Header Brand: visible solo en pasos intermedios (1..6)
+                    AnimatedVisibility(
+                        visible = showHeaderBrand,
+                        enter = fadeIn(tween(250)) + slideInVertically(tween(250)) { -it / 2 },
+                        exit = fadeOut(tween(200)) + slideOutVertically(tween(200)) { -it / 2 }
+                    ) {
+                        LumiBrandLockup(
+                            flowerSize = 21,
+                            fontSize = 22.sp,
+                            starSize = 11.sp,
+                            letterSpacing = (-1.2).sp,
+                            animated = true
+                        )
+                    }
+
+                    if (!showHeaderBrand) {
+                        Spacer(modifier = Modifier.width(1.dp))
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(21.dp))
+                            .background(tokens.panel)
+                            .border(1.dp, tokens.line, RoundedCornerShape(21.dp))
+                            .clickable { showThemeSheet = true }
+                            .padding(horizontal = 13.dp, vertical = 7.dp)
+                    ) {
+                        Text(
+                            text = "◐ Tema: ${onboardingTheme.displayName}",
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = tokens.muted
+                        )
+                    }
                 }
-            }
 
             // ── STEPBAR: Indicador y barra de progreso ───────────────────────
             AnimatedVisibility(
@@ -313,40 +313,18 @@ fun OnboardingScreen(
                     else -> "Continuar →"
                 }
 
-                // Botón principal (Pill 999.dp con gradiente Lumi)
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(
-                            if (uiState.isNextEnabled) {
-                                Brush.horizontalGradient(
-                                    listOf(Color(0xFFEAB0CE), Color(0xFFC6B1F4))
-                                )
-                            } else {
-                                Brush.horizontalGradient(
-                                    listOf(Color(0xFFEAB0CE).copy(alpha = 0.4f), Color(0xFFC6B1F4).copy(alpha = 0.4f))
-                                )
-                            }
-                        )
-                        .clickable(enabled = uiState.isNextEnabled) {
-                            if (isFinalStep) {
-                                viewModel.completeOnboarding(onDone = onComplete)
-                            } else {
-                                viewModel.nextStep()
-                            }
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = primaryLabel,
-                        fontSize = 13.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF23182C),
-                        letterSpacing = (-0.25).sp
-                    )
-                }
+                // Botón principal ceremonial con halo orbital y cinta drift
+                LumiPrimaryButton(
+                    text = primaryLabel,
+                    onClick = {
+                        if (isFinalStep) {
+                            viewModel.completeOnboarding(onDone = onComplete)
+                        } else {
+                            viewModel.nextStep()
+                        }
+                    },
+                    enabled = uiState.isNextEnabled
+                )
 
                 // Navegación secundaria (Volver y nota al pie)
                 Row(
@@ -469,14 +447,16 @@ fun OnboardingScreen(
 
         // ── THEME SHEET MODAL ────────────────────────────────────────────────
         if (showThemeSheet) {
-            LumiThemeSheet(
-                selectedTheme = currentTheme,
+            LumiOnboardingThemeSheet(
+                selectedTheme = onboardingTheme,
                 onSelectTheme = { theme ->
-                    settingsViewModel.changeTheme(theme)
+                    onboardingTheme = theme
+                    settingsViewModel.changeTheme(theme.appThemePalette)
                     showThemeSheet = false
                 },
                 onDismiss = { showThemeSheet = false }
             )
         }
     }
+}
 }

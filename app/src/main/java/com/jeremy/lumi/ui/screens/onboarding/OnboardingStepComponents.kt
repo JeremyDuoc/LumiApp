@@ -1,7 +1,14 @@
 package com.jeremy.lumi.ui.screens.onboarding
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,9 +27,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -42,7 +53,6 @@ import com.jeremy.lumi.domain.model.SecondaryGoal
 import com.jeremy.lumi.domain.model.UserGoal
 import com.jeremy.lumi.ui.components.LumiBrandLockup
 import com.jeremy.lumi.ui.components.LumiEditorialHeading
-import com.jeremy.lumi.ui.theme.LumiThemeTokens
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -58,7 +68,7 @@ fun PaperCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val tokens = LumiThemeTokens.current
+    val tokens = LumiOnboardingThemeTokens.current
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -79,7 +89,7 @@ fun OptionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tokens = LumiThemeTokens.current
+    val tokens = LumiOnboardingThemeTokens.current
     val borderAnimColor = if (selected) tokens.accent else tokens.line
     val bgAnimColor = if (selected) tokens.accentSoft else tokens.panel
 
@@ -221,7 +231,7 @@ fun Step1Safety(
     onOpenPrivacy: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tokens = LumiThemeTokens.current
+    val tokens = LumiOnboardingThemeTokens.current
 
     Column(modifier = modifier.fillMaxWidth()) {
         LumiEditorialHeading(
@@ -268,23 +278,11 @@ fun Step1Safety(
                 .padding(16.dp),
             verticalAlignment = Alignment.Top
         ) {
-            Box(
-                modifier = Modifier
-                    .size(24.dp)
-                    .clip(RoundedCornerShape(5.dp))
-                    .background(if (accepted) tokens.accent else tokens.panel2)
-                    .border(1.2.dp, if (accepted) tokens.accent else tokens.line, RoundedCornerShape(5.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                if (accepted) {
-                    Icon(
-                        imageVector = Icons.Rounded.Check,
-                        contentDescription = null,
-                        tint = tokens.bg,
-                        modifier = Modifier.size(17.dp)
-                    )
-                }
-            }
+            LumiConsentCheckbox(
+                checked = accepted,
+                onCheckedChange = { onToggleConsent(it) },
+                modifier = Modifier.padding(top = 2.dp)
+            )
 
             Spacer(modifier = Modifier.width(13.dp))
 
@@ -331,7 +329,7 @@ fun Step1Safety(
 
 @Composable
 private fun BulletItem(text: String) {
-    val tokens = LumiThemeTokens.current
+    val tokens = LumiOnboardingThemeTokens.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -352,7 +350,25 @@ fun Step2Nickname(
     onNameChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tokens = LumiThemeTokens.current
+    val tokens = LumiOnboardingThemeTokens.current
+    var isFocused by remember { mutableStateOf(false) }
+
+    val underlineScale by animateFloatAsState(
+        targetValue = if (isFocused) 1f else 0f,
+        animationSpec = tween(durationMillis = 350, easing = CubicBezierEasing(0.2f, 0.8f, 0.25f, 1f)),
+        label = "name_underline_scale"
+    )
+
+    val infiniteTransition = rememberInfiniteTransition(label = "nickname_sparkles")
+    val dotCycle by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2300, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "dot_cycle"
+    )
 
     Column(modifier = modifier.fillMaxWidth()) {
         LumiEditorialHeading(
@@ -374,17 +390,46 @@ fun Step2Nickname(
 
         Spacer(modifier = Modifier.height(9.dp))
 
-        // Input estilizado con subrayado y adorno de destello
+        // Input estilizado con subrayado expansivo, destellos vivos y ripple
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(55.dp)
                 .clip(RoundedCornerShape(15.dp))
                 .background(tokens.panel)
-                .border(1.dp, tokens.line, RoundedCornerShape(15.dp))
+                .border(
+                    width = if (isFocused) 1.5.dp else 1.dp,
+                    color = if (isFocused) tokens.accent.copy(alpha = 0.55f) else tokens.line,
+                    shape = RoundedCornerShape(15.dp)
+                )
                 .padding(horizontal = 16.dp),
             contentAlignment = Alignment.CenterStart
         ) {
+            // Destellos vivos ascendentes (name-dots i) cuando el input tiene foco
+            if (isFocused) {
+                val offsets = listOf(
+                    Triple(0.82f, 0.70f, 0.00f),
+                    Triple(0.90f, 0.20f, 0.11f),
+                    Triple(0.72f, 0.55f, 0.21f),
+                    Triple(0.96f, 0.56f, 0.31f)
+                )
+                androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                    val w = size.width
+                    val h = size.height
+                    offsets.forEach { (relX, relY, delayFraction) ->
+                        val phase = (dotCycle - delayFraction + 1f) % 1f
+                        val liftY = (8f - 29f * phase) * density
+                        val alpha = if (phase < 0.4f) (phase / 0.4f) * 0.55f else ((1f - phase) / 0.6f) * 0.55f
+                        val dotSize = (1.5f + 1.5f * phase) * density
+                        drawCircle(
+                            color = tokens.accent.copy(alpha = alpha.coerceIn(0f, 1f)),
+                            radius = dotSize,
+                            center = Offset(w * relX, h * relY + liftY)
+                        )
+                    }
+                }
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -399,7 +444,9 @@ fun Step2Nickname(
                         fontWeight = FontWeight.Medium
                     ),
                     cursorBrush = SolidColor(tokens.accent),
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .onFocusChanged { isFocused = it.isFocused },
                     decorationBox = { innerTextField ->
                         if (name.isEmpty()) {
                             Text(
@@ -415,8 +462,26 @@ fun Step2Nickname(
                 Icon(
                     imageVector = DefaultOnboardingIconProvider.getVector(OnboardingIconKey.Sparkle),
                     contentDescription = null,
-                    tint = tokens.accent,
-                    modifier = Modifier.size(19.dp)
+                    tint = if (isFocused) tokens.accent else tokens.muted,
+                    modifier = Modifier
+                        .size(19.dp)
+                        .scale(if (isFocused) 1.08f else 1f)
+                )
+            }
+
+            // Subrayado expansivo en el borde inferior
+            if (underlineScale > 0f) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth(underlineScale)
+                        .height(2.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color.Transparent, tokens.accent, Color.Transparent)
+                            )
+                        )
                 )
             }
         }
@@ -487,7 +552,7 @@ fun Step3Cycle(
     onAdjustCycleLength: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tokens = LumiThemeTokens.current
+    val tokens = LumiOnboardingThemeTokens.current
 
     Column(modifier = modifier.fillMaxWidth()) {
         LumiEditorialHeading(
@@ -603,7 +668,7 @@ fun RoundStepperButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tokens = LumiThemeTokens.current
+    val tokens = LumiOnboardingThemeTokens.current
     Box(
         modifier = modifier
             .size(43.dp)
@@ -634,7 +699,7 @@ fun Step4LastPeriod(
     onOpenDatePicker: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tokens = LumiThemeTokens.current
+    val tokens = LumiOnboardingThemeTokens.current
 
     Column(modifier = modifier.fillMaxWidth()) {
         LumiEditorialHeading(
@@ -673,7 +738,7 @@ fun Step4LastPeriod(
 
                 val formattedDate = if (lastPeriodDate > 0L) {
                     val date = Instant.ofEpochMilli(lastPeriodDate).atZone(ZoneId.systemDefault()).toLocalDate()
-                    date.format(DateTimeFormatter.ofPattern("d 'de' MMMM, yyyy", Locale("es", "CL")))
+                    date.format(DateTimeFormatter.ofPattern("d 'de' MMMM, yyyy", Locale.getDefault()))
                 } else {
                     "Toca para seleccionar fecha"
                 }
@@ -726,7 +791,7 @@ fun ChipButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tokens = LumiThemeTokens.current
+    val tokens = LumiOnboardingThemeTokens.current
     Box(
         modifier = modifier
             .clip(CircleShape)
@@ -756,7 +821,7 @@ fun Step5Preferences(
     onSelectContraception: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tokens = LumiThemeTokens.current
+    val tokens = LumiOnboardingThemeTokens.current
 
     Column(modifier = modifier.fillMaxWidth()) {
         LumiEditorialHeading(
@@ -843,7 +908,7 @@ fun GoalCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tokens = LumiThemeTokens.current
+    val tokens = LumiOnboardingThemeTokens.current
 
     Row(
         modifier = modifier
@@ -887,36 +952,108 @@ fun ContraceptionGlider(
     onSelectChoice: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tokens = LumiThemeTokens.current
+    val tokens = LumiOnboardingThemeTokens.current
     val options = listOf("yes" to "Sí", "no" to "No", "unsure" to "Prefiero no decir")
+    val selectedIndex = options.indexOfFirst { it.first == selectedChoice }
 
-    Row(
+    val weights = listOf(1f, 1f, 1.68f)
+    val totalWeight = 3.68f
+    val gap = 4.dp
+    val padding = 5.dp
+
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .clip(CircleShape)
-            .background(tokens.panel2)
-            .border(1.dp, tokens.line, CircleShape)
-            .padding(4.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .height(45.dp)
+            .clip(RoundedCornerShape(999.dp))
+            .background(tokens.panel)
+            .border(1.dp, tokens.line, RoundedCornerShape(999.dp))
+            .padding(padding)
     ) {
-        for ((key, label) in options) {
-            val isSelected = selectedChoice == key
+        val totalAvailableWidth = maxWidth - gap * 2
+        val width0 = totalAvailableWidth * (weights[0] / totalWeight)
+        val width1 = totalAvailableWidth * (weights[1] / totalWeight)
+        val width2 = totalAvailableWidth * (weights[2] / totalWeight)
+
+        val targetWidth = when (selectedIndex) {
+            0 -> width0
+            1 -> width1
+            2 -> width2
+            else -> 0.dp
+        }
+
+        val targetOffset = when (selectedIndex) {
+            0 -> 0.dp
+            1 -> width0 + gap
+            2 -> width0 + width1 + gap * 2
+            else -> 0.dp
+        }
+
+        val animWidth by animateDpAsState(
+            targetValue = targetWidth,
+            animationSpec = tween(
+                durationMillis = 370,
+                easing = CubicBezierEasing(0.2f, 0.9f, 0.25f, 1f)
+            ),
+            label = "glider_width"
+        )
+
+        val animOffset by animateDpAsState(
+            targetValue = targetOffset,
+            animationSpec = tween(
+                durationMillis = 370,
+                easing = CubicBezierEasing(0.2f, 0.9f, 0.25f, 1f)
+            ),
+            label = "glider_offset"
+        )
+
+        val gliderAlpha by animateFloatAsState(
+            targetValue = if (selectedIndex >= 0) 1f else 0f,
+            animationSpec = tween(durationMillis = 200),
+            label = "glider_alpha"
+        )
+
+        // Pastilla deslizante (Glider)
+        if (gliderAlpha > 0f) {
             Box(
                 modifier = Modifier
-                    .weight(if (key == "unsure") 1.6f else 1f)
-                    .height(34.dp)
-                    .clip(CircleShape)
-                    .background(if (isSelected) tokens.accent else Color.Transparent)
-                    .clickable { onSelectChoice(key) },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = label,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isSelected) tokens.bg else tokens.muted,
-                    maxLines = 1
-                )
+                    .offset(x = animOffset)
+                    .width(animWidth)
+                    .fillMaxHeight()
+                    .alpha(gliderAlpha)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(
+                        Brush.linearGradient(
+                            listOf(tokens.btnPink, tokens.btnViolet)
+                        )
+                    )
+            )
+        }
+
+        // Fila de opciones clickeables por encima
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.spacedBy(gap),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            options.forEachIndexed { index, (key, label) ->
+                val isSelected = selectedChoice == key
+                Box(
+                    modifier = Modifier
+                        .weight(weights[index])
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(999.dp))
+                        .clickable { onSelectChoice(key) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = label,
+                        fontSize = 11.sp,
+                        fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.SemiBold,
+                        color = if (isSelected) Color(0xFF21172D) else tokens.muted,
+                        maxLines = 1
+                    )
+                }
             }
         }
     }
@@ -940,7 +1077,7 @@ fun Step6Customization(
     onPhysicalProfileChange: (Int?, Float?, Float?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tokens = LumiThemeTokens.current
+    val tokens = LumiOnboardingThemeTokens.current
     var profileExpanded by remember { mutableStateOf(false) }
 
     Column(modifier = modifier.fillMaxWidth()) {
@@ -1185,7 +1322,7 @@ fun InterestTile(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tokens = LumiThemeTokens.current
+    val tokens = LumiOnboardingThemeTokens.current
 
     Column(
         modifier = modifier
@@ -1225,7 +1362,7 @@ fun ProfileInputField(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tokens = LumiThemeTokens.current
+    val tokens = LumiOnboardingThemeTokens.current
 
     Column(modifier = modifier) {
         Text(
@@ -1277,7 +1414,7 @@ fun Step7Summary(
     saveError: String?,
     modifier: Modifier = Modifier
 ) {
-    val tokens = LumiThemeTokens.current
+    val tokens = LumiOnboardingThemeTokens.current
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -1337,7 +1474,7 @@ fun Step7Summary(
             val cycleVal = if (data.cycleLengthKnown) "${data.cycleLength} días" else "Por conocer"
             val periodVal = if (data.lastPeriodKnown && data.lastPeriodDate > 0L) {
                 val d = Instant.ofEpochMilli(data.lastPeriodDate).atZone(ZoneId.systemDefault()).toLocalDate()
-                d.format(DateTimeFormatter.ofPattern("d MMM", Locale("es", "CL")))
+                d.format(DateTimeFormatter.ofPattern("d MMM", Locale.getDefault()))
             } else {
                 "Sin registrar"
             }
@@ -1407,7 +1544,7 @@ fun SummaryCard(
     onEdit: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tokens = LumiThemeTokens.current
+    val tokens = LumiOnboardingThemeTokens.current
 
     Column(
         modifier = modifier

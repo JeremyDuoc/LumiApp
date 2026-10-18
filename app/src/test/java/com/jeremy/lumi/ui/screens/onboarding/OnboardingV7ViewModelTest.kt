@@ -183,4 +183,42 @@ class OnboardingV7ViewModelTest {
         assertEquals("Hola, Valentina.", formatGreeting("Valentina"))
         assertEquals("Hola, Jeremy.", formatGreeting("  Jeremy  "))
     }
+
+    @Test
+    fun testAll8ThemesExistAndHaveValidTokens() {
+        assertEquals(8, LumiOnboardingTheme.entries.size)
+
+        val darkThemes = LumiOnboardingTheme.entries.filter { it.isDark }
+        val lightThemes = LumiOnboardingTheme.entries.filter { !it.isDark }
+
+        assertEquals(4, darkThemes.size)
+        assertEquals(4, lightThemes.size)
+
+        for (theme in LumiOnboardingTheme.entries) {
+            val tokens = getThemeTokensV7(theme)
+            assertEquals(theme.isDark, tokens.isDark)
+            assertNotNull(tokens.bg)
+            assertNotNull(tokens.panel)
+            assertNotNull(tokens.text)
+            assertNotNull(tokens.accent)
+            assertNotNull(tokens.accentSoft)
+            assertNotNull(tokens.dim)
+            assertNotNull(tokens.btnPink)
+            assertNotNull(tokens.btnViolet)
+        }
+    }
+
+    @Test
+    fun testThemeFromIdAndFromAppThemeFallback() {
+        assertEquals(LumiOnboardingTheme.NOIR, LumiOnboardingTheme.fromId("noir"))
+        assertEquals(LumiOnboardingTheme.CIRUELA, LumiOnboardingTheme.fromId("ciruela"))
+        assertEquals(LumiOnboardingTheme.BOSQUE, LumiOnboardingTheme.fromId("bosque"))
+        assertEquals(LumiOnboardingTheme.INDIGO, LumiOnboardingTheme.fromId("indigo"))
+        assertEquals(LumiOnboardingTheme.PETALO, LumiOnboardingTheme.fromId("petalo"))
+        assertEquals(LumiOnboardingTheme.MARFIL, LumiOnboardingTheme.fromId("marfil"))
+        assertEquals(LumiOnboardingTheme.SALVIA, LumiOnboardingTheme.fromId("salvia"))
+        assertEquals(LumiOnboardingTheme.LAVANDA, LumiOnboardingTheme.fromId("lavanda"))
+        assertEquals(LumiOnboardingTheme.NOIR, LumiOnboardingTheme.fromId("unknown_theme"))
+    }
 }
+
