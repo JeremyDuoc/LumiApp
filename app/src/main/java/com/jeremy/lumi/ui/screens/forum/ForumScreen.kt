@@ -143,8 +143,11 @@ fun ForumScreen(
                     .then(if(featured!=null) Modifier.clickable { selectedId=featured.id } else Modifier)
                     .padding(16.dp)
             ) {
-                Text(featured.status,
-                    fontSize=10.sp,fontWeight=FontWeight.Bold,color=t.accent)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(featured.status,
+                        fontSize=10.sp,fontWeight=FontWeight.Bold,color=t.accent)
+                    Text("Ver avance  ›",fontSize=10.sp,color=t.muted)
+                }
                 Spacer(Modifier.height(10.dp))
                 Text(featured.title,
                     fontSize=16.sp,fontWeight=FontWeight.Bold,color=t.text,lineHeight=21.sp)
@@ -156,7 +159,7 @@ fun ForumScreen(
             VoiceTabs(tab) { tab=it }
             Spacer(Modifier.height(18.dp))
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
-                Text(when(tab){0->"Ideas de Lumi";1->"En camino";else->"Ideas que apoyaste"},
+                Text(when(tab){0->"Más ideas";1->"En camino";else->"Mis votos"},
                     color=t.text,fontSize=14.sp,fontWeight=FontWeight.Bold,modifier=Modifier.weight(1f))
                 Box {
                     Column {
@@ -378,14 +381,17 @@ private fun VoiceCreateSheet(onDismiss:()->Unit,onPublish:(String,String,String)
         Column(Modifier.fillMaxWidth().navigationBarsPadding().imePadding()
             .padding(start=22.dp,end=22.dp,bottom=26.dp)) {
             VoiceSheetTop("Nueva propuesta",onDismiss)
-            Text("Proponer una idea",fontSize=23.sp,fontWeight=FontWeight.ExtraBold,color=t.text)
-            Spacer(Modifier.height(12.dp))
-            Text("Título",fontSize=12.sp,fontWeight=FontWeight.Bold,color=t.text)
-            OutlinedTextField(title,{if(it.length<=100)title=it},
+            Text("¿Qué mejorarías de Lumi?",fontSize=23.sp,fontWeight=FontWeight.ExtraBold,color=t.text)
+            Spacer(Modifier.height(7.dp))
+            Text("Una buena idea explica qué te gustaría cambiar y para qué te serviría.",
+                fontSize=11.sp,lineHeight=17.sp,color=t.muted)
+            Spacer(Modifier.height(14.dp))
+            Text("Título de la idea",fontSize=12.sp,fontWeight=FontWeight.Bold,color=t.text)
+            OutlinedTextField(title,{if(it.length<=95)title=it},
                 modifier=Modifier.fillMaxWidth(),singleLine=true,
-                placeholder={Text("¿Qué mejorarías en Lumi?")})
+                placeholder={Text("Ej. Poder ordenar mis síntomas favoritos")})
             Spacer(Modifier.height(11.dp))
-            Text("Categoría",fontSize=12.sp,fontWeight=FontWeight.Bold,color=t.text)
+            Text("¿En qué parte de Lumi?",fontSize=12.sp,fontWeight=FontWeight.Bold,color=t.text)
             Box {
                 TextButton(onClick={categoryMenu=true}){Text(category+"  ▾",color=t.accent)}
                 DropdownMenu(expanded=categoryMenu,onDismissRequest={categoryMenu=false}) {
@@ -394,16 +400,16 @@ private fun VoiceCreateSheet(onDismiss:()->Unit,onPublish:(String,String,String)
                     }
                 }
             }
-            Text("Describe tu idea",fontSize=12.sp,fontWeight=FontWeight.Bold,color=t.text)
-            OutlinedTextField(desc,{if(it.length<=900)desc=it},
+            Text("Cuéntanos un poco más",fontSize=12.sp,fontWeight=FontWeight.Bold,color=t.text)
+            OutlinedTextField(desc,{if(it.length<=600)desc=it},
                 modifier=Modifier.fillMaxWidth().heightIn(min=110.dp),minLines=3,maxLines=6,
-                placeholder={Text("¿Cómo ayudaría a las usuarias?")})
+                placeholder={Text("¿Qué problema resolvería esta mejora?")})
             Spacer(Modifier.height(10.dp))
-            Text("Sin nombre visible. No incluyas datos médicos o personales. Esta versión guarda solo en tu dispositivo.",
+            Text("Sin nombre visible. No incluyas síntomas, datos médicos, nombres, teléfonos ni información que pueda identificarte. Esta versión guarda solo en tu dispositivo.",
                 fontSize=11.sp,lineHeight=17.sp,color=t.muted)
             Spacer(Modifier.height(16.dp))
             VoicePrimary("Guardar propuesta local",
-                enabled=title.trim().length in 8..100 && desc.trim().length in 15..900) {
+                enabled=title.trim().length in 8..95 && desc.trim().length in 15..600) {
                 onPublish(title,desc,category)
             }
         }
