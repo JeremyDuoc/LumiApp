@@ -421,9 +421,25 @@ fun InsightsScreen(
 
             // Modal de Selección de Tema
             if (showThemeSheet) {
+                val themeRevealTrigger = com.jeremy.lumi.ui.theme.LocalThemeRevealTrigger.current
                 LumiThemeSheet(
                     selectedTheme = currentTheme,
-                    onSelectTheme = { settingsViewModel.changeTheme(it) },
+                    onSelectThemeAt = { palette, center ->
+                        if (themeRevealTrigger != null) {
+                            themeRevealTrigger.changeThemeWithReveal(palette, center)
+                        } else {
+                            settingsViewModel.changeTheme(palette)
+                        }
+                        showThemeSheet = false
+                    },
+                    onSelectTheme = { palette ->
+                        if (themeRevealTrigger != null) {
+                            themeRevealTrigger.changeThemeWithReveal(palette, null)
+                        } else {
+                            settingsViewModel.changeTheme(palette)
+                        }
+                        showThemeSheet = false
+                    },
                     onDismiss = { showThemeSheet = false }
                 )
             }

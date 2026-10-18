@@ -550,6 +550,12 @@ val LocalIsDarkTheme = compositionLocalOf { false }
 // Tema real de la raíz; evita el falso NOIR inicial de SettingsViewModel en MainScreen.
 val LocalActiveLumiTheme = compositionLocalOf { AppThemePalette.NOIR }
 
+data class ThemeRevealTrigger(
+    val changeThemeWithReveal: (palette: AppThemePalette, center: Offset?) -> Unit
+)
+
+val LocalThemeRevealTrigger = compositionLocalOf<ThemeRevealTrigger?> { null }
+
 // Expone los colores de fase activos a cualquier composable sin pasarlos como
 // parámetro. Se alimenta en LumiTheme con: preset elegido, o el set custom de
 // la usuaria cuando el preset activo es CUSTOM.

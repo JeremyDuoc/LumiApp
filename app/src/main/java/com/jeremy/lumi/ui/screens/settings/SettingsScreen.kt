@@ -565,11 +565,25 @@ fun SettingsScreen(
             )
         }
 
+        val themeRevealTrigger = com.jeremy.lumi.ui.theme.LocalThemeRevealTrigger.current
+
         if (showThemeSheet) {
             com.jeremy.lumi.ui.components.LumiThemeSheet(
                 selectedTheme = currentTheme,
-                onSelectTheme = {
-                    viewModel.changeTheme(it)
+                onSelectThemeAt = { palette, center ->
+                    if (themeRevealTrigger != null) {
+                        themeRevealTrigger.changeThemeWithReveal(palette, center)
+                    } else {
+                        viewModel.changeTheme(palette)
+                    }
+                    showThemeSheet = false
+                },
+                onSelectTheme = { palette ->
+                    if (themeRevealTrigger != null) {
+                        themeRevealTrigger.changeThemeWithReveal(palette, null)
+                    } else {
+                        viewModel.changeTheme(palette)
+                    }
                     showThemeSheet = false
                 },
                 onDismiss = { showThemeSheet = false }

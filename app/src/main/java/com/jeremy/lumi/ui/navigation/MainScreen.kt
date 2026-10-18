@@ -21,6 +21,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.geometry.Offset
+import com.jeremy.lumi.ui.components.captureThemeRevealSnapshot
+import com.jeremy.lumi.ui.components.LumiThemeSnapshotReveal
+import com.jeremy.lumi.ui.theme.LocalThemeRevealTrigger
+import com.jeremy.lumi.ui.theme.ThemeRevealTrigger
+import com.jeremy.lumi.ui.screens.settings.SettingsViewModel
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
@@ -503,10 +511,21 @@ fun MainScreen(
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute == "tabs"
 
-    // v19: el pulso debe sobrevivir al cambio de pestaña y al cierre de Settings.
-    // MainScreen (no HomeScreen) es el anfitrión común para toda la navegación interna.
     val activeAppTheme = com.jeremy.lumi.ui.theme.LocalActiveLumiTheme.current
-    val themePulseAccent = LumiThemeTokens.current.accent
+    val settingsViewModel: SettingsViewModel = hiltViewModel()
+    val sceneView = LocalView.current
+    var themeOldFrame by remember { mutableStateOf<ImageBitmap?>(null) }
+    var themeRevealCenter by remember { mutableStateOf<Offset?>(null) }
+
+    val themeRevealTrigger = remember(sceneView, settingsViewModel, activeAppTheme) {
+        ThemeRevealTrigger { targetPalette, origin ->
+            if (targetPalette != activeAppTheme) {
+                themeOldFrame = captureThemeRevealSnapshot(sceneView)
+                themeRevealCenter = origin
+                settingsViewModel.changeTheme(targetPalette)
+            }
+        }
+    }
 
     // Retorno suave a la pestaña Inicio si se presiona el botón Back del sistema
     BackHandler(enabled = showBottomBar && pagerState.currentPage != 0) {
@@ -515,6 +534,9 @@ fun MainScreen(
         }
     }
 
+    CompositionLocalProvider(
+        LocalThemeRevealTrigger provides themeRevealTrigger
+    ) {
     Box(Modifier.fillMaxSize()) {
     Scaffold(
         bottomBar = {
@@ -654,13 +676,16 @@ fun MainScreen(
                 ForumScreen()
             }
         }
-    }    // Sobre el Scaffold, nav inferior y pantallas internas: pulso de 720 ms
-    // idéntico al del HTML, sin oscurecer ni bloquear interacciones.
-    com.jeremy.lumi.ui.theme.ConnectedThemePulse(
-        accentColor = themePulseAccent,
-        pulseKey = activeAppTheme
-    )
+    }    // Revelación circular snapshot idéntica a la del onboarding (690 ms, cubic-bezier(.2, .83, .2, 1))
+    themeOldFrame?.let { old ->
+        LumiThemeSnapshotReveal(
+            oldFrame = old,
+            sourceCenter = themeRevealCenter,
+            onFinished = { themeOldFrame = null }
+        )
+    }
     } // Box de la navegación interna
+    } // CompositionLocalProvider
 
 }
 

@@ -40,6 +40,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jeremy.lumi.ui.theme.AppThemePalette
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.isSpecified
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 data class ThemeAtmosphereOption(
     val palette: AppThemePalette,
@@ -72,6 +80,7 @@ fun LumiThemeSheet(
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     selectedTheme: AppThemePalette,
     onSelectTheme: (AppThemePalette) -> Unit,
+    onSelectThemeAt: ((AppThemePalette, Offset) -> Unit)? = null,
     onDismiss: () -> Unit
 ) {
     val tokens = LumiThemeTokens.current
@@ -147,6 +156,7 @@ fun LumiThemeSheet(
                     .heightIn(max = 440.dp)
             ) {
                 items(AllThemeAtmospheres) { item ->
+                    var centerInWindow by remember { mutableStateOf(Offset.Unspecified) }
                     val isPicked = selectedTheme == item.palette ||
                             (item.palette == AppThemePalette.CIRUELA && selectedTheme == AppThemePalette.VINO) ||
                             (item.palette == AppThemePalette.BOSQUE && (selectedTheme == AppThemePalette.LUMI_FOREST || selectedTheme == AppThemePalette.LUMI_FOREST_DARK)) ||
@@ -164,8 +174,15 @@ fun LumiThemeSheet(
                                 color = if (isPicked) tokens.accent else tokens.line,
                                 shape = RoundedCornerShape(15.dp)
                             )
+                            .onGloballyPositioned {
+                                centerInWindow = it.boundsInWindow().center
+                            }
                             .clickable {
-                                onSelectTheme(item.palette)
+                                if (onSelectThemeAt != null && centerInWindow.isSpecified) {
+                                    onSelectThemeAt(item.palette, centerInWindow)
+                                } else {
+                                    onSelectTheme(item.palette)
+                                }
                             }
                             .padding(12.dp),
                         verticalArrangement = Arrangement.SpaceBetween

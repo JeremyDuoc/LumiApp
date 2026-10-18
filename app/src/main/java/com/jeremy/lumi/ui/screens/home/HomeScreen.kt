@@ -308,25 +308,10 @@ fun HomeScreen(
                         }
                     }
 
-                    Spacer(Modifier.height(22.dp))
+                    Spacer(Modifier.height(16.dp))
 
-                    // 2. TIMELINE SEMANAL (Integrado al fondo, antes del aro del ciclo)
-                    if (uiState.weekDays.isNotEmpty()) {
-                        FadeSlideIn(screenReady, STAGGER_MS) {
-                            LumiWeekTimeline(
-                                weekDays = uiState.weekDays,
-                                selectedDate = uiState.selectedDate,
-                                onSelectDate = { viewModel.selectDate(it) },
-                                onViewCalendarClick = onNavigateToCalendar,
-                                onResetToToday = { viewModel.resetToToday() }
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.height(18.dp))
-
-                    // 3. ARO DEL CICLO + STATUS DE PREDICCIÓN
-                    FadeSlideIn(screenReady, STAGGER_MS * 2) {
+                    // 2. ARO DEL CICLO + STATUS DE PREDICCIÓN (Hero central)
+                    FadeSlideIn(screenReady, STAGGER_MS) {
                         val phaseName = when (uiState.currentPhase) {
                             CyclePhase.MENSTRUAL -> stringResource(R.string.pm_phase_menstrual)
                             CyclePhase.FOLLICULAR -> stringResource(R.string.pm_phase_follicular)
@@ -353,6 +338,21 @@ fun HomeScreen(
                             confidenceLabel = confidenceLabel,
                             onConfidenceClick = { showPredictionInfoSheet = true }
                         )
+                    }
+
+                    Spacer(Modifier.height(20.dp))
+
+                    // 3. TIMELINE SEMANAL (Minicalendario desplazado abajo del aro central)
+                    if (uiState.weekDays.isNotEmpty()) {
+                        FadeSlideIn(screenReady, STAGGER_MS * 2) {
+                            LumiWeekTimeline(
+                                weekDays = uiState.weekDays,
+                                selectedDate = uiState.selectedDate,
+                                onSelectDate = { viewModel.selectDate(it) },
+                                onViewCalendarClick = onNavigateToCalendar,
+                                onResetToToday = { viewModel.resetToToday() }
+                            )
+                        }
                     }
 
                     Spacer(Modifier.height(22.dp))
@@ -560,11 +560,25 @@ fun HomeScreen(
             )
         }
 
+        val themeRevealTrigger = com.jeremy.lumi.ui.theme.LocalThemeRevealTrigger.current
+
         if (showThemeSheet) {
             LumiThemeSheet(
                 selectedTheme = currentTheme,
-                onSelectTheme = {
-                    settingsViewModel.changeTheme(it)
+                onSelectThemeAt = { palette, center ->
+                    if (themeRevealTrigger != null) {
+                        themeRevealTrigger.changeThemeWithReveal(palette, center)
+                    } else {
+                        settingsViewModel.changeTheme(palette)
+                    }
+                    showThemeSheet = false
+                },
+                onSelectTheme = { palette ->
+                    if (themeRevealTrigger != null) {
+                        themeRevealTrigger.changeThemeWithReveal(palette, null)
+                    } else {
+                        settingsViewModel.changeTheme(palette)
+                    }
                     showThemeSheet = false
                 },
                 onDismiss = { showThemeSheet = false }
