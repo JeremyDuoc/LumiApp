@@ -3,7 +3,7 @@ package com.jeremy.lumi.ui.navigation
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Home
@@ -24,5 +24,5 @@ sealed class BottomNavItem(
     object Chat     : BottomNavItem("chat",     Icons.Default.ChatBubbleOutline,  R.string.nav_chat)
     object Settings : BottomNavItem("settings", Icons.Default.Settings,           R.string.nav_settings)
     // Forum sigue siendo accesible pero ya no ocupa espacio en la barra principal
-    object Forum    : BottomNavItem("forum",    Icons.Default.Forum,               R.string.nav_voice)
+    object Forum    : BottomNavItem("forum",    Icons.Outlined.ChatBubbleOutline, R.string.nav_voice)
 }
