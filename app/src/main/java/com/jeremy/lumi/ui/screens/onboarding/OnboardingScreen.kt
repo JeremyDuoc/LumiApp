@@ -44,14 +44,14 @@ import com.jeremy.lumi.ui.theme.AppThemePalette
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
 
 private val STEP_NAMES = mapOf(
-    0 to "BIENVENIDA",
-    1 to "SEGURIDAD",
-    2 to "TU NOMBRE",
-    3 to "TU CICLO",
-    4 to "ÚLTIMO PERIODO",
-    5 to "PREFERENCIAS",
-    6 to "PERSONALIZACIÓN",
-    7 to "LISTO"
+    0 to R.string.onboarding_step_welcome,
+    1 to R.string.onboarding_step_security,
+    2 to R.string.onboarding_step_name,
+    3 to R.string.onboarding_step_cycle,
+    4 to R.string.onboarding_step_last_period,
+    5 to R.string.onboarding_step_preferences,
+    6 to R.string.onboarding_step_customization,
+    7 to R.string.onboarding_step_ready
 )
 
 /**
@@ -174,7 +174,7 @@ fun OnboardingScreen(
                             .padding(horizontal = 13.dp, vertical = 7.dp)
                     ) {
                         Text(
-                            text = "◐ Tema: ${onboardingTheme.displayName}",
+                            text = stringResource(R.string.onboarding_theme_indicator_format, onboardingTheme.displayName),
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Medium,
                             color = tokens.muted
@@ -195,7 +195,7 @@ fun OnboardingScreen(
                 ) {
                     val stepIndex = uiState.currentStepIndex + 1
                     val totalSteps = uiState.totalStepsCount
-                    val stepTitle = STEP_NAMES[stepNumber] ?: ""
+                    val stepTitle = STEP_NAMES[stepNumber]?.let { stringResource(it) } ?: ""
 
                     Text(
                         text = "${stepIndex.toString().padStart(2, '0')} / ${totalSteps.toString().padStart(2, '0')} · $stepTitle",
@@ -339,11 +339,11 @@ fun OnboardingScreen(
                     .padding(horizontal = 24.dp, vertical = 14.dp)
             ) {
                 val primaryLabel = when {
-                    uiState.isCompleting -> "Guardando…"
-                    isFirstStep -> "Empezar →"
-                    isFinalStep -> if (uiState.saveError != null) "Reintentar" else "Ver mi inicio"
-                    stepNumber == 6 -> "Terminar →"
-                    else -> "Continuar →"
+                    uiState.isCompleting -> stringResource(R.string.onboarding_saving)
+                    isFirstStep -> stringResource(R.string.onboarding_btn_start)
+                    isFinalStep -> if (uiState.saveError != null) stringResource(R.string.btn_retry) else stringResource(R.string.onboarding_btn_see_home)
+                    stepNumber == 6 -> stringResource(R.string.onboarding_btn_finish)
+                    else -> stringResource(R.string.onboarding_btn_continue)
                 }
 
                 // Botón principal ceremonial con halo orbital y cinta drift
@@ -372,7 +372,7 @@ fun OnboardingScreen(
                 ) {
                     if (!isFirstStep) {
                         Text(
-                            text = "← Volver",
+                            text = stringResource(R.string.onboarding_btn_back),
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Medium,
                             color = tokens.muted,
@@ -383,8 +383,8 @@ fun OnboardingScreen(
                     }
 
                     val footerNote = when {
-                        isFinalStep -> "Tus datos se guardan de forma local"
-                        stepNumber == 2 || stepNumber == 6 -> "Puedes omitir este paso"
+                        isFinalStep -> stringResource(R.string.onboarding_local_storage_note)
+                        stepNumber == 2 || stepNumber == 6 -> stringResource(R.string.onboarding_footer_skip_step)
                         else -> ""
                     }
 
@@ -417,7 +417,7 @@ fun OnboardingScreen(
                 onDismissRequest = { showPrivacyDialog = false },
                 title = {
                     Text(
-                        text = "Política de privacidad",
+                        text = stringResource(R.string.onboarding_privacy_dialog_title),
                         fontWeight = FontWeight.Bold,
                         fontSize = 17.sp,
                         color = tokens.text
@@ -425,7 +425,7 @@ fun OnboardingScreen(
                 },
                 text = {
                     Text(
-                        text = "Tus datos se procesan localmente en tu dispositivo para entregarte predicciones y estimaciones. Lumi nunca vende tus datos de salud ni los comparte sin tu autorización expresa.",
+                        text = stringResource(R.string.onboarding_privacy_dialog_desc),
                         fontSize = 12.5.sp,
                         lineHeight = 17.sp,
                         color = tokens.muted
@@ -440,7 +440,7 @@ fun OnboardingScreen(
                             .padding(horizontal = 18.dp, vertical = 9.dp)
                     ) {
                         Text(
-                            text = "Cerrar",
+                            text = stringResource(R.string.btn_close),
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.5.sp,
                             color = tokens.bg

@@ -920,13 +920,13 @@ fun DayCell(day: CalendarDay, index: Int, onClick: () -> Unit) {
 
     val phaseName = phaseLabel(day.phase)
     val statusDesc = when {
-        day.isToday && day.hasLog -> "Hoy, con registro"
-        day.isToday -> "Hoy, sin registro"
-        day.isPrediction -> "Predicción"
-        day.hasLog -> "Con registro"
-        else -> "Sin registro"
+        day.isToday && day.hasLog -> stringResource(R.string.cal_accessibility_today_with_log)
+        day.isToday -> stringResource(R.string.cal_accessibility_today_no_log)
+        day.isPrediction -> stringResource(R.string.cal_accessibility_prediction)
+        day.hasLog -> stringResource(R.string.cal_accessibility_with_log)
+        else -> stringResource(R.string.cal_accessibility_no_log)
     }
-    val cellSemantics = "Día ${day.dayOfMonth}, $phaseName, $statusDesc"
+    val cellSemantics = stringResource(R.string.cal_accessibility_day_semantics, day.dayOfMonth, phaseName, statusDesc)
 
     Box(
         modifier = Modifier

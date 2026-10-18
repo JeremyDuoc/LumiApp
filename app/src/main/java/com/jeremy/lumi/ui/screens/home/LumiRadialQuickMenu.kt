@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -78,6 +79,9 @@ fun LumiRadialQuickMenu(
 
     BackHandler(enabled = expanded) { onExpandedChange(false) }
 
+    val closeActionDesc = stringResource(R.string.quick_action_close)
+    val openActionDesc = stringResource(R.string.quick_action_open)
+
     // El centro del dial queda a 46dp del borde derecho/inferior del Home,
     // por tanto el borde del botón de 60dp queda a 16dp de ambos lados.
     Box(
@@ -86,12 +90,12 @@ fun LumiRadialQuickMenu(
             .size(200.dp)
     ) {
         val items = listOf(
-            QuickEntry(0, if (diaryAlreadyLogged) "Editar mi día" else "Registrar mi día",
+            QuickEntry(0, if (diaryAlreadyLogged) stringResource(R.string.quick_action_edit_day) else stringResource(R.string.quick_action_log_day),
                 R.drawable.lumi_quick_diary,
                 Color(0xFF62DACA), Color(0xFF10D4A9), onLogClick),
-            QuickEntry(1, "Me llegó el periodo", R.drawable.lumi_quick_period,
+            QuickEntry(1, stringResource(R.string.quick_action_period_started), R.drawable.lumi_quick_period,
                 Color(0xFFF97D98), Color(0xFFD41F46), onPeriodClick),
-            QuickEntry(2, "Crear recordatorio", R.drawable.lumi_quick_reminder,
+            QuickEntry(2, stringResource(R.string.quick_action_create_reminder), R.drawable.lumi_quick_reminder,
                 Color(0xFFF0F8FF), Color(0xFFD169D1), onReminderClick)
         )
 
@@ -195,7 +199,7 @@ fun LumiRadialQuickMenu(
                     onClick = { onExpandedChange(!expanded) }
                 )
                 .semantics {
-                    contentDescription = if (expanded) "Cerrar acciones rápidas" else "Abrir acciones rápidas"
+                    contentDescription = if (expanded) closeActionDesc else openActionDesc
                 },
             contentAlignment = Alignment.Center
         ) {

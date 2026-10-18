@@ -220,7 +220,7 @@ fun LumiThemeSheet(
                                 color = tokens.text
                             )
                             Text(
-                                text = if (item.isDark) "Oscuro" else "Claro",
+                                text = if (item.isDark) stringResource(R.string.theme_mode_dark) else stringResource(R.string.theme_mode_light),
                                 fontSize = 10.sp,
                                 color = tokens.muted
                             )

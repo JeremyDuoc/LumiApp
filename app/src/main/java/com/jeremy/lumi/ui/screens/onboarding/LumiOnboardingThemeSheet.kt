@@ -19,8 +19,10 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jeremy.lumi.R
 
 /**
  * BottomSheet para la selección de los 8 temas cohesivos del Onboarding v7.
@@ -72,7 +74,7 @@ fun LumiOnboardingThemeSheet(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Elige la atmósfera de Lumi",
+                        text = stringResource(R.string.onboarding_theme_sheet_subtitle),
                         fontSize = 11.5.sp,
                         color = tokens.muted
                     )
@@ -89,7 +91,7 @@ fun LumiOnboardingThemeSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = "Cerrar",
+                        contentDescription = stringResource(R.string.btn_close),
                         tint = tokens.text,
                         modifier = Modifier.size(16.dp)
                     )
@@ -189,7 +191,7 @@ private fun ThemeSheetCard(
                 color = tokens.text
             )
             Text(
-                text = if (theme.isDark) "Oscuro" else "Claro",
+                text = if (theme.isDark) stringResource(R.string.theme_mode_dark) else stringResource(R.string.theme_mode_light),
                 fontSize = 9.5.sp,
                 color = tokens.muted
             )

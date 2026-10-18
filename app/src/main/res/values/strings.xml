@@ -1605,4 +1605,86 @@
     <string name="widget_syncing">Sincronizando...</string>
     <string name="home_register_period">Registrar periodo</string>
     <string name="home_period_missing_hint">Añade la fecha de tu último periodo para comenzar tu seguimiento.</string>
+
+    <!-- Acciones Rápidas (Radial Quick Menu) -->
+    <string name="quick_action_edit_day">Editar mi día</string>
+    <string name="quick_action_log_day">Registrar mi día</string>
+    <string name="quick_action_period_started">Me llegó el periodo</string>
+    <string name="quick_action_create_reminder">Crear recordatorio</string>
+    <string name="quick_action_close">Cerrar acciones rápidas</string>
+    <string name="quick_action_open">Abrir acciones rápidas</string>
+
+    <!-- Modos de tema y Hojas de temas -->
+    <string name="theme_mode_dark">Oscuro</string>
+    <string name="theme_mode_light">Claro</string>
+    <string name="onboarding_theme_sheet_subtitle">Elige la atmósfera de Lumi</string>
+    <string name="onboarding_theme_indicator_format">◐ Tema: %1$s</string>
+
+    <!-- Transición Atmosférica Ceremonial -->
+    <string name="atmospheric_title_1">Tu espacio empieza aquí</string>
+    <string name="atmospheric_sub_1">Un momento para hacerlo tuyo</string>
+    <string name="atmospheric_title_2">Conociendo tus preferencias</string>
+    <string name="atmospheric_sub_2">Solo lo que decidiste compartir</string>
+    <string name="atmospheric_title_3">Un lugar a tu manera</string>
+    <string name="atmospheric_sub_3">Sin prisas, sin expectativas</string>
+    <string name="atmospheric_title_4">Preparando tu bienvenida</string>
+    <string name="atmospheric_sub_4">Tus elecciones estarán a mano</string>
+    <string name="atmospheric_title_5">Todo está listo</string>
+    <string name="atmospheric_sub_5">Bienvenida a Lumi</string>
+    <string name="atmospheric_enter_now">Entrar ahora ↗</string>
+
+    <!-- Navegación y Diálogos de Onboarding -->
+    <string name="onboarding_saving">Guardando…</string>
+    <string name="onboarding_btn_see_home">Ver mi inicio</string>
+    <string name="onboarding_btn_finish">Terminar →</string>
+    <string name="onboarding_btn_continue">Continuar →</string>
+    <string name="onboarding_btn_back">← Volver</string>
+    <string name="onboarding_footer_skip_step">Puedes omitir este paso</string>
+    <string name="onboarding_privacy_dialog_desc">Tus datos se procesan localmente en tu dispositivo para entregarte predicciones y estimaciones. Lumi nunca vende tus datos de salud ni los comparte sin tu autorización expresa.</string>
+
+    <!-- Componentes de Pasos de Onboarding -->
+    <string name="onboarding_cycle_title_normal">Conozcamos </string>
+    <string name="onboarding_cycle_title_italic">tu ciclo.</string>
+    <string name="onboarding_cycle_subtitle">No tienes que saberlo todo para empezar.</string>
+    <string name="onboarding_cycle_approx_duration">Duración aproximada</string>
+    <string name="onboarding_cycle_approx_desc">Es opcional y podrás modificarla después.</string>
+    <string name="onboarding_cycle_btn_dont_know">No lo sé</string>
+    <string name="onboarding_cycle_btn_estimate">Estimar duración</string>
+    <string name="onboarding_cycle_dont_worry">No pasa nada si todavía no conoces tu duración habitual.</string>
+    <string name="onboarding_last_period_q_title_normal">Tu último </string>
+    <string name="onboarding_last_period_q_title_italic">periodo.</string>
+    <string name="onboarding_last_period_remember_q">¿Recuerdas cuándo comenzó?</string>
+    <string name="onboarding_last_period_choose_date">Elegir fecha</string>
+    <string name="onboarding_last_period_dont_remember">No recuerdo</string>
+    <string name="onboarding_last_period_calendar_note">Puedes cambiar la fecha desde el calendario.</string>
+    <string name="onboarding_last_period_no_need_now">No necesitas recordarlo ahora</string>
+    <string name="onboarding_last_period_log_later">Podrás registrar una fecha cuando la conozcas.</string>
+    <string name="onboarding_contraception_title">¿Usas anticoncepción hormonal?</string>
+    <string name="onboarding_contraception_desc">Puede afectar el sangrado y las predicciones.</string>
+    <string name="onboarding_contraception_prefer_not_say">Prefiero no decir</string>
+    <string name="onboarding_customization_title_normal">Últimos </string>
+    <string name="onboarding_customization_title_italic">detalles.</string>
+    <string name="onboarding_choose">Elegir</string>
+    <string name="days_short">%1$d d</string>
+    <string name="common_yes">Sí</string>
+    <string name="common_no">No</string>
+    <string name="btn_retry">Reintentar</string>
+    <string name="onboarding_physical_age">Edad</string>
+    <string name="onboarding_physical_height">Estatura</string>
+    <string name="onboarding_physical_weight">Peso</string>
+    <string name="onboarding_physical_share_note">Solo completa los datos que quieras compartir.</string>
+
+    <!-- Registro Diario & Accesibilidad -->
+    <string name="log_had_intimacy_question">¿Tuviste intimidad hoy?</string>
+    <string name="log_had_intimacy_yes">❤️ Sí</string>
+    <string name="cycle_ring_accessibility_description">Día %1$d de %2$d del ciclo, %3$s, %4$s, %5$s</string>
+    <string name="cal_accessibility_today_with_log">Hoy, con registro</string>
+    <string name="cal_accessibility_today_no_log">Hoy, sin registro</string>
+    <string name="cal_accessibility_prediction">Predicción</string>
+    <string name="cal_accessibility_with_log">Con registro</string>
+    <string name="cal_accessibility_no_log">Sin registro</string>
+    <string name="cal_accessibility_day_semantics">Día %1$d, %2$s, %3$s</string>
+    <string name="ambient_none">Sin decoración de fondo</string>
+    <string name="ambient_stars_moon">Estrellas y luna de hoy</string>
+    <string name="palette_theme_harmony">Armonía con el tema</string>
 </resources>

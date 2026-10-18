@@ -1500,7 +1500,7 @@ private fun IntimacyInteractiveCard(
         Spacer(Modifier.height(14.dp))
 
         Text(
-            text = "¿Tuviste intimidad hoy?",
+            text = stringResource(R.string.log_had_intimacy_question),
             fontSize = 12.5.sp,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f),
             fontWeight = FontWeight.Medium
@@ -1537,7 +1537,7 @@ private fun IntimacyInteractiveCard(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Sin registrar",
+                    text = stringResource(R.string.onboarding_summary_not_logged),
                     fontSize = 11.5.sp,
                     fontWeight = if (isNone) FontWeight.Bold else FontWeight.Medium,
                     color = if (isNone) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
@@ -1569,7 +1569,7 @@ private fun IntimacyInteractiveCard(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "No",
+                    text = stringResource(R.string.common_no),
                     fontSize = 12.sp,
                     fontWeight = if (answeredNo) FontWeight.Bold else FontWeight.Medium,
                     color = if (answeredNo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
@@ -1601,7 +1601,7 @@ private fun IntimacyInteractiveCard(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "❤️ Sí",
+                    text = stringResource(R.string.log_had_intimacy_yes),
                     fontSize = 12.sp,
                     fontWeight = if (hadIntercourse) FontWeight.Bold else FontWeight.Medium,
                     color = if (hadIntercourse) Color(0xFFED6190) else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),

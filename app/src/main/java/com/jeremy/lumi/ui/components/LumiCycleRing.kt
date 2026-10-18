@@ -90,7 +90,14 @@ fun LumiCycleRing(
     val dotRadius = breathing.animateFloat(0.70f, 0.95f, LumiMotion.DotBreathing, label = "dot_halo")
     val glowColors = remember(tokens.glow) { listOf(tokens.glow, tokens.glow.copy(alpha = 0f)) }
 
-    val semanticsDesc = "Día $currentDay de $cycleLength del ciclo, $phaseName, $estimatedDaysText, $confidenceLabel"
+    val semanticsDesc = stringResource(
+        R.string.cycle_ring_accessibility_description,
+        currentDay,
+        cycleLength,
+        phaseName,
+        estimatedDaysText,
+        confidenceLabel
+    )
 
     Column(
         modifier = modifier

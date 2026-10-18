@@ -20,3 +20,5 @@ node_modules/
 .worktrees/
 firebase-local-test-results/
 scripts/
+.gemini/
+

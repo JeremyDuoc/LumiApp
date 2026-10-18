@@ -15,6 +15,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
+import com.jeremy.lumi.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -68,11 +70,11 @@ import kotlin.math.sin
  * pero la navegación final sigue siendo responsabilidad de onFinished.
  */
 private val ceremonyTexts = listOf(
-    "Tu espacio empieza aquí" to "Un momento para hacerlo tuyo",
-    "Conociendo tus preferencias" to "Solo lo que decidiste compartir",
-    "Un lugar a tu manera" to "Sin prisas, sin expectativas",
-    "Preparando tu bienvenida" to "Tus elecciones estarán a mano",
-    "Todo está listo" to "Bienvenida a Lumi"
+    R.string.atmospheric_title_1 to R.string.atmospheric_sub_1,
+    R.string.atmospheric_title_2 to R.string.atmospheric_sub_2,
+    R.string.atmospheric_title_3 to R.string.atmospheric_sub_3,
+    R.string.atmospheric_title_4 to R.string.atmospheric_sub_4,
+    R.string.atmospheric_title_5 to R.string.atmospheric_sub_5
 )
 private val messageStarts = listOf(1300f, 3450f, 5550f, 7780f, 9770f)
 private val enterCurve = CubicBezierEasing(.18f, 1f, .3f, 1f)
@@ -465,7 +467,7 @@ fun LumiAtmosphericTransition(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    ceremonyTexts[displayedIndex].first,
+                    stringResource(ceremonyTexts[displayedIndex].first),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-.16).sp,
@@ -475,7 +477,7 @@ fun LumiAtmosphericTransition(
                 )
                 Spacer(Modifier.height(7.dp))
                 Text(
-                    ceremonyTexts[displayedIndex].second,
+                    stringResource(ceremonyTexts[displayedIndex].second),
                     fontSize = 11.5.sp,
                     color = tokens.muted.copy(alpha = .85f),
                     lineHeight = 17.sp,
@@ -517,7 +519,7 @@ fun LumiAtmosphericTransition(
                     )
                     .padding(horizontal = 13.dp, vertical = 10.dp)
             ) {
-                Text("Entrar ahora ↗", fontSize = 11.sp, color = tokens.text)
+                Text(stringResource(R.string.atmospheric_enter_now), fontSize = 11.sp, color = tokens.text)
             }
         }
     }
