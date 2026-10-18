@@ -71,6 +71,7 @@ fun OnboardingScreen(
     var showPrivacyDialog by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showThemeSheet by remember { mutableStateOf(false) }
+    var showAtmosphericTransition by remember { mutableStateOf(false) }
 
     val stepNumber = uiState.currentStepNumber
     val isFirstStep = uiState.currentStepIndex == 0
@@ -85,11 +86,16 @@ fun OnboardingScreen(
     CompositionLocalProvider(
         LocalLumiOnboardingTokens provides tokens
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(tokens.bg)
-        ) {
+        if (showAtmosphericTransition) {
+            LumiAtmosphericTransition(
+                onFinished = onComplete
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(tokens.bg)
+            ) {
             // Cielo estrellado en 3 capas ascendentes en paralaje (solo temas oscuros)
             LumiSkyBackground(stepNumber = stepNumber)
 
@@ -318,7 +324,9 @@ fun OnboardingScreen(
                     text = primaryLabel,
                     onClick = {
                         if (isFinalStep) {
-                            viewModel.completeOnboarding(onDone = onComplete)
+                            viewModel.completeOnboarding(onDone = {
+                                showAtmosphericTransition = true
+                            })
                         } else {
                             viewModel.nextStep()
                         }
@@ -458,5 +466,6 @@ fun OnboardingScreen(
             )
         }
     }
+}
 }
 }
