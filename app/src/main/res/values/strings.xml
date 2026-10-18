@@ -291,8 +291,8 @@
     <string name="home_cd_connections">Vínculos</string>
     <string name="home_cd_link">Vincular</string>
     <string name="home_cd_sync_error">Error de sincronización</string>
-    <string name="home_confidence_high">Certeza alta</string>
-    <string name="home_confidence_moderate">Certeza moderada</string>
+    <string name="home_confidence_high">Más historial disponible</string>
+    <string name="home_confidence_moderate">Historial parcial</string>
     <string name="home_confirm_period_when">¿Cuándo comenzó tu sangrado?</string>
     <string name="home_create_link">Crear un vínculo</string>
     <string name="home_cycle_restored_toast">Ciclo previo restaurado</string>
@@ -305,18 +305,18 @@
     <string name="home_factors_calculating_subtitle">Analizando historial biológico y síntomas…</string>
     <string name="home_factors_calculating_title">Calculando predicción…</string>
     <string name="home_factors_collapse">Ocultar análisis</string>
-    <string name="home_factors_confidence_high">Certeza alta</string>
-    <string name="home_factors_confidence_low">En calibración</string>
-    <string name="home_factors_confidence_medium">Certeza moderada</string>
+    <string name="home_factors_confidence_high">Historial amplio</string>
+    <string name="home_factors_confidence_low">Pocos registros aún</string>
+    <string name="home_factors_confidence_medium">Historial parcial</string>
     <string name="home_factors_cycles_count">%1$d ciclos cerrados</string>
     <string name="home_factors_history">Días registrados</string>
     <string name="home_factors_margin_note">Margen estimado: %1$s</string>
-    <string name="home_factors_model_certainty">Certeza del modelo:</string>
+    <string name="home_factors_model_certainty">Información disponible:</string>
     <string name="home_factors_regularity">Regularidad</string>
     <string name="home_factors_subtitle">FACTORES DE PREDICCIÓN</string>
     <string name="home_factors_symptoms">Síntomas</string>
     <string name="home_factors_title">Basado en tus datos</string>
-    <string name="home_factors_trigger_subtitle">Toca para ver el análisis de certeza</string>
+    <string name="home_factors_trigger_subtitle">Cómo se calculan estas fechas</string>
     <string name="home_factors_trigger_title">¿Cómo calculamos tu próximo periodo?</string>
     <string name="home_greeting">Hola</string>
     <string name="home_greeting_day">Día %1$d</string>
@@ -1374,7 +1374,7 @@
     
     No utilizamos cajas negras ni inventamos certezas: cuando hay pocos ciclos registrados, Lumi te lo indica con honestidad hasta que tu patrón biológico se consolide.</string>
     <string name="pred_info_methodology_title">Metodología honesta</string>
-    <string name="pred_info_model_certainty">Certeza del modelo</string>
+    <string name="pred_info_model_certainty">Información para estimar el ciclo</string>
     <string name="pred_info_regularity">Regularidad de ciclos</string>
     <string name="pred_info_subtitle">Transparencia clínica y calibración basada en tus datos</string>
     <string name="pred_info_symptom_tracking">Registro de síntomas y estado</string>
@@ -1382,9 +1382,9 @@
     <string name="predict_ovulation_in">Ovulación en %1$d días</string>
     <string name="predict_period_in">Periodo en %1$d días</string>
     <string name="predict_today">Es hoy</string>
-    <string name="prediction_confidence_high">Alta certeza (basada en %1$d ciclos regulares)</string>
-    <string name="prediction_confidence_low">Poca certeza aún (registro más días para afinar)</string>
-    <string name="prediction_confidence_medium">Certeza moderada (sigo aprendiendo tu ritmo)</string>
+    <string name="prediction_confidence_high">Basado en %1$d ciclos registrados (fecha orientativa)</string>
+    <string name="prediction_confidence_low">Pocos ciclos registrados; el rango es orientativo</string>
+    <string name="prediction_confidence_medium">Estimación provisional basada en tu historial</string>
     <string name="prediction_expected_date">Fecha más probable: %1$s</string>
     <string name="prediction_interval_range">Entre el %1$s y el %2$s</string>
     <string name="prediction_interval_title">Predicción de tu próximo periodo</string>
