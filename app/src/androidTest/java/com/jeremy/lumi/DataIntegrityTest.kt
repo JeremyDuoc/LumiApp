@@ -4,6 +4,8 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.jeremy.lumi.data.backup.BackupManager
+import com.jeremy.lumi.data.preferences.OnboardingPreferenceManager
+import com.jeremy.lumi.domain.model.UserGoal
 import com.jeremy.lumi.data.local.LumiDatabase
 import com.jeremy.lumi.data.local.entity.*
 import com.jeremy.lumi.data.repository.LumiRepositoryImpl
@@ -26,11 +28,13 @@ import java.util.zip.ZipOutputStream
 class DataIntegrityTest {
     private lateinit var db: LumiDatabase
     private lateinit var backups: BackupManager
+    private lateinit var profilePrefs: OnboardingPreferenceManager
     private val day = LocalDate.of(2026, 9, 1).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
     @Before fun setup() {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         db = Room.inMemoryDatabaseBuilder(context, LumiDatabase::class.java).build()
-        backups = BackupManager(context, db)
+        profilePrefs = OnboardingPreferenceManager(context)
+        backups = BackupManager(context, db, profilePrefs)
     }
     @After fun close() { db.close() }
 
@@ -67,12 +71,23 @@ class DataIntegrityTest {
         db.chatDao.insertMessage(ChatMessageEntity(text = "Test message", messageType = ChatMessageType.USER))
         val reminderId = db.dao.insertReminder(ReminderEntity(type = ReminderType.CUSTOM, label = "Test reminder")).toInt()
         val before = db.dao.getHealthDataSnapshot()
+        profilePrefs.saveOnboardingProfile(
+            userName = "Apodo original", isRegular = false, cycleLength = 31,
+            periodLength = 6, goal = UserGoal.TRACK_CYCLE
+        )
         val bytes = ByteArrayOutputStream()
         backups.exportEncryptedDatabaseArchive(bytes, "very long private backup password".toCharArray()).getOrThrow()
         db.dao.clearAllDataForDev()
+        profilePrefs.saveOnboardingProfile(
+            userName = "Apodo cambiado", isRegular = true, cycleLength = 28,
+            periodLength = 5, goal = UserGoal.HEALTH_MONITORING
+        )
         backups.importEncryptedDatabaseArchive(
             bytes.toByteArray().inputStream(), "very long private backup password".toCharArray()
         ).getOrThrow()
+        assertEquals("Apodo original", profilePrefs.userNameFlow.first())
+        assertEquals(31, profilePrefs.cycleLengthFlow.first())
+        assertEquals(UserGoal.TRACK_CYCLE, profilePrefs.userGoalFlow.first())
         assertEquals(before, db.dao.getHealthDataSnapshot())
         assertEquals("Test message", db.chatDao.getAllMessages().first().single().text)
         assertEquals("Test reminder", db.dao.getReminderById(reminderId)!!.label)
