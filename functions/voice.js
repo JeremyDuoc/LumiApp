@@ -57,6 +57,7 @@ exports.voteVoiceIdea = onCall({region:REGION},async(req)=>{
   return db.runTransaction(async tx=>{
     const [post,prior]=await Promise.all([tx.get(idea),tx.get(vote)]);
     if(!post.exists || post.get("visible")!==true)throw new HttpsError("not-found","La idea ya no está disponible.");
+    await rateLimited(tx,db,uid,"lastVoteAt",1000);
     const voted=!prior.exists, before=Number(post.get("votesCount"))||0;
     if(voted) tx.create(vote,{createdAtMs:Date.now()}); else tx.delete(vote);
     tx.update(idea,{votesCount:Math.max(0,before+(voted?1:-1))});
@@ -77,6 +78,8 @@ exports.submitVoiceComment = onCall({region:REGION},async(req)=>{
 exports.reportVoiceIdea = onCall({region:REGION},async(req)=>{
   const uid=caller(req),db=getFirestore(),id=docId(req.data?.ideaId),reason=clean(req.data?.reason,160,4);
   await db.runTransaction(async tx=>{
+    const target=await tx.get(db.collection("voice_ideas").doc(id));
+    if(!target.exists || target.get("visible")!==true)throw new HttpsError("not-found","Publicación no disponible.");
     await rateLimited(tx,db,uid,"lastReportAt",60*1000);
     tx.set(db.collection("voice_reports").doc(uid+"_"+id),{ideaId:id,reporterUid:uid,reason,createdAtMs:Date.now()});
   });
