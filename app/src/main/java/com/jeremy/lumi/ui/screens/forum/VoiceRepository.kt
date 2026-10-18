@@ -40,6 +40,7 @@ class VoiceRepository @Inject constructor(
         // Filtrar visible en la consulta: las reglas no funcionan como filtros.
         val registration = db.collection("voice_ideas")
             .whereEqualTo("visible", true)
+            .orderBy("createdAtMs", Query.Direction.DESCENDING)
             .limit(100)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) { close(error); return@addSnapshotListener }
