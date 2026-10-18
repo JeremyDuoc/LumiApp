@@ -52,6 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
 
 /** Tu voz · Migración de Lumi_Tu_Voz_Animaciones_v3.html; modo local explícito. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ForumScreen(
     onNavigateToChat: () -> Unit = {},
