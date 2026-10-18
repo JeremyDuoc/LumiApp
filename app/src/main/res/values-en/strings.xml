@@ -1687,4 +1687,24 @@
     <string name="ambient_none">No background decoration</string>
     <string name="ambient_stars_moon">Today\'s stars and moon</string>
     <string name="palette_theme_harmony">Theme harmony</string>
+    <string name="manual_backup_export_title">Create encrypted backup</string>
+    <string name="manual_backup_restore_title">Restore encrypted backup</string>
+    <string name="manual_backup_export_explain">This file contains sensitive health records. Lumi encrypts it on this device before saving. If you lose the password, you cannot recover the backup.</string>
+    <string name="manual_backup_restore_explain">Your existing local records will be replaced by those in the encrypted backup. Enter the backup password. This cannot be undone.</string>
+    <string name="manual_backup_password">Backup password</string>
+    <string name="manual_backup_confirm_password">Repeat password</string>
+    <string name="manual_backup_password_guidance">Use a unique phrase of at least 12 characters. Store it somewhere safe.</string>
+    <string name="manual_backup_export_action">Choose save location</string>
+    <string name="manual_backup_restore_action">Restore records</string>
+    <string name="manual_backup_legacy_title">Import legacy unencrypted ZIP</string>
+    <string name="manual_backup_legacy_warning">Older ZIP backups contain private health records WITHOUT encryption. Only import files from trusted sources. Existing local records will be replaced.</string>
+    <string name="manual_backup_legacy_action">Select ZIP</string>
+    <string name="manual_backup_import_legacy_title">Import legacy ZIP</string>
+    <string name="manual_backup_import_legacy_desc">Old unencrypted backups only</string>
+    <string name="manual_backup_encrypted_export_title">Export encrypted backup</string>
+    <string name="manual_backup_encrypted_export_desc">Password-protected archive</string>
+    <string name="manual_backup_encrypted_restore_title">Restore encrypted backup</string>
+    <string name="manual_backup_encrypted_restore_desc">Restore a .lbk archive</string>
+    <string name="manual_backup_operation_busy">Processing backup…</string>
+    <string name="manual_backup_file_error">Could not open the selected file.</string>
 </resources>
