@@ -192,5 +192,29 @@ service cloud.firestore {
           get(/databases/$(database)/documents/partner_links/$(linkId)).data.partnerUid == request.auth.uid
         );
     }
+
+    // LUMI · TU VOZ. Información pública exclusivamente aprobada por moderadores.
+    // Escrituras, votos, conteos y estados solo desde Cloud Functions (Admin SDK).
+    match /voice_ideas/{ideaId} {
+      allow get, list: if request.auth != null && resource.data.visible == true;
+      allow create, update, delete: if false;
+      match /comments/{commentId} {
+        allow get, list: if request.auth != null
+          && get(/databases/$(database)/documents/voice_ideas/$(ideaId)).data.visible == true;
+        allow create, update, delete: if false;
+      }
+    }
+    match /voice_votes/{uid}/items/{ideaId} {
+      allow get, list: if request.auth != null && request.auth.uid == uid;
+      allow create, update, delete: if false;
+    }
+    match /voice_my_submissions/{uid}/items/{ideaId} {
+      allow get, list: if request.auth != null && request.auth.uid == uid;
+      allow create, update, delete: if false;
+    }
+    match /voice_pending_ideas/{id} { allow read, write: if false; }
+    match /voice_pending_comments/{id} { allow read, write: if false; }
+    match /voice_reports/{id} { allow read, write: if false; }
+    match /voice_limits/{uid} { allow read, write: if false; }
   }
 }
