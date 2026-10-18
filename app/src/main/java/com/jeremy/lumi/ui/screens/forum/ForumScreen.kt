@@ -85,7 +85,7 @@ fun ForumScreen(
         } }
         when(order) {
             "Más recientes" -> filtered.sortedByDescending { it.createdAt }
-            "Más comentadas" -> filtered.sortedWith(compareByDescending<VoiceProposal> { it.comments.orEmpty().size }.thenByDescending { it.createdAt })
+            "Más comentadas" -> filtered.sortedWith(compareByDescending<VoiceProposal> { it.commentsCount }.thenByDescending { it.createdAt })
             else -> filtered.sortedWith(compareByDescending<VoiceProposal> { it.votes }.thenByDescending { it.createdAt })
         }
     }
