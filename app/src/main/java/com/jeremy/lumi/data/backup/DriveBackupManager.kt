@@ -6,6 +6,7 @@ import com.jeremy.lumi.data.backup.drive.DriveApiException
 import com.jeremy.lumi.data.backup.drive.DriveBackupFile
 import com.jeremy.lumi.data.local.dao.LumiDao
 import com.jeremy.lumi.data.preferences.BackupPreferenceManager
+import com.jeremy.lumi.data.preferences.OnboardingPreferenceManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayInputStream
@@ -29,7 +30,8 @@ import javax.inject.Singleton
 class DriveBackupManager @Inject constructor(
     private val dao: LumiDao,
     private val api: DriveApiClient,
-    private val prefs: BackupPreferenceManager
+    private val prefs: BackupPreferenceManager,
+    private val profilePreferences: OnboardingPreferenceManager
 ) {
 
     /** No existe ningún respaldo en el Drive de esta cuenta. */
@@ -86,7 +88,8 @@ class DriveBackupManager @Inject constructor(
     /** Crea (o reemplaza) el respaldo cifrado en el Drive de la usuaria. */
     suspend fun createBackup(token: String, key: BackupCrypto.DerivedKey): DriveBackupFile {
         val snapshot = dao.getHealthDataSnapshot()
-        val json = BackupSerializer.toJson(snapshot.cycles, snapshot.logs, snapshot.symptoms)
+        val profile = profilePreferences.exportBackupProfile()
+        val json = BackupSerializer.toJson(snapshot.cycles, snapshot.logs, snapshot.symptoms, profile)
         val encrypted = withContext(Dispatchers.Default) {
             BackupCrypto.encrypt(gzip(json.toByteArray(Charsets.UTF_8)), key)
         }
@@ -139,6 +142,9 @@ class DriveBackupManager @Inject constructor(
 
         val restored = BackupSerializer.fromJson(json)
         dao.restoreHealthDataSnapshot(restored.cycles, restored.dailyLogs, restored.symptoms)
+        // v1 legacy cloud backups have no profile: keep existing nickname in that case.
+        // Never restore sensitive device-specific tokens/consents from a backup.
+        restored.profile?.let { profilePreferences.restoreBackupProfile(it) }
         prefs.setFileId(file.id)
 
         if (passphrase != null) {
