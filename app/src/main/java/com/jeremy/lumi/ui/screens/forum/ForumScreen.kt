@@ -30,7 +30,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalMotionDurationScale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -184,7 +183,7 @@ fun ForumScreen(viewModel: ForumViewModel = hiltViewModel()) {
 @Composable
 private fun VoiceTabs(selected:Int,onSelect:(Int)->Unit) {
     val t=LumiThemeTokens.current
-    val duration=if(LocalMotionDurationScale.current.scaleFactor==0f) 0 else 500
+    val duration=500
     BoxWithConstraints(Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(13.dp))
         .background(t.panel).border(1.dp,t.line,RoundedCornerShape(13.dp))) {
         val segment=(maxWidth-8.dp)/3
@@ -216,7 +215,7 @@ private fun VoiceTabs(selected:Int,onSelect:(Int)->Unit) {
 @Composable
 private fun VoiceVote(post:VoiceProposal,onVote:()->Unit,detail:Boolean=false) {
     val t=LumiThemeTokens.current
-    val duration=if(LocalMotionDurationScale.current.scaleFactor==0f)0 else 580
+    val duration=580
     val scale by animateFloatAsState(if(post.votedByMe)1.1f else 1f,
         tween(duration,easing=CubicBezierEasing(.18f,1f,.28f,1f)),
         label="voice_soft_vote")
