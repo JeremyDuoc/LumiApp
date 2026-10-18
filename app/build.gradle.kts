@@ -26,6 +26,7 @@ android {
     buildTypes {
         debug {
             buildConfigField("Boolean", "USE_FIREBASE_EMULATOR", "false")
+            buildConfigField("Boolean", "ENABLE_BONDS", "true")
             buildConfigField("String", "FIREBASE_PROJECT_ID", "\"lumi-7c924\"")
             buildConfigField("String", "EMULATOR_HOST", "\"\"")
         }
@@ -36,6 +37,7 @@ android {
                 "proguard-rules.pro"
             )
             buildConfigField("Boolean", "USE_FIREBASE_EMULATOR", "false")
+            buildConfigField("Boolean", "ENABLE_BONDS", "false")
             buildConfigField("String", "FIREBASE_PROJECT_ID", "\"lumi-7c924\"")
             buildConfigField("String", "EMULATOR_HOST", "\"\"")
         }
