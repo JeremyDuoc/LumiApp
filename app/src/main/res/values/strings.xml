@@ -1687,4 +1687,5 @@
     <string name="ambient_none">Sin decoración de fondo</string>
     <string name="ambient_stars_moon">Estrellas y luna de hoy</string>
     <string name="palette_theme_harmony">Armonía con el tema</string>
+    <string name="nav_voice">Tu voz</string>
 </resources>
