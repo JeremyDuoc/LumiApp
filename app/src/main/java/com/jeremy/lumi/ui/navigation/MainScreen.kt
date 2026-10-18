@@ -492,7 +492,7 @@ fun MainScreen(
                 BottomNavItem.Home,
                 BottomNavItem.Calendar,
                 BottomNavItem.Insights,
-                BottomNavItem.Bonds
+                BottomNavItem.Forum
             )
         }
     }
@@ -629,6 +629,7 @@ fun MainScreen(
                                 }
                             )
                         }
+                        BottomNavItem.Forum -> ForumScreen()
                         BottomNavItem.Chat -> ConversationsScreen(
                             onNavigateBack = {
                                 coroutineScope.launch { pagerState.animateScrollToPage(0) }
