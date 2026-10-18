@@ -2,7 +2,7 @@ package com.jeremy.lumi.ui.screens.forum
 
 /** Reglas puras compartidas por UI/ViewModel. No sustituyen validación de servidor. */
 object VoiceValidation {
-    val categories = setOf("Seguimiento", "Diseño", "Privacidad", "Accesibilidad", "Otros")
+    val categories = setOf("Calendario", "Registro diario", "Apariencia", "Privacidad", "Recordatorios", "Otro", "Seguimiento", "Diseño", "Accesibilidad", "Otros")
 
     fun validProposal(title: String, description: String, category: String): Boolean =
         title.trim().length in 8..100 &&
