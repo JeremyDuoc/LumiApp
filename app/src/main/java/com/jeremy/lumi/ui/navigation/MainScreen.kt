@@ -492,7 +492,7 @@ fun MainScreen(
                 BottomNavItem.Home,
                 BottomNavItem.Calendar,
                 BottomNavItem.Insights,
-                BottomNavItem.Bonds
+                BottomNavItem.Forum
             )
         }
     }
@@ -607,6 +607,7 @@ fun MainScreen(
                                 navController.navigate("conversations")
                             }
                         )
+                        BottomNavItem.Forum -> ForumScreen()
                         BottomNavItem.Calendar -> CalendarScreen()
                         BottomNavItem.Insights -> InsightsScreen(
                             onNavigateBack = {
