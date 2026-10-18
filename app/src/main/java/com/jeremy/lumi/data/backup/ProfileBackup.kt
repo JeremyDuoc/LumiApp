@@ -57,8 +57,8 @@ object ProfileBackupCodec {
         if (profile.userName != null && (profile.userName.length > 80 || profile.userName.any { it.isISOControl() })) {
             throw CorruptBackupException("Apodo inválido en el respaldo")
         }
-        if (profile.defaultCycleLength !in 15..120 ||
-            profile.defaultPeriodLength !in 1..20 ||
+        if (profile.defaultCycleLength?.let { it in 15..120 } != true ||
+            profile.defaultPeriodLength?.let { it in 1..20 } != true ||
             profile.isPregnant == null || profile.isOnContraceptive == null) {
             throw CorruptBackupException("Parámetros del perfil faltantes o inválidos")
         }
