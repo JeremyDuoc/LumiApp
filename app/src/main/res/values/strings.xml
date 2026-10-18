@@ -1687,4 +1687,24 @@
     <string name="ambient_none">Sin decoración de fondo</string>
     <string name="ambient_stars_moon">Estrellas y luna de hoy</string>
     <string name="palette_theme_harmony">Armonía con el tema</string>
+    <string name="manual_backup_export_title">Crear respaldo cifrado</string>
+    <string name="manual_backup_restore_title">Restaurar respaldo cifrado</string>
+    <string name="manual_backup_export_explain">El archivo contendrá datos íntimos de salud. Se cifrará en este dispositivo antes de guardarse. Si olvidas la contraseña, no podrás restaurarlo.</string>
+    <string name="manual_backup_restore_explain">Se reemplazarán los datos actuales por los del archivo cifrado. Escribe la contraseña del respaldo. Esta acción no se puede deshacer.</string>
+    <string name="manual_backup_password">Contraseña del respaldo</string>
+    <string name="manual_backup_confirm_password">Repetir contraseña</string>
+    <string name="manual_backup_password_guidance">Usa una frase única de al menos 12 caracteres. Guarda la contraseña en un lugar seguro.</string>
+    <string name="manual_backup_export_action">Elegir dónde guardar</string>
+    <string name="manual_backup_restore_action">Restaurar datos</string>
+    <string name="manual_backup_legacy_title">Importar ZIP antiguo sin cifrar</string>
+    <string name="manual_backup_legacy_warning">Los ZIP antiguos contienen datos personales SIN cifrar. Importa solo archivos de confianza. Se reemplazarán los registros locales actuales.</string>
+    <string name="manual_backup_legacy_action">Seleccionar ZIP</string>
+    <string name="manual_backup_import_legacy_title">Importar ZIP antiguo</string>
+    <string name="manual_backup_import_legacy_desc">Solo copias anteriores sin cifrar</string>
+    <string name="manual_backup_encrypted_export_title">Exportar respaldo cifrado</string>
+    <string name="manual_backup_encrypted_export_desc">Archivo protegido con contraseña</string>
+    <string name="manual_backup_encrypted_restore_title">Restaurar respaldo cifrado</string>
+    <string name="manual_backup_encrypted_restore_desc">Recuperar desde un archivo .lbk</string>
+    <string name="manual_backup_operation_busy">Procesando respaldo…</string>
+    <string name="manual_backup_file_error">No se pudo abrir el archivo seleccionado.</string>
 </resources>
