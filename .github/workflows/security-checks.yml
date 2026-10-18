@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'app/**'
+      - 'tools/security/**'
       - 'gradle/**'
       - 'gradle.properties'
       - 'build.gradle.kts'
@@ -34,7 +35,9 @@ jobs:
           packages: ''
       - name: Install Android 35 platform
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
-      - name: Unit tests
+      - name: Build debug and release; run tests
         run: |
           chmod +x ./gradlew
-          ./gradlew :app:testDebugUnitTest :app:processReleaseMainManifest --no-daemon --stacktrace
+          ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleRelease --no-daemon --stacktrace
+      - name: Verify final merged manifests and release flags
+        run: python3 tools/security/verify_release_artifacts.py
