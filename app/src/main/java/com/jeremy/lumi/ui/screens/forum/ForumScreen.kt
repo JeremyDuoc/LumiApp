@@ -23,6 +23,16 @@ import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.animation.core.Animatable
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.geometry.Offset
+import com.jeremy.lumi.ui.components.LumiTopBar
+import com.jeremy.lumi.ui.components.LumiThemeSheet
+import com.jeremy.lumi.ui.components.AmbientBackgroundLayer
+import com.jeremy.lumi.ui.theme.AmbientScreen
+import com.jeremy.lumi.ui.theme.LocalThemeRevealTrigger
+import com.jeremy.lumi.ui.screens.settings.SettingsViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,9 +53,18 @@ import com.jeremy.lumi.ui.theme.LumiThemeTokens
 
 /** Tu voz · Migración de Lumi_Tu_Voz_Animaciones_v3.html; modo local explícito. */
 @Composable
-fun ForumScreen(viewModel: ForumViewModel = hiltViewModel()) {
+fun ForumScreen(
+    onNavigateToChat: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
+    viewModel: ForumViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
+) {
     val t = LumiThemeTokens.current
     val posts by viewModel.proposals.collectAsStateWithLifecycle()
+    val currentTheme by settingsViewModel.currentTheme.collectAsStateWithLifecycle()
+    val revealTrigger = LocalThemeRevealTrigger.current
+    var showThemeSheet by remember { mutableStateOf(false) }
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var order by rememberSaveable { mutableStateOf("Más apoyadas") }
     var expanded by remember { mutableStateOf(false) }
@@ -65,8 +84,18 @@ fun ForumScreen(viewModel: ForumViewModel = hiltViewModel()) {
             else -> filtered.sortedWith(compareByDescending<VoiceProposal> { it.votes }.thenByDescending { it.createdAt })
         }
     }
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().background(t.bg),
+    Box(Modifier.fillMaxSize().background(t.bg)) {
+        AmbientBackgroundLayer(screenType = AmbientScreen.CONTENT)
+        Column(Modifier.fillMaxSize()) {
+            LumiTopBar(
+                hasNotificationAlert = false,
+                onThemeClick = { showThemeSheet = true },
+                onNotificationsClick = onNavigateToNotifications,
+                onChatClick = onNavigateToChat,
+                onSettingsClick = onNavigateToSettings
+            )
+            LazyColumn(
+        modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start=22.dp, end=22.dp, top=17.dp, bottom=28.dp)
     ) {
         item {
@@ -80,7 +109,7 @@ fun ForumScreen(viewModel: ForumViewModel = hiltViewModel()) {
                     Icon(Icons.Outlined.Info, "Cómo funciona", tint=t.muted, modifier=Modifier.size(18.dp))
                 }
             }
-            Text("Las mejores ideas nacen cuando nos escuchamos.",
+            Text("Propón una mejora, apoya otras ideas y descubre cómo avanzan.",
                 fontSize=12.sp, lineHeight=19.sp, color=t.muted,
                 modifier=Modifier.padding(top=8.dp,bottom=16.dp))
             Row(verticalAlignment=Alignment.CenterVertically, horizontalArrangement=Arrangement.spacedBy(12.dp)) {
@@ -94,17 +123,19 @@ fun ForumScreen(viewModel: ForumViewModel = hiltViewModel()) {
                         Text("Proponer una idea",fontSize=12.sp,fontWeight=FontWeight.ExtraBold,color=Color(0xFF21172A))
                     }
                 }
-                Text("Sin nombre público\nTus ideas importan",fontSize=10.sp,lineHeight=15.sp,color=t.muted)
+                Text("Sin nombre público.\nTu salud se queda en tu dispositivo.",fontSize=10.sp,lineHeight=15.sp,color=t.muted)
             }
             Spacer(Modifier.height(20.dp))
             HorizontalDivider(color=t.line.copy(alpha=.7f))
             Spacer(Modifier.height(18.dp))
+            val featured=posts.firstOrNull { it.status=="En desarrollo" && !it.hiddenByMe }
+                ?: posts.firstOrNull { it.status=="Aceptada" && !it.hiddenByMe }
+            if (tab == 0 && featured != null) {
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
                 Text("Lo que estamos creando",fontSize=13.sp,fontWeight=FontWeight.Bold,color=t.text)
                 Text("Hoja de ruta",fontSize=10.sp,color=t.muted)
             }
             Spacer(Modifier.height(11.dp))
-            val featured=posts.firstOrNull { it.status=="En desarrollo" && !it.hiddenByMe }
             Column(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(17.dp))
                     .background(Brush.horizontalGradient(listOf(t.accent.copy(alpha=.12f),t.panel)))
@@ -112,17 +143,16 @@ fun ForumScreen(viewModel: ForumViewModel = hiltViewModel()) {
                     .then(if(featured!=null) Modifier.clickable { selectedId=featured.id } else Modifier)
                     .padding(16.dp)
             ) {
-                Text(if(featured!=null) "EN DESARROLLO" else "PRÓXIMAMENTE",
+                Text(featured.status,
                     fontSize=10.sp,fontWeight=FontWeight.Bold,color=t.accent)
                 Spacer(Modifier.height(10.dp))
-                Text(featured?.title ?: "Novedades del equipo Lumi",
+                Text(featured.title,
                     fontSize=16.sp,fontWeight=FontWeight.Bold,color=t.text,lineHeight=21.sp)
                 Spacer(Modifier.height(8.dp))
-                Text(if(featured!=null) "Ver seguimiento de esta idea  ›"
-                    else "Las actualizaciones aparecerán aquí cuando exista un canal comunitario verificado.",
-                    fontSize=11.sp,color=t.muted,lineHeight=17.sp)
+                VoiceProgress(featured.status, featured.votes)
             }
             Spacer(Modifier.height(21.dp))
+            }
             VoiceTabs(tab) { tab=it }
             Spacer(Modifier.height(18.dp))
             Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
@@ -154,9 +184,13 @@ fun ForumScreen(viewModel: ForumViewModel = hiltViewModel()) {
             VoiceProposalRow(post,onVote={viewModel.toggleVote(post.id)},onDetail={selectedId=post.id})
         }
         item {
-            Text("Modo local de prueba · Los votos, las ideas y los comentarios no se sincronizan con otras usuarias.",
+            Text(if (com.jeremy.lumi.BuildConfig.DEBUG)
+                    "Vista previa · Las ideas y votos de ejemplo no son reales. Tus propias publicaciones permanecen solo en este dispositivo."
+                else "Modo local · Los votos, ideas y comentarios no se sincronizan con otras usuarias.",
                 color=t.dim,fontSize=10.sp,lineHeight=16.sp,
                 modifier=Modifier.padding(top=19.dp,bottom=10.dp))
+        }
+            }
         }
     }
     if(create) VoiceCreateSheet(onDismiss={create=false}) { a,b,c ->
@@ -166,6 +200,22 @@ fun ForumScreen(viewModel: ForumViewModel = hiltViewModel()) {
         title={Text("Cómo funciona Tu voz")},
         text={Text("Propón mejoras, apoya propuestas y comenta sin mostrar tu nombre. Los votos ayudan a priorizar, pero no garantizan el desarrollo.\n\nEsta versión almacena todo solo en el dispositivo. No existe aún una comunidad sincronizada ni moderación remota. No publiques datos médicos o identificables.")},
         confirmButton={TextButton(onClick={help=false}){Text("Entendido")}})
+    if (showThemeSheet) {
+        LumiThemeSheet(
+            selectedTheme = currentTheme,
+            onSelectThemeAt = { palette, center ->
+                if (revealTrigger != null) revealTrigger.changeThemeWithReveal(palette, center)
+                else settingsViewModel.changeTheme(palette)
+                showThemeSheet = false
+            },
+            onSelectTheme = { palette ->
+                if (revealTrigger != null) revealTrigger.changeThemeWithReveal(palette, null)
+                else settingsViewModel.changeTheme(palette)
+                showThemeSheet = false
+            },
+            onDismiss = { showThemeSheet = false }
+        )
+    }
     posts.firstOrNull { it.id==selectedId }?.let { current ->
         VoiceDetailSheet(current,onDismiss={selectedId=null},
             onVote={viewModel.toggleVote(current.id)},
@@ -178,6 +228,25 @@ fun ForumScreen(viewModel: ForumViewModel = hiltViewModel()) {
         text={Text("Este reporte se marcará solo en tu dispositivo. No se enviará a moderadores hasta que exista un backend seguro.")},
         confirmButton={TextButton(onClick={reportId?.let(viewModel::report);reportId=null}){Text("Marcar localmente")}},
         dismissButton={TextButton(onClick={reportId=null}){Text("Cancelar")}})
+}
+
+
+@Composable
+private fun VoiceProgress(status: String, votes: Int) {
+    val t = LumiThemeTokens.current
+    val steps = listOf("Recibida", "En revisión", "Aceptada", "En desarrollo", "Disponible")
+    val current = steps.indexOf(status)
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            steps.forEachIndexed { i, _ ->
+                Box(Modifier.size(6.dp).clip(CircleShape)
+                    .background(if (i <= current) t.accent else t.line))
+                if (i < 4) Box(Modifier.width(19.dp).height(1.dp)
+                    .background(if (i < current) t.accent else t.line))
+            }
+        }
+        Text("$votes apoyos", color = t.muted, fontSize = 10.sp)
+    }
 }
 
 @Composable
@@ -270,7 +339,7 @@ private fun VoiceCreateSheet(onDismiss:()->Unit,onPublish:(String,String,String)
     val t=LumiThemeTokens.current
     var title by rememberSaveable{mutableStateOf("")}
     var desc by rememberSaveable{mutableStateOf("")}
-    var category by rememberSaveable{mutableStateOf("Seguimiento")}
+    var category by rememberSaveable{mutableStateOf("Calendario")}
     var categoryMenu by remember{mutableStateOf(false)}
     ModalBottomSheet(onDismissRequest=onDismiss,containerColor=t.bg) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding().imePadding()
@@ -287,7 +356,7 @@ private fun VoiceCreateSheet(onDismiss:()->Unit,onPublish:(String,String,String)
             Box {
                 TextButton(onClick={categoryMenu=true}){Text(category+"  ▾",color=t.accent)}
                 DropdownMenu(expanded=categoryMenu,onDismissRequest={categoryMenu=false}) {
-                    listOf("Seguimiento","Diseño","Privacidad","Accesibilidad","Otros").forEach { label ->
+                    listOf("Calendario","Registro diario","Apariencia","Privacidad","Recordatorios","Otro").forEach { label ->
                         DropdownMenuItem(text={Text(label)},onClick={category=label;categoryMenu=false})
                     }
                 }
@@ -372,7 +441,7 @@ private fun VoiceDetailSheet(
             }
             items(post.comments.orEmpty(),key={it.id}) { comment ->
                 Column(Modifier.fillMaxWidth().padding(vertical=11.dp)) {
-                    Text(if(comment.team)"Equipo Lumi" else "Anónima",
+                    Text(if(comment.team)"Equipo Lumi · ejemplo" else "Anónima",
                         color=if(comment.team)t.accent else t.text,
                         fontSize=11.sp,fontWeight=FontWeight.Bold)
                     Spacer(Modifier.height(5.dp))
