@@ -39,7 +39,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalMotionDurationScale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.stateDescription
@@ -62,8 +61,8 @@ fun LumiCollapsibleActions(
     onSettingsClick: (() -> Unit)?
 ) {
     val tokens = LumiThemeTokens.current
-    val reducedMotion = LocalMotionDurationScale.current.scaleFactor == 0f
-    val duration = if (reducedMotion) 0 else 350
+    // Compose aplica automáticamente la escala de animaciones del sistema (incluido 0x).
+    val duration = 350
     val easing = remember { CubicBezierEasing(.5f, -.35f, .35f, 1.5f) }
     val screenDp = LocalConfiguration.current.screenWidthDp
     // No invadir el logo en teléfonos estrechos: cada opción sigue teniendo área táctil.
@@ -91,7 +90,7 @@ fun LumiCollapsibleActions(
         if (expanded) -45f else 0f, tween(durationMillis = duration, easing = easing), label = "lumi_menu_bottom"
     )
     val middleOpacity by animateFloatAsState(
-        if (expanded) 0f else 1f, tween(durationMillis = if (reducedMotion) 0 else 110), label = "lumi_menu_middle"
+        if (expanded) 0f else 1f, tween(durationMillis = 110), label = "lumi_menu_middle"
     )
     Row(
         modifier = Modifier
@@ -106,12 +105,12 @@ fun LumiCollapsibleActions(
         actions.forEachIndexed { index, (name, icon, onClick) ->
             AnimatedVisibility(
                 visible = expanded,
-                enter = fadeIn(tween(if (reducedMotion) 0 else 210, delayMillis = if (reducedMotion) 0 else 80 + (actions.size - 1 - index) * 53)) +
+                enter = fadeIn(tween(210, delayMillis = 80 + (actions.size - 1 - index) * 53)) +
                     slideInHorizontally(
-                        animationSpec = tween(if (reducedMotion) 0 else 330, delayMillis = if (reducedMotion) 0 else 80 + (actions.size - 1 - index) * 53, easing = CubicBezierEasing(.27f, .9f, .3f, 1f)),
+                        animationSpec = tween(330, delayMillis = 80 + (actions.size - 1 - index) * 53, easing = CubicBezierEasing(.27f, .9f, .3f, 1f)),
                         initialOffsetX = { it / 2 }
                     ),
-                exit = fadeOut(tween(if (reducedMotion) 0 else 110))
+                exit = fadeOut(tween(110))
             ) {
                 Box(
                     Modifier.size(itemSize)
