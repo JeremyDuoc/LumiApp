@@ -23,6 +23,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import com.jeremy.lumi.ui.theme.LocalIsDarkTheme
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
@@ -172,15 +175,50 @@ fun HomeScreen(
             } else null
 
             val homeScrollState = rememberScrollState()
+            var showConfirmPeriod by remember { mutableStateOf(false) }
+            var showSuccessLottie by remember { mutableStateOf(false) }
+
+            var radialOpen by remember { mutableStateOf(false) }
+
+            val blurEased = remember { CubicBezierEasing(0.16f, 1f, 0.3f, 1f) }
+            val blurRadius by animateDpAsState(
+                targetValue = if (radialOpen) 16.dp else 0.dp,
+                animationSpec = if (radialOpen) {
+                    tween(durationMillis = 420, easing = blurEased)
+                } else {
+                    tween(durationMillis = 320, easing = CubicBezierEasing(0.4f, 0f, 0.2f, 1f))
+                },
+                label = "home_content_blur"
+            )
+
+            val scrimAlpha by animateFloatAsState(
+                targetValue = if (radialOpen) 1f else 0f,
+                animationSpec = if (radialOpen) {
+                    tween(durationMillis = 400, easing = blurEased)
+                } else {
+                    tween(durationMillis = 300, easing = CubicBezierEasing(0.4f, 0f, 0.2f, 1f))
+                },
+                label = "home_scrim_alpha"
+            )
 
             Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        AmbientBackgroundLayer(
-            screenType           = AmbientScreen.HOME,
-            accentColor          = currentAuraColor,
-            scrollOffsetProvider = { homeScrollState.value.toFloat() }
-        )
-        var showConfirmPeriod by remember { mutableStateOf(false) }
-        var showSuccessLottie by remember { mutableStateOf(false) }
+                // Contenido y fondo de Home con desenfoque suave y reactivo al abrir acciones rápidas
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .then(
+                            if (blurRadius > 0.dp) {
+                                Modifier.blur(blurRadius, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                            } else {
+                                Modifier
+                            }
+                        )
+                ) {
+                    AmbientBackgroundLayer(
+                        screenType           = AmbientScreen.HOME,
+                        accentColor          = currentAuraColor,
+                        scrollOffsetProvider = { homeScrollState.value.toFloat() }
+                    )
 
         Scaffold(
             topBar = {
@@ -345,22 +383,36 @@ fun HomeScreen(
                 }
             }
         }
+        } // Cierre del Box desenfocado del Home
 
-        // v19: el pulso ahora está en MainScreen para funcionar tanto aquí
-        // como en Settings, sin reiniciarse ni dibujarse dos veces.
+        // Capa de difuminado (scrim) animada muy limpia y suave sobre el Home
+        if (scrimAlpha > 0.001f) {
+            val isDark = LocalIsDarkTheme.current
+            val scrimBase = if (isDark) {
+                Color(0xFF09070E)
+            } else {
+                MaterialTheme.colorScheme.background
+            }
 
-        // Menú original 20essentials / Uiverse: sin oscurecer Home.
-        // Este Box está fuera del Column scrollable y del Scaffold, de modo
-        // que permanece anclado a la esquina inferior derecha.
-        var radialOpen by remember { mutableStateOf(false) }
-        if (radialOpen) {
             Box(
-                Modifier.fillMaxSize().clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) { radialOpen = false }
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { alpha = scrimAlpha }
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                scrimBase.copy(alpha = if (isDark) 0.44f else 0.50f),
+                                scrimBase.copy(alpha = if (isDark) 0.62f else 0.66f)
+                            )
+                        )
+                    )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { radialOpen = false }
             )
         }
+
         LumiRadialQuickMenu(
             expanded = radialOpen,
             onExpandedChange = { radialOpen = it },
