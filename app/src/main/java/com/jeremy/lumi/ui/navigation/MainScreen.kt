@@ -497,6 +497,7 @@ fun MainScreen(
         }
     }
     
+    var pendingVoiceNotification by remember { mutableStateOf(false) }
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
     
@@ -580,6 +581,8 @@ fun MainScreen(
                         BottomNavItem.Home -> HomeScreen(
                             onBrandBounds = onHomeBrandBounds,
                             suppressBrandDuringHandoff = suppressHomeBrandDuringHandoff,
+                            openNotificationsFromVoice = pendingVoiceNotification,
+                            onVoiceNotificationsConsumed = { pendingVoiceNotification = false },
                             onNavigateToInsights = {
                                 val insightsIndex = tabs.indexOf(BottomNavItem.Insights)
                                 if (insightsIndex >= 0) {
@@ -607,7 +610,14 @@ fun MainScreen(
                                 navController.navigate("conversations")
                             }
                         )
-                        BottomNavItem.Forum -> ForumScreen()
+                        BottomNavItem.Forum -> ForumScreen(
+                            onNavigateToChat = { navController.navigate("conversations") },
+                            onNavigateToSettings = { navController.navigate("settings") },
+                            onNavigateToNotifications = {
+                                pendingVoiceNotification = true
+                                coroutineScope.launch { pagerState.animateScrollToPage(0) }
+                            }
+                        )
                         BottomNavItem.Calendar -> CalendarScreen()
                         BottomNavItem.Insights -> InsightsScreen(
                             onNavigateBack = {
