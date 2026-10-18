@@ -1,10 +1,10 @@
 package com.jeremy.lumi.ai
 
 /**
- * Resultado de la predicción combinada (TFLite + matemática).
+ * Resultado auxiliar del predictor local de ciclos. El modelo experimental está desactivado.
  *
  * @param predictedCycleLength  Duración predicha del próximo ciclo (días).
- * @param confidenceScore       0.0–1.0. Alta si hay historial suficiente + datos biométricos.
+ * @param confidenceScore       Índice descriptivo histórico; NO probabilidad clínica.
  * @param isIrregular           true si cycle_variance > 3.5 días (ciclo impredecible).
  * @param predictionRangeDays   Margen de incertidumbre en días. Ej: 2 → "entre martes y jueves".
  * @param source                De dónde provino la predicción final.
@@ -20,6 +20,7 @@ data class AIPredictionResult(
 enum class PredictionSource {
     TFLITE_MODEL,       // Usó el modelo de Deep Learning (tiene datos biométricos)
     MATHEMATICAL,       // Solo el promedio ponderado del historial (sin biométricos)
-    BLENDED,            // Combinación ponderada de ambos
+    BLENDED,            // Legacy: no se usa en la versión de producción
+    RIDGE_V2,           // Modelo residual experimental solo si se valida y habilita
     DEFAULT             // Primera vez, sin historial — usa media del dataset de entrenamiento
 }
