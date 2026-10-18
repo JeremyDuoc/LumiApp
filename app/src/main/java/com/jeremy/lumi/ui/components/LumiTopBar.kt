@@ -248,90 +248,12 @@ fun LumiTopBar(
             animated = true
         )
 
-        // Acciones superiores: Chat, Notificaciones, Ajustes
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Botón de chat (opcional)
-            if (onChatClick != null) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .clickable(onClick = onChatClick),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.ChatBubbleOutline,
-                        contentDescription = stringResource(R.string.nav_chat),
-                        tint = tokens.muted,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-
-            // Botón de tema (si está explícitamente habilitado)
-            if (onThemeClick != null) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .clickable(onClick = onThemeClick),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Palette,
-                        contentDescription = stringResource(R.string.cd_change_theme),
-                        tint = tokens.muted,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-
-            // Botón de notificaciones con dot-alert
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = onNotificationsClick),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Notifications,
-                    contentDescription = stringResource(R.string.cd_notifications),
-                    tint = tokens.muted,
-                    modifier = Modifier.size(20.dp)
-                )
-                if (hasNotificationAlert) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(top = 10.dp, end = 10.dp)
-                            .size(6.dp)
-                            .clip(CircleShape)
-                            .background(tokens.rose)
-                    )
-                }
-            }
-
-            // Botón de ajustes (opcional)
-            if (onSettingsClick != null) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .clickable(onClick = onSettingsClick),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Settings,
-                        contentDescription = stringResource(R.string.nav_settings),
-                        tint = tokens.muted,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-        }
+        LumiCollapsibleActions(
+            hasNotificationAlert = hasNotificationAlert,
+            onChatClick = onChatClick,
+            onThemeClick = onThemeClick,
+            onNotificationsClick = onNotificationsClick,
+            onSettingsClick = onSettingsClick
+        )
     }
 }
