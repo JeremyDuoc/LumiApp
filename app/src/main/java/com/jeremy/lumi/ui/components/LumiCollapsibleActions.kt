@@ -82,6 +82,8 @@ fun LumiCollapsibleActions(
         animationSpec = tween(durationMillis = duration, easing = CubicBezierEasing(.27f, .9f, .3f, 1f)),
         label = "lumi_actions_rail"
     )
+    val topOffset by animateDpAsState(if (expanded) 0.dp else (-7.2).dp, tween(durationMillis = duration, easing = easing), label = "lumi_top_offset")
+    val bottomOffset by animateDpAsState(if (expanded) 0.dp else 7.2.dp, tween(durationMillis = duration, easing = easing), label = "lumi_bottom_offset")
     val topAngle by animateFloatAsState(
         if (expanded) 45f else 0f, tween(durationMillis = duration, easing = easing), label = "lumi_menu_top"
     )
@@ -140,11 +142,9 @@ fun LumiCollapsibleActions(
             contentAlignment = Alignment.Center
         ) {
             val bar = Modifier.width(20.dp).height(2.5.dp).clip(CircleShape).background(tokens.accent)
-            Box(bar.graphicsLayer { translationY = -7.2.dp.toPx(); rotationZ = topAngle }
-                .then(if (expanded) Modifier.graphicsLayer { translationY = 0f } else Modifier))
+            Box(bar.graphicsLayer { translationY = topOffset.toPx(); rotationZ = topAngle })
             Box(bar.graphicsLayer { alpha = middleOpacity })
-            Box(bar.graphicsLayer { translationY = 7.2.dp.toPx(); rotationZ = bottomAngle }
-                .then(if (expanded) Modifier.graphicsLayer { translationY = 0f } else Modifier))
+            Box(bar.graphicsLayer { translationY = bottomOffset.toPx(); rotationZ = bottomAngle })
             if (hasNotificationAlert && !expanded) {
                 Box(Modifier.align(Alignment.TopEnd).padding(top = 6.dp, end = 7.dp)
                     .size(6.dp).clip(CircleShape).background(tokens.rose))
