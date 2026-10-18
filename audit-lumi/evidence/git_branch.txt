@@ -1,3 +1,0 @@
-﻿  backup/pre-fix-baseline a5229c6 chore(backup): snapshot of all files and untracked changes before P0 fixes
-* fix/bonds-security-p0   6a71759 security(bonds): resolve SEC-P0-A cycle inference, SEC-P0-B legacy consent, SEC-P1-D anti-enumeration, and add 2-account E2E integration
-  main                    6c447d6 feat: Hub Modo Pareja, Backup en la Nube, Chat Engine con IA, estilos de Dial y mejoras visuales en temas

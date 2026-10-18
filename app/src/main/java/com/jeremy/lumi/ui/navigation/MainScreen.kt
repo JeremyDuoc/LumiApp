@@ -1,5 +1,15 @@
 package com.jeremy.lumi.ui.navigation
 
+import com.jeremy.lumi.ui.theme.LumiMotion
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.runtime.withFrameNanos
+import com.jeremy.lumi.ui.screens.onboarding.LumiThemeTokensV7
+import com.jeremy.lumi.ui.screens.onboarding.LocalLumiOnboardingTokens
+import com.jeremy.lumi.ui.screens.onboarding.LumiAtmosphericTransition
+import androidx.compose.animation.core.animateFloatAsState
+import kotlin.math.abs
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -71,15 +81,56 @@ import androidx.compose.animation.slideOutVertically
  * onboarding. La lógica de qué muestra el Home según el rol del usuario
  * es responsabilidad de HomeViewModel y HomeScreen.
  */
+private data class LumiHandoff(
+    val sourceBounds: Rect?,
+    val theme: LumiThemeTokensV7
+)
+
 @Composable
 fun AppNavGraph() {
     val rootNavController = rememberNavController()
+    var handoff by remember { mutableStateOf<LumiHandoff?>(null) }
+    var mainNavigationStarted by remember { mutableStateOf(false) }
+    var homeBrandBounds by remember { mutableStateOf<Rect?>(null) }
+    var handoffFinishing by remember { mutableStateOf(false) }
+    val handoffScope = rememberCoroutineScope()
 
+    // La animación reside FUERA del NavHost, y sobrevive al cambio de ruta.
+    fun navigateToRealHome() {
+        if (mainNavigationStarted) return
+        mainNavigationStarted = true
+        rootNavController.navigate(AppRoutes.MAIN) {
+            popUpTo(AppRoutes.ONBOARDING) { inclusive = true }
+            launchSingleTop = true
+        }
+    }
+
+    fun finishHandoff() {
+        if (handoffFinishing) return
+        handoffFinishing = true
+        navigateToRealHome()
+        handoffScope.launch {
+            withFrameNanos { } // Permitir componer MAIN antes de quitar el velo.
+            withFrameNanos { }
+            handoff = null
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
     NavHost(
         navController = rootNavController,
         startDestination = AppRoutes.SPLASH,
-        enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(300)) },
-        exitTransition = { fadeOut(tween(300)) },
+        enterTransition = {
+            if (initialState.destination.route == AppRoutes.ONBOARDING && targetState.destination.route == AppRoutes.MAIN) {
+                // El velo atmosférico gestiona la transición visual.
+                EnterTransition.None
+            } else slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(300))
+        },
+        exitTransition = {
+            if (initialState.destination.route == AppRoutes.ONBOARDING && targetState.destination.route == AppRoutes.MAIN) {
+                ExitTransition.None
+            } else fadeOut(tween(300))
+        },
         popEnterTransition = { fadeIn(tween(300)) },
         popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(300)) }
     ) {
@@ -102,9 +153,13 @@ fun AppNavGraph() {
         // â”€â”€ Onboarding (solo la primera vez) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         composable(route = AppRoutes.ONBOARDING) {
             OnboardingScreen(
-                onComplete = {
-                    rootNavController.navigate(AppRoutes.MAIN) {
-                        popUpTo(AppRoutes.ONBOARDING) { inclusive = true }
+                onComplete = { navigateToRealHome() },
+                onCeremonyStart = { bounds, selectedTokens ->
+                    if (handoff == null) {
+                        homeBrandBounds = null
+                        mainNavigationStarted = false
+                        handoffFinishing = false
+                        handoff = LumiHandoff(bounds, selectedTokens)
                     }
                 }
             )
@@ -113,6 +168,8 @@ fun AppNavGraph() {
         // ——— Main (tabs + bottom nav) — para TODOS los usuarios —————————————————
         composable(route = AppRoutes.MAIN) {
             MainScreen(
+                onHomeBrandBounds = { rect -> homeBrandBounds = rect },
+                suppressHomeBrandDuringHandoff = handoff != null,
                 onNavigateToPartner = {
                     rootNavController.navigate(AppRoutes.BONDS_HOME)
                 },
@@ -368,6 +425,23 @@ fun AppNavGraph() {
             )
         }
     }
+
+    val activeHandoff = handoff
+    if (activeHandoff != null) {
+        BackHandler { finishHandoff() }
+        CompositionLocalProvider(LocalLumiOnboardingTokens provides activeHandoff.theme) {
+            LumiAtmosphericTransition(
+                sourceBrandBounds = activeHandoff.sourceBounds,
+                targetBrandBounds = homeBrandBounds,
+                revealUnderlyingHome = true,
+                // 1350 ms: el velo es completamente opaco. Cambiamos de ruta
+                // para que Home se componga UNA SOLA VEZ y prepare sus datos.
+                onCurtainOpaque = { navigateToRealHome() },
+                onFinished = { finishHandoff() } // Incluye el botón de omitir.
+            )
+        }
+    }
+    } // Box que mantiene el overlay visible entre destinos
 }
 
 // ——————————————————————————————————————————————————————————————————————————————
@@ -381,6 +455,8 @@ fun AppNavGraph() {
  */
 @Composable
 fun MainScreen(
+    onHomeBrandBounds: ((Rect) -> Unit)? = null,
+    suppressHomeBrandDuringHandoff: Boolean = false,
     onNavigateToPartner: () -> Unit = {},
     onNavigateToBackup: () -> Unit = {},
     onOpenBondsPairing: () -> Unit = {},
@@ -466,8 +542,16 @@ fun MainScreen(
         ) {
             composable("tabs") {
                 HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                    Box(Modifier.fillMaxSize().graphicsLayer {
+                        val distance = abs((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction).coerceIn(0f, 1f)
+                        alpha = 1f - 0.15f * distance
+                        scaleX = 1f - 0.015f * distance
+                        scaleY = scaleX
+                    }) {
                     when (tabs[page]) {
                         BottomNavItem.Home -> HomeScreen(
+                            onBrandBounds = onHomeBrandBounds,
+                            suppressBrandDuringHandoff = suppressHomeBrandDuringHandoff,
                             onNavigateToInsights = {
                                 val insightsIndex = tabs.indexOf(BottomNavItem.Insights)
                                 if (insightsIndex >= 0) {
@@ -533,6 +617,7 @@ fun MainScreen(
                             onNavigateToPartner = onNavigateToPartner
                         )
                         else -> {}
+                    }
                     }
                 }
             }
@@ -634,11 +719,12 @@ private fun AnimatedBottomNavItem(
     val targetColor = if (selected) tokens.accent else tokens.dim
     val animatedColor by animateColorAsState(
         targetValue = targetColor,
-        animationSpec = tween(durationMillis = 200),
+        animationSpec = LumiMotion.SpatialColorSpring,
         label = "bottom_nav_color"
     )
 
     val interactionSource = remember { MutableInteractionSource() }
+    val iconScale = animateFloatAsState(if (selected) 1.12f else 1f, LumiMotion.SpatialSpring, label = "nav_icon")
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -654,7 +740,10 @@ private fun AnimatedBottomNavItem(
     ) {
         // Ícono con badge
         Box(
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(24.dp).graphicsLayer {
+                scaleX = iconScale.value
+                scaleY = iconScale.value
+            },
             contentAlignment = Alignment.Center
         ) {
             if (unreadCount > 0) {

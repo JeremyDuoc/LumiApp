@@ -4,6 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,6 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -29,6 +35,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jeremy.lumi.R
 import com.jeremy.lumi.ui.components.LumiBrandLockup
 import com.jeremy.lumi.ui.components.LumiThemeSheet
+import com.jeremy.lumi.ui.components.LumiThemeSnapshotReveal
+import com.jeremy.lumi.ui.components.captureThemeRevealSnapshot
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.graphics.ImageBitmap
 import com.jeremy.lumi.ui.screens.settings.SettingsViewModel
 import com.jeremy.lumi.ui.theme.AppThemePalette
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
@@ -58,7 +68,13 @@ private val STEP_NAMES = mapOf(
 fun OnboardingScreen(
     viewModel: OnboardingViewModel = hiltViewModel(),
     settingsViewModel: SettingsViewModel = hiltViewModel(),
-    onComplete: () -> Unit
+    onComplete: () -> Unit,
+    // Para un handoff perfecto, el padre debe componer aquí el Home REAL sin
+    // duplicar el logo mientras vuela. Es opcional para compatibilidad.
+    homeRevealContent: (@Composable () -> Unit)? = null,
+    targetBrandBounds: Rect? = null,
+    // Permite a AppNavGraph conservar el velo fuera de esta ruta.
+    onCeremonyStart: ((Rect?, LumiThemeTokensV7) -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentTheme by settingsViewModel.currentTheme.collectAsStateWithLifecycle()
@@ -66,54 +82,55 @@ fun OnboardingScreen(
         mutableStateOf(LumiOnboardingTheme.fromAppTheme(currentTheme))
     }
     val tokens = getThemeTokensV7(onboardingTheme)
-    val scrollState = rememberScrollState()
+    val localDensity = LocalDensity.current
+    val enterPx = with(localDensity) { 20.dp.roundToPx() }
+    val lowerPx = with(localDensity) { 7.dp.roundToPx() }
+    val exitUpPx = with(localDensity) { 4.dp.roundToPx() }
 
     var showPrivacyDialog by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showThemeSheet by remember { mutableStateOf(false) }
+    val sceneView = LocalView.current
+    var themeOldFrame by remember { mutableStateOf<ImageBitmap?>(null) }
+    var themeRevealCenter by remember { mutableStateOf<Offset?>(null) }
+
     var showAtmosphericTransition by remember { mutableStateOf(false) }
+    var hideOnboardingAtReveal by remember { mutableStateOf(false) }
+    var sourceBrandBounds by remember { mutableStateOf<Rect?>(null) }
 
     val stepNumber = uiState.currentStepNumber
     val isFirstStep = uiState.currentStepIndex == 0
     val isFinalStep = stepNumber == 7
     val showHeaderBrand = stepNumber != 0 && stepNumber != 7
 
-    // Resetear scroll al cambiar de paso
-    LaunchedEffect(stepNumber) {
-        scrollState.scrollTo(0)
+    val selectThemeWithReveal: (LumiOnboardingTheme, Offset?) -> Unit = { next, origin ->
+        if (next != onboardingTheme) {
+            // Congelar la escena previa ANTES de cambiar colores (sin guardar imagen).
+            themeOldFrame = captureThemeRevealSnapshot(sceneView)
+            themeRevealCenter = origin
+            onboardingTheme = next
+            settingsViewModel.changeTheme(next.appThemePalette)
+        }
+        showThemeSheet = false
     }
+
 
     CompositionLocalProvider(
         LocalLumiOnboardingTokens provides tokens
     ) {
-        if (showAtmosphericTransition) {
-            LumiAtmosphericTransition(
-                onFinished = onComplete
-            )
-        } else {
+        // No desmontar la última página cuando comienza el vuelo. En el HTML
+        // ambos elementos comparten pantalla durante la primera parte.
+        Box(Modifier.fillMaxSize().background(tokens.bg)) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(tokens.bg)
+                    .graphicsLayer { alpha = if (hideOnboardingAtReveal) 0f else 1f }
             ) {
             // Cielo estrellado en 3 capas ascendentes en paralaje (solo temas oscuros)
             LumiSkyBackground(stepNumber = stepNumber)
 
-            // Fondo ambiental suave superior
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(340.dp)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                if (tokens.isDark) Color(0x18B884CA) else Color(0x35E4AFDB),
-                                Color.Transparent
-                            ),
-                            radius = 800f
-                        )
-                    )
-            )
+            // El HTML v6/v7 eliminó deliberadamente la neblina superior.
+            // No añadir aquí otra capa radial que altere el Noir de referencia.
 
             Column(
                 modifier = Modifier
@@ -222,24 +239,32 @@ fun OnboardingScreen(
             AnimatedContent(
                 targetState = stepNumber,
                 transitionSpec = {
+                    // HTML v11: entrada 20px/7px + fade (460ms con delay 70),
+                    // salida -20px/-4px + fade (290ms); no pantalla entera.
                     val forward = targetState > initialState
-                    if (forward) {
-                        (slideInHorizontally(tween(300)) { it } + fadeIn(tween(300)))
-                            .togetherWith(slideOutHorizontally(tween(250)) { -it } + fadeOut(tween(250)))
-                    } else {
-                        (slideInHorizontally(tween(300)) { -it } + fadeIn(tween(300)))
-                            .togetherWith(slideOutHorizontally(tween(250)) { it } + fadeOut(tween(250)))
-                    }
+                    val x = if (forward) enterPx else -enterPx
+                    val enter = slideIn(
+                        animationSpec = tween(460, delayMillis = 70, easing = CubicBezierEasing(.16f, 1f, .3f, 1f)),
+                        initialOffset = { IntOffset(x, lowerPx) }
+                    ) + fadeIn(tween(460, delayMillis = 70, easing = CubicBezierEasing(.16f, 1f, .3f, 1f)))
+                    val exit = slideOut(
+                        animationSpec = tween(290, easing = CubicBezierEasing(.35f, 0f, .45f, 1f)),
+                        targetOffset = { IntOffset(-x, -exitUpPx) }
+                    ) + fadeOut(tween(290, easing = CubicBezierEasing(.35f, 0f, .45f, 1f)))
+                    (enter togetherWith exit).using(SizeTransform(clip = false))
                 },
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
                 label = "step_content_anim"
             ) { step ->
+                // Cada página posee su propio estado de scroll. El ScrollState
+                // único anterior era compartido por dos páginas al animarse.
+                val pageScrollState = rememberScrollState()
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(scrollState)
+                        .verticalScroll(pageScrollState)
                         .padding(horizontal = 24.dp, vertical = 12.dp)
                 ) {
                     when (step) {
@@ -294,7 +319,9 @@ fun OnboardingScreen(
                         7 -> Step7Summary(
                             data = uiState.data,
                             onJumpToStep = { viewModel.jumpToStep(it) },
-                            saveError = uiState.saveError
+                            saveError = uiState.saveError,
+                            onBrandBounds = { sourceBrandBounds = it },
+                            brandVisible = !showAtmosphericTransition
                         )
                     }
                 }
@@ -326,6 +353,7 @@ fun OnboardingScreen(
                         if (isFinalStep) {
                             viewModel.completeOnboarding(onDone = {
                                 showAtmosphericTransition = true
+                                onCeremonyStart?.invoke(sourceBrandBounds, tokens)
                             })
                         } else {
                             viewModel.nextStep()
@@ -457,15 +485,31 @@ fun OnboardingScreen(
         if (showThemeSheet) {
             LumiOnboardingThemeSheet(
                 selectedTheme = onboardingTheme,
-                onSelectTheme = { theme ->
-                    onboardingTheme = theme
-                    settingsViewModel.changeTheme(theme.appThemePalette)
-                    showThemeSheet = false
-                },
-                onDismiss = { showThemeSheet = false }
+                onSelectTheme = { theme -> selectThemeWithReveal(theme, null) },
+                onDismiss = { showThemeSheet = false },
+                onSelectThemeAt = { theme, center -> selectThemeWithReveal(theme, center) }
             )
         }
-    }
-}
-}
-}
+            } // contenido anterior, conservado debajo del velo
+
+            // Snapshot exterior del círculo: pantalla antigua congelada sobre UI nueva.
+            themeOldFrame?.let { old ->
+                LumiThemeSnapshotReveal(
+                    oldFrame = old,
+                    sourceCenter = themeRevealCenter,
+                    onFinished = { themeOldFrame = null }
+                )
+            }
+
+            if (showAtmosphericTransition && onCeremonyStart == null) {
+                LumiAtmosphericTransition(
+                    sourceBrandBounds = sourceBrandBounds,
+                    targetBrandBounds = targetBrandBounds,
+                    homeRevealContent = homeRevealContent,
+                    onRevealStart = { hideOnboardingAtReveal = true },
+                    onFinished = onComplete
+                )
+            }
+        } // escenario con capas del onboarding
+    } // tokens
+} // OnboardingScreen

@@ -37,6 +37,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -45,6 +48,7 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
@@ -56,114 +60,74 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Flor con contorno orgánico, color en movimiento y luz suave.
- * Las fases se leen al dibujar para evitar recomponer la cabecera en cada frame.
+ * Flor EXACTA del HTML v11/v12. NO usar addRoundRect ni gradiente giratorio.
+ *
+ * Fuente de verdad: <symbol id="flower-art" viewBox="0 0 46 46"> del HTML.
+ * Se conserva el mismo path Bézier y los cuatro stops del linearGradient.
+ * El clip evita que la luz elíptica pinte fuera de la silueta.
+ * La animación transforma el SVG completo, sin deformar sus curvas.
  */
+private const val LUMI_SVG_FLOWER_PATH =
+    "M22 2.1C31 -0.3 42.1 6 44 15.9C46.3 24 42.3 36.2 35.6 41.3C30 45.8 19.6 46.2 12.3 42C4.6 38.1 .9 30 .9 22C1 12 10 3.6 22 2.1Z"
+
 @Composable
 fun LumiBrandFlower(
     modifier: Modifier = Modifier,
     size: Int = 20,
-    animated: Boolean = true
+    animated: Boolean = true,
+    ceremonial: Boolean = false
 ) {
-    val colors = remember {
-        listOf(
-            Color(0xFFE9B3C4),
-            Color(0xFFD4B3ED),
-            Color(0xFFA8D1C9),
-            Color(0xFFF5CCAA),
-            Color(0xFFE9B3C4)
+    // HTML: flowerLive 7.8s; handoff: lumiFlowerV7 2.9s alternate.
+    val transition = if (animated) rememberInfiniteTransition(label = "svg_flower_motion") else null
+    val phase = transition?.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = if (ceremonial) 2900 else 3900,
+                easing = if (ceremonial) androidx.compose.animation.core.CubicBezierEasing(.4f, .05f, .6f, .95f)
+                         else FastOutSlowInEasing
+            ),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "svg_flower_transform"
+    )?.value ?: .5f
+
+    val rotation = if (!animated) 0f else if (ceremonial) -7f + 15f * phase else -6f + 11f * phase
+    val zoom = if (!animated) 1f else if (ceremonial) {
+        if (phase < .45f) .96f + (.085f / .45f) * phase
+        else 1.045f - (.055f / .55f) * (phase - .45f)
+    } else .97f + .075f * phase
+
+    val sourcePath = remember { androidx.compose.ui.graphics.vector.PathParser().parsePathString(LUMI_SVG_FLOWER_PATH).toPath() }
+    Canvas(modifier = modifier.size(size.dp).graphicsLayer {
+        rotationZ = rotation
+        scaleX = zoom
+        scaleY = zoom
+    }) {
+        val ratioX = this.size.width / 46f
+        val ratioY = this.size.height / 46f
+        // SVG linearGradient: x1=9%, y1=87%; x2=95%, y2=12%.
+        val gradient = Brush.linearGradient(
+            0f to Color(0xFFD8B3F0),
+                .32f to Color(0xFFE5B9D4),
+                .62f to Color(0xFFF5CAAA),
+                1f to Color(0xFFA7D1CC),
+            start = Offset(46f * .09f, 46f * .87f),
+            end = Offset(46f * .95f, 46f * .12f)
         )
-    }
-
-    val infiniteTransition = if (animated) rememberInfiniteTransition(label = "flower_anim") else null
-    val organicPhase = infiniteTransition?.animateFloat(
-        initialValue = 0f,
-        targetValue = (2 * PI).toFloat(),
-        animationSpec = infiniteRepeatable(
-            animation = tween(8000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "flower_organic_phase"
-    )
-
-    val gradientRotation = infiniteTransition?.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(7000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "flower_gradient_rotation"
-    )
-    val path = remember { Path() }
-
-    Box(
-        modifier = modifier.size(size.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Canvas(modifier = Modifier.size(size.dp)) {
-            val phase = organicPhase?.value ?: 0f
-            val breath = if (animated) sin(phase * 2f) else 0f
-            val sway = if (animated) sin(phase) else 0f
-            val morph = if (animated) sin(phase + 0.8f) * 0.09f else 0f
-            val width = this.size.width
-            val height = this.size.height
-
-            if (animated) {
-                val glowCenter = center + Offset(width * sway * 0.12f, -height * 0.08f)
-                drawCircle(
+        withTransform({ scale(ratioX, ratioY, Offset.Zero) }) {
+            clipPath(sourcePath) {
+                drawRect(brush = gradient, size = androidx.compose.ui.geometry.Size(46f, 46f))
+                // SVG ellipse: cx=17 cy=13 rx=18 ry=15, #fff .32 -> 0.
+                drawOval(
                     brush = Brush.radialGradient(
-                        0f to Color(0xFFD4B3ED).copy(alpha = 0.28f + 0.10f * breath),
-                        0.5f to Color(0xFFE9B3C4).copy(alpha = 0.14f),
-                        1f to Color.Transparent,
-                        center = glowCenter,
-                        radius = width * (0.82f + 0.04f * breath)
+                        0f to Color.White.copy(alpha = .32f), 1f to Color.Transparent,
+                        center = Offset(17f, 13f), radius = 18f
                     ),
-                    radius = width * (0.82f + 0.04f * breath),
-                    center = glowCenter
+                    topLeft = Offset(-1f, -2f),
+                    size = androidx.compose.ui.geometry.Size(36f, 30f)
                 )
-            }
-
-            path.reset()
-            path.apply {
-                addRoundRect(
-                    RoundRect(
-                        left = 0f,
-                        top = 0f,
-                        right = width,
-                        bottom = height,
-                        topLeftCornerRadius = CornerRadius(width * (0.45f + morph), height * (0.55f - morph)),
-                        topRightCornerRadius = CornerRadius(width * (0.65f - morph), height * (0.40f + morph)),
-                        bottomRightCornerRadius = CornerRadius(width * (0.55f + morph), height * (0.65f - morph)),
-                        bottomLeftCornerRadius = CornerRadius(width * (0.40f - morph), height * (0.50f + morph))
-                    )
-                )
-            }
-            // Color rotates inside the silhouette, independently of its gentle sway.
-            // Amplitudes remain legible even in the 21 dp header mark.
-            translate(left = width * sway * 0.025f, top = height * sway * 0.075f) {
-                rotate(-25f + sway * 12f) {
-                    scale(1f + breath * 0.09f, 1f - breath * 0.055f) {
-                        clipPath(path) {
-                            rotate(gradientRotation?.value ?: 0f) {
-                                drawCircle(Brush.sweepGradient(colors, center), radius = width)
-                            }
-                            val lightCenter = Offset(
-                                width * (0.32f + sway * 0.20f),
-                                height * (0.28f + if (animated) cos(phase) * 0.16f else 0f)
-                            )
-                            drawCircle(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(Color.White.copy(alpha = 0.22f), Color.Transparent),
-                                    center = lightCenter,
-                                    radius = width * 0.75f
-                                ),
-                                radius = width,
-                                center = center
-                            )
-                        }
-                    }
-                }
             }
         }
     }
@@ -186,7 +150,8 @@ fun LumiBrandLockup(
     letterSpacing: TextUnit = (-1.5).sp,
     textColor: Color = LumiThemeTokens.current.text,
     starColor: Color = LumiThemeTokens.current.accent,
-    animated: Boolean = true
+    animated: Boolean = true,
+    ceremonial: Boolean = false
 ) {
     val infiniteTransition = if (animated) rememberInfiniteTransition(label = "brand_lockup_twinkle") else null
     val starTwinkle = infiniteTransition?.animateFloat(
@@ -210,12 +175,12 @@ fun LumiBrandLockup(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        LumiBrandFlower(size = flowerSize, animated = animated)
+        LumiBrandFlower(size = flowerSize, animated = animated, ceremonial = ceremonial)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = "lumi",
                 fontSize = fontSize,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.ExtraBold,
                 letterSpacing = letterSpacing,
                 color = textColor
             )
@@ -246,10 +211,13 @@ fun LumiBrandLockup(
 fun LumiTopBar(
     modifier: Modifier = Modifier,
     hasNotificationAlert: Boolean = true,
-    onThemeClick: () -> Unit,
+    onThemeClick: (() -> Unit)? = null,
     onNotificationsClick: () -> Unit,
     onChatClick: (() -> Unit)? = null,
-    onSettingsClick: (() -> Unit)? = null
+    onSettingsClick: (() -> Unit)? = null,
+    // Se mide la marca real; sirve como destino del vuelo desde el onboarding.
+    onBrandBounds: ((Rect) -> Unit)? = null,
+    hideBrand: Boolean = false
 ) {
     val tokens = LumiThemeTokens.current
 
@@ -263,6 +231,16 @@ fun LumiTopBar(
     ) {
         // Marca Lumi unificada y animada
         LumiBrandLockup(
+            modifier = Modifier
+                .onGloballyPositioned { coordinates ->
+                    val origin = coordinates.positionInRoot()
+                    onBrandBounds?.invoke(Rect(
+                        origin.x, origin.y,
+                        origin.x + coordinates.size.width,
+                        origin.y + coordinates.size.height
+                    ))
+                }
+                .graphicsLayer { alpha = if (hideBrand) 0f else 1f },
             flowerSize = 21,
             fontSize = 24.sp,
             starSize = 11.sp,
@@ -270,7 +248,7 @@ fun LumiTopBar(
             animated = true
         )
 
-        // Acciones superiores
+        // Acciones superiores: Chat, Notificaciones, Ajustes
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -279,7 +257,7 @@ fun LumiTopBar(
             if (onChatClick != null) {
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .clickable(onClick = onChatClick),
                     contentAlignment = Alignment.Center
@@ -293,26 +271,28 @@ fun LumiTopBar(
                 }
             }
 
-            // Botón de tema
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = onThemeClick),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Palette,
-                    contentDescription = stringResource(R.string.cd_change_theme),
-                    tint = tokens.muted,
-                    modifier = Modifier.size(20.dp)
-                )
+            // Botón de tema (si está explícitamente habilitado)
+            if (onThemeClick != null) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .clickable(onClick = onThemeClick),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Palette,
+                        contentDescription = stringResource(R.string.cd_change_theme),
+                        tint = tokens.muted,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
 
             // Botón de notificaciones con dot-alert
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
                     .clickable(onClick = onNotificationsClick),
                 contentAlignment = Alignment.Center
@@ -327,7 +307,7 @@ fun LumiTopBar(
                     Box(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
-                            .padding(top = 8.dp, end = 8.dp)
+                            .padding(top = 10.dp, end = 10.dp)
                             .size(6.dp)
                             .clip(CircleShape)
                             .background(tokens.rose)
@@ -339,7 +319,7 @@ fun LumiTopBar(
             if (onSettingsClick != null) {
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .clickable(onClick = onSettingsClick),
                     contentAlignment = Alignment.Center

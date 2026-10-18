@@ -28,6 +28,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
@@ -1412,7 +1415,9 @@ fun Step7Summary(
     data: OnboardingData,
     onJumpToStep: (Int) -> Unit,
     saveError: String?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onBrandBounds: (Rect) -> Unit = {},
+    brandVisible: Boolean = true
 ) {
     val tokens = LumiOnboardingThemeTokens.current
 
@@ -1426,13 +1431,20 @@ fun Step7Summary(
                 .padding(bottom = 22.dp),
             contentAlignment = Alignment.Center
         ) {
-            LumiBrandLockup(
-                flowerSize = 46,
-                fontSize = 42.sp,
-                starSize = 16.sp,
-                letterSpacing = (-2.8).sp,
-                animated = true
-            )
+            // HTML mide source.getBoundingClientRect() del logo, NO de toda la fila.
+            Box(
+                modifier = Modifier
+                    .onGloballyPositioned { onBrandBounds(it.boundsInRoot()) }
+                    .alpha(if (brandVisible) 1f else 0f)
+            ) {
+                LumiBrandLockup(
+                    flowerSize = 46,
+                    fontSize = 42.sp,
+                    starSize = 16.sp,
+                    letterSpacing = (-2.8).sp,
+                    animated = true
+                )
+            }
         }
 
         LumiEditorialHeading(

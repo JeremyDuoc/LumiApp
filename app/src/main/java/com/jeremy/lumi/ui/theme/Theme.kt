@@ -14,44 +14,70 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.ColorScheme
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
+
 // ─────────────────────────────────────────────
 //  ENUM DE TEMAS
 // ─────────────────────────────────────────────
 enum class AppThemePalette {
     // Oficial
     LUMI_SPARK, LUMI_SPARK_DARK,
+    // 8 Temas Cohesivos Oficiales HTML v11
+    NOIR, CIRUELA, BOSQUE, INDIGO, PETALO, MARFIL, SALVIA, LAVANDA,
     // Nuevas Gradientes
     LUMI_OCEAN, LUMI_OCEAN_DARK, LUMI_FOREST, LUMI_FOREST_DARK, LUMI_SUNSET, LUMI_SUNSET_DARK, LUMI_DUNE, LUMI_DUNE_DARK,
     LUMI_LAVENDER, LUMI_LAVENDER_DARK, LUMI_SAGE, LUMI_SAGE_DARK, LUMI_EARTH, LUMI_EARTH_DARK, LUMI_SLATE, LUMI_SLATE_DARK,
     CYCLE_MENSTRUAL, CYCLE_MENSTRUAL_DARK, CYCLE_OVULATION, CYCLE_OVULATION_DARK,
     // Claras
-    LAVANDA, CACTUS, HORTENSIA, TIERRA, LUXE, PETALO, PIEDRA,
+    CACTUS, HORTENSIA, TIERRA, LUXE, PIEDRA,
     // Oscuras
-    MEDIANOCHE, COSMOS, CARBONO, ECLIPSE, NOCHE_ROSA, OBSIDIANA, VINO, FORJA, AMBAR, NOIR,
+    MEDIANOCHE, COSMOS, CARBONO, ECLIPSE, NOCHE_ROSA, OBSIDIANA, VINO, FORJA, AMBAR,
     // Minimalistas
     PAPEL, NIEBLA, SAL, ARENA, PIZARRA, HUMO, LIENZO, CENIZA;
 
     fun isDark(): Boolean = this in setOf(
+        NOIR, CIRUELA, BOSQUE, INDIGO,
         LUMI_SPARK_DARK, LUMI_OCEAN_DARK, LUMI_FOREST_DARK, LUMI_SUNSET_DARK, LUMI_DUNE_DARK,
         LUMI_LAVENDER_DARK, LUMI_SAGE_DARK, LUMI_EARTH_DARK, LUMI_SLATE_DARK,
         CYCLE_MENSTRUAL_DARK, CYCLE_OVULATION_DARK,
-        MEDIANOCHE, COSMOS, CARBONO, ECLIPSE, NOCHE_ROSA, OBSIDIANA, VINO, FORJA, AMBAR, NOIR
+        MEDIANOCHE, COSMOS, CARBONO, ECLIPSE, NOCHE_ROSA, OBSIDIANA, VINO, FORJA, AMBAR
     )
 }
 
 // ── Noir · Atmósfera oscura minimalista aprobada en prototipo HTML ───────────
-val NoirPrimary    = Color(0xFFCFB8F4)   // Acento lila lavanda
-val NoirSecondary  = Color(0xFF9D96AB)   // Texto muted
-val NoirTertiary   = Color(0xFF716C7D)   // Texto dim
-val NoirBackground = Color(0xFF0B0B11)   // Fondo obsidian profundo
-val NoirSurface    = Color(0xFF1B1923)   // Panel de tarjetas
-val NoirOnPrimary  = Color(0xFF0B0B11)
-val NoirOnBg       = Color(0xFFF6F2F9)
+val NoirPrimary    = Color(0xFFCBB4F1)   // Acento lila lavanda
+val NoirSecondary  = Color(0xFFAAA3B5)   // Texto muted
+val NoirTertiary   = Color(0xFF858095)   // Texto dim
+val NoirBackground = Color(0xFF0E0C13)   // Fondo obsidian profundo
+val NoirSurface    = Color(0xFF1D1924)   // Panel de tarjetas
+val NoirOnPrimary  = Color(0xFF0E0C13)
+val NoirOnBg       = Color(0xFFFAF8FB)
 
 private val NoirColorScheme = darkColorScheme(
     primary          = NoirPrimary,
     onPrimary        = NoirOnPrimary,
-    primaryContainer = Color(0xFF23202B),
+    primaryContainer = Color(0xFF27222E),
     secondary        = NoirSecondary,
     onSecondary      = NoirBackground,
     tertiary         = NoirTertiary,
@@ -59,9 +85,122 @@ private val NoirColorScheme = darkColorScheme(
     onBackground     = NoirOnBg,
     surface          = NoirSurface,
     onSurface        = NoirOnBg,
-    surfaceVariant   = Color(0xFF23202B),
-    onSurfaceVariant = Color(0xFF9D96AB),
-    outline          = Color(0x1AE1D1ED)
+    surfaceVariant   = Color(0xFF27222E),
+    onSurfaceVariant = Color(0xFFAAA3B5),
+    outline          = Color(0xFF37313E)
+)
+
+// ── 8 TEMAS COHESIVOS OFICIALES (HTML v11) ──────────────────────────────────
+private val CiruelaColorScheme = darkColorScheme(
+    primary          = Color(0xFFDBB5EC),
+    onPrimary        = Color(0xFF141017),
+    primaryContainer = Color(0xFF33283A),
+    secondary        = Color(0xFFC2B1C2),
+    onSecondary      = Color(0xFF141017),
+    tertiary         = Color(0xFF9F8A9E),
+    background       = Color(0xFF141017),
+    onBackground     = Color(0xFFFFF9FC),
+    surface          = Color(0xFF241D29),
+    onSurface        = Color(0xFFFFF9FC),
+    surfaceVariant   = Color(0xFF33283A),
+    onSurfaceVariant = Color(0xFFC2B1C2),
+    outline          = Color(0xFF453646)
+)
+
+private val BosqueColorScheme = darkColorScheme(
+    primary          = Color(0xFFA3D4BD),
+    onPrimary        = Color(0xFF0C1413),
+    primaryContainer = Color(0xFF24362E),
+    secondary        = Color(0xFFB1C4B8),
+    onSecondary      = Color(0xFF0C1413),
+    tertiary         = Color(0xFF83998D),
+    background       = Color(0xFF0C1413),
+    onBackground     = Color(0xFFF1FAF5),
+    surface          = Color(0xFF17231F),
+    onSurface        = Color(0xFFF1FAF5),
+    surfaceVariant   = Color(0xFF24362E),
+    onSurfaceVariant = Color(0xFFB1C4B8),
+    outline          = Color(0xFF35493F)
+)
+
+private val IndigoColorScheme = darkColorScheme(
+    primary          = Color(0xFFC0C9FF),
+    onPrimary        = Color(0xFF0D1122),
+    primaryContainer = Color(0xFF29304D),
+    secondary        = Color(0xFFB5BBD8),
+    onSecondary      = Color(0xFF0D1122),
+    tertiary         = Color(0xFF8F99B9),
+    background       = Color(0xFF0D1122),
+    onBackground     = Color(0xFFF6F7FF),
+    surface          = Color(0xFF1A2037),
+    onSurface        = Color(0xFFF6F7FF),
+    surfaceVariant   = Color(0xFF29304D),
+    onSurfaceVariant = Color(0xFFB5BBD8),
+    outline          = Color(0xFF3B4263)
+)
+
+private val PetaloColorScheme = lightColorScheme(
+    primary          = Color(0xFF9369B2),
+    onPrimary        = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFF3E9ED),
+    secondary        = Color(0xFF786D7F),
+    onSecondary      = Color(0xFFFFFFFF),
+    tertiary         = Color(0xFF93899A),
+    background       = Color(0xFFFCF7F7),
+    onBackground     = Color(0xFF302838),
+    surface          = Color(0xFFFFFAFB),
+    onSurface        = Color(0xFF302838),
+    surfaceVariant   = Color(0xFFF3E9ED),
+    onSurfaceVariant = Color(0xFF786D7F),
+    outline          = Color(0xFFEBDFE7)
+)
+
+private val MarfilColorScheme = lightColorScheme(
+    primary          = Color(0xFF90718F),
+    onPrimary        = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFF3ECE3),
+    secondary        = Color(0xFF756A69),
+    onSecondary      = Color(0xFFFFFFFF),
+    tertiary         = Color(0xFF948986),
+    background       = Color(0xFFFAF6EE),
+    onBackground     = Color(0xFF352F32),
+    surface          = Color(0xFFFFFCF7),
+    onSurface        = Color(0xFF352F32),
+    surfaceVariant   = Color(0xFFF3ECE3),
+    onSurfaceVariant = Color(0xFF756A69),
+    outline          = Color(0xFFE7DCD4)
+)
+
+private val SalviaColorScheme = lightColorScheme(
+    primary          = Color(0xFF5C8E76),
+    onPrimary        = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFE6EEE7),
+    secondary        = Color(0xFF65786B),
+    onSecondary      = Color(0xFFFFFFFF),
+    tertiary         = Color(0xFF839B8B),
+    background       = Color(0xFFF2F7F2),
+    onBackground     = Color(0xFF253B30),
+    surface          = Color(0xFFFCFEFD),
+    onSurface        = Color(0xFF253B30),
+    surfaceVariant   = Color(0xFFE6EEE7),
+    onSurfaceVariant = Color(0xFF65786B),
+    outline          = Color(0xFFD3E3D9)
+)
+
+private val LavandaColorScheme = lightColorScheme(
+    primary          = Color(0xFF8F70BD),
+    onPrimary        = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFEEE9F8),
+    secondary        = Color(0xFF756B88),
+    onSecondary      = Color(0xFFFFFFFF),
+    tertiary         = Color(0xFF998EAD),
+    background       = Color(0xFFF8F5FE),
+    onBackground     = Color(0xFF342B49),
+    surface          = Color(0xFFFFFCFF),
+    onSurface        = Color(0xFF342B49),
+    surfaceVariant   = Color(0xFFEEE9F8),
+    onSurfaceVariant = Color(0xFF756B88),
+    outline          = Color(0xFFE3DCEF)
 )
 
 // ── Claras ───────────────────────────────────────────────────────────────────
@@ -232,13 +371,6 @@ private val CycleOvulationDarkColorScheme = darkColorScheme(
     surfaceVariant = Color(0xFF142E38), onSurfaceVariant = CycleOvulationDarkOnBg, outline = Color(0xFF2C4A5A)
 )
 
-private val LavandaColorScheme = lightColorScheme(
-    primary = LavandaPrimary, onPrimary = LavandaOnPrimary, primaryContainer = Color(0xFFE8D8F5),
-    secondary = LavandaSecondary, onSecondary = LavandaOnBg, tertiary = LavandaTertiary,
-    background = LavandaBackground, onBackground = LavandaOnBg,
-    surface = LavandaSurface, onSurface = LavandaOnBg,
-    surfaceVariant = Color(0xFFEEE6F5), onSurfaceVariant = LavandaOnBg, outline = Color(0xFFCDB8D8)
-)
 private val CactusColorScheme = lightColorScheme(
     primary = CactusPrimary, onPrimary = CactusOnPrimary, primaryContainer = Color(0xFFD8EDDF),
     secondary = CactusSecondary, onSecondary = CactusOnBg, tertiary = CactusTertiary,
@@ -266,13 +398,6 @@ private val LuxeColorScheme = lightColorScheme(
     background = LuxeBackground, onBackground = LuxeOnBg,
     surface = LuxeSurface, onSurface = LuxeOnBg,
     surfaceVariant = Color(0xFFEDE5DE), onSurfaceVariant = LuxeOnBg, outline = Color(0xFFCCBBAA)
-)
-private val PetaloColorScheme = lightColorScheme(
-    primary = PetaloPrimary, onPrimary = PetaloOnPrimary, primaryContainer = Color(0xFFFFE0EA),
-    secondary = PetaloSecondary, onSecondary = PetaloOnBg, tertiary = PetaloTertiary,
-    background = PetaloBackground, onBackground = PetaloOnBg,
-    surface = PetaloSurface, onSurface = PetaloOnBg,
-    surfaceVariant = Color(0xFFF5ECF0), onSurfaceVariant = PetaloOnBg, outline = Color(0xFFDDCCD4)
 )
 private val PiedraColorScheme = lightColorScheme(
     primary = PiedraPrimary, onPrimary = PiedraOnPrimary, primaryContainer = Color(0xFFE0DEDC),
@@ -442,6 +567,161 @@ val LocalBrandGradient = compositionLocalOf<Brush?> { null }
 // Expone un gradiente sutil para el fondo general de la app.
 val LocalBrandBackgroundGradient = compositionLocalOf<Brush?> { null }
 
+// ─────────────────────────────────────────────
+//  ANIMACIÓN FLUIDA DE TEMAS Y PULSO CONECTADO
+// ─────────────────────────────────────────────
+
+@Composable
+fun rememberAnimatedColorScheme(
+    target: ColorScheme,
+    animationSpec: AnimationSpec<Color> = tween(450, easing = CubicBezierEasing(0.2f, 0.83f, 0.2f, 1f))
+): ColorScheme {
+    val primary by animateColorAsState(target.primary, animationSpec, label = "cs_primary")
+    val onPrimary by animateColorAsState(target.onPrimary, animationSpec, label = "cs_onPrimary")
+    val primaryContainer by animateColorAsState(target.primaryContainer, animationSpec, label = "cs_primaryContainer")
+    val secondary by animateColorAsState(target.secondary, animationSpec, label = "cs_secondary")
+    val onSecondary by animateColorAsState(target.onSecondary, animationSpec, label = "cs_onSecondary")
+    val tertiary by animateColorAsState(target.tertiary, animationSpec, label = "cs_tertiary")
+    val background by animateColorAsState(target.background, animationSpec, label = "cs_bg")
+    val onBackground by animateColorAsState(target.onBackground, animationSpec, label = "cs_onBg")
+    val surface by animateColorAsState(target.surface, animationSpec, label = "cs_surface")
+    val onSurface by animateColorAsState(target.onSurface, animationSpec, label = "cs_onSurface")
+    val surfaceVariant by animateColorAsState(target.surfaceVariant, animationSpec, label = "cs_surfaceVariant")
+    val onSurfaceVariant by animateColorAsState(target.onSurfaceVariant, animationSpec, label = "cs_onSurfaceVariant")
+    val outline by animateColorAsState(target.outline, animationSpec, label = "cs_outline")
+
+    return remember(primary, onPrimary, primaryContainer, secondary, onSecondary, tertiary, background, onBackground, surface, onSurface, surfaceVariant, onSurfaceVariant, outline) {
+        target.copy(
+            primary = primary,
+            onPrimary = onPrimary,
+            primaryContainer = primaryContainer,
+            secondary = secondary,
+            onSecondary = onSecondary,
+            tertiary = tertiary,
+            background = background,
+            onBackground = onBackground,
+            surface = surface,
+            onSurface = onSurface,
+            surfaceVariant = surfaceVariant,
+            onSurfaceVariant = onSurfaceVariant,
+            outline = outline
+        )
+    }
+}
+
+@Composable
+fun rememberAnimatedLumiTokens(
+    target: LumiDesignTokens,
+    animationSpec: AnimationSpec<Color> = tween(450, easing = CubicBezierEasing(0.2f, 0.83f, 0.2f, 1f))
+): LumiDesignTokens {
+    val bg by animateColorAsState(target.bg, animationSpec, label = "tok_bg")
+    val panel by animateColorAsState(target.panel, animationSpec, label = "tok_panel")
+    val panel2 by animateColorAsState(target.panel2, animationSpec, label = "tok_panel2")
+    val text by animateColorAsState(target.text, animationSpec, label = "tok_text")
+    val muted by animateColorAsState(target.muted, animationSpec, label = "tok_muted")
+    val dim by animateColorAsState(target.dim, animationSpec, label = "tok_dim")
+    val line by animateColorAsState(target.line, animationSpec, label = "tok_line")
+    val accent by animateColorAsState(target.accent, animationSpec, label = "tok_accent")
+    val accentSoft by animateColorAsState(target.accentSoft, animationSpec, label = "tok_accentSoft")
+    val peach by animateColorAsState(target.peach, animationSpec, label = "tok_peach")
+    val rose by animateColorAsState(target.rose, animationSpec, label = "tok_rose")
+    val mint by animateColorAsState(target.mint, animationSpec, label = "tok_mint")
+    val gold by animateColorAsState(target.gold, animationSpec, label = "tok_gold")
+    val nav by animateColorAsState(target.nav, animationSpec, label = "tok_nav")
+    val glow by animateColorAsState(target.glow, animationSpec, label = "tok_glow")
+    val field by animateColorAsState(target.field, animationSpec, label = "tok_field")
+    val pill by animateColorAsState(target.pill, animationSpec, label = "tok_pill")
+    val ringTrack by animateColorAsState(target.ringTrack, animationSpec, label = "tok_ringTrack")
+
+    return remember(bg, panel, panel2, text, muted, dim, line, accent, accentSoft, peach, rose, mint, gold, nav, glow, field, pill, ringTrack, target.ringGradient, target.isDark) {
+        LumiDesignTokens(
+            bg = bg,
+            panel = panel,
+            panel2 = panel2,
+            text = text,
+            muted = muted,
+            dim = dim,
+            line = line,
+            accent = accent,
+            accentSoft = accentSoft,
+            peach = peach,
+            rose = rose,
+            mint = mint,
+            gold = gold,
+            nav = nav,
+            glow = glow,
+            field = field,
+            pill = pill,
+            ringTrack = ringTrack,
+            ringGradient = target.ringGradient,
+            isDark = target.isDark
+        )
+    }
+}
+
+/**
+ * Pulso de cambio de tema conectado según especificación HTML v11:
+ * radial-gradient at 87% 14%, escala 0.55 -> 1.55, opacidad 0 -> 0.72 -> 0 en 720ms.
+ */
+@Composable
+fun ConnectedThemePulse(
+    accentColor: Color,
+    pulseKey: Any?,
+    modifier: Modifier = Modifier
+) {
+    var hasLaunchedOnce by remember { mutableStateOf(false) }
+    var animating by remember { mutableStateOf(false) }
+    val animProgress = remember { Animatable(0f) }
+
+    LaunchedEffect(pulseKey) {
+        if (!hasLaunchedOnce) {
+            hasLaunchedOnce = true
+            return@LaunchedEffect
+        }
+        animating = true
+        animProgress.snapTo(0f)
+        animProgress.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 720, easing = LinearEasing)
+        )
+        animating = false
+    }
+
+    if (animating) {
+        val p = animProgress.value
+        val scale = lerp(0.55f, 1.55f, p)
+        val opacity = if (p <= 0.38f) {
+            lerp(0f, 0.72f, p / 0.38f)
+        } else {
+            lerp(0.72f, 0f, (p - 0.38f) / 0.62f)
+        }
+
+        val density = LocalDensity.current.density
+        val config = LocalConfiguration.current
+        val widthPx = config.screenWidthDp.toFloat() * density
+        val heightPx = config.screenHeightDp.toFloat() * density
+        val pulseCenter = Offset(widthPx * 0.87f, heightPx * 0.14f)
+
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    alpha = opacity
+                }
+                .background(
+                    Brush.radialGradient(
+                        0f to accentColor.copy(alpha = 0.18f),
+                        0.67f to Color.Transparent,
+                        center = pulseCenter,
+                        radius = kotlin.math.hypot(widthPx * 0.87f, heightPx * 0.86f) * 0.67f
+                    )
+                )
+        )
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  LUMI THEME
 // ─────────────────────────────────────────────────────────────────────────────
@@ -455,20 +735,28 @@ fun LumiTheme(
     selectedAmbient      : BackgroundAmbient = BackgroundAmbient.FLAT,
     content              : @Composable () -> Unit
 ) {
-    val colorScheme = when (selectedTheme) {
+    val rawColorScheme = when (selectedTheme) {
+        AppThemePalette.NOIR            -> NoirColorScheme
+        AppThemePalette.CIRUELA         -> CiruelaColorScheme
+        AppThemePalette.BOSQUE          -> BosqueColorScheme
+        AppThemePalette.INDIGO          -> IndigoColorScheme
+        AppThemePalette.PETALO          -> PetaloColorScheme
+        AppThemePalette.MARFIL          -> MarfilColorScheme
+        AppThemePalette.SALVIA          -> SalviaColorScheme
+        AppThemePalette.LAVANDA         -> LavandaColorScheme
         AppThemePalette.LUMI_SPARK      -> LumiSparkColorScheme
         AppThemePalette.LUMI_SPARK_DARK -> LumiSparkDarkColorScheme
         AppThemePalette.LUMI_OCEAN      -> LumiOceanColorScheme
-        AppThemePalette.LUMI_OCEAN_DARK -> LumiOceanDarkColorScheme
+        AppThemePalette.LUMI_OCEAN_DARK -> IndigoColorScheme
         AppThemePalette.LUMI_FOREST     -> LumiForestColorScheme
-        AppThemePalette.LUMI_FOREST_DARK -> LumiForestDarkColorScheme
+        AppThemePalette.LUMI_FOREST_DARK -> BosqueColorScheme
         AppThemePalette.LUMI_SUNSET     -> LumiSunsetColorScheme
         AppThemePalette.LUMI_SUNSET_DARK -> LumiSunsetDarkColorScheme
         AppThemePalette.LUMI_DUNE       -> LumiDuneColorScheme
         AppThemePalette.LUMI_DUNE_DARK  -> LumiDuneDarkColorScheme
-        AppThemePalette.LUMI_LAVENDER   -> LumiLavenderColorScheme
+        AppThemePalette.LUMI_LAVENDER   -> LavandaColorScheme
         AppThemePalette.LUMI_LAVENDER_DARK -> LumiLavenderDarkColorScheme
-        AppThemePalette.LUMI_SAGE       -> LumiSageColorScheme
+        AppThemePalette.LUMI_SAGE       -> SalviaColorScheme
         AppThemePalette.LUMI_SAGE_DARK  -> LumiSageDarkColorScheme
         AppThemePalette.LUMI_EARTH      -> LumiEarthColorScheme
         AppThemePalette.LUMI_EARTH_DARK -> LumiEarthDarkColorScheme
@@ -478,12 +766,10 @@ fun LumiTheme(
         AppThemePalette.CYCLE_MENSTRUAL_DARK -> CycleMenstrualDarkColorScheme
         AppThemePalette.CYCLE_OVULATION -> CycleOvulationColorScheme
         AppThemePalette.CYCLE_OVULATION_DARK -> CycleOvulationDarkColorScheme
-        AppThemePalette.LAVANDA    -> LavandaColorScheme
-        AppThemePalette.CACTUS     -> CactusColorScheme
+        AppThemePalette.CACTUS     -> SalviaColorScheme
         AppThemePalette.HORTENSIA  -> HortensiaColorScheme
         AppThemePalette.TIERRA     -> TierraColorScheme
         AppThemePalette.LUXE       -> LuxeColorScheme
-        AppThemePalette.PETALO     -> PetaloColorScheme
         AppThemePalette.PIEDRA     -> PiedraColorScheme
         AppThemePalette.MEDIANOCHE -> MedianocheColorScheme
         AppThemePalette.COSMOS     -> CosmosColorScheme
@@ -491,20 +777,20 @@ fun LumiTheme(
         AppThemePalette.ECLIPSE    -> EclipseColorScheme
         AppThemePalette.NOCHE_ROSA -> NocheRosaColorScheme
         AppThemePalette.OBSIDIANA  -> ObsidianaColorScheme
-        AppThemePalette.VINO       -> VinoColorScheme
+        AppThemePalette.VINO       -> CiruelaColorScheme
         AppThemePalette.FORJA      -> ForjaColorScheme
         AppThemePalette.AMBAR      -> AmbarColorScheme
-        AppThemePalette.NOIR       -> NoirColorScheme
         AppThemePalette.PAPEL      -> PapelColorScheme
         AppThemePalette.NIEBLA     -> NieblaColorScheme
         AppThemePalette.SAL        -> SalColorScheme
-        AppThemePalette.ARENA      -> ArenaColorScheme
+        AppThemePalette.ARENA      -> MarfilColorScheme
         AppThemePalette.PIZARRA    -> PizarraColorScheme
         AppThemePalette.HUMO       -> HumoColorScheme
         AppThemePalette.LIENZO     -> LienzoColorScheme
         AppThemePalette.CENIZA     -> CenizaColorScheme
     }
 
+    val animatedColorScheme = rawColorScheme // v18: sin colores intermedios ni desincronización con la revelación CSS
     val isDark = selectedTheme.isDark()
 
     // Resolver qué colores de fase usar:
@@ -522,7 +808,7 @@ fun LumiTheme(
         SideEffect {
             val window = (view.context as Activity).window
             @Suppress("DEPRECATION")
-            window.statusBarColor = colorScheme.background.toArgb()
+            window.statusBarColor = animatedColorScheme.background.toArgb()
             WindowCompat.getInsetsController(window, view)
                 .isAppearanceLightStatusBars = !isDark
         }
@@ -571,14 +857,15 @@ fun LumiTheme(
     }
 
     // Resolver tokens de diseño semánticos unificados del prototipo
-    val lumiTokens = resolveLumiTokens(selectedTheme)
+    val rawLumiTokens = resolveLumiTokens(selectedTheme)
+    val animatedLumiTokens = rawLumiTokens // v18: tokens inmediatos, también en cambio oscuro↔claro
 
     // Los colores semánticos SIEMPRE son DEFAULT (rojo/teal/morado/ámbar).
     val semanticPhaseColors = selectedPhasePalette.toSemanticPhaseColors(isDark)
 
     CompositionLocalProvider(
         LocalIsDarkTheme provides isDark,
-        LocalLumiTokens provides lumiTokens,
+        LocalLumiTokens provides animatedLumiTokens,
         LocalPhaseColors provides phaseColors,
         LocalSemanticPhaseColors provides semanticPhaseColors,
         LocalDialStyle provides dialStyle,
@@ -586,6 +873,11 @@ fun LumiTheme(
         LocalBrandBackgroundGradient provides brandBackgroundGradient,
         LocalBackgroundAmbient provides selectedAmbient
     ) {
-        MaterialTheme(colorScheme = colorScheme, typography = Typography, content = content)
+        MaterialTheme(colorScheme = animatedColorScheme, typography = Typography) {
+            Box(Modifier.fillMaxSize()) {
+                content()
+                // El pulso solo pertenece al Home. Onboarding usa revelación circular de 690 ms.
+            }
+        }
     }
 }

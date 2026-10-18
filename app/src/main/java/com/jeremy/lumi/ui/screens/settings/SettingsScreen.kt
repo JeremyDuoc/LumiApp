@@ -263,8 +263,15 @@ fun SettingsScreen(
                     icon = Icons.Rounded.Palette,
                     title = stringResource(R.string.settings_theme_general),
                     subtitle = when (currentTheme) {
-                        AppThemePalette.PETALO -> "Blush"
-                        else -> "Noir"
+                        AppThemePalette.NOIR -> "Noir"
+                        AppThemePalette.CIRUELA, AppThemePalette.VINO -> "Ciruela"
+                        AppThemePalette.BOSQUE, AppThemePalette.LUMI_FOREST, AppThemePalette.LUMI_FOREST_DARK -> "Bosque"
+                        AppThemePalette.INDIGO, AppThemePalette.LUMI_OCEAN, AppThemePalette.LUMI_OCEAN_DARK -> "Índigo"
+                        AppThemePalette.PETALO -> "Pétalo"
+                        AppThemePalette.MARFIL, AppThemePalette.ARENA -> "Marfil"
+                        AppThemePalette.SALVIA, AppThemePalette.LUMI_SAGE, AppThemePalette.LUMI_SAGE_DARK, AppThemePalette.CACTUS -> "Salvia"
+                        AppThemePalette.LAVANDA, AppThemePalette.LUMI_LAVENDER, AppThemePalette.LUMI_LAVENDER_DARK -> "Lavanda"
+                        else -> if (currentTheme.isDark()) "Noir" else "Pétalo"
                     },
                     onClick = { showThemeSheet = true }
                 )

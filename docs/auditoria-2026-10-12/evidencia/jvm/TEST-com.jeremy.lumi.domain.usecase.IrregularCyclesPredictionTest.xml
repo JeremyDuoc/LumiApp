@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.jeremy.lumi.domain.usecase.IrregularCyclesPredictionTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-12T17:59:44.188Z" hostname="JEREMY" time="0.007">
-  <properties/>
-  <testcase name="test 6 months irregular cycles bio-statistical behavior" classname="com.jeremy.lumi.domain.usecase.IrregularCyclesPredictionTest" time="0.007"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

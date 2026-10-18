@@ -49,6 +49,7 @@ import com.jeremy.lumi.R
 import com.jeremy.lumi.data.local.entity.DailyLogWithSymptoms
 import com.jeremy.lumi.data.local.entity.SymptomEntity
 import com.jeremy.lumi.domain.util.ClinicalLabels
+import com.jeremy.lumi.ui.theme.LumiThemeTokens
 import com.popovanton0.heartswitch.HeartSwitch
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -397,6 +398,7 @@ fun DailyLogSheet(
             ) { page ->
                 when (page) {
                     0 -> TabHoyContent(
+                        activeCategories = activeCategories,
                         selectedFlow = selectedFlow,
                         flowIsNone = flowIsNone,
                         onFlowChange = { flowRes, isNone ->
@@ -491,6 +493,7 @@ fun DailyLogSheet(
                     )
 
                     2 -> TabBienestarContent(
+                        activeCategories = activeCategories,
                         sleepHours = sleepHours,
                         onSleepChange = { sleepHours = it },
                         energyLevel = energyLevel,
@@ -678,7 +681,8 @@ private fun DailyLogHeader(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 6.dp)
+            .statusBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 8.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -719,54 +723,18 @@ private fun DailyLogHeader(
             IconButton(
                 onClick = onClose,
                 modifier = Modifier
-                    .size(34.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Close,
                     contentDescription = stringResource(R.string.btn_close),
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(20.dp),
                     tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                 )
             }
         }
-
-        Spacer(Modifier.height(10.dp))
-
-        // Barra de progreso interactiva (01 · Lo esencial — 1 de 4)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(R.string.log_step_progress, currentStep + 1, stepLabel),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary,
-                letterSpacing = 0.5.sp
-            )
-            Text(
-                text = stringResource(R.string.log_step_of, currentStep + 1, 4),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-
-        Spacer(Modifier.height(4.dp))
-
-        val progress = (currentStep + 1) / 4f
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(3.dp)
-                .clip(CircleShape),
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.surfaceVariant
-        )
     }
 }
 
@@ -844,6 +812,7 @@ private fun DailyLogTabBar(
 
 @Composable
 private fun TabHoyContent(
+    activeCategories: Set<String>,
     selectedFlow: Int?,
     flowIsNone: Boolean,
     onFlowChange: (resId: Int?, isNone: Boolean) -> Unit,
@@ -884,8 +853,7 @@ private fun TabHoyContent(
     ) {
         // 1. SANGRADO Y PERIODO
         CardSection(
-            title = stringResource(R.string.log_period_status_question),
-            subtitle = stringResource(R.string.log_period_status_desc)
+            title = stringResource(R.string.log_period_status_question)
         ) {
             FlowSelectorWithNone(
                 options = listOf(R.string.flow_light, R.string.flow_medium, R.string.flow_heavy),
@@ -935,8 +903,7 @@ private fun TabHoyContent(
 
         // 2. ¿CÓMO TE ENCUENTRAS? (ESTADO DE ÁNIMO)
         CardSection(
-            title = stringResource(R.string.log_how_feeling_question),
-            subtitle = stringResource(R.string.log_how_feeling_desc)
+            title = stringResource(R.string.log_how_feeling_question)
         ) {
             MoodGridSelector(
                 options = moodOptions,
@@ -949,25 +916,26 @@ private fun TabHoyContent(
         }
 
         // 3. NIVEL DE DOLOR
-        CardSection(
-            title = stringResource(R.string.log_pain_question),
-            subtitle = stringResource(R.string.log_pain_intensity_range),
-            actionText = if (painLevel > 0f) stringResource(R.string.log_no_pain) else null,
-            onActionClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onPainChange(0f)
+        if ("physical" in activeCategories) {
+            CardSection(
+                title = stringResource(R.string.log_pain_question),
+                subtitle = stringResource(R.string.log_pain_intensity_range),
+                actionText = if (painLevel > 0f) stringResource(R.string.log_no_pain) else null,
+                onActionClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onPainChange(0f)
+                }
+            ) {
+                PainSliderCard(
+                    painLevel = painLevel,
+                    onPainChange = onPainChange
+                )
             }
-        ) {
-            PainSliderCard(
-                painLevel = painLevel,
-                onPainChange = onPainChange
-            )
         }
 
         // 4. SÍNTOMAS HABITUALES A UN TOQUE
         CardSection(
             title = stringResource(R.string.log_frequent_symptoms),
-            subtitle = stringResource(R.string.log_frequent_symptoms_desc),
             actionText = stringResource(R.string.log_view_all_arrow),
             onActionClick = onNavigateToAllSymptoms
         ) {
@@ -999,22 +967,24 @@ private fun TabHoyContent(
         }
 
         // 5. REGISTRO ÍNTIMO CON EL BOTÓN CORAZÓN ORIGINAL DE LUMI
-        IntimacyInteractiveCard(
-            hadIntercourse = hadIntercourse,
-            answeredNo = intercourseAnsweredNo,
-            onHadIntercourseChange = onHadIntercourseChange,
-            onAnswerNo = onIntercourseAnswerNo,
-            onClear = onClearIntercourse,
-            protectionUsed = protectionUsed,
-            onProtectionChange = onProtectionChange,
-            methodOptions = methodOptions,
-            selectedMethod = selectedMethod,
-            onMethodSelect = onMethodSelect,
-            intercourseNotes = intercourseNotes,
-            onIntercourseNotesChange = onIntercourseNotesChange,
-            showOnCalendar = showOnCalendar,
-            onShowOnCalendarChange = onShowOnCalendarChange
-        )
+        if ("intercourse" in activeCategories) {
+            IntimacyInteractiveCard(
+                hadIntercourse = hadIntercourse,
+                answeredNo = intercourseAnsweredNo,
+                onHadIntercourseChange = onHadIntercourseChange,
+                onAnswerNo = onIntercourseAnswerNo,
+                onClear = onClearIntercourse,
+                protectionUsed = protectionUsed,
+                onProtectionChange = onProtectionChange,
+                methodOptions = methodOptions,
+                selectedMethod = selectedMethod,
+                onMethodSelect = onMethodSelect,
+                intercourseNotes = intercourseNotes,
+                onIntercourseNotesChange = onIntercourseNotesChange,
+                showOnCalendar = showOnCalendar,
+                onShowOnCalendarChange = onShowOnCalendarChange
+            )
+        }
 
         Spacer(Modifier.height(10.dp))
     }
@@ -1257,6 +1227,14 @@ private fun PainSliderCard(
         else -> stringResource(R.string.log_pain_very_severe)
     }
 
+    val painOptions = listOf(
+        Triple(0f, "0", "Nada"),
+        Triple(2f, "2", "Leve"),
+        Triple(5f, "5", "Medio"),
+        Triple(7f, "7", "Fuerte"),
+        Triple(9f, "9", "Severo")
+    )
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1290,47 +1268,89 @@ private fun PainSliderCard(
             }
         }
 
-        Spacer(Modifier.height(8.dp))
-
-        Slider(
-            value = painLevel,
-            onValueChange = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onPainChange(it)
-            },
-            valueRange = 0f..10f,
-            steps = 9,
-            colors = SliderDefaults.colors(
-                thumbColor = animColor,
-                activeTrackColor = animColor,
-                inactiveTrackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f)
-            )
-        )
+        Spacer(Modifier.height(12.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(stringResource(R.string.log_pain_scale_none), fontSize = 10.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f))
-            Text(stringResource(R.string.log_pain_scale_mod), fontSize = 10.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f))
-            Text(stringResource(R.string.log_pain_scale_intense), fontSize = 10.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f))
+            painOptions.forEach { (valFloat, score, label) ->
+                val isSelected = (valFloat == 0f && painLevel == 0f) ||
+                    (valFloat == 2f && painLevel in 1f..3f) ||
+                    (valFloat == 5f && painLevel in 4f..6f) ||
+                    (valFloat == 7f && painLevel in 7f..8f) ||
+                    (valFloat == 9f && painLevel >= 9f) ||
+                    (painLevel == valFloat)
+
+                val btnBg by animateColorAsState(
+                    if (isSelected) animColor.copy(alpha = 0.2f)
+                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    label = "pain_btn_bg_$score"
+                )
+                val borderModifier = if (isSelected) {
+                    Modifier.border(1.5.dp, animColor, RoundedCornerShape(12.dp))
+                } else Modifier
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 52.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .then(borderModifier)
+                        .background(btnBg)
+                        .clickable {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onPainChange(valFloat)
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(horizontal = 2.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = score,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isSelected) animColor else MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                            text = label,
+                            fontSize = 10.5.sp,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                            color = if (isSelected) animColor else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
         }
 
-        if (painLevel >= 8f) {
-            Spacer(Modifier.height(10.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f))
-                    .padding(10.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.log_pain_warning),
-                    fontSize = 11.5.sp,
-                    color = MaterialTheme.colorScheme.error,
-                    lineHeight = 16.sp
-                )
+        Spacer(Modifier.height(10.dp))
+
+        // Espacio fijo reservado para el aviso clínico cuando dolor >= 7 para no empujar el layout
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 44.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            if (painLevel >= 7f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f))
+                        .padding(horizontal = 10.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.log_pain_warning),
+                        fontSize = 11.5.sp,
+                        color = MaterialTheme.colorScheme.error,
+                        lineHeight = 15.sp
+                    )
+                }
             }
         }
     }
@@ -1479,56 +1499,113 @@ private fun IntimacyInteractiveCard(
 
         Spacer(Modifier.height(14.dp))
 
-        // Fila de pregunta con botón "No" y HeartSwitch
+        Text(
+            text = "¿Tuviste intimidad hoy?",
+            fontSize = 12.5.sp,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f),
+            fontWeight = FontWeight.Medium
+        )
+
+        Spacer(Modifier.height(10.dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                text = stringResource(R.string.log_had_intercourse_question),
-                fontSize = 12.5.sp,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f),
-                modifier = Modifier.weight(1f)
+            val isNone = !hadIntercourse && !answeredNo
+            // 1. Sin registrar
+            val noneBg by animateColorAsState(
+                if (isNone) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                else MaterialTheme.colorScheme.surfaceVariant,
+                label = "none_btn_bg"
             )
+            val noneBorder = if (isNone) {
+                Modifier.border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+            } else Modifier
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Botón "No" rápido
-                val noBg by animateColorAsState(
-                    if (answeredNo) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
-                    else MaterialTheme.colorScheme.surfaceVariant,
-                    label = "no_btn_bg"
-                )
-                Box(
-                    modifier = Modifier
-                        .height(34.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(noBg)
-                        .clickable {
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            onAnswerNo()
-                        }
-                        .padding(horizontal = 12.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No",
-                        fontSize = 11.5.sp,
-                        fontWeight = if (answeredNo) FontWeight.Bold else FontWeight.Medium,
-                        color = if (answeredNo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                    )
-                }
-
-                // HeartSwitch oficial preservado de Lumi
-                HeartSwitch(
-                    checked = hadIntercourse,
-                    onCheckedChange = { checked ->
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .then(noneBorder)
+                    .background(noneBg)
+                    .clickable {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        onHadIntercourseChange(checked)
-                    }
+                        onClear()
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Sin registrar",
+                    fontSize = 11.5.sp,
+                    fontWeight = if (isNone) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isNone) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            // 2. No
+            val noBg by animateColorAsState(
+                if (answeredNo) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                else MaterialTheme.colorScheme.surfaceVariant,
+                label = "no_btn_bg"
+            )
+            val noBorder = if (answeredNo) {
+                Modifier.border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+            } else Modifier
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .then(noBorder)
+                    .background(noBg)
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onAnswerNo()
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No",
+                    fontSize = 12.sp,
+                    fontWeight = if (answeredNo) FontWeight.Bold else FontWeight.Medium,
+                    color = if (answeredNo) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            // 3. ❤️ Sí
+            val yesBg by animateColorAsState(
+                if (hadIntercourse) Color(0xFFED6190).copy(alpha = 0.2f)
+                else MaterialTheme.colorScheme.surfaceVariant,
+                label = "yes_btn_bg"
+            )
+            val yesBorder = if (hadIntercourse) {
+                Modifier.border(1.dp, Color(0xFFED6190), RoundedCornerShape(12.dp))
+            } else Modifier
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .then(yesBorder)
+                    .background(yesBg)
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onHadIntercourseChange(true)
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "❤️ Sí",
+                    fontSize = 12.sp,
+                    fontWeight = if (hadIntercourse) FontWeight.Bold else FontWeight.Medium,
+                    color = if (hadIntercourse) Color(0xFFED6190) else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    textAlign = TextAlign.Center
                 )
             }
         }
@@ -1933,6 +2010,7 @@ private fun TabSintomasContent(
 
 @Composable
 private fun TabBienestarContent(
+    activeCategories: Set<String>,
     sleepHours: Float?,
     onSleepChange: (Float?) -> Unit,
     energyLevel: Int?,
@@ -1957,139 +2035,165 @@ private fun TabBienestarContent(
             .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Horas de sueño con Stepper
-        HabitStepperRow(
-            title = stringResource(R.string.log_sleep_hours_title),
-            subtitle = stringResource(R.string.log_sleep_hours_desc),
-            displayValue = sleepHours?.let { String.format(Locale.US, "%.1f h", it) } ?: "—",
-            onDecrement = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                val current = sleepHours ?: 7.0f
-                val next = (current - 0.5f).coerceAtLeast(0f)
-                onSleepChange(if (next == 0f) null else next)
-            },
-            onIncrement = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                val current = sleepHours ?: 7.0f
-                val next = (current + 0.5f).coerceAtMost(24f)
-                onSleepChange(next)
-            }
-        )
-
-        // Nivel de energía (1 a 5)
-        SegmentMeterRow(
-            title = stringResource(R.string.log_energy_title),
-            subtitle = stringResource(R.string.log_energy_desc),
-            currentValue = energyLevel,
-            onValueSelect = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onEnergyChange(if (energyLevel == it) null else it)
-            }
-        )
-
-        // Nivel de estrés (1 a 5)
-        SegmentMeterRow(
-            title = stringResource(R.string.log_stress_title),
-            subtitle = stringResource(R.string.log_stress_desc),
-            currentValue = stressLevel,
-            onValueSelect = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onStressChange(if (stressLevel == it) null else it)
-            }
-        )
-
-        // Agua que bebiste con Stepper
-        HabitStepperRow(
-            title = stringResource(R.string.log_water_title),
-            subtitle = stringResource(R.string.log_water_desc),
-            displayValue = waterIntake?.let { String.format(Locale.US, "%.2f L", it) } ?: "—",
-            onDecrement = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                val current = waterIntake ?: 1.5f
-                val next = (current - 0.25f).coerceAtLeast(0f)
-                onWaterChange(if (next == 0f) null else next)
-            },
-            onIncrement = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                val current = waterIntake ?: 1.5f
-                val next = (current + 0.25f).coerceAtMost(10f)
-                onWaterChange(next)
-            }
-        )
-
-        HorizontalDivider(
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-            thickness = 1.dp
-        )
-
-        // Señales corporales
-        Text(
-            text = stringResource(R.string.log_body_signals),
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        // Temperatura basal (°C)
-        Column {
-            Text(
-                text = stringResource(R.string.log_bbt_celsius),
-                fontSize = 12.5.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground
+        if ("wellbeing" in activeCategories) {
+            // Horas de sueño con Stepper
+            HabitStepperRow(
+                title = stringResource(R.string.log_sleep_hours_title),
+                subtitle = stringResource(R.string.log_sleep_hours_desc),
+                displayValue = sleepHours?.let { String.format(Locale.US, "%.1f h", it) } ?: "0 h",
+                onDecrement = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    val current = sleepHours ?: 7.0f
+                    val next = (current - 0.5f).coerceAtLeast(0f)
+                    onSleepChange(if (next == 0f) null else next)
+                },
+                onIncrement = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    val current = sleepHours ?: 7.0f
+                    val next = (current + 0.5f).coerceAtMost(24f)
+                    onSleepChange(next)
+                }
             )
-            Spacer(Modifier.height(6.dp))
-            OutlinedTextField(
-                value = basalBodyTemp,
-                onValueChange = onBasalBodyTempChange,
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text(stringResource(R.string.log_bbt_placeholder), fontSize = 12.5.sp) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                shape = RoundedCornerShape(14.dp),
-                singleLine = true
+
+            // Nivel de energía (1 a 5)
+            SegmentMeterRow(
+                title = stringResource(R.string.log_energy_title),
+                subtitle = stringResource(R.string.log_energy_desc),
+                currentValue = energyLevel,
+                onValueSelect = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onEnergyChange(if (energyLevel == it) null else it)
+                }
             )
-            Text(
-                text = stringResource(R.string.log_bbt_disclaimer),
-                fontSize = 10.5.sp,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
-                modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+
+            // Nivel de estrés (1 a 5)
+            SegmentMeterRow(
+                title = stringResource(R.string.log_stress_title),
+                subtitle = stringResource(R.string.log_stress_desc),
+                currentValue = stressLevel,
+                onValueSelect = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onStressChange(if (stressLevel == it) null else it)
+                }
+            )
+
+            // Agua que bebiste con Stepper
+            HabitStepperRow(
+                title = stringResource(R.string.log_water_title),
+                subtitle = stringResource(R.string.log_water_desc),
+                displayValue = waterIntake?.let { String.format(Locale.US, "%.2f L", it) } ?: "0 L",
+                onDecrement = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    val current = waterIntake ?: 1.5f
+                    val next = (current - 0.25f).coerceAtLeast(0f)
+                    onWaterChange(if (next == 0f) null else next)
+                },
+                onIncrement = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    val current = waterIntake ?: 1.5f
+                    val next = (current + 0.25f).coerceAtMost(10f)
+                    onWaterChange(next)
+                }
             )
         }
 
-        // Moco cervical
-        Column {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.log_cervical_mucus),
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground
+        // Señales corporales
+        if ("vitals" in activeCategories || "mucus" in activeCategories) {
+            if ("wellbeing" in activeCategories) {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                    thickness = 1.dp
                 )
-                IconButton(onClick = onMucusInfoClick, modifier = Modifier.size(28.dp)) {
-                    Icon(
-                        imageVector = Icons.Rounded.Info,
-                        contentDescription = stringResource(R.string.cd_info),
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.primary
+            }
+
+            Text(
+                text = stringResource(R.string.log_body_signals),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            // Temperatura basal (°C)
+            if ("vitals" in activeCategories) {
+                Column {
+                    Text(
+                        text = stringResource(R.string.log_bbt_celsius),
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    OutlinedTextField(
+                        value = basalBodyTemp,
+                        onValueChange = onBasalBodyTempChange,
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text(stringResource(R.string.log_bbt_placeholder), fontSize = 12.5.sp) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        shape = RoundedCornerShape(14.dp),
+                        singleLine = true
+                    )
+                    Text(
+                        text = stringResource(R.string.log_bbt_disclaimer),
+                        fontSize = 10.5.sp,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
+                        modifier = Modifier.padding(top = 4.dp, start = 4.dp)
                     )
                 }
             }
-            Spacer(Modifier.height(6.dp))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(mucusOptions) { optionRes ->
-                    PillChip(
-                        text = stringResource(id = optionRes),
-                        isSelected = selectedMucus == optionRes,
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            onMucusSelect(optionRes)
+
+            // Moco cervical
+            if ("mucus" in activeCategories) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.log_cervical_mucus),
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        IconButton(onClick = onMucusInfoClick, modifier = Modifier.size(28.dp)) {
+                            Icon(
+                                imageVector = Icons.Rounded.Info,
+                                contentDescription = stringResource(R.string.cd_info),
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         }
-                    )
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(mucusOptions) { optionRes ->
+                            PillChip(
+                                text = stringResource(id = optionRes),
+                                isSelected = selectedMucus == optionRes,
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    onMucusSelect(optionRes)
+                                }
+                            )
+                        }
+                    }
                 }
+            }
+        }
+
+        if ("wellbeing" !in activeCategories && "vitals" !in activeCategories && "mucus" !in activeCategories) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 40.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = stringResource(R.string.log_customize_desc),
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                    textAlign = TextAlign.Center
+                )
             }
         }
 
@@ -2415,11 +2519,11 @@ private fun HabitStepperRow(
             IconButton(
                 onClick = onDecrement,
                 modifier = Modifier
-                    .size(34.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Text("−", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text("−", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
 
             Box(
@@ -2437,11 +2541,11 @@ private fun HabitStepperRow(
             IconButton(
                 onClick = onIncrement,
                 modifier = Modifier
-                    .size(34.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Text("+", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text("+", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -2454,6 +2558,8 @@ private fun SegmentMeterRow(
     currentValue: Int?,
     onValueSelect: (Int) -> Unit
 ) {
+    val tokens = LumiThemeTokens.current
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -2494,11 +2600,20 @@ private fun SegmentMeterRow(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .height(20.dp)
+                        .height(28.dp)
                         .clip(RoundedCornerShape(6.dp))
+                        .border(1.dp, tokens.line, RoundedCornerShape(6.dp))
                         .background(bg)
-                        .clickable { onValueSelect(num) }
-                )
+                        .clickable { onValueSelect(num) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "$num",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                    )
+                }
             }
         }
     }

@@ -6,6 +6,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -15,8 +16,13 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.ChevronRight
@@ -187,7 +193,11 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                 label = "calendar_zoom_anim"
             ) { currentMode ->
                 if (currentMode == CalendarMode.MONTH) {
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                    ) {
                         MonthView(
                             uiState = uiState,
                             viewModel = viewModel,
@@ -209,8 +219,9 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                             enter = fadeIn() + expandVertically(),
                             exit = fadeOut() + shrinkVertically(),
                             modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(horizontal = 16.dp, vertical = 12.dp)
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp)
+                                .padding(bottom = 20.dp)
                         ) {
                             com.jeremy.lumi.ui.components.LumiEmptyStateCard(
                                 icon = Icons.Rounded.Today,
@@ -225,6 +236,8 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                                 }
                             )
                         }
+
+                        Spacer(Modifier.height(80.dp))
                     }
                 } else {
                     YearView(
@@ -376,8 +389,9 @@ fun CurrentPhasePill(currentPhase: CyclePhase, currentDayOfCycle: Int) {
             fontSize = 13.sp
         )
         if (currentDayOfCycle > 0) {
+            val rawDay = stringResource(R.string.cal_current_day_pill, currentDayOfCycle).trimStart(' ', '•', '·')
             Text(
-                text = stringResource(R.string.cal_current_day_pill, currentDayOfCycle),
+                text = " · $rawDay",
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                 fontSize = 13.sp
             )
@@ -389,16 +403,17 @@ fun CurrentPhasePill(currentPhase: CyclePhase, currentDayOfCycle: Int) {
 fun MonthView(
     uiState: CalendarUiState,
     viewModel: CalendarViewModel,
-    onDayClick: (CalendarDay) -> Unit
+    onDayClick: (CalendarDay) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = modifier
+            .fillMaxWidth()
             .padding(horizontal = 20.dp)
-            .padding(bottom = 20.dp)
+            .padding(bottom = 12.dp)
     ) {
         Card(
-            modifier = Modifier.fillMaxWidth().weight(1f),
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(28.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
@@ -469,22 +484,28 @@ fun MonthView(
 
                 Spacer(Modifier.height(8.dp))
 
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(7),
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                    verticalArrangement = Arrangement.SpaceEvenly,
-                    modifier = Modifier.fillMaxSize().padding(bottom = 8.dp),
-                    userScrollEnabled = false
-                ) {
-                    itemsIndexed(uiState.days) { index, calendarDay ->
-                        if (calendarDay.isEmptyOffset) {
-                            Box(modifier = Modifier.size(48.dp))
-                        } else {
-                            DayCell(
-                                day = calendarDay,
-                                index = index,
-                                onClick = { onDayClick(calendarDay) }
-                            )
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    // The parent scrolls vertically, so the non-scrolling grid needs a finite height.
+                    val rowCount = (uiState.days.size + 6) / 7
+                    val cellHeight = maxOf(48.dp, (maxWidth - 12.dp) / 7)
+                    val gridHeight = cellHeight * rowCount + 8.dp
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(7),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        verticalArrangement = Arrangement.SpaceEvenly,
+                        modifier = Modifier.fillMaxWidth().height(gridHeight).padding(bottom = 8.dp),
+                        userScrollEnabled = false
+                    ) {
+                        itemsIndexed(uiState.days) { index, calendarDay ->
+                            if (calendarDay.isEmptyOffset) {
+                                Box(modifier = Modifier.size(48.dp))
+                            } else {
+                                DayCell(
+                                    day = calendarDay,
+                                    index = index,
+                                    onClick = { onDayClick(calendarDay) }
+                                )
+                            }
                         }
                     }
                 }
@@ -897,9 +918,20 @@ fun DayCell(day: CalendarDay, index: Int, onClick: () -> Unit) {
         )
     )
 
+    val phaseName = phaseLabel(day.phase)
+    val statusDesc = when {
+        day.isToday && day.hasLog -> "Hoy, con registro"
+        day.isToday -> "Hoy, sin registro"
+        day.isPrediction -> "Predicción"
+        day.hasLog -> "Con registro"
+        else -> "Sin registro"
+    }
+    val cellSemantics = "Día ${day.dayOfMonth}, $phaseName, $statusDesc"
+
     Box(
         modifier = Modifier
             .aspectRatio(1f)
+            .semantics { contentDescription = cellSemantics }
             .graphicsLayer {
                 alpha  = enter.value
                 scaleX = (0.5f + 0.5f * enter.value) * pressScale
@@ -939,6 +971,51 @@ fun DayCell(day: CalendarDay, index: Int, onClick: () -> Unit) {
                         color = primary.copy(alpha = pulseAlpha),
                         style = androidx.compose.ui.graphics.drawscope.Stroke(width = 4f)
                     )
+                }
+            }
+
+            if (!isUnknown) {
+                // Doble codificación geométrica de la fase
+                val shapeColor = if (day.isPrediction) baseColor.copy(alpha = 0.5f) else baseColor
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 4.dp)
+                ) {
+                    when (day.phase) {
+                        CyclePhase.MENSTRUAL -> {
+                            Box(
+                                modifier = Modifier
+                                    .size(3.5.dp)
+                                    .clip(CircleShape)
+                                    .background(shapeColor)
+                            )
+                        }
+                        CyclePhase.FOLLICULAR -> {
+                            Box(
+                                modifier = Modifier
+                                    .size(3.5.dp)
+                                    .rotate(45f)
+                                    .background(shapeColor)
+                            )
+                        }
+                        CyclePhase.OVULATION -> {
+                            Box(
+                                modifier = Modifier
+                                    .size(4.dp)
+                                    .border(1.dp, shapeColor, CircleShape)
+                            )
+                        }
+                        CyclePhase.LUTEAL -> {
+                            Box(
+                                modifier = Modifier
+                                    .size(width = 5.dp, height = 2.5.dp)
+                                    .clip(RoundedCornerShape(1.dp))
+                                    .background(shapeColor)
+                            )
+                        }
+                        else -> Unit
+                    }
                 }
             }
 

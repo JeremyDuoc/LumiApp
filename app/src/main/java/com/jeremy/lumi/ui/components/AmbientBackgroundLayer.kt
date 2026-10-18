@@ -29,6 +29,8 @@ import com.jeremy.lumi.ui.theme.BackgroundAmbient
 import com.jeremy.lumi.ui.theme.LocalBackgroundAmbient
 import com.jeremy.lumi.ui.theme.LocalBrandBackgroundGradient
 import com.jeremy.lumi.ui.theme.LocalIsDarkTheme
+import com.jeremy.lumi.ui.theme.LumiThemeTokens
+import androidx.compose.ui.graphics.drawscope.withTransform
 import java.time.LocalDate
 import kotlin.math.floor
 import kotlin.random.Random
@@ -52,26 +54,59 @@ fun AmbientBackgroundLayer(
     val isDark           = LocalIsDarkTheme.current
     val brandBgGradient  = LocalBrandBackgroundGradient.current
 
-    when (ambient) {
-        BackgroundAmbient.FLAT -> {
-            // Fondo plano: minimalista, estático, cero distracción o consumo de GPU
-            if (brandBgGradient != null) {
-                Box(
-                    modifier = modifier
-                        .background(MaterialTheme.colorScheme.background)
-                        .background(brandBgGradient)
+    // El CSS de Lumi dibuja .ambient CON INDEPENDENCIA de Celestial/Flat.
+    // Antes, FLAT sin gradiente de marca no dibujaba nada (caso NOIR).
+    Box(modifier = modifier) {
+        if (ambient == BackgroundAmbient.FLAT && brandBgGradient != null) {
+            Box(Modifier.fillMaxSize().background(brandBgGradient))
+        }
+        if (screenType == AmbientScreen.HOME) {
+            LumiHomeCssAmbient(Modifier.fillMaxSize())
+        }
+        if (ambient == BackgroundAmbient.CELESTIAL) {
+            CelestialLayer(
+                isDark = isDark,
+                screenType = screenType,
+                scrollOffsetProvider = scrollOffsetProvider,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+
+/**
+ * Calco de la capa .ambient del Home HTML v12 (no la escena de estrellas):
+ *  ellipse 70% 28% at 23% 14%, var(--glow), transparent;
+ *  ellipse 95% 28% at 92% 53%, color-mix(accent 9%,transparent), transparent;
+ *  opacity: .65.
+ * En Compose cada óvalo conserva su radio XY sin añadir una "nebulosa" artificial.
+ */
+@Composable
+private fun LumiHomeCssAmbient(modifier: Modifier = Modifier) {
+    val tokens = LumiThemeTokens.current
+    Canvas(modifier) {
+        fun ellipseGlow(cx: Float, cy: Float, rx: Float, ry: Float, color: Color) {
+            if (rx <= 0f || ry <= 0f || color.alpha <= 0f) return
+            val center = Offset(size.width * cx, size.height * cy)
+            val radius = (rx * size.width).coerceAtLeast(1f)
+            val radiusY = (ry * size.height).coerceAtLeast(1f)
+            withTransform({ scale(scaleX = 1f, scaleY = radiusY / radius, pivot = center) }) {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        0f to color,
+                        1f to Color.Transparent,
+                        center = center,
+                        radius = radius
+                    ),
+                    center = center,
+                    radius = radius
                 )
             }
         }
-
-        BackgroundAmbient.CELESTIAL -> {
-            CelestialLayer(
-                isDark               = isDark,
-                screenType           = screenType,
-                scrollOffsetProvider = scrollOffsetProvider,
-                modifier             = modifier
-            )
-        }
+        ellipseGlow(.23f, .14f, .70f, .28f,
+            tokens.glow.copy(alpha = tokens.glow.alpha * .65f))
+        ellipseGlow(.92f, .53f, .95f, .28f,
+            tokens.accent.copy(alpha = .09f * .65f))
     }
 }
 

@@ -73,7 +73,7 @@ enum class PhaseColorPalette {
             // Oscuros violeta/rosa
             AppThemePalette.MEDIANOCHE -> PhaseMonocromoDark
             AppThemePalette.NOCHE_ROSA -> PhaseMonocromoDark
-            AppThemePalette.VINO       -> PhaseMonocromoDark
+            AppThemePalette.CIRUELA, AppThemePalette.VINO -> PhaseMonocromoDark
             // Pastel rosa
             AppThemePalette.PETALO -> PhasePastelLight
             AppThemePalette.SAL    -> PhasePastelLight
@@ -82,7 +82,7 @@ enum class PhaseColorPalette {
             AppThemePalette.CYCLE_MENSTRUAL_DARK -> PhaseDefaultDark
 
             // ── Familia Océano / Azul / Frío — OCEANO ─────────────────────────
-            AppThemePalette.LUMI_OCEAN, AppThemePalette.LUMI_OCEAN_DARK ->
+            AppThemePalette.INDIGO, AppThemePalette.LUMI_OCEAN, AppThemePalette.LUMI_OCEAN_DARK ->
                 if (isDark) PhaseOceanoGradientDark else PhaseOceanoGradientLight
             AppThemePalette.LUMI_SLATE, AppThemePalette.LUMI_SLATE_DARK ->
                 if (isDark) PhaseOceanoDark else PhaseOceanoLight
@@ -94,9 +94,9 @@ enum class PhaseColorPalette {
             AppThemePalette.CYCLE_OVULATION_DARK -> PhaseOceanoGradientDark
 
             // ── Familia Verde / Naturaleza — BOSQUE ───────────────────────────
-            AppThemePalette.LUMI_FOREST, AppThemePalette.LUMI_FOREST_DARK ->
+            AppThemePalette.BOSQUE, AppThemePalette.LUMI_FOREST, AppThemePalette.LUMI_FOREST_DARK ->
                 if (isDark) PhaseBosqueGradientDark else PhaseBosqueGradientLight
-            AppThemePalette.LUMI_SAGE, AppThemePalette.LUMI_SAGE_DARK ->
+            AppThemePalette.SALVIA, AppThemePalette.LUMI_SAGE, AppThemePalette.LUMI_SAGE_DARK ->
                 if (isDark) PhaseBosqueGradientDark else PhaseBosqueGradientLight
             AppThemePalette.CACTUS    -> PhaseBosqueGradientLight
             AppThemePalette.OBSIDIANA -> PhaseBosqueGradientDark  // Teal profundo
@@ -116,7 +116,7 @@ enum class PhaseColorPalette {
             AppThemePalette.TIERRA -> PhaseTierraLight
             AppThemePalette.LUXE   -> PhaseTierraLight  // Burdeos + beige cálido
             AppThemePalette.LIENZO -> PhaseTierraLight  // Beige artístico
-            AppThemePalette.ARENA  -> PhaseTierraLight  // Arena neutra cálida
+            AppThemePalette.MARFIL, AppThemePalette.ARENA  -> PhaseTierraLight  // Arena neutra cálida
             AppThemePalette.AMBAR  -> PhaseTierraDark   // Ámbar oscuro
             AppThemePalette.HUMO   -> PhaseTierraLight  // Gris cálido
 

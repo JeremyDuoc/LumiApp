@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.jeremy.lumi.ThemeAndDialStyleTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-12T17:59:43.188Z" hostname="JEREMY" time="0.132">
-  <properties/>
-  <testcase name="testDialStyleEntries" classname="com.jeremy.lumi.ThemeAndDialStyleTest" time="0.029"/>
-  <testcase name="testAutoHarmonyResolvesForDifferentThemes" classname="com.jeremy.lumi.ThemeAndDialStyleTest" time="0.101"/>
-  <testcase name="testAllPhasePalettesResolveWithoutCrash" classname="com.jeremy.lumi.ThemeAndDialStyleTest" time="0.001"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

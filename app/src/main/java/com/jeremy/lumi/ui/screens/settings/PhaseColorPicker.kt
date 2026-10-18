@@ -85,6 +85,7 @@ fun PhaseColorPicker(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
+                    .heightIn(min = 48.dp)
                     .clip(RoundedCornerShape(50))
                     .clickable { wheelExpanded = !wheelExpanded }
                     .padding(horizontal = 10.dp, vertical = 6.dp)
@@ -119,31 +120,37 @@ fun PhaseColorPicker(
             verticalArrangement   = Arrangement.spacedBy(8.dp),
             modifier              = Modifier
                 .fillMaxWidth()
-                .height(72.dp),
+                .height(104.dp),
             userScrollEnabled     = false
         ) {
             items(PhaseColorSwatches) { swatch ->
                 val isSelected = swatch.toArgb() == currentColor.toArgb()
                 Box(
                     modifier = Modifier
-                        .size(28.dp)
-                        .clip(CircleShape)
-                        .background(swatch)
-                        .border(
-                            width = if (isSelected) 2.5.dp else 0.dp,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
-                            shape = CircleShape
-                        )
+                        .size(48.dp)
                         .clickable { onColorPicked(swatch) },
                     contentAlignment = Alignment.Center
                 ) {
-                    if (isSelected) {
-                        Icon(
-                            imageVector        = Icons.Rounded.Check,
-                            contentDescription = null,
-                            tint               = if (swatch.luminanceIsLight()) Color.Black else Color.White,
-                            modifier           = Modifier.size(14.dp)
-                        )
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(swatch)
+                            .border(
+                                width = if (isSelected) 2.5.dp else 0.dp,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isSelected) {
+                            Icon(
+                                imageVector        = Icons.Rounded.Check,
+                                contentDescription = null,
+                                tint               = if (swatch.luminanceIsLight()) Color.Black else Color.White,
+                                modifier           = Modifier.size(14.dp)
+                            )
+                        }
                     }
                 }
             }

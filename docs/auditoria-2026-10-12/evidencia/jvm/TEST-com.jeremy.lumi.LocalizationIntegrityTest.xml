@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.jeremy.lumi.LocalizationIntegrityTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-12T17:59:42.408Z" hostname="JEREMY" time="0.573">
-  <properties/>
-  <testcase name="testStringKeyParityAndSpecifiers" classname="com.jeremy.lumi.LocalizationIntegrityTest" time="0.573"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

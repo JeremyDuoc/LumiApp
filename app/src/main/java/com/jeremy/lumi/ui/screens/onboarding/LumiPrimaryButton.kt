@@ -1,6 +1,7 @@
 package com.jeremy.lumi.ui.screens.onboarding
 
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -85,10 +86,10 @@ fun LumiPrimaryButton(
     // Desplazamiento de la cinta elíptica (4.7s ida y vuelta)
     val driftOffsetFraction by if (!reducedMotion && enabled) {
         infiniteTransition.animateFloat(
-            initialValue = -0.3f,
-            targetValue = 1.3f,
+            initialValue = -0.325f,
+            targetValue = 1.85f,
             animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 4700, easing = LinearEasing),
+                animation = tween(durationMillis = 4700, easing = CubicBezierEasing(0.42f, 0f, 0.58f, 1f)),
                 repeatMode = RepeatMode.Reverse
             ),
             label = "btn_ribbon_drift"
@@ -160,7 +161,7 @@ fun LumiPrimaryButton(
                             colors = haloColors,
                             center = Offset(w * 0.5f, h * 0.5f)
                         ),
-                        radius = w * 0.45f,
+                        radius = 85.dp.toPx(), // CSS .primary-light: 170px de diámetro
                         center = Offset(w * 0.5f, h * 0.5f)
                     )
                 }

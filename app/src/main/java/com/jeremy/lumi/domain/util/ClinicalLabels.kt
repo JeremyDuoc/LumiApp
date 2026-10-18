@@ -189,7 +189,7 @@ object ClinicalLabels {
         OptionMapping(
             resId = R.string.symp_breast_tenderness,
             canonicalName = "Sensibilidad Senos",
-            aliases = setOf("sensibilidad senos", "sensibilidad en los senos", "sensibilidad en senos", "breast tenderness", "dolor de senos")
+            aliases = setOf("pecho sensible", "sensibilidad senos", "sensibilidad en los senos", "sensibilidad en senos", "breast tenderness", "dolor de senos")
         ),
         OptionMapping(
             resId = R.string.symp_dizziness,
@@ -219,7 +219,7 @@ object ClinicalLabels {
         OptionMapping(
             resId = R.string.symp_diarrhea,
             canonicalName = "Prob. Digestivos",
-            aliases = setOf("prob. digestivos", "problemas digestivos", "digestive upset", "diarrea", "diarrhea")
+            aliases = setOf("malestar digestivo", "prob. digestivos", "problemas digestivos", "digestive upset", "diarrea", "diarrhea")
         ),
         OptionMapping(
             resId = R.string.symp_constipation,

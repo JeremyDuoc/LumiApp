@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
+import com.jeremy.lumi.ui.theme.LumiSans
+import com.jeremy.lumi.ui.theme.LumiEditorialSerif
 
 /**
  * Encabezado editorial que reproduce fielmente la identidad visual aprobada:
@@ -45,8 +47,8 @@ fun LumiEditorialHeading(
             Text(
                 text = eyebrow.uppercase(),
                 fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 2.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 0.9.sp,
                 color = tokens.muted
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -59,10 +61,14 @@ fun LumiEditorialHeading(
                     fontSize = titleSize,
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = (-1.5).sp,
-                    fontFamily = FontFamily.SansSerif
+                    fontFamily = LumiSans
                 )
             ) {
                 append(titleNormal)
+            }
+
+            if (titleNormal.isNotEmpty() && !titleNormal.endsWith(" ") && titleSerifItalic.isNotEmpty() && !titleSerifItalic.startsWith(" ")) {
+                append(" ")
             }
 
             withStyle(
@@ -72,20 +78,23 @@ fun LumiEditorialHeading(
                     fontWeight = FontWeight.Normal,
                     fontStyle = FontStyle.Italic,
                     letterSpacing = (-0.5).sp,
-                    fontFamily = FontFamily.Serif
+                    fontFamily = LumiEditorialSerif
                 )
             ) {
                 append(titleSerifItalic)
             }
 
             if (titleNormalTrailing.isNotEmpty()) {
+                if (titleSerifItalic.isNotEmpty() && !titleSerifItalic.endsWith(" ") && !titleNormalTrailing.startsWith(" ")) {
+                    append(" ")
+                }
                 withStyle(
                     SpanStyle(
                         color = tokens.text,
                         fontSize = titleSize,
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = (-1.5).sp,
-                        fontFamily = FontFamily.SansSerif
+                        fontFamily = LumiSans
                     )
                 ) {
                     append(titleNormalTrailing)
@@ -95,7 +104,7 @@ fun LumiEditorialHeading(
 
         Text(
             text = annotatedTitle,
-            lineHeight = (titleSize.value * 1.08f).sp
+            lineHeight = (titleSize.value * 1.16f).sp
         )
 
         if (!subtitle.isNullOrBlank()) {
@@ -103,8 +112,8 @@ fun LumiEditorialHeading(
             Text(
                 text = subtitle,
                 fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = tokens.accent
+                fontWeight = FontWeight.Medium,
+                color = tokens.muted
             )
         }
 

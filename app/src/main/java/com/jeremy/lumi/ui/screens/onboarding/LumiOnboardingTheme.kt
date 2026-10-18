@@ -32,15 +32,15 @@ enum class LumiOnboardingTheme(
         displayName = "Ciruela",
         isDark = true,
         appThemePalette = AppThemePalette.VINO,
-        previewBg = Color(0xFF141017),
-        previewAccent = Color(0xFFDBB5EC)
+        previewBg = Color(0xFF241D29),
+        previewAccent = Color(0xFFE8ADC8)
     ),
     BOSQUE(
         id = "bosque",
         displayName = "Bosque",
         isDark = true,
         appThemePalette = AppThemePalette.LUMI_FOREST_DARK,
-        previewBg = Color(0xFF0C1413),
+        previewBg = Color(0xFF17231F),
         previewAccent = Color(0xFFA3D4BD)
     ),
     INDIGO(
@@ -48,7 +48,7 @@ enum class LumiOnboardingTheme(
         displayName = "Índigo",
         isDark = true,
         appThemePalette = AppThemePalette.LUMI_OCEAN_DARK,
-        previewBg = Color(0xFF0D1122),
+        previewBg = Color(0xFF1A2037),
         previewAccent = Color(0xFFC0C9FF)
     ),
     PETALO(
@@ -56,32 +56,32 @@ enum class LumiOnboardingTheme(
         displayName = "Pétalo",
         isDark = false,
         appThemePalette = AppThemePalette.PETALO,
-        previewBg = Color(0xFFFCF7F7),
-        previewAccent = Color(0xFF9369B2)
+        previewBg = Color(0xFFFFF5F8),
+        previewAccent = Color(0xFFCD9AC9)
     ),
     MARFIL(
         id = "marfil",
         displayName = "Marfil",
         isDark = false,
         appThemePalette = AppThemePalette.ARENA,
-        previewBg = Color(0xFFFAF6EE),
-        previewAccent = Color(0xFF90718F)
+        previewBg = Color(0xFFFFF9EF),
+        previewAccent = Color(0xFFC99193)
     ),
     SALVIA(
         id = "salvia",
         displayName = "Salvia",
         isDark = false,
         appThemePalette = AppThemePalette.LUMI_SAGE,
-        previewBg = Color(0xFFF2F7F2),
-        previewAccent = Color(0xFF5C8E76)
+        previewBg = Color(0xFFE4EEE7),
+        previewAccent = Color(0xFF648F76)
     ),
     LAVANDA(
         id = "lavanda",
         displayName = "Lavanda",
         isDark = false,
         appThemePalette = AppThemePalette.LAVANDA,
-        previewBg = Color(0xFFF8F5FE),
-        previewAccent = Color(0xFF8F70BD)
+        previewBg = Color(0xFFF8F1FF),
+        previewAccent = Color(0xFF9B7CC5)
     );
 
     companion object {

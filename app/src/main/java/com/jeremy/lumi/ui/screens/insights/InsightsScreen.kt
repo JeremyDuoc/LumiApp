@@ -396,9 +396,7 @@ fun InsightsScreen(
                             showAllMoods = uiState.showAllMoods,
                             onToggleShowAllMoods = { viewModel.toggleShowAllMoods() },
                             bbtPoints = uiState.bbtPoints,
-                            hayDatosBbt = uiState.hayDatosBbt,
-                            onAddDemoTemp = { day, temp -> viewModel.addDemoTemperature(day, temp) },
-                            onClearDemoTemp = { viewModel.clearDemoTemperatures() }
+                            hayDatosBbt = uiState.hayDatosBbt
                         )
 
                         // ── 03 / INTERPRETACIÓN: Mirar con calma ─────────────────────
@@ -414,7 +412,7 @@ fun InsightsScreen(
                             isGeneratingPdf = uiState.isGeneratingPdf
                         )
 
-                        Spacer(Modifier.height(32.dp))
+                        Spacer(Modifier.height(96.dp))
                     }
                 }
             }
@@ -600,6 +598,7 @@ private fun SectionHeroCard(
         }
 
         // Flagline contextual
+        val isCalibrating = stats == null
         val hasVariation = stats != null && (stats.longestCycle - stats.shortestCycle > 9)
         Row(
             modifier = Modifier
@@ -611,36 +610,68 @@ private fun SectionHeroCard(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(30.dp))
-                    .background(if (hasVariation) Color(0x28ECC78F) else tokens.panel2)
-                    .border(1.dp, if (hasVariation) Color(0x60ECC78F) else tokens.line, RoundedCornerShape(30.dp))
+                    .background(
+                        when {
+                            isCalibrating -> tokens.panel2
+                            hasVariation -> Color(0x28ECC78F)
+                            else -> tokens.panel2
+                        }
+                    )
+                    .border(
+                        1.dp,
+                        when {
+                            isCalibrating -> tokens.line
+                            hasVariation -> Color(0x60ECC78F)
+                            else -> tokens.line
+                        },
+                        RoundedCornerShape(30.dp)
+                    )
                     .padding(horizontal = 9.dp, vertical = 5.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                     Icon(
-                        imageVector = if (hasVariation) Icons.Rounded.WarningAmber else Icons.Rounded.Check,
+                        imageVector = when {
+                            isCalibrating -> Icons.Rounded.AutoAwesome
+                            hasVariation -> Icons.Rounded.WarningAmber
+                            else -> Icons.Rounded.Check
+                        },
                         contentDescription = null,
-                        tint = if (hasVariation) Color(0xFFECC78F) else tokens.accent,
+                        tint = when {
+                            isCalibrating -> tokens.muted
+                            hasVariation -> Color(0xFFECC78F)
+                            else -> tokens.accent
+                        },
                         modifier = Modifier.size(13.dp)
                     )
                     Text(
-                        text = if (hasVariation) stringResource(R.string.insights_variation_to_review) else stringResource(R.string.insights_steady_rhythm),
+                        text = when {
+                            isCalibrating -> "En calibración"
+                            hasVariation -> stringResource(R.string.insights_variation_to_review)
+                            else -> stringResource(R.string.insights_steady_rhythm)
+                        },
                         fontSize = 10.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (hasVariation) Color(0xFFECC78F) else tokens.accent
+                        color = when {
+                            isCalibrating -> tokens.muted
+                            hasVariation -> Color(0xFFECC78F)
+                            else -> tokens.accent
+                        }
                     )
                 }
             }
 
-            TextButton(
-                onClick = onViewObservations,
-                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.insights_view_n_observations, observationsCount),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = tokens.accent
-                )
+            if (stats != null && observationsCount > 0) {
+                TextButton(
+                    onClick = onViewObservations,
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.insights_view_n_observations, observationsCount),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = tokens.accent
+                    )
+                }
             }
         }
     }
@@ -709,11 +740,13 @@ private fun SectionEvolucion(
                             fontWeight = FontWeight.Bold,
                             color = tokens.text
                         )
-                        Text(
-                            text = stringResource(R.string.insights_select_bar_hint),
-                            fontSize = 10.sp,
-                            color = tokens.muted
-                        )
+                        if (cycleBars.isNotEmpty()) {
+                            Text(
+                                text = stringResource(R.string.insights_select_bar_hint),
+                                fontSize = 10.sp,
+                                color = tokens.muted
+                            )
+                        }
                     }
                     Text(
                         text = if (stats != null) stringResource(R.string.insights_avg_cycle_days_format, stats.avgCycleLength.roundToInt()) else stringResource(R.string.insights_avg_cycle_empty),
@@ -1014,13 +1047,9 @@ private fun SectionBienestar(
     showAllMoods: Boolean,
     onToggleShowAllMoods: () -> Unit,
     bbtPoints: List<PuntoBbt>,
-    hayDatosBbt: Boolean,
-    onAddDemoTemp: (Int, Float) -> Unit,
-    onClearDemoTemp: () -> Unit
+    hayDatosBbt: Boolean
 ) {
     val tokens = LumiThemeTokens.current
-    var demoDay by remember { mutableIntStateOf(12) }
-    var demoTemp by remember { mutableFloatStateOf(36.5f) }
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Column {
@@ -1411,82 +1440,6 @@ private fun SectionBienestar(
                         }
                     }
                 }
-
-                // Controles de prueba interactiva (fieles al HTML)
-                Spacer(Modifier.height(14.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = stringResource(R.string.insights_cycle_day_label), fontSize = 10.sp, color = tokens.muted)
-                        Spacer(Modifier.height(4.dp))
-                        OutlinedTextField(
-                            value = "$demoDay",
-                            onValueChange = { demoDay = it.toIntOrNull()?.coerceIn(1, 90) ?: 1 },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = tokens.panel2,
-                                unfocusedContainerColor = tokens.panel2,
-                                focusedBorderColor = tokens.accent,
-                                unfocusedBorderColor = tokens.line,
-                                focusedTextColor = tokens.text,
-                                unfocusedTextColor = tokens.text
-                            ),
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                    }
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = stringResource(R.string.insights_temperature_celsius_label), fontSize = 10.sp, color = tokens.muted)
-                        Spacer(Modifier.height(4.dp))
-                        OutlinedTextField(
-                            value = "%.1f".format(demoTemp),
-                            onValueChange = { demoTemp = it.toFloatOrNull()?.coerceIn(35f, 39f) ?: 36.5f },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = tokens.panel2,
-                                unfocusedContainerColor = tokens.panel2,
-                                focusedBorderColor = tokens.accent,
-                                unfocusedBorderColor = tokens.line,
-                                focusedTextColor = tokens.text,
-                                unfocusedTextColor = tokens.text
-                            ),
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                    }
-
-                    Button(
-                        onClick = { onAddDemoTemp(demoDay, demoTemp) },
-                        colors = ButtonDefaults.buttonColors(containerColor = tokens.accent, contentColor = tokens.bg),
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.height(52.dp)
-                    ) {
-                        Text(stringResource(R.string.btn_add), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    }
-
-                    if (hayDatosBbt) {
-                        Button(
-                            onClick = onClearDemoTemp,
-                            colors = ButtonDefaults.buttonColors(containerColor = tokens.panel2, contentColor = tokens.muted),
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.height(52.dp)
-                        ) {
-                            Text(stringResource(R.string.btn_clear), fontSize = 11.sp)
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = stringResource(R.string.insights_interactive_bbt_notice),
-                    fontSize = 9.5.sp,
-                    color = tokens.muted,
-                    lineHeight = 14.sp
-                )
             }
         }
     }

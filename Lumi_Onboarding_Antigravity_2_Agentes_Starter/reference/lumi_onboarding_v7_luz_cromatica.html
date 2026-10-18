@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0e0c13">
+<title>Lumi · Onboarding v6 — Transiciones atmosféricas</title>
+<style>
+
+*{box-sizing:border-box}html{min-height:100%}body{margin:0;min-height:100vh;background:#121117;color:#eeeaf2;font-family:Inter,'DM Sans',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid #dfb8f5;outline-offset:3px}button[disabled]{cursor:default;opacity:.7}
+.workbench{display:grid;grid-template-columns:minmax(265px,342px) 420px;justify-content:center;align-items:center;gap:58px;padding:27px 20px;min-height:100vh}.sidebar{align-self:center;max-width:330px}.overline{color:#ccafe9;letter-spacing:2.15px;font-weight:750;font-size:10px}.sidebar h1{font-size:31px;line-height:1.14;letter-spacing:-1.5px;margin:14px 0}.sidebar p{color:#b1abbc;font-size:13px;line-height:1.67;margin:0 0 21px}.smallnote{margin-top:18px;font-size:11px;line-height:1.65;color:#837f91;border-top:1px solid #363140;padding-top:15px}.control-head{font-size:10px;font-weight:800;letter-spacing:1.45px;color:#81778c;margin:25px 0 11px;text-transform:uppercase}.control-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}.control{min-height:42px;border:1px solid #35303e;background:#211d29;color:#c7c0cf;border-radius:12px;padding:9px 10px;font-size:11px;line-height:1.3;text-align:center;font-weight:650}.control:hover{border-color:#7e688f;background:#2b2534}.control.on{border-color:#c5a4e9;background:#3a2c47;color:#f7e9ff}.control.big{width:100%;margin-top:12px;background:linear-gradient(105deg,#e7afca,#c9b2ef);color:#211729;border:0;font-weight:800}.switchline{display:flex;align-items:center;gap:10px;margin:11px 0;font-size:12px;color:#b3adbb}.switchline input{accent-color:#c7b2eb;height:16px;width:16px}.mini-pill{font-size:10px;border:1px solid #3d3548;color:#ab9eba;border-radius:20px;padding:5px 9px;display:inline-block;margin-top:3px}
+/* Pixel-approximated Android screen. Screenshot includes a developer touch-debug strip, intentionally not reproduced. */
+.phone-shell{width:420px;height:872px;position:relative;padding:12px;border-radius:47px;background:linear-gradient(100deg,#717178 0%,#1d1d24 7%,#0c0c0f 48%,#515056 94%,#b0aab2 100%);box-shadow:0 36px 85px #000a,0 0 0 1px #858389, inset 0 0 0 2px #1d1c20;flex:none}.phone-shell:before{content:"";position:absolute;inset:5px;border-radius:44px;border:2px solid #1b1a1e;pointer-events:none}.phone-shell:after{content:"";position:absolute;right:-4px;top:265px;width:4px;height:67px;border-radius:0 3px 3px 0;background:linear-gradient(#46454d,#b5b3ba,#54525a);box-shadow:0 95px 0 #77757c;pointer-events:none}.phone{position:relative;isolation:isolate;width:100%;height:100%;overflow:hidden;border-radius:37px;background:var(--bg);color:var(--text);--bg:#0e0c13;--panel:#1d1924;--panel2:#27222e;--line:#37313e;--text:#faf8fb;--muted:#aaa3b5;--muted2:#858095;--rose:#e6afca;--accent:#cbb4f1;--selection:rgba(189,153,232,.095);--veil1:rgba(204,171,237,.19);--veil2:rgba(228,177,203,.22);--glow:rgba(197,139,224,.21);--navbg:rgba(19,17,25,.94);background:radial-gradient(ellipse at 48% 12%,rgba(79,47,85,.20),transparent 48%),var(--bg)}
+.phone[data-theme="petalo"]{--bg:#fcf7f7;--panel:#fffafb;--panel2:#f3e9ed;--line:#ebdfe7;--text:#302838;--muted:#786d7f;--muted2:#93899a;--rose:#ce849f;--accent:#9369b2;--selection:rgba(193,132,180,.11);--veil1:rgba(214,168,222,.3);--veil2:rgba(245,177,202,.35);--glow:rgba(225,143,181,.16);--navbg:rgba(255,250,252,.94);background:radial-gradient(ellipse at 48% 10%,rgba(245,188,221,.24),transparent 55%),var(--bg)}
+.status{position:absolute;inset:0 0 auto;z-index:22;height:40px;display:flex;justify-content:space-between;align-items:flex-end;padding:0 25px 7px;font-weight:650;color:var(--text);font-size:12px;pointer-events:none}.status-icons{display:flex;align-items:center;gap:6px}.status-icons svg{width:17px;height:15px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round}.status-icons .battery{width:24px}.camera{position:absolute;left:50%;top:11px;transform:translateX(-50%);z-index:28;width:25px;height:25px;border-radius:50%;background:radial-gradient(circle at 52% 44%,#0a111c 0 3px,#101b20 4px,#020305 6px,#121314 8px,#000 9px);box-shadow:0 0 0 2px #15161b66;pointer-events:none}.gesture{position:absolute;bottom:9px;left:50%;transform:translateX(-50%);height:4px;width:108px;border-radius:30px;background:var(--text);z-index:30;pointer-events:none}
+.stage{position:absolute;inset:40px 0 0;padding-bottom:32px;display:flex;flex-direction:column}.onboard{z-index:3}.home{z-index:2;opacity:0;pointer-events:none;display:flex}.home.open{pointer-events:auto;opacity:1}.header{height:56px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative;z-index:3}.header .header-brand{display:flex;align-items:center}.theme-chip{margin-left:auto;background:var(--panel);border:1px solid var(--line);height:39px;border-radius:21px;color:var(--muted);padding:0 13px;display:flex;align-items:center;gap:5px;font-size:11px;letter-spacing:.1px}.theme-chip:hover{border-color:var(--accent)}
+.brand{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;transform-origin:top left;position:relative}.brand .flower{height:var(--flower-size);width:var(--flower-size);display:block;flex:none;overflow:visible;filter:drop-shadow(0 0 14px rgba(219,167,223,.12));animation:flowerLive 7.8s ease-in-out infinite}.brand .word{font-weight:800;font-size:var(--word-size);letter-spacing:var(--word-spacing);line-height:1;display:block;color:var(--text)}.brand .star{font-size:var(--star-size);color:var(--accent);font-weight:400;margin-left:-5px;animation:twinkle 6.2s ease-in-out infinite}.brand.large{--flower-size:46px;--word-size:42px;--word-spacing:-2.8px;--star-size:16px}.brand.small{--flower-size:21px;--word-size:22px;--word-spacing:-1.2px;--star-size:11px;gap:6px}.brand.homebrand{--flower-size:21px;--word-size:24px;--word-spacing:-1.5px;--star-size:11px;gap:6px}#originalBrand .flower,#originalBrand .star{animation:none}@keyframes flowerLive{0%,100%{transform:rotate(-6deg) scale(.97)}50%{transform:rotate(5deg) scale(1.045)}}@keyframes twinkle{0%,35%,65%,100%{opacity:.75;transform:scale(.95)}43%{opacity:1;transform:scale(1.15) rotate(12deg)}}
+.progress-wrap{height:54px;flex:none;padding:13px 24px 0}.progress-info{font-size:10px;letter-spacing:1.15px;font-weight:650;color:var(--muted);margin-bottom:14px}.track{height:4px;border-radius:40px;background:var(--line);overflow:hidden}.track .fill{height:100%;border-radius:40px;background:linear-gradient(90deg,var(--rose),var(--accent));transition:width 350ms cubic-bezier(.2,.7,.3,1)}
+.content-scroll{flex:1;overflow-y:auto;overflow-x:hidden;min-height:0;scrollbar-width:none}.content-scroll::-webkit-scrollbar{display:none}.content{padding:12px 24px 18px;min-height:100%;animation:stepEnter .37s ease-out both}.step-welcome .content{padding-top:16px}.step-welcome .hero{margin:1px auto 23px;display:flex;justify-content:center;align-items:center;height:64px}.step-finish .content{padding-top:29px}.step-finish .hero{margin:0 auto 22px;display:flex;justify-content:center;align-items:center;min-height:51px}
+.heading{font-weight:800;letter-spacing:-1.1px;line-height:1.2;font-size:27px;margin:0;color:var(--text)}.heading em{font-family:Georgia,'Times New Roman',serif;font-weight:400;letter-spacing:-1px;color:var(--accent)}.description{font-size:12px;line-height:1.5;color:var(--muted);margin:7px 0 0;letter-spacing:.15px}
+.selection-list{margin-top:20px;display:grid;gap:11px}.option-card{width:100%;min-height:74px;border:1px solid var(--line);border-radius:18px;display:flex;align-items:center;gap:13px;background:var(--panel);padding:13px;text-align:left;color:var(--text);transition:border-color .18s,background .18s}.option-card.selected{border:1.5px solid var(--accent);background:var(--selection)}.opt-icon{width:40px;height:40px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:var(--panel2);color:var(--accent);flex:none}.opt-icon svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.opt-copy{flex:1;min-width:0}.opt-copy strong{font-size:13px;line-height:1.3;display:block;font-weight:720}.opt-copy small{display:block;margin-top:6px;font-size:10.5px;line-height:1.3;color:var(--muted)}.select-indicator{height:20px;width:20px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;color:#23172d;flex:none;font-size:12px;font-weight:700}.option-card.selected .select-indicator{background:var(--accent);border-color:var(--accent)}
+.paper{background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:17px}.paper strong{font-size:13px;font-weight:750}.paper p,.paper li{color:var(--muted);font-size:11px;line-height:1.55}.paper ul{padding-left:16px;margin:13px 0 0}.paper li+li{margin-top:11px}.consent{margin-top:13px;display:flex;gap:12px;align-items:flex-start}.checkmark{background:var(--accent);color:#1e1726;border-radius:3px;width:20px;height:20px;display:grid;place-items:center;font-size:16px;flex:none;margin-top:1px}.consent strong{display:block;font-size:12px}.consent small{font-size:10.5px;line-height:1.5;display:block;color:var(--muted);margin:5px 0 9px}.consent a{color:var(--accent);font-weight:700;font-size:11px}
+.field-label{font-size:11px;color:var(--muted);font-weight:700;display:block;margin:19px 0 9px}.field-input{width:100%;height:55px;padding:14px 16px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:15px;outline:none}.field-input:focus{border-color:var(--accent)}.micro{font-size:11px;color:var(--muted);line-height:1.5}.preview-greeting{margin-top:17px}.preview-greeting b{display:block;margin-top:10px;font-size:19px}.preview-greeting em{color:var(--accent);font-family:Georgia,serif;font-weight:400}.chip-row{display:flex;flex-wrap:wrap;gap:8px;margin:17px 0}.chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;padding:10px 12px;font-size:11px;font-weight:650}.chip.selected{color:var(--text);border-color:var(--accent);background:var(--selection)}.number-row{display:flex;align-items:center;justify-content:center;gap:20px;margin:16px 0}.round-button{height:43px;width:43px;border-radius:50%;border:1px solid var(--line);color:var(--text);background:var(--panel);font-size:23px}.value{font-size:38px;font-weight:800;color:var(--accent)}.datebox{display:flex;flex-direction:column;gap:4px}.datebox input{color:var(--text);color-scheme:dark;background:transparent;border:0;font-size:15px;width:100%}.phone[data-theme="petalo"] .datebox input{color-scheme:light}
+.footer{flex:none;position:relative;z-index:5;background:linear-gradient(180deg,transparent,var(--bg) 22%,var(--bg) 100%);padding:12px 24px 27px}.primary{display:flex;align-items:center;justify-content:center;height:52px;width:100%;border:0;border-radius:16px;background:linear-gradient(105deg,#eab0ce,#c6b1f4);font-size:13px;color:#23182c;font-weight:800;letter-spacing:-.25px;transition:filter .15s,transform .15s}.primary:active{transform:scale(.987)}.primary:hover{filter:brightness(1.035)}.secondary-footer{min-height:39px;display:flex;align-items:center;justify-content:space-between;gap:8px}.link-button{padding:12px 0;background:none;border:0;color:var(--muted);font-size:11px}.footer-note{font-size:10px;color:var(--muted);line-height:1.3}.error-line{margin:0;color:#ed9aac;text-align:center;font-size:11px;min-height:0}.error-line:not(:empty){margin-top:8px}
+.summary-grid{margin-top:18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.summary-card{border-radius:13px;border:1px solid var(--line);background:var(--panel);min-height:73px;padding:14px 10px;text-align:left;color:var(--text);display:flex;flex-direction:column;justify-content:space-between;gap:12px}.summary-card:hover{border-color:var(--accent)}.summary-head{display:flex;align-items:center;justify-content:space-between;gap:4px}.summary-head span{font-size:9.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.summary-head b{font-size:10px;color:var(--accent);font-weight:650}.summary-value{font-size:11px;font-weight:780;line-height:1.2}.entering .summary-card{animation:summaryExit .42s forwards}.entering .summary-card:nth-child(2){animation-delay:.035s}.entering .summary-card:nth-child(3){animation-delay:.07s}.entering .summary-card:nth-child(4){animation-delay:.105s}.entering .heading,.entering .description{animation:labelExit .35s both}.entering .footer{animation:labelExit .33s both}.entering .theme-chip{animation:labelExit .2s both}@keyframes summaryExit{to{opacity:0;transform:translateY(23px)}}@keyframes labelExit{to{opacity:0;transform:translateY(12px)}}@keyframes stepEnter{from{opacity:0;transform:translateX(11px)}to{opacity:1;transform:none}}
+/* Home preview based on the supplied LumiTopBar component; other portions are explicitly conceptual. */
+.home-head{flex:none;height:66px;display:flex;justify-content:space-between;align-items:center;padding:0 24px}.home-actions{display:flex;align-items:center;gap:5px}.home-action{height:42px;width:42px;border:0;background:transparent;color:var(--muted);border-radius:50%;display:grid;place-items:center}.home-action svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.home-body{flex:1;overflow:auto;padding:13px 24px 16px;scrollbar-width:none}.home-body::-webkit-scrollbar{display:none}.eyebrow{color:var(--muted);font-size:10px;letter-spacing:.9px;font-weight:650}.home-greeting{font-size:29px;line-height:1.16;margin:8px 0 5px;font-weight:760;letter-spacing:-1.1px}.home-greeting em{font-family:Georgia,serif;color:var(--accent);font-weight:400}.home-desc{font-size:12px;color:var(--muted);margin:0}.cycle-hero{position:relative;margin:18px auto 11px;width:254px;height:254px;display:grid;place-items:center}.cycle-hero svg{width:100%;height:100%;position:absolute;inset:0}.cycle-hero .cycle-center{text-align:center;z-index:2;max-width:155px}.cycle-center .tip{font-size:11px;color:var(--accent);font-weight:700;margin-bottom:10px}.cycle-center .main{font-size:26px;letter-spacing:-.8px;font-weight:780}.cycle-center .sub{font-size:10px;color:var(--muted);line-height:1.5;margin-top:7px}.home-caption{color:var(--muted);font-size:11px;line-height:1.5;text-align:center;margin:4px auto 21px}.week-row{display:flex;gap:7px;justify-content:space-between;margin-bottom:22px}.datecell{flex:1;text-align:center;min-width:0;color:var(--muted);font-size:10px}.datecell b{display:grid;place-items:center;width:100%;aspect-ratio:1/1;max-height:43px;margin:8px auto 0;background:var(--panel);border:1px solid var(--line);border-radius:12px;color:var(--text);font-size:12px;font-weight:650}.datecell.now b{border-color:var(--accent);background:var(--selection);color:var(--accent)}.reminder-card{display:flex;gap:13px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px}.reminder-card .ic{width:40px;height:40px;border-radius:14px;background:var(--panel2);color:var(--accent);display:grid;place-items:center;font-size:19px;flex:none}.reminder-card strong{font-size:12px;display:block}.reminder-card small{font-size:10px;color:var(--muted);line-height:1.45;display:block;margin-top:5px}.tabbar{flex:none;border-top:1px solid var(--line);height:68px;background:var(--navbg);display:grid;grid-template-columns:repeat(4,1fr);align-items:start;padding:11px 11px 4px}.tab{border:0;background:transparent;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px;font-size:9px}.tab.selected{color:var(--accent)}.tab svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+/* transition layers */
+.handoff-glow{position:absolute;inset:0;z-index:7;opacity:0;pointer-events:none;background:radial-gradient(ellipse 83% 43% at 48% 29%,var(--veil1),transparent 82%),radial-gradient(ellipse 106% 75% at 56% 57%,var(--veil2),transparent 80%);filter:blur(10px);transform:scale(.85)}.phone.atmospheric .handoff-glow{background:radial-gradient(ellipse 96% 56% at 48% 27%,rgba(206,176,239,.25),transparent 79%),radial-gradient(ellipse 108% 78% at 56% 62%,rgba(229,175,205,.24),transparent 79%)}.handoff-veil{position:absolute;z-index:6;inset:0;opacity:0;pointer-events:none;background:linear-gradient(155deg,var(--bg),var(--panel) 55%,var(--bg))}.handoff-title{position:absolute;z-index:9;top:49%;left:0;right:0;text-align:center;font-size:12px;letter-spacing:.25px;color:var(--text);opacity:0;pointer-events:none}.handoff-title small{display:block;font-size:11px;color:var(--muted);margin-top:8px}.moving-brand{position:absolute;z-index:12;left:0;top:0;pointer-events:none;display:none;will-change:transform,opacity;transform-origin:top left}.moving-brand .brand{--flower-size:46px;--word-size:42px;--word-spacing:-2.8px;--star-size:16px}.home.revealing{animation:homeReveal .80s cubic-bezier(.2,.72,.29,1) both}.home.revealing .home-body>*{animation:riseHome .75s both}.home.revealing .home-body>*:nth-child(1){animation-delay:.13s}.home.revealing .home-body>*:nth-child(2){animation-delay:.19s}.home.revealing .home-body>*:nth-child(3){animation-delay:.24s}.home.revealing .home-body>*:nth-child(4){animation-delay:.28s}.home.revealing .home-body>*:nth-child(5){animation-delay:.36s}.home.revealing .home-body>*:nth-child(6){animation-delay:.44s}.home.revealing .tabbar{animation:riseHome .65s .33s both}@keyframes homeReveal{from{opacity:0;transform:translateY(16px);filter:blur(7px)}to{opacity:1;transform:none;filter:blur(0)}}@keyframes riseHome{from{opacity:0;transform:translateY(17px)}to{opacity:1;transform:none}}
+@media(max-width:850px){.workbench{grid-template-columns:1fr;gap:18px;justify-items:center;padding:18px 12px 22px}.sidebar{max-width:420px;width:100%;order:2}.phone-shell{order:1}.sidebar h1{font-size:22px;margin:6px 0}.sidebar p{margin-bottom:7px}.control-head{margin-top:12px}.sidebar .smallnote{margin-top:12px}}@media(max-width:450px){.workbench{padding:0;gap:0}.phone-shell{width:min(100vw,420px);height:min(100dvh,872px);min-height:620px;border-radius:0;padding:0;border:0;box-shadow:none}.phone-shell:before,.phone-shell:after{display:none}.phone{border-radius:0}.sidebar{padding:20px 17px 25px}.camera{top:11px}.status{height:40px}}
+@media(prefers-reduced-motion:reduce){.brand .flower,.brand .star{animation:none}.content,.track .fill{animation:none;transition:none}}
+
+/* ── Lumi · Interacciones v3 ──
+   Adaptación de tres referencias de Uiverse: Wendell47 (gradient orbit),
+   checkbox con trazo SVG, junaid_3671 (radio microinteractions).
+   Se utilizan únicamente las variables y geometrías del sistema Lumi.
+*/
+.phone{--btn-pink:#eab0ce;--btn-violet:#c6b1f4;--btn-halo-pink:rgba(246,167,205,.84);--btn-halo-violet:rgba(190,152,255,.9);--btn-halo-peach:rgba(254,204,180,.75)}
+.phone[data-theme="petalo"]{--btn-pink:#eab0ce;--btn-violet:#c6b1f4;--btn-halo-pink:rgba(228,145,185,.82);--btn-halo-violet:rgba(167,125,219,.82);--btn-halo-peach:rgba(255,215,195,.8)}
+/* Animated orbit INSIDE the primary CTA; label never rotates. */
+.primary{
+  position:relative;isolation:isolate;overflow:hidden;border-radius:999px;
+  background:linear-gradient(108deg,var(--btn-pink),var(--btn-violet));
+  box-shadow:0 5px 17px rgba(94,56,126,.10), inset 0 1px rgba(255,255,255,.16);
+  transition:transform 180ms cubic-bezier(.2,.85,.2,1),box-shadow 200ms ease,filter 200ms ease;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+}
+.primary:before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(165deg,rgba(255,255,255,.15),transparent 43%,rgba(131,81,164,.045));}
+.primary-ambient{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden;pointer-events:none;z-index:0;opacity:.73;transition:opacity .35s ease}
+/* A low-contrast ribbon travels across the pill, while the central light rotates.
+   Motion is visible even on touch-only devices without ever using :hover. */
+.primary-ambient:before{
+  content:"";position:absolute;left:-65%;top:-65%;width:65%;height:230%;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(255,251,255,.55),rgba(246,190,222,.20) 47%,transparent 77%);
+  filter:blur(14px);opacity:.66;animation:lumiButtonDrift 4.7s ease-in-out infinite alternate;
+}
+.primary-light{
+  width:170px;height:170px;flex:none;display:block;border-radius:50%;
+  background:conic-gradient(from 0deg,var(--btn-halo-pink) 0deg,var(--btn-halo-violet) 107deg,var(--btn-halo-peach) 215deg,var(--btn-halo-pink) 360deg);
+  filter:blur(18px);opacity:.67;transform-origin:center;
+  animation:lumiButtonOrbit 3.7s linear infinite;will-change:transform;
+}
+.primary-label{position:relative;z-index:2;display:inline-flex;align-items:center;justify-content:center;min-height:24px;white-space:nowrap;}
+.primary:active{transform:scale(.973);box-shadow:0 2px 9px rgba(94,56,126,.09)}
+.primary:active .primary-ambient{opacity:1}
+.primary:disabled{filter:saturate(.65);box-shadow:none;cursor:not-allowed}
+.primary:disabled .primary-ambient{opacity:.15}
+.primary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@keyframes lumiButtonOrbit{to{transform:rotate(360deg)}}
+@keyframes lumiButtonDrift{from{transform:translateX(0) rotate(-14deg)}to{transform:translateX(335%) rotate(15deg)}}
+@media (hover:hover) and (pointer:fine){
+  .primary:not(:disabled):hover{box-shadow:0 7px 24px rgba(171,122,207,.2);filter:brightness(1.025)}
+  .primary:not(:disabled):hover .primary-ambient{opacity:1}
+  .option-card:hover:not(:active){transform:translateX(3px);border-color:var(--accent);box-shadow:0 6px 16px rgba(0,0,0,.075)}
+  .option-card:hover .opt-copy{transform:translateX(2px)}
+}
+/* Stroke-drawn consent checkbox. Neutral border stays legible when unselected. */
+.consent{align-items:flex-start;cursor:pointer;transition:border-color 240ms ease,background 240ms ease}
+.consent.is-checked{border-color:color-mix(in srgb,var(--accent) 47%,var(--line));background:var(--panel)}
+.consent-check{border:0;background:none;width:32px;height:35px;display:grid;place-items:start center;padding:0;margin:-2px 0 0;flex:none;color:var(--accent);cursor:pointer;touch-action:manipulation}
+.checkbox-svg{width:26px;height:26px;display:block;overflow:visible}
+.check-frame{fill:transparent;stroke:var(--line);stroke-width:1.2}
+.check-fill{fill:var(--accent);opacity:0;transition:opacity 260ms ease}
+.check-outline{fill:none;stroke:var(--accent);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:100;stroke-dashoffset:100;transition:stroke-dashoffset 550ms cubic-bezier(.2,.72,.3,1)}
+.check-tick{fill:none;stroke:var(--accent);stroke-width:2.9;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:100;stroke-dashoffset:100;transition:stroke-dashoffset 380ms cubic-bezier(.15,.85,.25,1) 155ms}
+.consent-check[aria-checked="true"] .check-outline{stroke-dashoffset:0}
+.consent-check[aria-checked="true"] .check-tick{stroke-dashoffset:0}
+.consent-check[aria-checked="true"] .check-fill{opacity:.12}
+.consent-check[aria-checked="false"] .check-tick{transition-delay:0ms}
+.consent-copy{flex:1;min-width:0}
+.privacy-link{font-size:11px;font-weight:750;color:var(--accent);background:none;border:0;text-align:left;padding:5px 0;margin:0;min-height:25px;display:inline-block}
+.privacy-link:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px}
+/* Selected radios: original cards, new reactive circle and selection pulse. */
+.option-card{
+  position:relative;overflow:hidden;transform:translateZ(0);touch-action:manipulation;
+  transition:border-color 260ms ease,background 260ms ease,box-shadow 280ms ease,transform 280ms cubic-bezier(.25,.8,.25,1);
+}
+.option-card:active{transform:scale(.985)}
+.option-card.selected{background:var(--selection);border:1.5px solid var(--accent);box-shadow:inset 0 0 0 .25px var(--accent),0 5px 21px rgba(171,122,207,.07)}
+.opt-copy{transition:transform 240ms ease}
+.opt-icon{transition:background 280ms ease,transform 350ms cubic-bezier(.2,.9,.2,1)}
+.option-card.selected .opt-icon{background:color-mix(in srgb,var(--accent) 13%,var(--panel2))}
+.select-indicator{
+  width:22px;height:22px;position:relative;flex:none;display:block;
+  background:transparent;border:1.6px solid var(--line);border-radius:50%;
+  transform:scale(1);transition:background 330ms ease,border-color 330ms ease,transform 350ms cubic-bezier(.34,1.4,.4,1);
+}
+.select-indicator:before{
+  content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid var(--accent);
+  opacity:0;transform:scale(.45);transition:opacity 360ms ease,transform 400ms cubic-bezier(.2,.85,.2,1);
+}
+.select-indicator:after{
+  content:"";position:absolute;width:8px;height:8px;top:50%;left:50%;border-radius:50%;
+  background:#24182e;transform:translate(-50%,-50%) scale(0);
+  transition:transform 320ms cubic-bezier(.25,1.45,.38,1);
+}
+.option-card.selected .select-indicator{background:var(--accent);border-color:var(--accent);transform:scale(1.09)}
+.option-card.selected .select-indicator:after{transform:translate(-50%,-50%) scale(1)}
+.option-card.selected .select-indicator:before{transform:scale(1);opacity:.45}
+.option-card.just-selected .select-indicator:before{animation:lumiRadioHalo 560ms cubic-bezier(.2,.8,.2,1) both}
+.option-card.just-selected .opt-icon{animation:lumiIconWelcome 430ms cubic-bezier(.2,1,.3,1) both}
+@keyframes lumiRadioHalo{0%{opacity:.7;transform:scale(.4)}65%{opacity:.45;transform:scale(1.13)}100%{opacity:.26;transform:scale(1)}}
+@keyframes lumiIconWelcome{0%{transform:scale(.94)}65%{transform:scale(1.065)}100%{transform:scale(1)}}
+/* Modal is a truthful prototype placeholder; it does not fabricate a policy. */
+.prototype-dialog{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:19px;max-width:305px;width:calc(100% - 45px);padding:22px;box-shadow:0 24px 80px #0009;position:absolute;inset:0;margin:auto;max-height:max-content}
+.prototype-dialog::backdrop{background:rgba(9,7,14,.71);backdrop-filter:blur(3px)}
+.prototype-dialog h2{font-size:17px;margin:0 0 10px}.prototype-dialog p{font-size:12px;line-height:1.6;color:var(--muted);margin:0 0 18px}
+.prototype-dialog button{border:0;background:linear-gradient(100deg,var(--btn-pink),var(--btn-violet));color:#23182c;padding:10px 18px;border-radius:999px;font-weight:750}
+@media(prefers-reduced-motion:reduce){
+  .primary-light,.primary-ambient:before{animation:none!important}.primary,.primary-ambient,.option-card,.select-indicator,.select-indicator:before,.select-indicator:after,.opt-icon,.opt-copy,.check-outline,.check-tick,.check-fill{animation:none!important;transition:none!important}
+}
+.phone.less-motion .primary-light,.phone.less-motion .primary-ambient:before,.phone.less-motion .option-card.just-selected .select-indicator:before,.phone.less-motion .option-card.just-selected .opt-icon{animation:none!important}
+.phone.less-motion .primary,.phone.less-motion .option-card,.phone.less-motion .select-indicator,.phone.less-motion .select-indicator:before,.phone.less-motion .select-indicator:after,.phone.less-motion .check-outline,.phone.less-motion .check-tick,.phone.less-motion .check-fill{transition:none!important}
+
+/* ── V4 · Cielo de Lumi: basado en la idea de Uiverse by sinful_9361, reinterpretado ── */
+.phone{--sky-density:1;--sky-energy:.60}
+.sky-scene{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  opacity:0;transition:opacity .55s ease;background:transparent;
+  contain:paint;}
+.sky-scene .ambient-sky{position:absolute;inset:0;
+  background:radial-gradient(ellipse 94% 78% at 50% 102%,rgba(70,29,76,.66) 0%,rgba(44,23,51,.29) 42%,rgba(9,10,15,0) 88%),
+  radial-gradient(ellipse 85% 42% at 52% 5%,rgba(71,47,79,.13),transparent 84%);
+  opacity:1;transition:opacity .6s ease;}
+.sky-scene .sky-stars{position:absolute;inset:-4% 0 0;opacity:var(--sky-energy);transition:opacity .35s ease;}
+.sky-scene .sky-stars.low{animation:starsDriftA 68s linear infinite alternate}
+.sky-scene .sky-stars.high{animation:starsDriftB 90s linear infinite alternate}
+.sky-scene .stardot{position:absolute;display:block;width:var(--size);height:var(--size);
+ background:var(--star-color);border-radius:50%;opacity:var(--star-alpha);
+ box-shadow:0 0 2px var(--star-color);}
+.sky-scene .stardot.twinkle{animation:skyTwinkle var(--speed) ease-in-out var(--delay) infinite alternate}
+.sky-scene .sky-scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(13,11,18,.22) 0%,rgba(13,11,18,.06) 28%,rgba(13,11,18,.02) 65%,rgba(13,11,18,.2) 100%)}
+.phone[data-sky="subtle"] .sky-scene{opacity:.62;--sky-energy:.65}
+.phone[data-sky="ambient"] .sky-scene{opacity:.98}
+.phone[data-sky="ambient"]{--sky-energy:.96}
+.phone[data-sky="subtle"] .sky-stars.high{opacity:.45}
+.phone[data-sky="ambient"] .sky-stars.high{opacity:.88}
+.phone[data-sky="ambient"] .sky-scene .ambient-sky{filter:saturate(1.12)}
+.phone[data-theme="petalo"] .sky-scene{opacity:0} /* Cielo nocturno no ensucia el tema claro */
+.phone.home-active .sky-scene{opacity:0}
+@keyframes starsDriftA{from{transform:translateY(5px)}to{transform:translateY(-24px)}}
+@keyframes starsDriftB{from{transform:translateY(-9px)}to{transform:translateY(23px)}}
+@keyframes skyTwinkle{from{opacity:calc(var(--star-alpha)*.53)}to{opacity:var(--star-alpha)}}
+/* Bajo carga, batería o accesibilidad: nada animado de forma obligatoria */
+.phone.less-motion .sky-stars,.phone.less-motion .stardot{animation:none!important}
+@media (prefers-reduced-motion: reduce){.sky-scene .sky-stars,.sky-scene .stardot{animation:none!important}}
+/* prevent effects accidentally overpainting text */
+.sky-scene + .camera{z-index:28}
+.sky-control-summary{font-size:11px;line-height:1.55;color:#c3b8cd;margin:9px 0 0}
+.sky-legend{display:flex;align-items:center;gap:8px;font-size:10px;color:#8b8295;margin-top:9px}
+.sky-dot{height:7px;width:7px;border-radius:50%;background:#c5a9ea;box-shadow:0 0 9px rgba(196,155,232,.45)}
+.sky-info{margin-top:10px;font-size:11px;color:#918b9d;line-height:1.55}
+@media (max-width:800px){.sky-info{font-size:10px}}
+
+
+/* ────────────────── V5 / 8 cohesive theme tokens ────────────────── */
+.phone{--sky-a:rgba(70,29,76,.70);--sky-b:rgba(44,23,51,.23);--btn-pink:#eab0ce;--btn-violet:#c6b1f4;--btn-halo-pink:rgba(246,167,205,.84);--btn-halo-violet:rgba(190,152,255,.9);--btn-halo-peach:rgba(254,204,180,.75)}
+.phone[data-theme="ciruela"]{--bg:#141017;--panel:#241d29;--panel2:#33283a;--line:#453646;--text:#fff9fc;--muted:#c2b1c2;--muted2:#9f8a9e;--rose:#e8adc8;--accent:#dbb5ec;--selection:rgba(227,170,215,.10);--veil1:rgba(232,148,185,.23);--veil2:rgba(201,158,224,.19);--glow:rgba(230,153,200,.19);--navbg:rgba(20,16,23,.94);--btn-pink:#efb6d1;--btn-violet:#d3b6ed;--sky-a:rgba(104,39,67,.52);--sky-b:rgba(82,45,100,.26)}
+.phone[data-theme="bosque"]{--bg:#0c1413;--panel:#17231f;--panel2:#24362e;--line:#35493f;--text:#f1faf5;--muted:#b1c4b8;--muted2:#83998d;--rose:#b7d4bd;--accent:#a3d4bd;--selection:rgba(138,205,175,.10);--veil1:rgba(118,184,147,.18);--veil2:rgba(151,206,165,.14);--glow:rgba(134,206,172,.16);--navbg:rgba(12,20,19,.94);--btn-pink:#b2dfc6;--btn-violet:#d2dcae;--btn-halo-pink:rgba(120,219,185,.76);--btn-halo-violet:rgba(222,231,152,.64);--sky-a:rgba(21,78,64,.57);--sky-b:rgba(31,64,48,.24)}
+.phone[data-theme="indigo"]{--bg:#0d1122;--panel:#1a2037;--panel2:#29304d;--line:#3b4263;--text:#f6f7ff;--muted:#b5bbd8;--muted2:#8f99b9;--rose:#c7afdf;--accent:#c0c9ff;--selection:rgba(148,169,240,.11);--veil1:rgba(146,150,238,.21);--veil2:rgba(160,119,229,.17);--glow:rgba(151,166,255,.17);--navbg:rgba(13,17,34,.94);--btn-pink:#dbbfe9;--btn-violet:#b2c4fa;--btn-halo-pink:rgba(208,150,240,.73);--btn-halo-violet:rgba(139,173,255,.86);--sky-a:rgba(45,51,122,.64);--sky-b:rgba(49,43,107,.26)}
+.phone[data-theme="petalo"]{--btn-pink:#eab0ce;--btn-violet:#c6b1f4}
+.phone[data-theme="marfil"]{--bg:#faf6ee;--panel:#fffcf7;--panel2:#f3ece3;--line:#e7dcd4;--text:#352f32;--muted:#756a69;--muted2:#948986;--rose:#c99193;--accent:#90718f;--selection:rgba(165,121,151,.11);--veil1:rgba(230,187,151,.16);--veil2:rgba(211,174,215,.17);--glow:rgba(206,155,158,.13);--navbg:rgba(255,252,247,.96);--btn-pink:#f0c2b4;--btn-violet:#d9c4e0;--btn-halo-pink:rgba(242,183,143,.66);--btn-halo-violet:rgba(187,151,220,.65)}
+.phone[data-theme="salvia"]{--bg:#f2f7f2;--panel:#fcfefd;--panel2:#e6eee7;--line:#d3e3d9;--text:#253b30;--muted:#65786b;--muted2:#839b8b;--rose:#82aa94;--accent:#5c8e76;--selection:rgba(116,169,136,.12);--veil1:rgba(128,190,154,.20);--veil2:rgba(176,206,170,.13);--glow:rgba(132,177,148,.15);--navbg:rgba(252,254,253,.96);--btn-pink:#bce4c8;--btn-violet:#c4d9b9;--btn-halo-pink:rgba(139,215,164,.68);--btn-halo-violet:rgba(182,204,140,.65)}
+.phone[data-theme="lavanda"]{--bg:#f8f5fe;--panel:#fffcff;--panel2:#eee9f8;--line:#e3dcef;--text:#342b49;--muted:#756b88;--muted2:#998ead;--rose:#bd8fc3;--accent:#8f70bd;--selection:rgba(173,143,221,.12);--veil1:rgba(191,161,228,.16);--veil2:rgba(219,166,219,.16);--glow:rgba(173,142,226,.15);--navbg:rgba(255,252,255,.95);--btn-pink:#e5badd;--btn-violet:#c3b8ee;--btn-halo-pink:rgba(229,155,208,.75);--btn-halo-violet:rgba(164,152,232,.7)}
+.phone[data-theme="noir"],.phone[data-theme="ciruela"],.phone[data-theme="bosque"],.phone[data-theme="indigo"]{background:var(--bg)}
+.phone[data-theme="petalo"],.phone[data-theme="marfil"],.phone[data-theme="salvia"],.phone[data-theme="lavanda"]{background:var(--bg)}
+.phone[data-family="light"] .sky-scene{opacity:0!important}
+.phone[data-family="light"] .datebox input{color-scheme:light}
+.phone[data-family="dark"] .datebox input{color-scheme:dark}
+/* ── Three seamless star planes. Each plane has two identical star tile copies. ── */
+.sky-scene .ambient-sky{background:radial-gradient(ellipse 105% 75% at 50% 103%,var(--sky-a) 0%,var(--sky-b) 45%,transparent 87%)}
+.sky-scene .sky-stars{position:absolute;inset:0 0 auto;height:200%;contain:layout style;will-change:transform;opacity:var(--sky-energy);}
+.sky-scene .sky-stars.low{animation:skyRise 44s linear infinite}
+.sky-scene .sky-stars.mid{animation:skyRise 73s linear infinite}
+.sky-scene .sky-stars.high{animation:skyRise 116s linear infinite}
+.sky-scene .sky-stars.high{opacity:.40}
+.sky-scene .sky-stars.mid{opacity:.67}
+.sky-scene .sky-stars.low{opacity:.70}
+.sky-scene .sky-scrim{background:linear-gradient(180deg,rgba(12,10,20,.10),transparent 28%,transparent 80%,rgba(10,8,16,.13))}
+.phone[data-sky="off"] .sky-scene{opacity:0}
+.phone[data-sky="subtle"] .sky-scene{opacity:.78}
+.phone[data-sky="ambient"] .sky-scene{opacity:1}
+.phone[data-step="0"] .sky-scene,.phone[data-step="7"] .sky-scene{filter:brightness(1.08)}
+.phone[data-step="1"] .sky-scene,.phone[data-step="2"] .sky-scene,.phone[data-step="3"] .sky-scene,.phone[data-step="4"] .sky-scene,.phone[data-step="5"] .sky-scene,.phone[data-step="6"] .sky-scene{filter:brightness(.75)}
+@keyframes skyRise{from{transform:translate3d(0,0,0)}to{transform:translate3d(0,-50%,0)}}
+/* ── Uiverse-inspired animated nickname field, without misleading AI branding ── */
+.name-input-wrap{position:relative;isolation:isolate;display:flex;align-items:center;min-height:55px;border-radius:15px;border:1px solid var(--line);background:var(--panel);overflow:hidden;transition:border-color .36s cubic-bezier(.22,.85,.25,1),box-shadow .36s,transform .36s}
+.name-input-wrap:focus-within{border-color:var(--accent);box-shadow:0 5px 20px var(--glow),0 0 0 1px color-mix(in srgb,var(--accent) 30%,transparent);transform:translateY(-2px)}
+.nickname-input{min-width:0;flex:1;position:relative;z-index:3;width:100%;height:54px;padding:0 15px;color:var(--text);background:transparent;border:0;outline:0;font-size:14px;letter-spacing:.05px}
+.nickname-input:focus-visible{outline:none}.nickname-input::placeholder{color:var(--muted)}
+.name-input-ornament{width:47px;height:51px;display:grid;place-items:center;position:relative;z-index:3;color:var(--accent);flex:none;transition:transform .42s cubic-bezier(.23,1.2,.36,1)}
+.name-input-ornament svg{height:19px;width:19px;stroke:currentColor;stroke-width:1.6;fill:none;transition:transform .42s}
+.name-input-wrap:focus-within .name-input-ornament{transform:translateY(-1px) scale(1.08)}
+.name-input-wrap:focus-within .name-input-ornament svg{transform:rotate(13deg)}
+.name-input-wrap .name-underline{position:absolute;bottom:0;left:0;height:2px;background:linear-gradient(90deg,var(--rose),var(--accent));width:0;transition:width .55s cubic-bezier(.25,.8,.25,1);z-index:2}
+.name-input-wrap:focus-within .name-underline{width:100%}
+.name-input-wrap .name-ripple{position:absolute;right:-60px;top:50%;width:0;height:0;border-radius:50%;background:radial-gradient(circle,var(--glow),transparent 69%);transform:translate(-50%,-50%);transition:width .6s,height .6s;pointer-events:none;z-index:0}
+.name-input-wrap:focus-within .name-ripple{width:250px;height:250px}
+.name-dots{position:absolute;inset:0;pointer-events:none;z-index:1}
+.name-dots i{position:absolute;width:3px;height:3px;left:82%;top:70%;opacity:0;border-radius:50%;background:var(--accent)}
+.name-dots i:nth-child(2){left:90%;top:20%;animation-delay:.25s!important}
+.name-dots i:nth-child(3){left:72%;top:55%;animation-delay:.49s!important}
+.name-dots i:nth-child(4){left:96%;top:56%;animation-delay:.72s!important}
+.name-input-wrap:focus-within .name-dots i{animation:nameDotLift 2.3s ease-in-out infinite}
+@keyframes nameDotLift{0%{transform:translateY(8px) scale(.5);opacity:0}40%{opacity:.55}100%{transform:translateY(-21px) scale(1);opacity:0}}
+/* ── Segmented contraception chooser. Glider computed from actual label widths. ── */
+.hormone-block{border-top:1px solid var(--line);padding-top:19px;margin-top:20px}
+.hormone-block h3,.interest-title{margin:0;font-size:13px;font-weight:750;line-height:1.5}
+.hormone-block p{font-size:11px;color:var(--muted);margin:5px 0 13px;line-height:1.5}
+.hormone-tabs{position:relative;isolation:isolate;display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px;width:100%;max-width:340px;min-height:45px}
+.hormone-tab{position:relative;z-index:2;display:grid;place-items:center;flex:1;min-height:34px;border:0;background:transparent;border-radius:999px;color:var(--muted);font-size:11px;font-weight:650;white-space:nowrap;transition:color .2s ease}
+.hormone-tab:last-of-type{flex:1.68}
+.hormone-tab[aria-checked="true"]{color:var(--on-glider,#21172d)}
+.hormone-glider{position:absolute;left:5px;top:5px;height:calc(100% - 10px);border-radius:999px;background:linear-gradient(105deg,var(--btn-pink),var(--btn-violet));box-shadow:0 3px 13px var(--glow);z-index:1;pointer-events:none;transform:translateX(var(--g-x,0px));width:var(--g-w,0px);opacity:0;transition:transform .37s cubic-bezier(.2,.9,.25,1),width .37s cubic-bezier(.2,.9,.25,1),opacity .2s ease}
+.hormone-glider.active{opacity:1}
+/* ── Final-details symptom interest tiles and physical accordion ── */
+.final-details{padding-top:3px}
+.period-block{margin-top:17px;padding:15px 16px}
+.period-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.period-head strong{font-size:13px}.period-head p{font-size:10.5px;margin:5px 0 0}
+.tertiary-action{color:var(--accent);font-weight:750;border:0;background:none;font-size:11px;min-height:36px;padding:4px 0 4px 8px;white-space:nowrap}
+.period-stepper{display:flex;justify-content:center;align-items:center;gap:16px;margin:10px 0}
+.period-stepper .number-display{font-size:31px;letter-spacing:-1px;font-weight:780;color:var(--accent);min-width:40px;text-align:center}.period-stepper small{font-size:12px;font-weight:500;color:var(--muted)}
+.period-stepper .round-button{width:38px;height:38px;font-size:20px}
+.quick-chips{display:flex;gap:7px;justify-content:center;margin:9px 0 2px}
+.quick-chips button{min-width:37px;height:29px;border-radius:16px;border:1px solid var(--line);color:var(--muted);background:var(--panel2);font-size:11px}
+.quick-chips button.active{border-color:var(--accent);color:var(--accent);background:var(--selection)}
+.interest-title{margin-top:19px;margin-bottom:12px}
+.interest-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.interest-tile{min-height:81px;display:flex;flex-direction:column;gap:9px;align-items:center;justify-content:center;background:var(--panel);border:1px solid var(--line);border-radius:13px;color:var(--text);padding:9px 3px;transition:background .25s,border-color .25s,transform .2s,box-shadow .2s}
+.interest-tile:active{transform:scale(.97)}.interest-tile svg{height:21px;width:21px;color:var(--accent);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .35s cubic-bezier(.2,1.4,.3,1)}
+.interest-tile[aria-pressed="true"]{background:var(--selection);border-color:var(--accent);box-shadow:inset 0 0 0 .5px var(--accent)}
+.interest-tile[aria-pressed="true"] svg{transform:scale(1.14)}
+.interest-tile span{font-size:10px;font-weight:650;text-align:center;line-height:1.25}
+.profile-accordion{margin-top:17px;padding:0;overflow:hidden}
+.profile-toggle{width:100%;min-height:50px;padding:0 16px;background:none;border:0;color:var(--text);display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:750;text-align:left}
+.profile-chevron{color:var(--muted);font-size:19px;display:inline-block;transition:transform .3s}
+.profile-accordion.expanded .profile-chevron{transform:rotate(180deg)}
+.profile-fields{padding:0 14px 15px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.profile-fields label{font-size:10px;color:var(--muted);display:block;line-height:1.4}.profile-fields input{margin-top:7px;padding:8px 6px;height:38px;width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:9px;font-size:12px;outline:none}
+.profile-fields input:focus{border-color:var(--accent)}.profile-foot{grid-column:1/-1;margin:1px 0 0!important;color:var(--muted);font-size:10px!important}
+/* ── A 2x2 objective grid, matching Lumi's real Kotlin screenshot ── */
+.goal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:18px}
+.goal-card{position:relative;display:flex;align-items:center;text-align:left;gap:9px;padding:10px 9px;min-height:58px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:16px;font-size:11px;font-weight:700;line-height:1.38;transition:border-color .23s,background .23s,transform .2s}
+.goal-card:active{transform:scale(.975)}.goal-card.selected{background:var(--selection);border:1.5px solid var(--accent)}
+.goal-icon{width:29px;height:29px;border-radius:9px;background:var(--panel2);display:grid;place-items:center;color:var(--accent);flex:none}.goal-icon svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+/* ── Theme selector: in-phone bottom sheet and workbench previews ── */
+.theme-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+.theme-swatch{border-radius:13px;padding:7px 8px;background:#211d29;border:1px solid #3c3346;min-height:49px;text-align:left;color:#ddd0e7;display:flex;align-items:center;gap:9px;font-size:11px;font-weight:700}
+.theme-swatch.on{border-color:#d6b4f5;background:#372b42}
+.swatch-pair{height:27px;width:33px;border-radius:9px;flex:none;background:var(--chip-bg);box-shadow:inset 0 0 0 1px #ffffff22;position:relative;overflow:hidden}
+.swatch-pair:after{content:"";position:absolute;right:-2px;bottom:-3px;width:22px;height:22px;border-radius:50%;background:var(--chip-accent);opacity:.9}
+.theme-layer{position:absolute;inset:0;z-index:60;display:flex;align-items:flex-end}.theme-layer[hidden]{display:none}
+.theme-backdrop{position:absolute;inset:0;border:0;background:rgba(6,5,10,.68);backdrop-filter:blur(4px)}
+.theme-sheet{position:relative;background:var(--panel);border-radius:25px 25px 0 0;border-top:1px solid var(--line);padding:11px 19px 35px;width:100%;box-shadow:0 -20px 50px #0005;max-height:76%;overflow-y:auto;animation:themeSheetUp .35s cubic-bezier(.2,1,.25,1) both}
+.sheet-handle{height:4px;width:44px;background:var(--line);border-radius:5px;margin:0 auto 18px}
+.sheet-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:19px}.sheet-title strong{font-size:22px;letter-spacing:-.8px;display:block}.sheet-title span{font-size:11px;color:var(--muted)}
+.sheet-close{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:50%;width:32px;height:32px}
+.theme-sheet-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.theme-sheet-card{padding:12px;min-height:88px;background:var(--bg);color:var(--text);border-radius:15px;border:1px solid var(--line);text-align:left;display:flex;flex-direction:column;gap:11px}
+.theme-sheet-card[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:-3px}
+.theme-sheet-card .swatch-pair{width:100%;height:27px}.theme-sheet-card .theme-label{font-weight:800;font-size:12px}.theme-sheet-card .theme-family{font-size:9px;color:var(--muted)}
+@keyframes themeSheetUp{from{transform:translateY(75%)}to{transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){.sky-scene .sky-stars,.sky-scene .stardot,.name-dots i{animation:none!important}.name-input-wrap,.name-input-wrap *,.hormone-glider,.interest-tile,.interest-tile svg,.theme-sheet{animation:none!important;transition:none!important}}
+.phone.less-motion .sky-stars,.phone.less-motion .stardot,.phone.less-motion .name-dots i{animation:none!important}
+.phone.less-motion .name-input-wrap,.phone.less-motion .name-input-wrap *,.phone.less-motion .hormone-glider,.phone.less-motion .theme-sheet{animation:none!important;transition:none!important}
+
+
+/* ── V6: softened editorial movement and story-driven handoff ── */
+/* Eliminate the top-center haze: Noir is genuinely dark above the content. */
+.phone{background:var(--bg)}
+.phone[data-family="dark"]{background:var(--bg)}
+.phone[data-family="light"]{background:var(--bg)}
+.sky-scene .ambient-sky{background:radial-gradient(ellipse 100% 75% at 50% 108%,var(--sky-a),var(--sky-b) 48%,transparent 88%)}
+.sky-scene .sky-scrim{background:linear-gradient(180deg,rgba(10,8,17,.18),transparent 18%,transparent 79%,rgba(10,8,17,.18))}
+.phone[data-family="light"] .sky-scrim{opacity:0}
+.content-scroll{position:relative;isolation:isolate}
+.outgoing-step{position:absolute;left:0;right:0;pointer-events:none;z-index:4;will-change:transform,opacity;animation:none!important;min-height:0}
+.content{animation:stepEnter .38s cubic-bezier(.18,1,.32,1) both}
+/* Reveal overlays inherit this theme, including dark-safe custom properties. */
+.phone .theme-reveal-snapshot{position:absolute;inset:0;width:100%;height:100%;margin:0;overflow:hidden;pointer-events:none;isolation:isolate;border-radius:inherit;transform:none!important;z-index:75;contain:paint}
+.phone .theme-reveal-snapshot .phone{border-radius:inherit}
+.phone .theme-reveal-snapshot .sky-scene{transition:none}
+.handoff-veil{z-index:7;background:linear-gradient(173deg,var(--bg) 4%,var(--panel) 62%,var(--bg) 100%);filter:none}
+.handoff-glow{z-index:8;inset:0;filter:none;overflow:hidden;background:none!important;transform-origin:center;isolation:isolate;contain:paint}
+.handoff-glow:before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 90% 72% at 50% 44%,var(--glow),transparent 83%);filter:blur(22px);opacity:.66}
+.aura-orb{position:absolute;display:block;pointer-events:none;left:50%;top:40%;border-radius:50%;mix-blend-mode:screen;filter:blur(43px);opacity:.53;will-change:transform}
+.aura-pink{width:200px;height:220px;background:rgba(233,179,196,.30);transform:translate(-86%,-65%);animation:auraPink 7.5s ease-in-out infinite alternate}
+.aura-violet{width:230px;height:240px;background:rgba(205,178,237,.30);transform:translate(-15%,-60%);animation:auraViolet 8.5s ease-in-out infinite alternate}
+.aura-sage{width:170px;height:180px;background:rgba(168,209,201,.23);transform:translate(-10%,-12%);animation:auraSage 9s ease-in-out infinite alternate}
+.aura-peach{width:175px;height:180px;background:rgba(245,204,170,.20);transform:translate(-88%,-6%);animation:auraPeach 8s ease-in-out infinite alternate}
+@keyframes auraPink{to{transform:translate(-65%,-72%) scale(1.13)}}
+@keyframes auraViolet{to{transform:translate(-30%,-43%) scale(1.09)}}
+@keyframes auraSage{to{transform:translate(-38%,-20%) scale(.96)}}
+@keyframes auraPeach{to{transform:translate(-69%,-26%) scale(1.13)}}
+.phone[data-family="light"] .aura-orb{mix-blend-mode:multiply;opacity:.4}
+.phone.atmospheric .aura-orb{opacity:.67}
+.phone.atmospheric .handoff-glow:before{opacity:.80}
+.phone[data-theme="bosque"] .handoff-glow:before{opacity:.4}
+.phone[data-theme="indigo"] .handoff-glow:before{opacity:.52}
+.handoff-title{z-index:10;top:55%;padding:0 34px;font-size:15px;font-weight:690;letter-spacing:-.2px;line-height:1.5;text-shadow:none}
+.handoff-title small{font-weight:420;font-size:11.5px;letter-spacing:.05px;margin-top:5px;line-height:1.5}
+.handoff-indicator{display:flex;justify-content:center;gap:8px;margin-top:23px}
+.handoff-indicator i{width:4px;height:4px;border-radius:50%;background:var(--accent);opacity:.45;animation:dotBreath 1.65s ease-in-out infinite}
+.handoff-indicator i:nth-child(2){animation-delay:.22s}
+.handoff-indicator i:nth-child(3){animation-delay:.44s}
+@keyframes dotBreath{0%,100%{opacity:.25;transform:scale(.85)}50%{opacity:.94;transform:scale(1.24)}}
+.moving-brand{z-index:12;filter:drop-shadow(0 3px 23px rgba(222,174,228,.11))}
+.moving-brand .flower{animation:flowerLive 5.4s ease-in-out infinite!important}
+.moving-brand .star{animation:twinkle 3.7s ease-in-out infinite!important}
+.skip-entrance{position:absolute;right:25px;bottom:55px;z-index:20;background:transparent;color:var(--muted);border:0;border-radius:9px;padding:9px 10px;font-size:11px;letter-spacing:.13px}
+.skip-entrance[hidden]{display:none}
+.skip-entrance:hover{color:var(--text)}
+.skip-entrance:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.phone.in-handoff .sky-scene{opacity:.36;transition:opacity .75s}
+.phone[data-family="light"].in-handoff .sky-scene{opacity:0}
+/* Home stays soft behind the light haze as the shared logo returns to the header. */
+.home.revealing{animation:homeRevealV6 1.05s cubic-bezier(.25,.82,.2,1) both}
+.home.revealing .home-body>*{animation:riseHome 1.05s both}
+.home.revealing .home-body>*:nth-child(1){animation-delay:.10s}
+.home.revealing .home-body>*:nth-child(2){animation-delay:.16s}
+.home.revealing .home-body>*:nth-child(3){animation-delay:.22s}
+.home.revealing .home-body>*:nth-child(4){animation-delay:.26s}
+.home.revealing .home-body>*:nth-child(5){animation-delay:.32s}
+.home.revealing .home-body>*:nth-child(6){animation-delay:.38s}
+@keyframes homeRevealV6{from{opacity:0;transform:translateY(8px);filter:blur(3px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
+@media(prefers-reduced-motion:reduce){.aura-orb,.handoff-indicator i,.handoff-glow:after{animation:none!important}.outgoing-step{display:none!important}}
+.phone.less-motion .aura-orb,.phone.less-motion .handoff-indicator i,.phone.less-motion .handoff-glow:after{animation:none!important}
+
+
+/* ─────── V7 · PRISMATIC LUMI / human-paced onboarding welcome ─────── */
+/* The dark veil stays dark. No screen blend, no white tint at all in the bloom. */
+.handoff-veil{background:linear-gradient(167deg,var(--bg) 1%,color-mix(in srgb,var(--panel) 64%,var(--bg)) 51%,var(--bg) 100%);filter:none}
+.handoff-glow{background:transparent!important;filter:none!important;isolation:isolate;overflow:hidden}
+.handoff-glow:before{inset:0;background:
+ radial-gradient(ellipse 50% 34% at 32% 37%,rgba(232,101,172,.18) 0%,transparent 83%),
+ radial-gradient(ellipse 49% 42% at 71% 38%,rgba(133,92,229,.19) 0%,transparent 83%),
+ radial-gradient(ellipse 34% 25% at 66% 53%,rgba(95,200,176,.13) 0%,transparent 88%),
+ radial-gradient(ellipse 36% 31% at 36% 54%,rgba(245,163,105,.12) 0%,transparent 87%)!important;
+ filter:none!important;opacity:1!important;pointer-events:none}
+.aura-orb{mix-blend-mode:normal!important;filter:blur(30px);opacity:1!important;top:42%;will-change:transform;transition:none}
+.aura-pink{left:33%;width:190px;height:200px;background:radial-gradient(circle,rgba(245,99,172,.48) 0%,rgba(226,98,172,.26) 37%,transparent 73%);animation:lumiPinkOrbit 6.4s ease-in-out infinite alternate;transform:translate(-50%,-70%)}
+.aura-violet{left:69%;width:198px;height:210px;background:radial-gradient(circle,rgba(149,103,247,.47) 0%,rgba(145,102,238,.24) 40%,transparent 74%);animation:lumiVioletOrbit 7.3s ease-in-out infinite alternate;transform:translate(-50%,-65%)}
+.aura-sage{left:64%;top:53%;width:167px;height:160px;background:radial-gradient(circle,rgba(89,220,188,.40) 0%,rgba(92,214,183,.18) 40%,transparent 76%);animation:lumiSageOrbit 6.9s ease-in-out infinite alternate;transform:translate(-50%,-45%)}
+.aura-peach{left:37%;top:55%;width:170px;height:165px;background:radial-gradient(circle,rgba(255,163,104,.42) 0%,rgba(250,163,113,.17) 42%,transparent 76%);animation:lumiPeachOrbit 7.8s ease-in-out infinite alternate;transform:translate(-50%,-40%)}
+.aura-quiet-ring{position:absolute;left:50%;top:40%;width:260px;height:260px;border-radius:50%;transform:translate(-50%,-50%);border:1px solid rgba(215,164,221,.11);box-shadow:0 0 42px rgba(178,113,224,.045),inset 0 0 50px rgba(115,82,180,.035);animation:lumiRing 5.4s ease-in-out infinite;opacity:.56}
+@keyframes lumiRing{0%,100%{transform:translate(-50%,-50%) scale(.85);opacity:.13}50%{transform:translate(-50%,-50%) scale(1.22);opacity:.51}}
+@keyframes lumiPinkOrbit{to{transform:translate(-24%,-85%) scale(1.14)}}
+@keyframes lumiVioletOrbit{to{transform:translate(-76%,-54%) scale(1.2)}}
+@keyframes lumiSageOrbit{to{transform:translate(-70%,-78%) scale(1.1)}}
+@keyframes lumiPeachOrbit{to{transform:translate(-20%,-20%) scale(1.17)}}
+/* Keep dark environments rich, not gray. Light themes use quieter chromatic washes. */
+.phone[data-family="light"] .aura-orb{opacity:.46!important;mix-blend-mode:normal!important}
+.phone[data-family="light"] .handoff-glow:before{opacity:.28!important}
+.phone[data-family="light"] .aura-quiet-ring{opacity:.2}
+.phone.atmospheric .aura-orb{opacity:1!important}
+.phone[data-family="light"].atmospheric .aura-orb{opacity:.46!important}
+.moving-brand{filter:none!important;z-index:13}
+.moving-brand .flower{filter:drop-shadow(0 0 18px rgba(194,110,225,.24));animation:lumiFlowerV7 2.9s cubic-bezier(.4,.05,.6,.95) infinite alternate!important}
+.moving-brand .star{animation:lumiStarV7 2.6s cubic-bezier(.3,.7,.2,1) infinite!important}
+@keyframes lumiFlowerV7{0%{transform:rotate(-7deg) scale(.96) skew(.2deg);filter:drop-shadow(0 0 9px rgba(239,122,173,.19))}45%{transform:rotate(2deg) scale(1.045) skew(-1deg);filter:drop-shadow(0 0 15px rgba(145,120,239,.28))}100%{transform:rotate(8deg) scale(.99);filter:drop-shadow(0 0 14px rgba(91,205,169,.25))}}
+@keyframes lumiStarV7{0%,25%,58%,100%{opacity:.7;transform:scale(.91) rotate(-8deg)}38%{opacity:1;transform:scale(1.36) rotate(14deg)}75%{opacity:.9;transform:scale(1.06) rotate(0deg)}}
+.handoff-title{top:55%;font-size:14px;font-weight:710;letter-spacing:-.16px;line-height:1.4}
+.handoff-title small{font-size:11.5px;margin-top:7px;opacity:.85}
+.handoff-indicator{margin-top:20px;gap:9px}
+.skip-entrance{color:var(--text);background:color-mix(in srgb,var(--panel) 82%,transparent);border:1px solid var(--line);padding:10px 13px;border-radius:999px;bottom:53px;opacity:.84}
+.skip-entrance:hover{opacity:1}
+.home.revealing{animation:homeRevealV7 .85s cubic-bezier(.22,1,.3,1) both}
+@keyframes homeRevealV7{0%{opacity:0;transform:translateY(10px);filter:blur(3px)}100%{opacity:1;transform:none;filter:none}}
+.phone.less-motion .aura-quiet-ring{animation:none!important}
+@media(prefers-reduced-motion:reduce){.aura-quiet-ring{animation:none!important}}
+</style>
+</head>
+<body>
+<svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden"><defs><linearGradient id="lumi-gradient" x1="9%" y1="87%" x2="95%" y2="12%"><stop offset="0" stop-color="#d8b3f0"/><stop offset=".32" stop-color="#e5b9d4"/><stop offset=".62" stop-color="#f5caaa"/><stop offset="1" stop-color="#a7d1cc"/></linearGradient><radialGradient id="lumi-light"><stop stop-color="#fff" stop-opacity=".32"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient><symbol id="flower-art" viewBox="0 0 46 46"><path d="M22 2.1C31 -0.3 42.1 6 44 15.9C46.3 24 42.3 36.2 35.6 41.3C30 45.8 19.6 46.2 12.3 42C4.6 38.1 .9 30 .9 22C1 12 10 3.6 22 2.1Z" fill="url(#lumi-gradient)"/><ellipse cx="17" cy="13" rx="18" ry="15" fill="url(#lumi-light)"/></symbol><symbol id="ico-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></symbol><symbol id="ico-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17.5" cy="9" r="2.2"/><path d="M2.5 20v-1.3a5.6 5.6 0 0 1 11.2 0V20M15.2 15.6a4.7 4.7 0 0 1 6.3 4.4"/></symbol><symbol id="ico-heart" viewBox="0 0 24 24"><path d="M12 20s-8-5.1-8-10.2a4.8 4.8 0 0 1 8-3.3 4.8 4.8 0 0 1 8 3.3C20 14.9 12 20 12 20Z"/></symbol><symbol id="ico-moon" viewBox="0 0 24 24"><path d="M20.2 14.9A8.5 8.5 0 0 1 9.1 3.8a8.6 8.6 0 1 0 11.1 11.1Z"/></symbol><symbol id="ico-leaf" viewBox="0 0 24 24"><path d="M20 4c-9 .2-15.5 3.5-15.5 11.2a4.8 4.8 0 0 0 4.9 4.8C17 20 20 12.7 20 4ZM4.8 20c2.7-4.2 6-7.2 10-9.2"/></symbol><symbol id="ico-waves" viewBox="0 0 24 24"><path d="M2 7c3-3 5 3 8 0s5 3 8 0 3 0 4 0M2 12c3-3 5 3 8 0s5 3 8 0 3 0 4 0M2 17c3-3 5 3 8 0s5 3 8 0 3 0 4 0"/></symbol><symbol id="ico-sparkle" viewBox="0 0 24 24"><path d="m12 2 2.1 7.9L22 12l-7.9 2.1L12 22l-2.1-7.9L2 12l7.9-2.1L12 2ZM19 2v4m-2-2h4"/></symbol><symbol id="ico-shield" viewBox="0 0 24 24"><path d="M12 2 20 5v6.1C20 16.5 16.8 20 12 22 7.2 20 4 16.5 4 11.1V5l8-3Z"/></symbol><symbol id="ico-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v11H3zM9 21v-8h6v8"/></symbol><symbol id="ico-bar" viewBox="0 0 24 24"><path d="M4 20V10M9 20V4M15 20v-9M20 20v-6"/></symbol><symbol id="ico-user" viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol><symbol id="ico-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/></symbol><symbol id="ico-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18h2.2a2 2 0 0 0 1.4-3.5 1.6 1.6 0 0 1 1.1-2.7H19A4 4 0 0 0 23 11a9.5 9.5 0 0 0-11-8Z"/><circle cx="7" cy="10" r=".7"/><circle cx="11" cy="7" r=".7"/><circle cx="16" cy="8" r=".7"/></symbol></defs></svg>
+<div class="workbench">
+ <aside class="sidebar">
+  <div class="overline">LUMI · PROTOTIPO 07</div>
+  <h1>Un comienzo que<br>respira contigo.</h1>
+  <p>Más de diez segundos de bienvenida ceremonial: luz cromática del logo, cinco mensajes y un regreso rápido y orgánico al encabezado. Prueba toda la secuencia.</p>
+  <span class="mini-pill">8 temas · Revelación circular · Logo compartido</span>
+  <div class="control-head">Ir a una pantalla</div>
+  <div class="control-row">
+   <button type="button" class="control" id="goWelcome">01 · Bienvenida</button><button type="button" class="control" id="goSafety">02 · Seguridad</button>
+   <button type="button" class="control on" id="goFinish">08 · Todo listo</button><button type="button" class="control" id="goHome">Vista del Home</button>
+  </div>
+  <div class="control-row">
+   <button type="button" class="control" id="goName">03 · Apodo</button><button type="button" class="control" id="goPreferences">06 · Preferencias</button>
+   <button type="button" class="control" id="goPersonalize">07 · Últimos detalles</button><button type="button" class="control" id="goCycle">04 · Tu ciclo</button>
+  </div>
+  <button type="button" class="control big" id="replay">↻ Repetir transición desde «Todo listo»</button>
+  <div class="control-head">Ocho temas Lumi · 4 oscuros y 4 claros</div>
+  <div class="theme-grid" id="themePalette" role="group" aria-label="Temas visuales"></div>
+  <div class="control-head">Fondo del onboarding</div>
+  <div class="control-row" role="group" aria-label="Estilo del fondo">
+    <button type="button" class="control" id="skyNone" aria-pressed="false">Sin estrellas</button>
+    <button type="button" class="control on" id="skySubtle" aria-pressed="true">Cielo sutil</button>
+    <button type="button" class="control" id="skyAmbient" aria-pressed="false">Más nocturno</button>
+    <button type="button" class="control" id="skyComparison">Comparar ↔</button>
+  </div>
+  <p id="skyDescription" class="sky-control-summary" aria-live="polite">Estrellas pequeñas, luz violeta al fondo y movimiento casi imperceptible. Mi propuesta para Noir.</p>
+  <div class="sky-legend"><span class="sky-dot"></span> Solo en temas oscuros · 3 capas ascendentes · sin imágenes externas</div>
+  <div class="control-head">Comportamiento</div>
+  <div class="control-row"><button type="button" class="control" id="modeSubtle">Serena · 10,2 s</button><button type="button" class="control on" id="modeAmbient">Atmosférica · 11,5 s</button></div>
+  <label class="switchline"><input type="checkbox" id="reduceMotion"> Reducir movimiento</label>
+  <label class="switchline"><input type="checkbox" id="simulateFailure"> Simular un error al guardar</label>
+  <div class="smallnote">Este recorrido prolongado es solo la primera bienvenida, con opción de entrar en cualquier momento. No pretende representar un análisis médico ni carga artificial. El guardado es simulado y el <b>Home sigue siendo ilustrativo</b> hasta disponer de HomeScreen.kt. En Android la animación debe comenzar <b>después</b> del guardado correcto.</div>
+ </aside>
+ <div class="phone-shell"><div class="phone" id="phone" data-theme="noir" data-sky="subtle">
+  <div class="sky-scene" id="skyScene" aria-hidden="true"><div class="ambient-sky"></div><div class="sky-stars low" id="skyLow"></div><div class="sky-stars mid" id="skyMid"></div><div class="sky-stars high" id="skyHigh"></div><div class="sky-scrim"></div></div>
+  <div class="camera"></div>
+  <div class="status"><span>9:43 ◉</span><span class="status-icons"><svg viewBox="0 0 24 24"><path d="M2 20v-2m4 2v-6m4 6V9m4 11V5m4 15V2"/></svg><svg viewBox="0 0 24 24"><path d="M3 9a14 14 0 0 1 18 0M6 12a10 10 0 0 1 12 0M9 15a5 5 0 0 1 6 0"/><circle cx="12" cy="19" r=".5"/></svg><svg class="battery" viewBox="0 0 29 18"><rect x="1" y="2" width="23" height="14" rx="3" stroke-width="1.5" fill="currentColor" stroke="none"/><path d="M26 6v6"/></svg></span></div>
+  <section class="stage onboard" id="onboard" aria-label="Onboarding de Lumi"><div class="header" id="header"><div class="header-brand" id="headerBrand"></div><button type="button" class="theme-chip" id="themeButton">◐ <span id="themeLabel">Tema: Noir</span></button></div><div class="progress-wrap" id="progressWrap"><div class="progress-info" id="progressInfo">01 / 08 · BIENVENIDA</div><div class="track"><div class="fill" id="progressFill" style="width:12.5%"></div></div></div><div class="content-scroll" id="scroll"><main class="content" id="content"></main></div><div class="footer" id="footer"><button class="primary" type="button" id="nextBtn"><span class="primary-ambient" aria-hidden="true"><span class="primary-light"></span></span><span class="primary-label" id="nextLabel">Ver mi inicio</span></button><div class="secondary-footer"><button type="button" class="link-button" id="backBtn">← Volver</button><span class="footer-note" id="footerNote">Tus datos se guardan de forma local</span></div><p role="alert" class="error-line" id="errorLine"></p></div></section>
+  <section class="stage home" id="home" aria-label="Vista de ejemplo del inicio" aria-hidden="true"><div class="home-head"><div id="homeBrandTarget"></div><div class="home-actions"><button type="button" class="home-action" aria-label="Cambiar tema" id="homeTheme"><svg viewBox="0 0 24 24"><use href="#ico-palette"/></svg></button><button type="button" class="home-action" aria-label="Notificaciones"><svg viewBox="0 0 24 24"><use href="#ico-bell"/></svg></button></div></div><div class="home-body"><div class="eyebrow">TU ESPACIO</div><h2 class="home-greeting" id="homeGreeting">Hola.</h2><p class="home-desc">Un día a la vez, a tu manera.</p><div class="cycle-hero"><svg viewBox="0 0 260 260"><circle cx="130" cy="130" r="106" fill="none" stroke="var(--line)" stroke-width="6"/><circle cx="130" cy="130" r="106" fill="none" stroke="var(--accent)" stroke-width="6" stroke-dasharray="115 700" stroke-linecap="round" transform="rotate(-95 130 130)" opacity=".85"/></svg><div class="cycle-center"><div class="tip">TU CICLO</div><div class="main" id="cycleDisplay">Por conocer</div><div class="sub" id="cycleInfo">Lumi irá aprendiendo contigo.</div></div></div><p class="home-caption">Registra lo que conozcas de tu ciclo cuando quieras.</p><div class="week-row"><div class="datecell">Lun<b>12</b></div><div class="datecell">Mar<b>13</b></div><div class="datecell">Mié<b>14</b></div><div class="datecell">Jue<b>15</b></div><div class="datecell">Vie<b>16</b></div><div class="datecell now">Sáb<b>17</b></div><div class="datecell">Dom<b>18</b></div></div><div class="reminder-card"><div class="ic">✦</div><div><strong>Empieza cuando quieras</strong><small>Registra cómo te sientes hoy o completa tus datos más adelante.</small></div></div></div><nav class="tabbar"><button class="tab selected"><svg viewBox="0 0 24 24"><use href="#ico-home"/></svg>Inicio</button><button class="tab"><svg viewBox="0 0 24 24"><use href="#ico-calendar"/></svg>Calendario</button><button class="tab"><svg viewBox="0 0 24 24"><use href="#ico-bar"/></svg>Insights</button><button class="tab"><svg viewBox="0 0 24 24"><use href="#ico-user"/></svg>Perfil</button></nav></section>
+  <div class="theme-layer" id="themeLayer" hidden><button type="button" class="theme-backdrop" id="themeBackdrop" aria-label="Cerrar selección de temas"></button><section class="theme-sheet" role="dialog" aria-modal="true" aria-label="Elegir un tema"><div class="sheet-handle"></div><div class="sheet-title"><div><strong>Hazlo tuyo.</strong><span>Elige la atmósfera de Lumi</span></div><button type="button" id="themeClose" class="sheet-close" aria-label="Cerrar">✕</button></div><div class="theme-sheet-grid" id="themeSheetGrid"></div></section></div>
+  <dialog class="prototype-dialog" id="privacyDialog" aria-labelledby="privacyDialogTitle"><h2 id="privacyDialogTitle">Política de privacidad</h2><p>Vista de demostración: en la aplicación real este enlace debe abrir el texto oficial de la política. No se incluye contenido legal ficticio en el prototipo.</p><button type="button" id="closePrivacy">Cerrar</button></dialog>
+  <div class="handoff-veil" id="veil"></div>
+   <div class="handoff-glow" id="glow"><span class="aura-orb aura-pink"></span><span class="aura-orb aura-violet"></span><span class="aura-orb aura-sage"></span><span class="aura-orb aura-peach"></span><span class="aura-quiet-ring"></span></div>
+   <div class="handoff-title" id="handoffMessage" aria-live="polite"><span id="handoffHeadline">Dando forma a tu espacio</span><small id="handoffSubtitle">Un lugar hecho a tu manera</small><div class="handoff-indicator" aria-hidden="true"><i></i><i></i><i></i></div></div>
+   <button class="skip-entrance" id="skipEntrance" type="button" hidden>Entrar ahora <span aria-hidden="true">↗</span></button>
+   <div class="moving-brand" id="movingBrand"></div><div class="gesture"></div>
+ </div></div>
+</div>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id),app=$('phone'),onboard=$('onboard'),home=$('home'),content=$('content'),headerBrand=$('headerBrand'),progress=$('progressWrap'),error=$('errorLine'),footer=$('footer'),homeTarget=$('homeBrandTarget'),moving=$('movingBrand'),veil=$('veil'),glow=$('glow'),message=$('handoffMessage');
+const state={mode:'track',step:0,name:'',accepted:false,cycleKnown:false,cycleLength:28,regularity:null,dateKnown:false,lastPeriod:'',goal:null,periodDays:5,periodKnown:false,secondaryGoals:[],profileExpanded:false,physical:{age:'',height:'',weight:''},contraception:'',theme:'noir',busy:false,atmospheric:true,slow:false};
+let runToken=0;let jobs=[],flightAnimation=null;
+const sleep=ms=>new Promise(ok=>setTimeout(ok,ms));
+const brand=(size='large',id='')=>`<div class="brand ${size}"${id?` id="${id}"`:''}><svg class="flower" viewBox="0 0 46 46" aria-hidden="true"><use href="#flower-art"/></svg><span class="word">lumi</span><span class="star">✦</span></div>`;
+const icon=(name)=>`<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#ico-${name}"/></svg>`;
+function steps(){return state.mode==='support'?[0,1,2,7]:[0,1,2,3,4,5,6,7]}
+const names={0:'BIENVENIDA',1:'SEGURIDAD',2:'TU NOMBRE',3:'TU CICLO',4:'ÚLTIMO PERIODO',5:'PREFERENCIAS',6:'PERSONALIZACIÓN',7:'LISTO'};
+function shellHeading(title,description){return `<h1 class="heading">${title}</h1><p class="description">${description}</p>`}
+function option(title,sub,ico,selected,action){return `<button type="button" aria-pressed="${selected}" class="option-card${selected?' selected':''}" data-action="${action}"><span class="opt-icon">${icon(ico)}</span><span class="opt-copy"><strong>${title}</strong><small>${sub}</small></span><span class="select-indicator" aria-hidden="true"></span></button>`}
+function setPrimaryLabel(value){$('nextLabel').textContent=value}
+function applyRadioChoice(action){
+ const chosen=content.querySelector(`.option-card[data-action="${action}"]`);
+ if(!chosen)return;
+ const wasSelected=chosen.classList.contains('selected');
+ content.querySelectorAll('.selection-list .option-card').forEach(card=>{
+   const selected=card===chosen;
+   card.classList.toggle('selected',selected);
+   card.classList.remove('just-selected');
+   card.setAttribute('aria-pressed',String(selected));
+ });
+ if(!wasSelected&&!state.slow&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+   chosen.classList.add('just-selected');
+   setTimeout(()=>chosen.classList.remove('just-selected'),620);
+ }
+ $('nextBtn').disabled=state.step===3&&!state.regularity;
+}
+function updateConsent(){
+ const check=$('consentToggle');const card=$('consentCard');
+ if(!check||!card)return;
+ check.setAttribute('aria-checked',String(state.accepted));
+ card.classList.toggle('is-checked',state.accepted);
+ $('nextBtn').disabled=!state.accepted;
+}
+function summary(title,value,step){return `<button class="summary-card" type="button" data-edit="${step}"><span class="summary-head"><span>${title}</span><b>Editar</b></span><strong class="summary-value">${escapeHtml(value)}</strong></button>`}
+function escapeHtml(str){return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;')}
+function render(){
+ app.classList.remove('home-active');cancelMotion();const idx=steps().indexOf(state.step);if(idx<0){state.step=7;return render()}
+ error.textContent='';state.busy=false;onboard.classList.remove('entering');app.classList.remove('atmospheric');home.classList.remove('revealing','open');home.style.opacity='0';home.style.pointerEvents='none';home.setAttribute('aria-hidden','true');onboard.style.display='flex';onboard.style.opacity='1';onboard.style.pointerEvents='auto';moving.style.display='none';moving.innerHTML='';veil.style.opacity='0';glow.style.opacity='0';message.style.opacity='0';
+ const s=state.step;const final=s===7;const first=s===0;headerBrand.innerHTML=!first&&!final?brand('small'):'';progress.style.display=final?'none':'block';progress.querySelector('#progressInfo').textContent=`${String(idx+1).padStart(2,'0')} / ${String(steps().length).padStart(2,'0')} · ${names[s]}`;$('progressFill').style.width=((idx+1)/steps().length*100)+'%';
+ applyTheme(false);app.dataset.step=String(s);
+ content.className='content '+(first?'step-welcome':final?'step-finish':'step-standard');
+ switch(s){
+  case 0:content.innerHTML=`<div class="hero">${brand('large')}</div>${shellHeading('Tu ciclo, <em>a tu manera.</em>','Elige cómo quieres usar Lumi.')}<div class="selection-list">${option('Seguir mi ciclo','Registros y estimaciones personales.','calendar',state.mode==='track','track')}${option('Acompañar a alguien','Conectar con una persona de confianza.','people',state.mode==='support','support')}</div>`;break;
+  case 1:content.innerHTML=`${shellHeading('Tu bienestar, <em>con claridad.</em>','Antes de comenzar.')}<div class="paper" style="margin-top:19px"><div style="display:flex;align-items:center;gap:9px;color:var(--accent)"><span style="font-size:18px">⬟</span><strong style="color:var(--text)">Lumi acompaña, no diagnostica</strong></div><ul><li>Las predicciones son estimaciones, no certezas.</li><li>No utilices Lumi como anticonceptivo.</li><li>Si algo te preocupa o tienes síntomas intensos, busca atención profesional.</li></ul></div><div class="paper consent${state.accepted?' is-checked':''}" id="consentCard"><button type="button" class="consent-check" id="consentToggle" role="checkbox" aria-checked="${state.accepted}" aria-label="Entiendo las limitaciones y acepto la política de privacidad"><svg class="checkbox-svg" viewBox="0 0 30 30" aria-hidden="true"><rect class="check-frame" x="3" y="3" width="24" height="24" rx="4"/><rect class="check-fill" x="4" y="4" width="22" height="22" rx="4"/><rect class="check-outline" x="3" y="3" width="24" height="24" rx="4" pathLength="100"/><polyline class="check-tick" points="9 15 13 19 21 10" pathLength="100"/></svg></button><div class="consent-copy"><strong>Entiendo estas limitaciones.</strong><small>Puedo cambiar mis preferencias más adelante.</small><strong>Acepto la política de privacidad</strong><small>y autorizo el tratamiento de mis datos para prestar el servicio.</small><button type="button" class="privacy-link" id="privacyInfo">Consultar política</button></div></div>`;break;
+  case 2:content.innerHTML=`${shellHeading('¿Cómo te gustaría <em>que te saludemos?</em>','Puedes usar un apodo o dejarlo vacío.')}<label for="nameField" class="field-label">Nombre o apodo · opcional</label><div class="name-input-wrap"><span class="name-ripple" aria-hidden="true"></span><span class="name-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></span><input id="nameField" type="text" class="nickname-input" maxlength="32" autocomplete="nickname" placeholder="Tu apodo" value="${escapeHtml(state.name)}"><span class="name-input-ornament" aria-hidden="true">${icon('sparkle')}</span><span class="name-underline" aria-hidden="true"></span></div><div class="paper preview-greeting"><span class="micro">Así aparecerá en Inicio</span><b id="greetPreview">Hola${state.name.trim()?`, <em>${escapeHtml(state.name.trim())}</em>`:''}.</b></div><p class="micro" style="margin-top:17px">Puedes cambiarlo más adelante.</p>`;break;
+  case 3:content.innerHTML=`${shellHeading('Conozcamos <em>tu ciclo.</em>','No tienes que saberlo todo para empezar.')}<div class="selection-list">${option('Sí, es regular','Mi ciclo suele mantener un patrón parecido.','calendar',state.regularity==='yes','regularity-yes')}${option('No, es irregular','La duración cambia de un mes a otro.','calendar',state.regularity==='no','regularity-no')}${option('No estoy segura','Prefiero descubrirlo con el tiempo.','calendar',state.regularity==='unknown','regularity-unknown')}</div><div class="paper" style="margin-top:17px"><strong>Duración aproximada</strong><p>Es opcional y podrás modificarla después.</p><div class="chip-row"><button class="chip ${state.cycleKnown?'selected':''}" data-action="cycle-toggle">${state.cycleKnown?'No lo sé':'Estimar duración'}</button></div>${state.cycleKnown?`<div class="number-row"><button class="round-button" data-action="cycle-minus">−</button><span class="value">${state.cycleLength}</span><button class="round-button" data-action="cycle-plus">+</button></div>`:'<p>No pasa nada si todavía no conoces tu duración habitual.</p>'}</div>`;break;
+  case 4:content.innerHTML=`${shellHeading('Tu último <em>periodo.</em>','¿Recuerdas cuándo comenzó?')}<div class="chip-row"><button class="chip ${state.dateKnown?'selected':''}" data-action="date-yes">Elegir fecha</button><button class="chip ${!state.dateKnown?'selected':''}" data-action="date-no">No recuerdo</button></div><div class="paper datebox">${state.dateKnown?'<label class="micro" for="dateField">Primer día de sangrado</label><input id="dateField" type="date" value="'+escapeHtml(state.lastPeriod)+'"><p>Puedes cambiar la fecha desde el calendario.</p>':'<strong>No necesitas recordarlo ahora</strong><p>Podrás registrar una fecha cuando la conozcas.</p>'}</div>`;break;
+  case 5:content.innerHTML=`${shellHeading('¿Qué te gustaría <em>hacer con Lumi?</em>','Para organizar tu experiencia inicial.')}<div class="goal-grid" role="group" aria-label="Tu objetivo principal">${[['Entender mi ciclo','calendar'],['Conocer mi bienestar','heart'],['Buscar embarazo','leaf'],['Evitar embarazo','shield']].map(([text,ico],i)=>`<button type="button" class="goal-card${state.goal===['Entender mi ciclo','Conocer mi bienestar','Buscar embarazo','Evitar embarazo'][i]?' selected':''}" data-action="goal-${i}" aria-pressed="${state.goal===['Entender mi ciclo','Conocer mi bienestar','Buscar embarazo','Evitar embarazo'][i]}"><span class="goal-icon">${icon(ico)}</span><span>${text}</span></button>`).join('')}</div><div class="hormone-block"><h3>¿Usas anticoncepción hormonal?</h3><p>Puede afectar el sangrado y las predicciones.</p><div class="hormone-tabs" id="hormoneTabs" role="radiogroup" aria-label="Anticoncepción hormonal"><span class="hormone-glider" id="hormoneGlider" aria-hidden="true"></span>${[['yes','Sí'],['no','No'],['unsure','Prefiero no decir']].map(([v,label])=>`<button type="button" role="radio" class="hormone-tab" data-contraception="${v}" aria-checked="${state.contraception===v}" tabindex="${state.contraception===v||(!state.contraception&&v==='yes')?'0':'-1'}">${label}</button>`).join('')}</div></div>`;requestAnimationFrame(placeGlider);break;
+  case 6:content.innerHTML=`<div class="final-details">${shellHeading('Últimos <em>detalles.</em>','Todo esto es opcional y podrás cambiarlo.')}<div class="paper period-block"><div class="period-head"><div><strong>Duración del sangrado</strong><p>Si conoces tu promedio.</p></div><button class="tertiary-action" type="button" data-action="period-toggle">${state.periodKnown?'No lo sé':'Elegir'}</button></div>${state.periodKnown?`<div class="period-stepper"><button class="round-button" data-action="period-minus" aria-label="Restar un día" ${state.periodDays<=1?'disabled':''}>−</button><div class="number-display">${state.periodDays}<small> días</small></div><button class="round-button" data-action="period-plus" aria-label="Sumar un día" ${state.periodDays>=10?'disabled':''}>+</button></div><div class="quick-chips">${[3,4,5,6].map(v=>`<button class="${state.periodDays===v?'active':''}" data-action="period-quick-${v}" aria-pressed="${state.periodDays===v}">${v} d</button>`).join('')}</div>`:`<p style="margin:10px 0 0">Sin promedio por ahora.</p>`}</div><h3 class="interest-title">Quiero prestar atención a...</h3><div class="interest-grid" role="group" aria-label="Aspectos que quieres seguir">${[['Cólicos','heart','cramps'],['Sueño','moon','sleep'],['Estado de ánimo','sparkle','mood'],['Fertilidad','leaf','fertility'],['Estrés','waves','stress']].map(([label,ico,key])=>`<button type="button" class="interest-tile" data-interest="${key}" aria-pressed="${state.secondaryGoals.includes(key)}">${icon(ico)}<span>${label}</span></button>`).join('')}</div><div class="paper profile-accordion${state.profileExpanded?' expanded':''}"><button type="button" class="profile-toggle" data-action="profile-toggle" aria-expanded="${state.profileExpanded}">Perfil físico (opcional)<span class="profile-chevron">⌄</span></button>${state.profileExpanded?`<div class="profile-fields"><label>Edad<input type="number" min="1" max="120" id="physicalAge" placeholder="Años" value="${escapeHtml(state.physical.age)}"></label><label>Estatura<input type="number" min="80" max="250" id="physicalHeight" placeholder="cm" value="${escapeHtml(state.physical.height)}"></label><label>Peso<input type="number" min="20" max="400" id="physicalWeight" placeholder="kg" value="${escapeHtml(state.physical.weight)}"></label><p class="profile-foot">Solo completa los datos que quieras compartir.</p></div>`:''}</div></div>`;break;
+  case 7:content.innerHTML=`<div class="hero" id="heroSource">${brand('large','originalBrand')}</div>${shellHeading('Todo listo.','Puedes cambiar tus elecciones cuando quieras.')}${state.mode==='support'?`<div class="paper" style="margin-top:19px"><span class="micro">Tu próximo paso</span><h3 style="font-size:17px;margin:8px 0">Conectar con alguien</h3><p>Puedes vincularte con una persona de confianza desde la aplicación.</p></div>`:`<div class="summary-grid">${summary('Tu saludo',state.name.trim()?`Hola, ${state.name.trim()}.`:'Hola.',2)}${summary('Tu ciclo',state.cycleKnown?`${state.cycleLength} días`:'Por conocer',3)}${summary('Último periodo',state.dateKnown&&state.lastPeriod?new Date(state.lastPeriod+'T00:00:00').toLocaleDateString('es-CL',{day:'numeric',month:'short'}):'Sin registrar',4)}${summary('Tu objetivo',state.goal||'Sin seleccionar',5)}</div>`}`;break;
+ }
+ setPrimaryLabel(first?'Empezar →':final?'Ver mi inicio':s===6?'Terminar →':'Continuar →');$('backBtn').style.visibility=first?'hidden':'visible';$('footerNote').textContent=final?'Tus datos se guardan de forma local':(s===2||s===6)?'Puedes omitir este paso':'';$('nextBtn').disabled=s===1&&!state.accepted||s===3&&!state.regularity||s===4&&state.dateKnown&&!state.lastPeriod;
+ $('scroll').scrollTop=0;updateSide();
+}
+function updateSide(){for(const [id,condition] of [['goWelcome',state.step===0],['goSafety',state.step===1],['goFinish',state.step===7],['goHome',state.step===8],['modeSubtle',!state.atmospheric],['modeAmbient',state.atmospheric]])$(id).classList.toggle('on',condition)}
+function cancelMotion(){
+ runToken++;for(const n of jobs)clearTimeout(n);jobs=[];
+ flightAnimation?.cancel();flightAnimation=null;
+ state.busy=false;
+ [veil,glow,message,home,moving].forEach(el=>el.getAnimations().forEach(a=>a.cancel()));
+ glow.style.opacity='0';veil.style.opacity='0';message.style.opacity='0';
+ moving.style.display='none';moving.style.transform='';moving.innerHTML='';
+ $('skipEntrance').hidden=true;app.classList.remove('in-handoff','atmospheric');
+ const brand=$('originalBrand');if(brand)brand.style.visibility='';
+ const final=$('finalTarget');if(final)final.style.visibility='';
+}
+function goto(step){
+ if(state.busy)return;
+ const oldStep=state.step;
+ if(!steps().includes(step)&&step!==8)state.mode='track';
+ if(step===oldStep)return;
+ const reduced=motionReduced();
+ let outgoing=null;
+ const forward=steps().indexOf(step)>steps().indexOf(oldStep);
+ if(!reduced&&oldStep!==8&&step!==8&&oldStep>=0&&oldStep<=7){
+   const viewport=$('scroll');
+   outgoing=content.cloneNode(true);outgoing.removeAttribute('id');
+   outgoing.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
+   outgoing.classList.add('outgoing-step');outgoing.setAttribute('aria-hidden','true');outgoing.inert=true;
+   outgoing.style.setProperty('--step-dir',forward?'1':'-1');
+   outgoing.style.top=(-viewport.scrollTop)+'px';
+ }
+ state.step=step;render();
+ if(outgoing){
+   $('scroll').appendChild(outgoing);
+   outgoing.animate([
+    {opacity:1,transform:'translate3d(0,0,0)',filter:'blur(0px)'},
+    {opacity:0,transform:`translate3d(${forward?-20:20}px,-4px,0)`,filter:'blur(4px)'}
+   ],{duration:290,easing:'cubic-bezier(.35,0,.45,1)',fill:'forwards'}).finished.finally(()=>outgoing.remove());
+   content.animate([
+    {opacity:0,transform:`translate3d(${forward?20:-20}px,7px,0)`,filter:'blur(3px)'},
+    {opacity:1,transform:'translate3d(0,0,0)',filter:'blur(0px)'}
+   ],{duration:460,delay:70,easing:'cubic-bezier(.16,1,.3,1)',fill:'both'});
+   const footerLabel=$('nextLabel');
+   footerLabel.animate([{opacity:.45,transform:'translateY(3px)'},{opacity:1,transform:'translateY(0)'}],{duration:300,easing:'ease-out'});
+ }
+}
+function motionReduced(){return state.slow||matchMedia('(prefers-reduced-motion: reduce)').matches}
+function toggleTheme(){openThemeSheet()}
+
+const themes=[
+ {id:'noir',name:'Noir',family:'dark',bg:'#0e0c13',accent:'#cbb4f1'},
+ {id:'ciruela',name:'Ciruela',family:'dark',bg:'#241d29',accent:'#e8adc8'},
+ {id:'bosque',name:'Bosque',family:'dark',bg:'#17231f',accent:'#a3d4bd'},
+ {id:'indigo',name:'Índigo',family:'dark',bg:'#1a2037',accent:'#c0c9ff'},
+ {id:'petalo',name:'Pétalo',family:'light',bg:'#fff5f8',accent:'#cd9ac9'},
+ {id:'marfil',name:'Marfil',family:'light',bg:'#fff9ef',accent:'#c99193'},
+ {id:'salvia',name:'Salvia',family:'light',bg:'#e4eee7',accent:'#648f76'},
+ {id:'lavanda',name:'Lavanda',family:'light',bg:'#f8f1ff',accent:'#9b7cc5'}
+];
+function themeMarkup(x,card=false){const selected=x.id===state.theme;return card?`<button class="theme-sheet-card" type="button" data-theme-key="${x.id}" aria-pressed="${selected}"><span class="swatch-pair" style="--chip-bg:${x.bg};--chip-accent:${x.accent}"></span><span class="theme-label">${x.name}</span><span class="theme-family">${x.family==='dark'?'Oscuro':'Claro'}</span></button>`:`<button type="button" class="theme-swatch${selected?' on':''}" data-theme-key="${x.id}" aria-pressed="${selected}"><span class="swatch-pair" style="--chip-bg:${x.bg};--chip-accent:${x.accent}"></span>${x.name}</button>`}
+function applyTheme(rebuildChoices=true){const selected=themes.find(x=>x.id===state.theme)||themes[0];app.dataset.theme=selected.id;app.dataset.family=selected.family;$('themeLabel').textContent='Tema: '+selected.name;if(rebuildChoices){renderThemeChoices()}}
+function renderThemeChoices(){$('themePalette').innerHTML=themes.map(t=>themeMarkup(t)).join('');$('themeSheetGrid').innerHTML=themes.map(t=>themeMarkup(t,true)).join('')}
+let themeRevealAnimation=null,themeRevealLayer=null;
+function selectTheme(id,source=null){
+ if(!themes.some(x=>x.id===id)||id===state.theme)return;
+ const selected=themes.find(t=>t.id===id);
+ if(motionReduced()||state.busy){state.theme=id;applyTheme();placeGlider();return}
+ if(themeRevealAnimation){themeRevealAnimation.cancel();themeRevealLayer?.remove()}
+ const rect=app.getBoundingClientRect();
+ const sr=source?.getBoundingClientRect();
+ const cx=sr&&sr.right>rect.left&&sr.left<rect.right ? (sr.left+sr.width/2-rect.left) : rect.width/2;
+ const cy=sr&&sr.bottom>rect.top&&sr.top<rect.bottom ? (sr.top+sr.height/2-rect.top) : rect.height/2;
+ const radius=Math.ceil(Math.hypot(Math.max(cx,rect.width-cx),Math.max(cy,rect.height-cy)))+18;
+ // The entire upcoming themed interface is clipped by an expanding circle.
+ // Keeping the existing interface underneath avoids any white flash.
+ const clone=app.cloneNode(true);
+ clone.removeAttribute('id');clone.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
+ clone.className='phone theme-reveal-snapshot';
+ clone.dataset.theme=id;clone.dataset.family=selected.family;
+ clone.querySelector('.theme-layer')?.remove();
+ clone.querySelector('.handoff-veil')?.remove();
+ clone.querySelector('.handoff-glow')?.remove();
+ clone.querySelector('.handoff-title')?.remove();
+ clone.querySelector('.moving-brand')?.remove();
+ clone.querySelector('.skip-entrance')?.remove();
+ const chip=clone.querySelector('.theme-chip span');if(chip)chip.textContent='Tema: '+selected.name;
+ const cloneScroll=clone.querySelector('.content-scroll');if(cloneScroll)cloneScroll.scrollTop=$('scroll').scrollTop;
+ clone.setAttribute('aria-hidden','true');clone.inert=true;
+ clone.style.clipPath=`circle(0px at ${cx}px ${cy}px)`;
+ clone.style.zIndex=75;
+ app.appendChild(clone);themeRevealLayer=clone;
+ const a=clone.animate([
+   {clipPath:`circle(0px at ${cx}px ${cy}px)`},
+   {clipPath:`circle(${radius}px at ${cx}px ${cy}px)`}
+ ],{duration:690,easing:'cubic-bezier(.2,.83,.2,1)',fill:'forwards'});
+ themeRevealAnimation=a;
+ a.finished.then(()=>{
+   if(themeRevealAnimation!==a)return;
+   state.theme=id;applyTheme();placeGlider();clone.remove();themeRevealLayer=null;themeRevealAnimation=null;
+ }).catch(()=>{});
+}
+function openThemeSheet(){renderThemeChoices();$('themeLayer').hidden=false;const c=$('themeClose');c.focus()}
+function closeThemeSheet(){$('themeLayer').hidden=true;$('themeButton').focus()}
+$('themeClose').addEventListener('click',closeThemeSheet);$('themeBackdrop').addEventListener('click',closeThemeSheet);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('themeLayer').hidden)closeThemeSheet()});
+function themeHandler(e){const btn=e.target.closest('[data-theme-key]');if(!btn)return;selectTheme(btn.dataset.themeKey,btn);if(e.currentTarget.id==='themeSheetGrid')closeThemeSheet()}
+$('themePalette').addEventListener('click',themeHandler);$('themeSheetGrid').addEventListener('click',themeHandler);
+function placeGlider(){const wrap=$('hormoneTabs'),glider=$('hormoneGlider');if(!wrap||!glider)return;const selected=wrap.querySelector('[aria-checked="true"]');if(!selected){glider.classList.remove('active');return}glider.style.setProperty('--g-x',(selected.offsetLeft-5)+'px');glider.style.setProperty('--g-w',selected.offsetWidth+'px');glider.classList.add('active')}
+function selectHormone(value){state.contraception=value;const wrap=$('hormoneTabs');if(!wrap)return;wrap.querySelectorAll('.hormone-tab').forEach(node=>{const active=node.dataset.contraception===value;node.setAttribute('aria-checked',String(active));node.tabIndex=active?0:-1});placeGlider()}
+content.addEventListener('keydown',e=>{if(!e.target.matches('.hormone-tab')||!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();const opts=['yes','no','unsure'];let index=opts.indexOf(e.target.dataset.contraception);if(e.key==='Home')index=0;else if(e.key==='End')index=2;else index=(index+(e.key==='ArrowRight'?1:2))%3;selectHormone(opts[index]);content.querySelector('[data-contraception="'+opts[index]+'"]').focus()});
+window.addEventListener('resize',placeGlider);
+
+$('closePrivacy').addEventListener('click',()=>$('privacyDialog').close());
+$('themeButton').addEventListener('click',toggleTheme);$('homeTheme').addEventListener('click',toggleTheme);
+$('goName').addEventListener('click',()=>goto(2));$('goPreferences').addEventListener('click',()=>goto(5));$('goPersonalize').addEventListener('click',()=>goto(6));$('goCycle').addEventListener('click',()=>goto(3));$('goWelcome').addEventListener('click',()=>goto(0));$('goSafety').addEventListener('click',()=>goto(1));$('goFinish').addEventListener('click',()=>goto(7));$('goHome').addEventListener('click',showHome);$('replay').addEventListener('click',()=>{goto(7);requestAnimationFrame(()=>startTransition())});
+$('modeSubtle').addEventListener('click',()=>{state.atmospheric=false;updateSide()});$('modeAmbient').addEventListener('click',()=>{state.atmospheric=true;updateSide()});
+$('reduceMotion').addEventListener('change',e=>{state.slow=e.target.checked;app.classList.toggle('less-motion',state.slow)});
+content.addEventListener('input',e=>{if(e.target.id==='nameField'){state.name=e.target.value;const greet=$('greetPreview');if(greet)greet.innerHTML='Hola'+(state.name.trim()?`, <em>${escapeHtml(state.name.trim())}</em>`:'')+'.';}if(e.target.id==='dateField'){state.lastPeriod=e.target.value;$('nextBtn').disabled=!state.lastPeriod}if(e.target.id==='physicalAge')state.physical.age=e.target.value;if(e.target.id==='physicalHeight')state.physical.height=e.target.value;if(e.target.id==='physicalWeight')state.physical.weight=e.target.value});
+content.addEventListener('click',e=>{const edit=e.target.closest('[data-edit]');if(edit){goto(+edit.dataset.edit);return}if(e.target.closest('#privacyInfo')){$('privacyDialog').showModal();return}if(e.target.closest('#consentCard')){state.accepted=!state.accepted;updateConsent();return}const i=e.target.closest('[data-interest]');if(i){const key=i.dataset.interest;state.secondaryGoals=state.secondaryGoals.includes(key)?state.secondaryGoals.filter(x=>x!==key):[...state.secondaryGoals,key];i.setAttribute('aria-pressed',String(state.secondaryGoals.includes(key)));return;}const tab=e.target.closest('[data-contraception]');if(tab){selectHormone(tab.dataset.contraception);return}const action=e.target.closest('[data-action]')?.dataset.action;if(!action)return;switch(action){case 'track':state.mode='track';break;case 'support':state.mode='support';break;case 'cycle-toggle':state.cycleKnown=!state.cycleKnown;break;case 'cycle-minus':state.cycleLength=Math.max(21,state.cycleLength-1);break;case 'cycle-plus':state.cycleLength=Math.min(45,state.cycleLength+1);break;case 'date-yes':state.dateKnown=true;break;case 'date-no':state.dateKnown=false;state.lastPeriod='';break;case 'period-toggle':state.periodKnown=!state.periodKnown;break;case 'period-minus':state.periodDays=Math.max(1,state.periodDays-1);break;case 'period-plus':state.periodDays=Math.min(10,state.periodDays+1);break;case 'profile-toggle':state.profileExpanded=!state.profileExpanded;break;default:if(action.startsWith('period-quick-'))state.periodDays=Number(action.split('-')[2]);if(action.startsWith('regularity-'))state.regularity=action.split('-')[1];if(action.startsWith('goal-'))state.goal=['Entender mi ciclo','Conocer mi bienestar','Buscar embarazo','Evitar embarazo'][Number(action.split('-')[1])];}if(action==='track'||action==='support'||action.startsWith('regularity-')){applyRadioChoice(action);return;}if(action.startsWith('goal-')){content.querySelectorAll('.goal-card').forEach(el=>{const selected=el.dataset.action===action;el.classList.toggle('selected',selected);el.setAttribute('aria-pressed',String(selected))});return;}render()});
+$('backBtn').addEventListener('click',()=>{if(state.busy)return;const list=steps(),idx=list.indexOf(state.step);if(idx>0)goto(list[idx-1])});
+$('nextBtn').addEventListener('click',()=>{if(state.busy)return;if(state.step===7){startTransition();return}if(state.step===1&&!state.accepted||state.step===3&&!state.regularity||state.step===4&&state.dateKnown&&!state.lastPeriod)return;const list=steps(),idx=list.indexOf(state.step);if(idx<list.length-1)goto(list[idx+1])});
+function showHome(){
+ cancelMotion();app.classList.add('home-active');state.step=8;app.dataset.step='8';app.dataset.theme=state.theme;updateHome();
+ onboard.style.display='none';home.classList.remove('revealing');home.style.opacity='1';home.style.pointerEvents='auto';home.classList.add('open');home.removeAttribute('aria-hidden');
+ $('finalTarget')?.style.setProperty('visibility','visible');
+ updateSide();
+}
+function updateHome(){homeTarget.innerHTML=brand('homebrand','finalTarget');$('homeGreeting').innerHTML=state.name.trim()?`Hola, <em>${escapeHtml(state.name.trim())}.</em>`:'Hola.';$('cycleDisplay').textContent=state.cycleKnown?`${state.cycleLength} días`:'Por conocer';$('cycleInfo').textContent=state.dateKnown?'Puedes revisar tus registros.':'Lumi irá aprendiendo contigo.'}
+function frame(ms,fn){jobs.push(setTimeout(fn,ms))}
+async function startTransition(){
+ if(state.busy||state.step!==7)return;
+ state.busy=true;const token=++runToken;error.textContent='';$('nextBtn').disabled=true;
+ setPrimaryLabel('Guardando…');
+ // This is a prototype. Real Kotlin must await persistence before the presentation begins.
+ await sleep(340);
+ if(token!==runToken)return;
+ if($('simulateFailure').checked){state.busy=false;$('nextBtn').disabled=false;setPrimaryLabel('Reintentar');error.textContent='No pudimos guardar los datos. Puedes intentarlo de nuevo.';return}
+ if(motionReduced()){showHome();return}
+ updateHome();app.classList.add('in-handoff');app.classList.toggle('atmospheric',state.atmospheric);onboard.classList.add('entering');
+ const source=$('originalBrand'),target=$('finalTarget');
+ if(!source||!target){showHome();return}
+ const ar=app.getBoundingClientRect(),sr=source.getBoundingClientRect(),tr=target.getBoundingClientRect();
+ const sx=sr.left-ar.left,sy=sr.top-ar.top;
+ const centerX=ar.width/2-sr.width/2;
+ const centerY=ar.height*.397-sr.height/2;
+ const cx=centerX-sx,cy=centerY-sy;
+ const dx=tr.left-sr.left,dy=tr.top-sr.top;
+ const finalScale=tr.height/sr.height;
+  // V7 timing: the contemplative middle is intentionally long, the actual movements are not.
+  const duration=state.atmospheric?11520:10240;
+  const tCenter=state.atmospheric?900:800;
+  const flightMs=state.atmospheric?590:540;
+  const flightStart=duration-flightMs-170;
+  const homeRevealTime=duration-1120;
+  const brandCenterScale=state.atmospheric?1.17:1.10;
+  moving.innerHTML=source.outerHTML.replace('id="originalBrand"','id="flyingBrand"');
+  moving.style.left=sx+'px';moving.style.top=sy+'px';moving.style.display='block';moving.style.width=sr.width+'px';moving.style.height=sr.height+'px';
+  source.style.visibility='hidden';target.style.visibility='hidden';
+  message.style.opacity='0';
+  const head=$('handoffHeadline'),sub=$('handoffSubtitle'),skip=$('skipEntrance');
+  const texts=state.atmospheric?[
+    ['Tu espacio empieza aquí','Un momento para hacerlo tuyo'],
+    ['Conociendo tus preferencias','Solo lo que decidiste compartir'],
+    ['Un lugar a tu manera','Sin prisas, sin expectativas'],
+    ['Preparando tu bienvenida','Tus elecciones estarán a mano'],
+    ['Todo está listo','Bienvenida a Lumi']
+  ]:[
+    ['Dando forma a tu espacio','Con tus preferencias, a tu manera'],
+    ['Un comienzo a tu ritmo','Puedes cambiarlo todo cuando quieras'],
+    ['Tu espacio está listo','Bienvenida a Lumi']
+  ];
+  const messageTimes=state.atmospheric?[1300,3450,5550,7780,9770]:[1320,4750,8160];
+  function showMessage(ix){if(token!==runToken)return;
+   const changeText=()=>{head.textContent=texts[ix][0];sub.textContent=texts[ix][1];message.classList.remove('message-change');void message.offsetWidth;message.classList.add('message-change')};
+   if(ix===0){changeText();message.animate([{opacity:0,transform:'translateY(13px)'},{opacity:1,transform:'translateY(0)'}],{duration:750,easing:'cubic-bezier(.18,1,.3,1)',fill:'forwards'});}
+   else {message.animate([{opacity:1,transform:'translateY(0)'},{opacity:0,transform:'translateY(-13px)'}],{duration:400,fill:'forwards',easing:'ease-in'}).finished.then(()=>{if(token!==runToken)return;changeText();message.animate([{opacity:0,transform:'translateY(15px)'},{opacity:1,transform:'translateY(0)'}],{duration:680,fill:'forwards',easing:'cubic-bezier(.18,1,.3,1)'})}).catch(()=>{});}
+  }
+  // Hold the dark-themed veil throughout the ceremony; fade near the real Home reveal.
+  veil.style.opacity='0';glow.style.opacity='0';
+  veil.animate([
+   {opacity:0,offset:0},{opacity:1,offset:.11},{opacity:1,offset:.84},{opacity:.98,offset:.93},{opacity:0,offset:1}
+  ],{duration,easing:'linear',fill:'forwards'});
+  // Chromatic field builds slowly; stays behind the logo during messages, and retreats with the handoff.
+  glow.animate([
+   {opacity:0,transform:'scale(.80)',offset:0},
+   {opacity:.78,transform:'scale(.95)',offset:.13},
+   {opacity:1,transform:'scale(1.07)',offset:.37},
+   {opacity:.97,transform:'scale(1.02)',offset:.66},
+   {opacity:.85,transform:'scale(1.12)',offset:.84},
+   {opacity:0,transform:'scale(1.24)',offset:1}
+  ],{duration,easing:'linear',fill:'forwards'});
+  // Local easing on the first and last legs. The journey to Home is ONLY ~590ms.
+  const middle=tCenter/duration, exit=flightStart/duration;
+  const flightEnd=(flightStart+flightMs)/duration;
+  flightAnimation=moving.animate([
+   {offset:0,transform:'translate3d(0,0,0) scale(1)',easing:'cubic-bezier(.16,.89,.24,1)'},
+   {offset:middle,transform:`translate3d(${cx}px,${cy}px,0) scale(${brandCenterScale})`,easing:'linear'},
+   {offset:exit,transform:`translate3d(${cx}px,${cy}px,0) scale(${brandCenterScale})`,easing:'cubic-bezier(.17,.79,.21,1)'},
+   {offset:flightEnd,transform:`translate3d(${dx}px,${dy}px,0) scale(${finalScale})`,easing:'linear'},
+   {offset:1,transform:`translate3d(${dx}px,${dy}px,0) scale(${finalScale})`}
+  ],{duration,easing:'linear',fill:'forwards'});
+  messageTimes.forEach((t,i)=>frame(t,()=>showMessage(i)));
+  frame(850,()=>{if(token!==runToken)return;skip.hidden=false;skip.animate([{opacity:0},{opacity:1}],{duration:350,fill:'both'})});
+  frame(homeRevealTime,()=>{if(token!==runToken)return;message.animate([{opacity:1},{opacity:0}],{duration:440,fill:'forwards'});skip.hidden=true;
+   home.classList.add('revealing');home.style.pointerEvents='none';home.style.opacity='1';home.removeAttribute('aria-hidden');
+  });
+  frame(duration+35,()=>{if(token!==runToken)return;showHome()});
+}
+$('skipEntrance').addEventListener('click',()=>{if(state.busy)showHome()});
+// Initial stage is the exact screenshot's last screen, making the transition one click away.
+
+// Fondo personalizado: posiciones estables y dos capas animadas como una sola superficie.
+// El código de Uiverse tiene cientos de box-shadow; esta versión usa puntos ligeros y un degradado calibrado para Lumi.
+const skyModes={
+ off:'Sin estrellas: fondo Noir original.',
+ subtle:'Tres capas de estrellas suben continuamente, a distinta velocidad. Recomendado para los temas oscuros.',
+ ambient:'Cielo más visible. Para Bienvenida y Todo listo; en formularios la intensidad se reduce.'
+};
+function seededRandom(seed){let n=seed>>>0;return()=>{n=(Math.imul(1664525,n)+1013904223)>>>0;return n/4294967296}}
+function buildSky(){const rand=seededRandom(4409),layers=[{id:'skyLow',count:37,size:[.65,1.15],opacity:[.38,.64]},{id:'skyMid',count:28,size:[.8,1.55],opacity:[.40,.70]},{id:'skyHigh',count:18,size:[1,1.85],opacity:[.38,.65]}];
+ // Three vertical parallax layers; each half repeats exactly for a seamless upward movement.
+ for(const layer of layers){const host=$(layer.id);host.innerHTML='';for(let i=0;i<layer.count;i++){
+  const x=rand()*100,y=rand()*50,sz=layer.size[0]+rand()*(layer.size[1]-layer.size[0]),a=layer.opacity[0]+rand()*(layer.opacity[1]-layer.opacity[0]);
+  for(let copy=0;copy<2;copy++){const dot=document.createElement('i');dot.className='stardot'+(i%9===0?' twinkle':'');dot.style.left=x.toFixed(2)+'%';dot.style.top=(y+copy*50).toFixed(3)+'%';dot.style.setProperty('--size',sz.toFixed(2)+'px');dot.style.setProperty('--star-color',i%11===0?'#eed4fb':'#fff9fc');dot.style.setProperty('--star-alpha',a.toFixed(3));dot.style.setProperty('--speed',(4+rand()*5).toFixed(1)+'s');dot.style.setProperty('--delay',(-rand()*8).toFixed(1)+'s');host.appendChild(dot)}}}
+}
+function updateSkyControl(mode){
+ app.dataset.sky=mode;
+ [['skyNone','off'],['skySubtle','subtle'],['skyAmbient','ambient']].forEach(([id,value])=>{
+   $(id).classList.toggle('on',mode===value);$(id).setAttribute('aria-pressed',String(mode===value));
+ });
+ $('skyDescription').textContent=skyModes[mode];
+}
+$('skyNone').addEventListener('click',()=>updateSkyControl('off'));
+$('skySubtle').addEventListener('click',()=>updateSkyControl('subtle'));
+$('skyAmbient').addEventListener('click',()=>updateSkyControl('ambient'));
+$('skyComparison').addEventListener('click',()=>updateSkyControl(app.dataset.sky==='off'?'subtle':app.dataset.sky==='subtle'?'ambient':'off'));
+buildSky();updateSkyControl('subtle');renderThemeChoices();
+
+render();
+})();
+</script>
+</body>
+</html>

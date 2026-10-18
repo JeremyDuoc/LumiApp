@@ -1,8 +1,11 @@
 package com.jeremy.lumi.ui.components
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
+import androidx.compose.animation.*
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.ui.draw.drawWithCache
+import com.jeremy.lumi.ui.theme.LumiMotion
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -17,11 +20,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.WaterDrop
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
+
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -66,7 +72,8 @@ fun LumiCycleRing(
     estimatedDaysText: String,
     confidenceLabel: String = stringResource(R.string.cycle_ring_confidence_moderate),
     ringSize: Dp = 238.dp,
-    strokeWidth: Dp = 9.dp
+    strokeWidth: Dp = 9.dp,
+    onConfidenceClick: (() -> Unit)? = null
 ) {
     val tokens = LumiThemeTokens.current
 
@@ -76,13 +83,21 @@ fun LumiCycleRing(
 
     val progressAnim = remember { Animatable(0f) }
     LaunchedEffect(rawProgress) {
-        progressAnim.animateTo(rawProgress, animationSpec = tween(durationMillis = 900))
+        progressAnim.animateTo(rawProgress, animationSpec = LumiMotion.CycleSpring)
     }
 
+    val breathing = rememberInfiniteTransition(label = "cycle_dot")
+    val dotRadius = breathing.animateFloat(0.70f, 0.95f, LumiMotion.DotBreathing, label = "dot_halo")
     val glowColors = remember(tokens.glow) { listOf(tokens.glow, tokens.glow.copy(alpha = 0f)) }
 
+    val semanticsDesc = "Día $currentDay de $cycleLength del ciclo, $phaseName, $estimatedDaysText, $confidenceLabel"
+
     Column(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) {
+                contentDescription = semanticsDesc
+            },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
@@ -92,7 +107,12 @@ fun LumiCycleRing(
             contentAlignment = Alignment.Center
         ) {
             // Canvas del Aro
-            Canvas(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.fillMaxSize().drawWithCache {
+                val glowRadius = size.minDimension / 2f + strokeWidth.toPx() * 1.5f
+                val glowBrush = Brush.radialGradient(glowColors, Offset(size.width / 2f, size.height / 2f), glowRadius)
+                val trackStroke = Stroke(width = strokeWidth.toPx())
+                val arcStroke = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round)
+                onDrawBehind {
                 val strokePx = strokeWidth.toPx()
                 val diameter = size.minDimension - strokePx
                 val topLeft = Offset(strokePx / 2f, strokePx / 2f)
@@ -100,11 +120,7 @@ fun LumiCycleRing(
 
                 // 0. Resplandor radial suave circular (elimina el artefacto cuadrado en GPUs físicas)
                 drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = glowColors,
-                        center = center,
-                        radius = (diameter / 2f) + (strokePx * 2f)
-                    ),
+                    brush = glowBrush,
                     radius = (diameter / 2f) + (strokePx * 2f),
                     center = center
                 )
@@ -114,7 +130,7 @@ fun LumiCycleRing(
                     color = tokens.ringTrack,
                     radius = diameter / 2f,
                     center = center,
-                    style = Stroke(width = strokePx)
+                    style = trackStroke
                 )
 
                 // 2. Arco de progreso con degradado
@@ -126,7 +142,7 @@ fun LumiCycleRing(
                     useCenter = false,
                     topLeft = topLeft,
                     size = arcSize,
-                    style = Stroke(width = strokePx, cap = StrokeCap.Round)
+                    style = arcStroke
                 )
 
                 // 3. Indicador de punto en la cabeza del arco
@@ -138,7 +154,7 @@ fun LumiCycleRing(
                 // Aura del dot
                 drawCircle(
                     color = DotAuraColor,
-                    radius = strokePx * 0.75f,
+                    radius = strokePx * dotRadius.value,
                     center = Offset(dotX, dotY)
                 )
                 // Centro del dot
@@ -147,18 +163,17 @@ fun LumiCycleRing(
                     radius = strokePx * 0.45f,
                     center = Offset(dotX, dotY)
                 )
-            }
+                }
+            })
 
             // Contenido central del aro
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.WaterDrop,
-                    contentDescription = null,
+                LumiIconPeriod(
                     tint = tokens.accent,
-                    modifier = Modifier.size(20.dp)
+                    size = 20.dp
                 )
                 Spacer(modifier = Modifier.height(3.dp))
                 Text(
@@ -168,14 +183,24 @@ fun LumiCycleRing(
                     letterSpacing = 1.sp,
                     color = tokens.muted
                 )
+                AnimatedContent(
+                    targetState = currentDay,
+                    transitionSpec = {
+                        val direction = if (targetState > initialState) 1 else -1
+                        ((slideInVertically(LumiMotion.StepSlide) { direction * it / 2 } + fadeIn(LumiMotion.ShortFade))
+                            togetherWith (slideOutVertically(LumiMotion.StepExitSlide) { -direction * it / 2 } + fadeOut(LumiMotion.ShortFade)))
+                            .using(SizeTransform(clip = false))
+                    }, label = "cycle_day"
+                ) { day ->
                 Text(
-                    text = if (currentDay > 0) "$currentDay" else "—",
+                    text = if (day > 0) "$day" else "—",
                     fontSize = 56.sp,
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = (-3.5).sp,
                     lineHeight = 58.sp,
                     color = tokens.text
                 )
+                }
                 Text(
                     text = phaseName,
                     fontSize = 13.sp,
@@ -191,15 +216,22 @@ fun LumiCycleRing(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-        // Píldora de certeza
+        // Status chip informativo integrado al hero: ● En calibración ⓘ
         Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(20.dp))
-                .background(tokens.accentSoft)
-                .border(1.dp, tokens.accent.copy(alpha = 0.28f), RoundedCornerShape(20.dp))
-                .padding(horizontal = 14.dp, vertical = 6.dp),
+                .heightIn(min = 44.dp)
+                .then(
+                    if (onConfidenceClick != null) {
+                        Modifier.clickable(
+                            role = Role.Button,
+                            onClickLabel = confidenceLabel,
+                            onClick = onConfidenceClick
+                        )
+                    } else Modifier
+                )
+                .padding(horizontal = 10.dp, vertical = 4.dp),
             contentAlignment = Alignment.Center
         ) {
             Row(
@@ -208,26 +240,21 @@ fun LumiCycleRing(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(5.dp)
+                        .size(4.5.dp)
                         .clip(CircleShape)
-                        .background(tokens.accent)
+                        .background(tokens.accent.copy(alpha = 0.90f))
                 )
                 Text(
                     text = confidenceLabel,
-                    fontSize = 10.5.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
-                    color = tokens.accent
+                    color = tokens.muted
+                )
+                LumiIconInfo(
+                    tint = tokens.dim.copy(alpha = 0.65f),
+                    size = 11.dp
                 )
             }
         }
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        // Nota orientativa inferior
-        Text(
-            text = stringResource(R.string.cycle_variation_estimation),
-            fontSize = 10.sp,
-            color = tokens.dim
-        )
     }
 }

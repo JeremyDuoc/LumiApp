@@ -65,6 +65,7 @@ fun LumiNotificationsSheet(
     hasEntryToday: Boolean,
     activeReminders: List<ReminderEntity> = emptyList(),
     onQuickLogClick: () -> Unit,
+    onConfigureReminders: (() -> Unit)? = null,
     onDismiss: () -> Unit
 ) {
     val tokens = LumiThemeTokens.current
@@ -206,16 +207,37 @@ fun LumiNotificationsSheet(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // 5. Recordatorios activos de la usuaria
-            if (activeReminders.isNotEmpty()) {
+            // 5. Recordatorios programados por la usuaria
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
                     text = stringResource(R.string.notif_scheduled_title),
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = tokens.text
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                if (onConfigureReminders != null) {
+                    Text(
+                        text = if (activeReminders.isNotEmpty()) stringResource(R.string.reminder_manage) else stringResource(R.string.reminder_set),
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = tokens.accent,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable {
+                                onDismiss()
+                                onConfigureReminders()
+                            }
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
 
+            if (activeReminders.isNotEmpty()) {
                 activeReminders.forEach { reminder ->
                     val timeFormatted = String.format(java.util.Locale.US, "%02d:%02d", reminder.hourOfDay, reminder.minute)
                     val labelSuffix = if (reminder.label?.isNotBlank() == true) " · ${reminder.label}" else ""
@@ -229,6 +251,21 @@ fun LumiNotificationsSheet(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
+            } else {
+                NotificationAlertCard(
+                    icon = Icons.Rounded.Notifications,
+                    iconColor = tokens.dim,
+                    title = stringResource(R.string.reminder_title),
+                    description = stringResource(R.string.reminder_empty_hint),
+                    backgroundColor = tokens.panel2,
+                    borderColor = tokens.line,
+                    actionLabel = stringResource(R.string.reminder_set),
+                    onActionClick = {
+                        onDismiss()
+                        onConfigureReminders?.invoke()
+                    }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
             Spacer(modifier = Modifier.height(16.dp))

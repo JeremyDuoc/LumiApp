@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.jeremy.lumi.PredictionFactorsCalculationTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-12T17:59:43.177Z" hostname="JEREMY" time="0.007">
-  <properties/>
-  <testcase name="testPredictionFactors_firstCycle_learning" classname="com.jeremy.lumi.PredictionFactorsCalculationTest" time="0.006"/>
-  <testcase name="testPredictionFactors_highConfidence_regular" classname="com.jeremy.lumi.PredictionFactorsCalculationTest" time="0.0"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

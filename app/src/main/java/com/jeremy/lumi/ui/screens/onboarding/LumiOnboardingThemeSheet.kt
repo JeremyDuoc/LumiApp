@@ -9,9 +9,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.isSpecified
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -28,7 +32,8 @@ fun LumiOnboardingThemeSheet(
     selectedTheme: LumiOnboardingTheme,
     onSelectTheme: (LumiOnboardingTheme) -> Unit,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onSelectThemeAt: ((LumiOnboardingTheme, Offset) -> Unit)? = null
 ) {
     val tokens = LumiOnboardingThemeTokens.current
 
@@ -102,14 +107,23 @@ fun LumiOnboardingThemeSheet(
                     ) {
                         for (theme in row) {
                             val isSelected = theme == selectedTheme
+                            var centerInWindow by androidx.compose.runtime.remember {
+                                androidx.compose.runtime.mutableStateOf(Offset.Unspecified)
+                            }
                             ThemeSheetCard(
                                 theme = theme,
                                 isSelected = isSelected,
                                 onClick = {
-                                    onSelectTheme(theme)
-                                    onDismiss()
+                                    if (onSelectThemeAt != null && centerInWindow.isSpecified) {
+                                        onSelectThemeAt(theme, centerInWindow)
+                                    } else {
+                                        onSelectTheme(theme)
+                                    }
+                                    // El padre controla el cierre, una sola vez.
                                 },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f).onGloballyPositioned {
+                                    centerInWindow = it.boundsInWindow().center
+                                }
                             )
                         }
                     }
