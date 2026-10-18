@@ -159,7 +159,13 @@ fun ForumScreen(
                 Text(when(tab){0->"Ideas de Lumi";1->"En camino";else->"Ideas que apoyaste"},
                     color=t.text,fontSize=14.sp,fontWeight=FontWeight.Bold,modifier=Modifier.weight(1f))
                 Box {
-                    TextButton(onClick={expanded=true}) { Text(order,color=t.muted,fontSize=10.sp) }
+                    Column {
+                        TextButton(onClick={expanded=true},contentPadding=PaddingValues(horizontal=4.dp, vertical=5.dp)) {
+                            Text(order,color=t.muted,fontSize=10.sp)
+                            Text(" ⌄",color=t.muted,fontSize=13.sp)
+                        }
+                        HorizontalDivider(color=t.line)
+                    }
                     DropdownMenu(expanded=expanded,onDismissRequest={expanded=false},
                         modifier=Modifier.background(t.panel)) {
                         listOf("Más apoyadas","Más recientes","Más comentadas").forEach { label ->
@@ -284,10 +290,17 @@ private fun VoiceTabs(selected:Int,onSelect:(Int)->Unit) {
 @Composable
 private fun VoiceVote(post:VoiceProposal,onVote:()->Unit,detail:Boolean=false) {
     val t=LumiThemeTokens.current
-    val duration=580
-    val scale by animateFloatAsState(if(post.votedByMe)1.1f else 1f,
-        tween(duration,easing=CubicBezierEasing(.18f,1f,.28f,1f)),
-        label="voice_soft_vote")
+    val scale = remember(post.id) { Animatable(1f) }
+    var previousVote by remember(post.id) { mutableStateOf(post.votedByMe) }
+    LaunchedEffect(post.votedByMe) {
+        if (previousVote != post.votedByMe) {
+            previousVote = post.votedByMe
+            scale.snapTo(if (post.votedByMe) .9f else .97f)
+            scale.animateTo(if (post.votedByMe) 1.1f else 1.045f,
+                tween(290, easing = CubicBezierEasing(.18f, .95f, .28f, 1f)))
+            scale.animateTo(1f, tween(280, easing = CubicBezierEasing(.2f, .9f, .28f, 1f)))
+        }
+    }
     val shape=RoundedCornerShape(13.dp)
     Column(Modifier.width(if(detail)75.dp else 48.dp)
         .height(if(detail)49.dp else 63.dp)
@@ -295,7 +308,25 @@ private fun VoiceVote(post:VoiceProposal,onVote:()->Unit,detail:Boolean=false) {
         .border(1.dp,if(post.votedByMe)t.accent.copy(alpha=.36f)else t.line,shape)
         .clickable(role=Role.Button,onClickLabel=if(post.votedByMe)"Quitar apoyo" else "Apoyar"){onVote()},
         horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center) {
-        Box(Modifier.size(23.dp).graphicsLayer { scaleX=scale;scaleY=scale }
+        Box(Modifier.size(23.dp).graphicsLayer { scaleX=scale.value;scaleY=scale.value }
+            .drawBehind {
+                if (post.votedByMe) {
+                    val c = Offset(size.width * .5f, size.height * .5f)
+                    val r = size.width * 1.15f
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            listOf(t.accent.copy(alpha = .28f),
+                                t.rose.copy(alpha = .18f),
+                                t.peach.copy(alpha = .075f),
+                                Color.Transparent),
+                            center = c,
+                            radius = r
+                        ),
+                        radius = r,
+                        center = c
+                    )
+                }
+            }
             .shadow(if(post.votedByMe)4.dp else 0.dp,CircleShape,
                 ambientColor=t.rose.copy(alpha=.32f),spotColor=t.accent.copy(alpha=.3f))
             .clip(CircleShape).background(Color(0xFF09080D))
@@ -313,21 +344,23 @@ private fun VoiceVote(post:VoiceProposal,onVote:()->Unit,detail:Boolean=false) {
 @Composable
 private fun VoiceProposalRow(post:VoiceProposal,onVote:()->Unit,onDetail:()->Unit) {
     val t=LumiThemeTokens.current
-    Row(Modifier.fillMaxWidth().padding(vertical=15.dp),
+    Row(Modifier.fillMaxWidth().heightIn(min=116.dp).padding(top=15.dp,bottom=17.dp),
         verticalAlignment=Alignment.Top,horizontalArrangement=Arrangement.spacedBy(13.dp)) {
         VoiceVote(post,onVote)
         Column(Modifier.weight(1f)
             .clickable(role=Role.Button,onClickLabel="Ver detalles de la idea"){onDetail()}) {
-            Text(post.title,color=t.text,fontSize=13.sp,lineHeight=19.sp,fontWeight=FontWeight.Bold,
+            Text(post.title,color=t.text,fontSize=13.sp,lineHeight=18.sp,fontWeight=FontWeight.Bold,
                 maxLines=3,overflow=TextOverflow.Ellipsis)
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(9.dp))
             Row(verticalAlignment=Alignment.CenterVertically) {
-                Text(post.category+" · ",fontSize=10.sp,color=t.muted)
-                Icon(Icons.Outlined.ChatBubbleOutline,null,tint=t.muted,modifier=Modifier.size(13.dp))
-                Text(" "+post.comments.orEmpty().size.toString(),fontSize=10.sp,color=t.muted)
+                Text(post.status,fontSize=9.sp,fontWeight=FontWeight.Bold,color=t.accent)
+                Text("  ·  "+post.category+"  ·  ",fontSize=9.5.sp,maxLines=1,overflow=TextOverflow.Ellipsis,color=t.muted)
+                Text(post.comments.orEmpty().size.toString()+" comentarios",fontSize=9.5.sp,maxLines=1,color=t.muted)
             }
-            Spacer(Modifier.height(5.dp))
-            Text(post.status,fontSize=10.sp,fontWeight=FontWeight.Bold,color=t.accent)
+            if (post.id.startsWith("voice-demo-")) {
+                Text("Idea de ejemplo",fontSize=9.sp,color=t.dim,
+                    modifier=Modifier.padding(top=6.dp))
+            }
         }
     }
     HorizontalDivider(color=t.line)
