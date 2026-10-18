@@ -1704,7 +1704,7 @@
     <string name="manual_backup_encrypted_export_title">Export encrypted backup</string>
     <string name="manual_backup_encrypted_export_desc">Password-protected archive</string>
     <string name="manual_backup_encrypted_restore_title">Restore encrypted backup</string>
-    <string name="manual_backup_encrypted_restore_desc">Restore a .lbk archive</string>
+    <string name="manual_backup_encrypted_restore_desc">Restore a .lbx archive</string>
     <string name="manual_backup_operation_busy">Processing backup…</string>
     <string name="manual_backup_file_error">Could not open the selected file.</string>
 </resources>
