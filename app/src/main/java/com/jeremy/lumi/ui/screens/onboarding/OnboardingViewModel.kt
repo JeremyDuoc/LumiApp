@@ -18,7 +18,8 @@ import javax.inject.Inject
 data class OnboardingUiState(
     val currentStepIndex: Int = 0,
     val data: OnboardingData = OnboardingData(),
-    val isCompleting: Boolean = false
+    val isCompleting: Boolean = false,
+    val saveError: String? = null
 ) {
     // 0: Bienvenida, 1: Seguridad, 2: Tu nombre, 3: Tu ciclo, 4: Último periodo, 5: Preferencias, 6: Personalización, 7: Listo
     val visibleSteps: List<Int>
@@ -39,7 +40,7 @@ data class OnboardingUiState(
             4 -> !data.lastPeriodKnown || data.lastPeriodDate > 0L
             5 -> true // Objetivos y anticoncepción tienen valores seguros por defecto
             6 -> true
-            7 -> true
+            7 -> !isCompleting
             else -> true
         }
 }
@@ -179,51 +180,65 @@ class OnboardingViewModel @Inject constructor(
         }
     }
 
+    fun clearSaveError() {
+        _uiState.update { it.copy(saveError = null) }
+    }
+
     // ── Finalización del onboarding ───────────────────────────────────────────
 
     fun completeOnboarding(onDone: () -> Unit) {
+        if (_uiState.value.isCompleting) return
         val data = _uiState.value.data
-        _uiState.update { it.copy(isCompleting = true) }
+        _uiState.update { it.copy(isCompleting = true, saveError = null) }
 
         viewModelScope.launch {
-            if (data.mode == "support") {
-                prefs.saveOnboardingProfile(
-                    userName = data.userName,
-                    isRegular = null,
-                    cycleLength = 28,
-                    periodLength = 5,
-                    goal = UserGoal.TRACK_CYCLE,
-                    isObserver = true
-                )
-                prefs.markOnboardingCompleted(isObserver = true)
-            } else {
-                prefs.saveOnboardingProfile(
-                    userName = data.userName,
-                    isRegular = data.isRegular,
-                    cycleLength = if (data.cycleLengthKnown) data.cycleLength else 28,
-                    periodLength = if (data.periodLengthKnown) data.periodLength else 5,
-                    goal = data.userGoal ?: UserGoal.TRACK_CYCLE,
-                    age = data.age,
-                    height = data.height,
-                    weight = data.weight,
-                    secondaryGoals = data.secondaryGoals,
-                    medicalDisclaimerAccepted = data.medicalDisclaimerAccepted
-                )
-                prefs.setIsOnContraceptive(data.isOnContraceptive)
-                prefs.markOnboardingCompleted(isObserver = false)
-
-                // Crear el primer ciclo en Room, SÓLO si la usuaria dio una fecha de inicio real
-                if (data.lastPeriodKnown && data.lastPeriodDate > 0L) {
-                    repository.startNewCycle(
-                        startDate = data.lastPeriodDate,
+            try {
+                if (data.mode == "support") {
+                    prefs.saveOnboardingProfile(
+                        userName = data.userName,
+                        isRegular = null,
+                        cycleLength = 28,
+                        periodLength = 5,
+                        goal = UserGoal.TRACK_CYCLE,
+                        isObserver = true
+                    )
+                    prefs.markOnboardingCompleted(isObserver = true)
+                } else {
+                    prefs.saveOnboardingProfile(
+                        userName = data.userName,
+                        isRegular = data.isRegular,
                         cycleLength = if (data.cycleLengthKnown) data.cycleLength else 28,
-                        periodLength = if (data.periodLengthKnown) data.periodLength else 5
+                        periodLength = if (data.periodLengthKnown) data.periodLength else 5,
+                        goal = data.userGoal ?: UserGoal.TRACK_CYCLE,
+                        age = data.age,
+                        height = data.height,
+                        weight = data.weight,
+                        secondaryGoals = data.secondaryGoals,
+                        medicalDisclaimerAccepted = data.medicalDisclaimerAccepted
+                    )
+                    prefs.setIsOnContraceptive(data.isOnContraceptive)
+                    prefs.markOnboardingCompleted(isObserver = false)
+
+                    // Crear el primer ciclo en Room, SÓLO si la usuaria dio una fecha de inicio real
+                    if (data.lastPeriodKnown && data.lastPeriodDate > 0L) {
+                        repository.startNewCycle(
+                            startDate = data.lastPeriodDate,
+                            cycleLength = if (data.cycleLengthKnown) data.cycleLength else 28,
+                            periodLength = if (data.periodLengthKnown) data.periodLength else 5
+                        )
+                    }
+                }
+
+                _uiState.update { it.copy(isCompleting = false, saveError = null) }
+                onDone()
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isCompleting = false,
+                        saveError = e.localizedMessage ?: "No pudimos guardar los datos. Puedes intentarlo de nuevo."
                     )
                 }
             }
-
-            _uiState.update { it.copy(isCompleting = false) }
-            onDone()
         }
     }
 }
