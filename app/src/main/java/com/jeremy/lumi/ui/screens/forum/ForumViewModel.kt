@@ -69,8 +69,7 @@ class ForumViewModel @Inject constructor(
     fun publish(title: String, description: String, category: String): Boolean {
         val cleanTitle = title.trim()
         val cleanDescription = description.trim()
-        if (cleanTitle.length !in 8..100 || cleanDescription.length !in 15..900 ||
-            category !in listOf("Seguimiento", "Diseño", "Privacidad", "Accesibilidad", "Otros")) return false
+        if (!VoiceValidation.validProposal(cleanTitle, cleanDescription, category)) return false
         // Los datos se guardan exclusivamente en este dispositivo hasta habilitar backend.
         val idea = VoiceProposal(
             id = UUID.randomUUID().toString(),
@@ -94,7 +93,7 @@ class ForumViewModel @Inject constructor(
 
     fun comment(id: String, text: String): Boolean {
         val clean = text.trim()
-        if (clean.length !in 3..500 || _proposals.value.none { it.id == id }) return false
+        if (!VoiceValidation.validComment(clean) || _proposals.value.none { it.id == id }) return false
         update { list -> list.map { p ->
             if (p.id == id) p.copy(comments = p.comments.orEmpty() +
                 VoiceComment(UUID.randomUUID().toString(), clean, System.currentTimeMillis()))
