@@ -47,13 +47,16 @@ class BackupManager @Inject constructor(
             require(passphrase.size >= MIN_PASSPHRASE_LENGTH) { "Contraseña demasiado corta" }
             val internalZip = ByteArrayOutputStream()
             exportDatabaseToZip(internalZip).getOrThrow()
-            plaintext = internalZip.toByteArray()
-            if (plaintext.size.toLong() > MAX_ENCRYPTED_ARCHIVE_BYTES) {
+            val zipBytes = internalZip.toByteArray()
+            plaintext = zipBytes
+            if (zipBytes.size.toLong() > MAX_ENCRYPTED_ARCHIVE_BYTES) {
                 throw CorruptBackupException("El respaldo supera el tamaño máximo")
             }
-            key = BackupCrypto.deriveKey(passphrase, BackupCrypto.generateSalt())
-            encrypted = BackupCrypto.encrypt(plaintext, key)
-            outputStream.use { it.write(encrypted) }
+            val derived = BackupCrypto.deriveKey(passphrase, BackupCrypto.generateSalt())
+            key = derived
+            val encryptedBytes = BackupCrypto.encrypt(zipBytes, derived)
+            encrypted = encryptedBytes
+            outputStream.use { it.write(encryptedBytes) }
             Result.success(Unit)
         } catch (e: CancellationException) {
             throw e
@@ -78,11 +81,14 @@ class BackupManager @Inject constructor(
         var plaintext: ByteArray? = null
         var key: BackupCrypto.DerivedKey? = null
         try {
-            fileBytes = readLimited(inputStream, MAX_ENCRYPTED_ARCHIVE_BYTES)
-            val header = BackupCrypto.readHeader(fileBytes)
-            key = BackupCrypto.deriveKey(passphrase, header.salt, header.iterations)
-            plaintext = BackupCrypto.decrypt(fileBytes, key.keyBytes)
-            importDatabaseFromZip(ByteArrayInputStream(plaintext)).getOrThrow()
+            val file = readLimited(inputStream, MAX_ENCRYPTED_ARCHIVE_BYTES)
+            fileBytes = file
+            val header = BackupCrypto.readHeader(file)
+            val derived = BackupCrypto.deriveKey(passphrase, header.salt, header.iterations)
+            key = derived
+            val zipBytes = BackupCrypto.decrypt(file, derived.keyBytes)
+            plaintext = zipBytes
+            importDatabaseFromZip(ByteArrayInputStream(zipBytes)).getOrThrow()
             Result.success(Unit)
         } catch (e: CancellationException) {
             throw e
