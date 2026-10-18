@@ -202,7 +202,7 @@ fun SettingsScreen(
                 showEncryptedExportPassword = false
                 pendingEncryptedExportPassword?.fill('\u0000')
                 pendingEncryptedExportPassword = password
-                encryptedExportLauncher.launch("Lumi_Backup_Encrypted.lbk")
+                encryptedExportLauncher.launch("Lumi_Backup_Encrypted.lbx")
             }
         )
     }
