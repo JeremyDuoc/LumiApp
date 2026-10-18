@@ -119,20 +119,6 @@ fun SettingsScreen(
         }
     }
 
-    val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/zip")
-    ) { uri ->
-        uri?.let {
-            coroutineScope.launch {
-                context.contentResolver.openOutputStream(it)?.let { os ->
-                    val result = backupManager.exportDatabaseToZip(os)
-                    val msg = if (result.isSuccess) context.getString(R.string.settings_backup_export_success) else context.getString(R.string.settings_backup_export_error)
-                    android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-    }
-
     val importLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
     ) { uri ->
@@ -341,13 +327,9 @@ fun SettingsScreen(
                     onClick = onNavigateToBackup
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
-                SettingsItem(
-                    icon = Icons.Rounded.Check,
-                    title = stringResource(R.string.settings_backup_zip_create),
-                    subtitle = stringResource(R.string.settings_backup_zip_create_desc),
-                    onClick = { exportLauncher.launch("Lumi_Backup.zip") }
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
+                // La exportación ZIP antigua era texto plano y se retira del menú.
+                // La exportación cifrada se habilitará tras incorporar un diálogo
+                // de contraseña con confirmación y tests instrumentados.
                 SettingsItem(
                     icon = Icons.Rounded.Check,
                     title = stringResource(R.string.settings_backup_zip_restore),
