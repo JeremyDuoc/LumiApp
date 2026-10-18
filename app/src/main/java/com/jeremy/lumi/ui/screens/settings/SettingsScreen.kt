@@ -491,13 +491,15 @@ fun SettingsScreen(
             // ── PRIVACIDAD & PAREJA ───────────────────────────────────────────
             SettingsSectionTitle(stringResource(R.string.settings_section_advanced))
             SettingsCard {
-                SettingsItem(
-                    icon = Icons.Rounded.Favorite,
-                    title = stringResource(R.string.settings_partner),
-                    subtitle = stringResource(R.string.settings_partner_desc),
-                    onClick = { onNavigateToPartner() }
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
+                if (com.jeremy.lumi.BuildConfig.ENABLE_BONDS) {
+                    SettingsItem(
+                        icon = Icons.Rounded.Favorite,
+                        title = stringResource(R.string.settings_partner),
+                        subtitle = stringResource(R.string.settings_partner_desc),
+                        onClick = { onNavigateToPartner() }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
+                }
                 SettingsItem(
                     icon = Icons.Rounded.Security,
                     title = stringResource(R.string.settings_privacy),
