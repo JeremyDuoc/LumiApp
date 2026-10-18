@@ -1704,7 +1704,7 @@
     <string name="manual_backup_encrypted_export_title">Exportar respaldo cifrado</string>
     <string name="manual_backup_encrypted_export_desc">Archivo protegido con contraseña</string>
     <string name="manual_backup_encrypted_restore_title">Restaurar respaldo cifrado</string>
-    <string name="manual_backup_encrypted_restore_desc">Recuperar desde un archivo .lbk</string>
+    <string name="manual_backup_encrypted_restore_desc">Recuperar desde un archivo .lbx</string>
     <string name="manual_backup_operation_busy">Procesando respaldo…</string>
     <string name="manual_backup_file_error">No se pudo abrir el archivo seleccionado.</string>
 </resources>
