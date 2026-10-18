@@ -9,6 +9,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
@@ -24,7 +26,95 @@ class BackupManager @Inject constructor(
 ) {
     private val tables = listOf("cycles", "daily_logs", "symptoms", "reminders", "chat_messages")
 
-    suspend fun exportDatabaseToZip(outputStream: OutputStream): Result<Unit> = archiveOperation { directory ->
+    companion object {
+        private const val MAX_ENCRYPTED_ARCHIVE_BYTES = 32L * 1024 * 1024
+        private const val MIN_PASSPHRASE_LENGTH = 12
+    }
+
+    /**
+     * Exportación manual protegida. No depende de Drive ni de una clave cacheada:
+     * cada archivo puede restaurarse en otro teléfono usando su contraseña.
+     * Nunca escribir el ZIP sin cifrar en el Storage Access Framework.
+     */
+    suspend fun exportEncryptedDatabaseArchive(
+        outputStream: OutputStream,
+        passphrase: CharArray
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        var plaintext: ByteArray? = null
+        var encrypted: ByteArray? = null
+        var key: BackupCrypto.DerivedKey? = null
+        try {
+            require(passphrase.size >= MIN_PASSPHRASE_LENGTH) { "Contraseña demasiado corta" }
+            val internalZip = ByteArrayOutputStream()
+            exportDatabaseToZip(internalZip).getOrThrow()
+            plaintext = internalZip.toByteArray()
+            if (plaintext.size.toLong() > MAX_ENCRYPTED_ARCHIVE_BYTES) {
+                throw CorruptBackupException("El respaldo supera el tamaño máximo")
+            }
+            key = BackupCrypto.deriveKey(passphrase, BackupCrypto.generateSalt())
+            encrypted = BackupCrypto.encrypt(plaintext, key)
+            outputStream.use { it.write(encrypted) }
+            Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e)
+        } finally {
+            plaintext?.fill(0)
+            encrypted?.fill(0)
+            key?.clear()
+        }
+    }
+
+    /**
+     * Restauración manual cifrada: el tag de GCM se valida ANTES de tocar Room.
+     * No se aceptan ZIP sin cifrar por esta ruta.
+     */
+    suspend fun importEncryptedDatabaseArchive(
+        inputStream: InputStream,
+        passphrase: CharArray
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        var fileBytes: ByteArray? = null
+        var plaintext: ByteArray? = null
+        var key: BackupCrypto.DerivedKey? = null
+        try {
+            fileBytes = readLimited(inputStream, MAX_ENCRYPTED_ARCHIVE_BYTES)
+            val header = BackupCrypto.readHeader(fileBytes)
+            key = BackupCrypto.deriveKey(passphrase, header.salt, header.iterations)
+            plaintext = BackupCrypto.decrypt(fileBytes, key.keyBytes)
+            importDatabaseFromZip(ByteArrayInputStream(plaintext)).getOrThrow()
+            Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e)
+        } finally {
+            fileBytes?.fill(0)
+            plaintext?.fill(0)
+            key?.clear()
+        }
+    }
+
+    private fun readLimited(stream: InputStream, maximumBytes: Long): ByteArray =
+        stream.use { source ->
+            ByteArrayOutputStream().use { out ->
+                val buffer = ByteArray(8192)
+                var total = 0L
+                while (true) {
+                    val read = source.read(buffer)
+                    if (read == -1) break
+                    total += read
+                    if (total > maximumBytes) {
+                        throw CorruptBackupException("El archivo cifrado supera el límite de seguridad")
+                    }
+                    out.write(buffer, 0, read)
+                }
+                out.toByteArray()
+            }
+        }
+
+
+    private suspend fun exportDatabaseToZip(outputStream: OutputStream): Result<Unit> = archiveOperation { directory ->
         val snapshotFile = File(directory, "lumi_db")
         SQLiteDatabase.openOrCreateDatabase(snapshotFile, null).use { snapshot ->
             database.withTransaction {
@@ -58,6 +148,10 @@ class BackupManager @Inject constructor(
         }
     }
 
+    /**
+     * Solo compatibilidad con archivos ZIP exportados por versiones antiguas.
+     * Esta ruta no está cifrada: la UI debe pedir confirmación explícita.
+     */
     suspend fun importDatabaseFromZip(inputStream: InputStream): Result<Unit> = archiveOperation { directory ->
         val allowed = setOf("lumi_db", "lumi_db-wal", "lumi_db-shm")
         val found = mutableSetOf<String>()
