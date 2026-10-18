@@ -74,8 +74,11 @@ class HomeViewModel @Inject constructor(
 
     init {
         observePreferences()
-        observeHugs()
-        observeLinkedCycles()
+        // Bonds no se publica en release: no suscribirse a Firestore ni iniciar auth.
+        if (com.jeremy.lumi.BuildConfig.ENABLE_BONDS) {
+            observeHugs()
+            observeLinkedCycles()
+        }
         viewModelScope.launch {
             LumiClock.offsetDays.collect {
                 loadCurrentCycle()
@@ -256,6 +259,7 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun syncToPartner() {
+        if (!com.jeremy.lumi.BuildConfig.ENABLE_BONDS) return
         // Los observadores no publican snapshot propio
         if (_uiState.value.isObserverOnly) return
         viewModelScope.launch {
