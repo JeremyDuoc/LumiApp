@@ -1,21 +1,18 @@
 package com.jeremy.lumi.domain.usecase
 
 import com.jeremy.lumi.ai.CycleAIPredictor
+import com.jeremy.lumi.ai.PredictionSource
 import com.jeremy.lumi.data.local.entity.CycleEntity
 import com.jeremy.lumi.utils.LumiClock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.roundToInt
 
 enum class PredictionSourceType {
-    NONE,
-    PROFILE_DEFAULT,
-    HISTORICAL_MATH,
-    AI_BLENDED,
-    CONTRACEPTIVE
+    NONE, PROFILE_DEFAULT, HISTORICAL_MATH, AI_BLENDED, CONTRACEPTIVE
 }
 
 data class EffectiveCyclePredictionResult(
@@ -27,12 +24,10 @@ data class EffectiveCyclePredictionResult(
 )
 
 /**
- * Fuente única de verdad para la predicción efectiva del ciclo menstrual.
- *
- * Unifica el cálculo de longitud estimada, blending de IA (LiteRT / TFLite),
- * reglas de anticoncepción hormonal y estado de fase para todos los consumidores:
- * HomeScreen (Dial y cabecera), CalendarScreen (mes y tarjeta de estado),
- * recordatorios locales y sincronización con pareja.
+ * Single source of truth for Home/Calendar/reminders.
+ * Prior cycles only; no information from the cycle being predicted.
+ * The experimental Ridge candidate is disabled in bundled assets until a
+ * prospective participant-held-out study establishes actual benefit.
  */
 @Singleton
 class GetEffectiveCyclePredictionUseCase @Inject constructor(
@@ -49,68 +44,62 @@ class GetEffectiveCyclePredictionUseCase @Inject constructor(
         targetDate: LocalDate = LumiClock.today()
     ): EffectiveCyclePredictionResult {
         if (activeCycle == null) {
-            return EffectiveCyclePredictionResult(
-                prediction = null,
-                effectiveCycleLength = 28,
-                periodLength = 5,
-                source = PredictionSourceType.NONE
-            )
+            return EffectiveCyclePredictionResult(null, 28, 5, PredictionSourceType.NONE)
         }
 
         val startDate = Instant.ofEpochMilli(activeCycle.startDate)
-            .atZone(ZoneId.of("UTC")).toLocalDate()
-        val periodLength = activeCycle.periodLength.coerceAtLeast(1)
+            .atZone(ZoneOffset.UTC).toLocalDate()
+        val periodLength = activeCycle.periodLength.takeIf { it in 1..10 } ?: 5
+        val priorCycles = CycleHistoryV2.validCycles(closedCycles, activeCycle.startDate)
 
-        // 1. Longitud de ciclo base matemática
-        val mathCycleLen = if (isOnContraceptive) {
-            28
-        } else if (closedCycles.size >= 3) {
-            CyclePredictor.weightedAverageCycleLength(closedCycles).roundToInt().coerceIn(15, 60)
-        } else {
-            activeCycle.cycleLength.coerceIn(15, 60)
+        val mathCycleLen = when {
+            isOnContraceptive -> 28 // Historical UI behavior; see clinical caveat.
+            priorCycles.size >= 3 -> CyclePredictor.weightedAverageCycleLength(priorCycles)
+                .roundToInt().coerceIn(15, 60)
+            else -> activeCycle.cycleLength.coerceIn(15, 60)
         }
 
-        // 2. Modelo de Machine Learning (LiteRT / TFLite)
-        val aiResult = if (closedCycles.size >= 3 && !isOnContraceptive) {
+        val ai = if (priorCycles.size >= 3 && !isOnContraceptive && !isPregnant &&
+            aiPredictor.isModelReady()) {
             aiPredictor.predict(
-                closedCycles = closedCycles,
-                currentCycleLen = mathCycleLen.toFloat(),
+                closedCycles = priorCycles, currentCycleLen = mathCycleLen.toFloat(),
                 periodLength = periodLength.toFloat(),
-                age = age,
-                height = height,
-                weight = weight
+                age = age, height = height, weight = weight
             )
         } else null
 
-        val effectiveCycleLen = aiResult?.predictedCycleLength?.roundToInt()?.coerceIn(15, 60)
-            ?: mathCycleLen
+        // Never trust unchecked NaN/infinite/out-of-range outputs.
+        val verifiedModelLength = ai?.takeIf {
+            it.source == PredictionSource.RIDGE_V2 &&
+                it.predictedCycleLength.isFinite() &&
+                it.predictedCycleLength in 15f..60f
+        }?.predictedCycleLength
+        val effectiveCycleLength = verifiedModelLength?.roundToInt() ?: mathCycleLen
 
-        // 3. Predicción clínica integral
         val prediction = CyclePredictor.predict(
             startDate = startDate,
-            cycleLength = effectiveCycleLen,
+            cycleLength = effectiveCycleLength,
             periodLength = periodLength,
             today = targetDate,
-            closedCycles = closedCycles,
+            closedCycles = priorCycles,
             isPregnant = isPregnant,
             isOnContraceptive = isOnContraceptive,
-            effectiveCycleLength = effectiveCycleLen,
-            predictionConfidence = aiResult?.confidenceScore
+            effectiveCycleLength = effectiveCycleLength,
+            predictionConfidence = null
         )
 
         val source = when {
             isOnContraceptive -> PredictionSourceType.CONTRACEPTIVE
-            aiResult != null && aiResult.source == com.jeremy.lumi.ai.PredictionSource.BLENDED -> PredictionSourceType.AI_BLENDED
-            closedCycles.size >= 3 -> PredictionSourceType.HISTORICAL_MATH
+            verifiedModelLength != null -> PredictionSourceType.AI_BLENDED // Legacy enum name
+            priorCycles.size >= 3 -> PredictionSourceType.HISTORICAL_MATH
             else -> PredictionSourceType.PROFILE_DEFAULT
         }
-
         return EffectiveCyclePredictionResult(
             prediction = prediction,
-            effectiveCycleLength = effectiveCycleLen,
+            effectiveCycleLength = effectiveCycleLength,
             periodLength = periodLength,
             source = source,
-            aiConfidence = aiResult?.confidenceScore
+            aiConfidence = null // no unsupported claims of probability
         )
     }
 }
