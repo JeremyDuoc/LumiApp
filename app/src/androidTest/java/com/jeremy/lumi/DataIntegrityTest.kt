@@ -60,7 +60,7 @@ class DataIntegrityTest {
         assertEquals(firstId, db.dao.getDailyLogWithSymptoms(nextDay)!!.dailyLog.cycleId)
     }
 
-    @Test fun zipRoundTripWorksWhileRoomStaysOpen() = runBlocking {
+    @Test fun encryptedArchiveRoundTripWorksWhileRoomStaysOpen() = runBlocking {
         db.dao.startCycleReplacingActive(CycleEntity(startDate = day, endDate = null, predictedOvulationDate = null))
         db.dao.upsertDailyLogWithSymptoms(DailyLogEntity(cycleId = db.dao.getCurrentActiveCycle()!!.id, date = day, notes = "Original"),
             listOf(SymptomEntity(dailyLogId = 0, name = "Test", intensity = 1)))
@@ -68,9 +68,11 @@ class DataIntegrityTest {
         val reminderId = db.dao.insertReminder(ReminderEntity(type = ReminderType.CUSTOM, label = "Test reminder")).toInt()
         val before = db.dao.getHealthDataSnapshot()
         val bytes = ByteArrayOutputStream()
-        backups.exportDatabaseToZip(bytes).getOrThrow()
+        backups.exportEncryptedDatabaseArchive(bytes, "very long private backup password".toCharArray()).getOrThrow()
         db.dao.clearAllDataForDev()
-        backups.importDatabaseFromZip(bytes.toByteArray().inputStream()).getOrThrow()
+        backups.importEncryptedDatabaseArchive(
+            bytes.toByteArray().inputStream(), "very long private backup password".toCharArray()
+        ).getOrThrow()
         assertEquals(before, db.dao.getHealthDataSnapshot())
         assertEquals("Test message", db.chatDao.getAllMessages().first().single().text)
         assertEquals("Test reminder", db.dao.getReminderById(reminderId)!!.label)
@@ -86,4 +88,44 @@ class DataIntegrityTest {
         assertTrue(backups.importDatabaseFromZip(byteArrayOf(1, 2, 3).inputStream()).isFailure)
         assertEquals("Keep", db.dao.getAllDailyLogsSnapshot().single().notes)
     }
+    @Test fun wrongPasswordAndTamperingNeverOverwriteRoom() = runBlocking {
+        db.dao.upsertDailyLogWithSymptoms(
+            DailyLogEntity(cycleId = 0, date = day, notes = "Keep this record"), emptyList()
+        )
+        val original = db.dao.getHealthDataSnapshot()
+        val bytes = ByteArrayOutputStream()
+        backups.exportEncryptedDatabaseArchive(
+            bytes, "correct and private backup password".toCharArray()
+        ).getOrThrow()
+        val encrypted = bytes.toByteArray()
+
+        val wrong = backups.importEncryptedDatabaseArchive(
+            encrypted.inputStream(), "incorrect and different password".toCharArray()
+        )
+        assertTrue(wrong.isFailure)
+        assertEquals(original, db.dao.getHealthDataSnapshot())
+
+        val tampered = encrypted.copyOf().also {
+            it[it.lastIndex] = (it.last().toInt() xor 1).toByte()
+        }
+        val modified = backups.importEncryptedDatabaseArchive(
+            tampered.inputStream(), "correct and private backup password".toCharArray()
+        )
+        assertTrue(modified.isFailure)
+        assertEquals(original, db.dao.getHealthDataSnapshot())
+    }
+
+    @Test fun plaintextZipCannotBeImportedThroughEncryptedPath() = runBlocking {
+        db.dao.upsertDailyLogWithSymptoms(
+            DailyLogEntity(cycleId = 0, date = day, notes = "Do not delete"), emptyList()
+        )
+        val original = db.dao.getHealthDataSnapshot()
+        val zip = ByteArrayOutputStream().also { ZipOutputStream(it).close() }.toByteArray()
+        val result = backups.importEncryptedDatabaseArchive(
+            zip.inputStream(), "some long private backup password".toCharArray()
+        )
+        assertTrue(result.isFailure)
+        assertEquals(original, db.dao.getHealthDataSnapshot())
+    }
+
 }
