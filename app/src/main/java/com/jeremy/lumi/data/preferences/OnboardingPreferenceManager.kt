@@ -15,6 +15,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
+import com.jeremy.lumi.data.backup.ProfileBackup
+import com.jeremy.lumi.data.backup.ProfileBackupCodec
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -276,6 +279,59 @@ class OnboardingPreferenceManager @Inject constructor(
                 prefs[SECONDARY_GOALS_KEY] = secondaryGoals.map { it.name }.toSet()
             }
             prefs[MEDICAL_DISCLAIMER_KEY] = medicalDisclaimerAccepted
+        }
+    }
+
+    /**
+     * Exporta solo los datos de perfil necesarios para recuperar la experiencia
+     * menstrual. No incluye tokens, flags de consentimiento, preferencias de Bonds,
+     * ajustes de Health Connect, claves de Drive ni estado del dispositivo.
+     */
+    suspend fun exportBackupProfile(): ProfileBackup {
+        val p = safeData.first()
+        return ProfileBackupCodec.validate(ProfileBackup(
+            userName = p[USER_NAME_KEY],
+            isRegular = p[IS_REGULAR_KEY],
+            userGoal = p[USER_GOAL_KEY] ?: UserGoal.TRACK_CYCLE.name,
+            defaultCycleLength = p[CYCLE_LENGTH_KEY] ?: 28,
+            defaultPeriodLength = p[PERIOD_LENGTH_KEY] ?: 5,
+            isPregnant = p[IS_PREGNANT_KEY] ?: false,
+            isOnContraceptive = p[IS_ON_CONTRACEPTIVE_KEY] ?: false,
+            userAge = p[USER_AGE_KEY],
+            userHeightCm = p[USER_HEIGHT_KEY],
+            userWeightKg = p[USER_WEIGHT_KEY],
+            secondaryGoals = (p[SECONDARY_GOALS_KEY] ?: emptySet()).sorted()
+        ))
+    }
+
+    /**
+     * Una sola operación DataStore: restaurar el perfil sin tocar consentimientos,
+     * telemetría, permisos, sesión de Google, flags de Bonds o preferencias visuales.
+     * Esto evita reactivar funciones de red por restaurar datos de otro teléfono.
+     */
+    suspend fun restoreBackupProfile(untrusted: ProfileBackup) {
+        val profile = ProfileBackupCodec.validate(untrusted)
+        dataStore.edit { p ->
+            fun <T> restoreOrRemove(key: androidx.datastore.preferences.core.Preferences.Key<T>, value: T?) {
+                if (value == null) p.remove(key) else p[key] = value
+            }
+            restoreOrRemove(USER_NAME_KEY, profile.userName)
+            restoreOrRemove(IS_REGULAR_KEY, profile.isRegular)
+            p[USER_GOAL_KEY] = profile.userGoal!!
+            p[CYCLE_LENGTH_KEY] = profile.defaultCycleLength!!
+            p[PERIOD_LENGTH_KEY] = profile.defaultPeriodLength!!
+            p[IS_PREGNANT_KEY] = profile.isPregnant!!
+            p[IS_ON_CONTRACEPTIVE_KEY] = profile.isOnContraceptive!!
+            restoreOrRemove(USER_AGE_KEY, profile.userAge)
+            restoreOrRemove(USER_HEIGHT_KEY, profile.userHeightCm)
+            restoreOrRemove(USER_WEIGHT_KEY, profile.userWeightKg)
+            val goals = profile.secondaryGoals.orEmpty().toSet()
+            if (goals.isEmpty()) p.remove(SECONDARY_GOALS_KEY)
+            else p[SECONDARY_GOALS_KEY] = goals
+            // Permanece completado solo después de que la usuaria aceptó el onboarding actual.
+            // No restauramos consentimientos médicos desde archivos ajenos.
+            p[ONBOARDING_DONE_KEY] = true
+            p[IS_OBSERVER_ONLY_KEY] = false
         }
     }
 
