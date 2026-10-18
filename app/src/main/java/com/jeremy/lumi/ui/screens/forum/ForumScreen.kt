@@ -63,7 +63,12 @@ fun ForumScreen(viewModel:ForumViewModel = hiltViewModel()) {
     var reportId by rememberSaveable { mutableStateOf<String?>(null) }
     val snack=remember{SnackbarHostState()}
     LaunchedEffect(state.notice) {
-        state.notice?.let { snack.showSnackbar(it); viewModel.dismissNotice() }
+        state.notice?.let { message ->
+            if(message.startsWith("Idea enviada.")) create=false
+            if(message.startsWith("Comentario enviado")) selectedId=null
+            snack.showSnackbar(message)
+            viewModel.dismissNotice()
+        }
     }
     LaunchedEffect(selectedId) {viewModel.showComments(selectedId)}
     val hero=state.ideas.firstOrNull{it.status=="En desarrollo"}
@@ -173,9 +178,9 @@ fun ForumScreen(viewModel:ForumViewModel = hiltViewModel()) {
         }
         SnackbarHost(snack,modifier=Modifier.align(Alignment.BottomCenter).navigationBarsPadding())
     }
-    if(create) NewIdeaSheet(theme,state.busy,onDismiss={create=false},onSubmit=viewModel::suggest)
+    if(create) NewIdeaSheet(theme,state.busy,state.notice,onDismiss={create=false},onSubmit=viewModel::suggest)
     val detail=state.ideas.firstOrNull{it.id==selectedId}
-    if(detail!=null) DetailSheet(detail,theme,state.comments,detail.id in state.voted,state.busy,
+    if(detail!=null) DetailSheet(detail,theme,state.comments,detail.id in state.voted,state.busy,state.notice,
         onDismiss={selectedId=null},onVote={viewModel.vote(detail.id)},
         onComment={viewModel.comment(detail.id,it)},onReport={reportId=detail.id})
     if(help) AlertDialog(onDismissRequest={help=false},containerColor=theme.panel,
@@ -286,7 +291,7 @@ private fun VoiceEmpty(title:String,description:String,theme:LumiDesignTokens){
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun NewIdeaSheet(theme:LumiDesignTokens,busy:Boolean,onDismiss:()->Unit,
+private fun NewIdeaSheet(theme:LumiDesignTokens,busy:Boolean,notice:String?,onDismiss:()->Unit,
                          onSubmit:(String,String,String)->Unit){
     var title by rememberSaveable{mutableStateOf("")}
     var description by rememberSaveable{mutableStateOf("")}
@@ -337,13 +342,14 @@ private fun NewIdeaSheet(theme:LumiDesignTokens,busy:Boolean,onDismiss:()->Unit,
                 colors=ButtonDefaults.buttonColors(containerColor=theme.accent,contentColor=theme.bg)){
                 Text(if(busy)"Enviando…" else "Enviar idea a revisión",fontWeight=FontWeight.Bold)
             }
+            if(notice!=null && !notice.startsWith("Idea enviada.")) Text(notice,color=theme.rose,fontSize=11.sp,modifier=Modifier.padding(top=10.dp))
         }
     }
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DetailSheet(idea:VoiceIdea,theme:LumiDesignTokens,comments:List<VoiceComment>,
-                        voted:Boolean,busy:Boolean,onDismiss:()->Unit,onVote:()->Unit,
+                        voted:Boolean,busy:Boolean,notice:String?,onDismiss:()->Unit,onVote:()->Unit,
                         onComment:(String)->Unit,onReport:()->Unit){
     var message by rememberSaveable(idea.id){mutableStateOf("")}
     ModalBottomSheet(onDismissRequest=onDismiss,containerColor=theme.bg){
@@ -405,6 +411,7 @@ private fun DetailSheet(idea:VoiceIdea,theme:LumiDesignTokens,comments:List<Voic
                 colors=ButtonDefaults.buttonColors(containerColor=theme.accent,contentColor=theme.bg)){
                 Text("Enviar comentario a revisión")
             }
+            if(notice!=null && !notice.startsWith("Comentario enviado")) Text(notice,color=theme.rose,fontSize=11.sp,modifier=Modifier.padding(top=10.dp))
         }
     }
 }
