@@ -495,3 +495,12 @@ async function limpiarTokenInvalidoSiAplica(linkId, campoToken, error) {
     }
   }
 }
+
+
+// Tu voz: funciones aisladas, sin acceso a datos menstruales desde sus handlers.
+const voice = require("./voice");
+exports.voiceCreateIdea = voice.voiceCreateIdea;
+exports.voiceToggleVote = voice.voiceToggleVote;
+exports.voiceAddComment = voice.voiceAddComment;
+exports.voiceReportIdea = voice.voiceReportIdea;
+exports.voiceSetIdeaStatus = voice.voiceSetIdeaStatus;
