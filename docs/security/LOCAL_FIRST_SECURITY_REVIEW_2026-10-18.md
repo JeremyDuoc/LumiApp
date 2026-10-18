@@ -34,3 +34,12 @@ Static review of repository source, not a production penetration test. No produc
 - Debug variant: Bonds remains available for internal development.
 - Release variant: `ENABLE_BONDS=false`, Bonds navigation and automatic Home synchronization are bypassed, and partner repository is injected lazily to avoid initialization in Home.
 - Manual files: `.lbx` are encrypted full-database archives; `.lbk` on Drive is a different encrypted JSON/GZIP backup format. Do not assume they are interchangeable.
+
+## Profile backup recovery — fix for missing nickname (18 Oct 2026)
+- **Root cause**: Room backup contains cycles/logs/reminders/chat while the nickname and cycle profile are stored separately in the `lumi_prefs` DataStore. Encrypted Google Drive JSON backups similarly included only cycles/logs/symptoms.
+- **Manual .lbx**: the authenticated encrypted ZIP now contains `lumi_db` plus a small versioned `profile.json`. The file is validated and bounded before modifying Room. The profile is applied as part of the Room restoration operation when present.
+- **Google Drive .lbk**: the same validated profile is an optional field in the existing JSON payload; original format version 1 remains readable.
+- **Allowlist only**: nickname, cycle/period defaults, regularity, goal, pregnancy/contraception state and optional physical profile / secondary goals. Never copy raw DataStore, Firebase sharing preferences, access tokens, Google credentials, Health Connect grant state, device-specific encryption keys or prior medical consent flags.
+- **Backward compatibility**: backups created before this change do **not contain the old nickname**, and cannot reconstruct it after reset. When profile information is missing, restoration retains the currently configured profile rather than inventing a nickname.
+- **Validation boundaries**: cross-store changes (DataStore + Room) are not one ACID transaction. Manual restore writes DataStore while the Room transaction is in progress so a failed DataStore write rolls back Room. Drive restore writes Room and then DataStore; a device/storage failure between those commits still needs recovery testing. An installed app may need restart for screens that cache profile values.
+- **Tests**: added profile round-trip, corrupt profile rejection, legacy cloud compatibility and Android integration test assertions on the saved nickname. Instrumented tests must still be executed on an Android device or emulator (compilation in CI alone does not run them).
