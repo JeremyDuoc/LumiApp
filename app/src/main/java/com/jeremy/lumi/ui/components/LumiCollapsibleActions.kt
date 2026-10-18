@@ -9,6 +9,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -81,23 +84,17 @@ fun LumiCollapsibleActions(
         animationSpec = tween(durationMillis = duration, easing = CubicBezierEasing(.27f, .9f, .3f, 1f)),
         label = "lumi_actions_rail"
     )
-    val topOffset by animateDpAsState(if (expanded) 0.dp else (-7.2).dp, tween(durationMillis = duration, easing = easing), label = "lumi_top_offset")
-    val bottomOffset by animateDpAsState(if (expanded) 0.dp else 7.2.dp, tween(durationMillis = duration, easing = easing), label = "lumi_bottom_offset")
-    val topAngle by animateFloatAsState(
-        if (expanded) 45f else 0f, tween(durationMillis = duration, easing = easing), label = "lumi_menu_top"
-    )
-    val bottomAngle by animateFloatAsState(
-        if (expanded) -45f else 0f, tween(durationMillis = duration, easing = easing), label = "lumi_menu_bottom"
-    )
-    val middleOpacity by animateFloatAsState(
-        if (expanded) 0f else 1f, tween(durationMillis = 110), label = "lumi_menu_middle"
+    val morph by animateFloatAsState(
+        targetValue = if (expanded) 1f else 0f,
+        animationSpec = tween(420, easing = easing),
+        label = "lumi_hamburger_morph"
     )
     Row(
         modifier = Modifier
             .width(railWidth)
             .height(44.dp)
             .clip(RoundedCornerShape(24.dp))
-            .background(if (expanded) tokens.panel else tokens.bg)
+            .background(if (expanded) tokens.panel else tokens.panel.copy(alpha = .85f))
             .then(if (expanded) Modifier.border(BorderStroke(.8.dp, tokens.line), RoundedCornerShape(24.dp)) else Modifier),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.End
@@ -105,9 +102,9 @@ fun LumiCollapsibleActions(
         actions.forEachIndexed { index, (name, icon, onClick) ->
             AnimatedVisibility(
                 visible = expanded,
-                enter = fadeIn(tween(210, delayMillis = 80 + (actions.size - 1 - index) * 53)) +
+                enter = fadeIn(tween(225, delayMillis = 30 + (actions.size - 1 - index) * 30)) +
                     slideInHorizontally(
-                        animationSpec = tween(330, delayMillis = 80 + (actions.size - 1 - index) * 53, easing = CubicBezierEasing(.27f, .9f, .3f, 1f)),
+                        animationSpec = tween(300, delayMillis = 30 + (actions.size - 1 - index) * 30, easing = CubicBezierEasing(.27f, .9f, .3f, 1f)),
                         initialOffsetX = { it / 2 }
                     ),
                 exit = fadeOut(tween(110))
@@ -140,10 +137,19 @@ fun LumiCollapsibleActions(
                 .semantics { stateDescription = if (expanded) "Expandido" else "Contraído" },
             contentAlignment = Alignment.Center
         ) {
-            val bar = Modifier.width(20.dp).height(2.5.dp).clip(CircleShape).background(tokens.accent)
-            Box(bar.graphicsLayer { translationY = topOffset.toPx(); rotationZ = topAngle })
-            Box(bar.graphicsLayer { alpha = middleOpacity })
-            Box(bar.graphicsLayer { translationY = bottomOffset.toPx(); rotationZ = bottomAngle })
+            Canvas(Modifier.size(26.dp)) {
+                val ratio = size.width / 26f
+                fun pt(x: Float, y: Float): Offset = Offset(x * ratio, y * ratio)
+                val stroke = 2.5.dp.toPx()
+                // Three parallel bars transform into diagonals. The middle fades.
+                drawLine(tokens.accent, pt(5f, 6f), pt(21f, 6f + 14f * morph),
+                    strokeWidth = stroke, cap = StrokeCap.Round)
+                drawLine(tokens.accent.copy(alpha = (1f - morph).coerceIn(0f, 1f)),
+                    pt(5f, 13f), pt(21f, 13f),
+                    strokeWidth = stroke, cap = StrokeCap.Round)
+                drawLine(tokens.accent, pt(5f, 20f), pt(21f, 20f - 14f * morph),
+                    strokeWidth = stroke, cap = StrokeCap.Round)
+            }
             if (hasNotificationAlert && !expanded) {
                 Box(Modifier.align(Alignment.TopEnd).padding(top = 6.dp, end = 7.dp)
                     .size(6.dp).clip(CircleShape).background(tokens.rose))
