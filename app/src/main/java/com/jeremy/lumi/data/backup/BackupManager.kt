@@ -5,6 +5,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.withTransaction
 import com.jeremy.lumi.data.local.LumiDatabase
+import com.jeremy.lumi.data.preferences.OnboardingPreferenceManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -22,7 +23,8 @@ import javax.inject.Inject
 /** Consistent snapshots; imports never overwrite files used by a live Room connection. */
 class BackupManager @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val database: LumiDatabase
+    private val database: LumiDatabase,
+    private val profilePreferences: OnboardingPreferenceManager
 ) {
     private val tables = listOf("cycles", "daily_logs", "symptoms", "reminders", "chat_messages")
 
@@ -159,9 +161,18 @@ class BackupManager @Inject constructor(
                 }
             }
         }
+        // Capture the portable profile without exposing the raw DataStore file.
+        val profileJson = ProfileBackupCodec.toJson(profilePreferences.exportBackupProfile())
+        val profileBytes = profileJson.toByteArray(Charsets.UTF_8)
+        if (profileBytes.size > ProfileBackupCodec.MAX_JSON_BYTES) {
+            throw CorruptBackupException("Perfil de respaldo demasiado grande")
+        }
         ZipOutputStream(outputStream).use { zip ->
             zip.putNextEntry(ZipEntry("lumi_db"))
             snapshotFile.inputStream().use { it.copyTo(zip) }
+            zip.closeEntry()
+            zip.putNextEntry(ZipEntry("profile.json"))
+            zip.write(profileBytes)
             zip.closeEntry()
         }
     }
@@ -171,7 +182,7 @@ class BackupManager @Inject constructor(
      * Esta ruta no está cifrada: la UI debe pedir confirmación explícita.
      */
     suspend fun importDatabaseFromZip(inputStream: InputStream): Result<Unit> = archiveOperation { directory ->
-        val allowed = setOf("lumi_db", "lumi_db-wal", "lumi_db-shm")
+        val allowed = setOf("lumi_db", "lumi_db-wal", "lumi_db-shm", "profile.json")
         val found = mutableSetOf<String>()
         var extractedBytes = 0L
         ZipInputStream(inputStream).use { zip ->
@@ -182,10 +193,15 @@ class BackupManager @Inject constructor(
                 }
                 File(directory, entry.name).outputStream().use { output ->
                     val buffer = ByteArray(8192)
+                    var entryBytes = 0L
                     var count = zip.read(buffer)
                     while (count != -1) {
                         extractedBytes += count
+                        entryBytes += count
                         if (extractedBytes > 25L * 1024 * 1024) throw CorruptBackupException("Respaldo demasiado grande")
+                        if (entry.name == "profile.json" && entryBytes > ProfileBackupCodec.MAX_JSON_BYTES) {
+                            throw CorruptBackupException("Perfil de respaldo demasiado grande")
+                        }
                         output.write(buffer, 0, count)
                         count = zip.read(buffer)
                     }
@@ -195,6 +211,11 @@ class BackupManager @Inject constructor(
             }
         }
         if ("lumi_db" !in found) throw CorruptBackupException("El respaldo no contiene una base de datos")
+        // Existing archives contain only lumi_db. Missing profile means preserve
+        // current DataStore; profile.json in new archives is checked before writes.
+        val profile = if ("profile.json" in found) {
+            ProfileBackupCodec.fromJson(File(directory, "profile.json").readText(Charsets.UTF_8))
+        } else null
         // Older archives may include a WAL; recovery happens only in this staging database.
         SQLiteDatabase.openDatabase(File(directory, "lumi_db").path, null, SQLiteDatabase.OPEN_READWRITE).use { source ->
             source.rawQuery("PRAGMA quick_check", null).use { cursor ->
@@ -241,6 +262,9 @@ class BackupManager @Inject constructor(
                         // Si la tabla no tiene autoincrement en sqlite_sequence, ignorar
                     }
                 }
+                // Do not restore permissions/consents or the raw DataStore. If this
+                // operation throws, Room rolls back the database transaction.
+                if (profile != null) profilePreferences.restoreBackupProfile(profile)
             }
             // Notificar a Room InvalidationTracker para refrescar los Flows activos
             database.invalidationTracker.refreshVersionsAsync()
