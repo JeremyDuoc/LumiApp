@@ -79,7 +79,9 @@ fun HomeScreen(
     settingsViewModel: SettingsViewModel = hiltViewModel(),
     // Hooks optativos para el logo compartido con la transición del onboarding.
     onBrandBounds: ((Rect) -> Unit)? = null,
-    suppressBrandDuringHandoff: Boolean = false
+    suppressBrandDuringHandoff: Boolean = false,
+    openNotificationsFromVoice: Boolean = false,
+    onVoiceNotificationsConsumed: () -> Unit = {}
 ) {
     val uiState           by viewModel.uiState.collectAsStateWithLifecycle()
     val tokens            = LumiThemeTokens.current
@@ -89,6 +91,12 @@ fun HomeScreen(
     var showQuickLogSheet by remember { mutableStateOf(false) }
     var showPredictionInfoSheet by remember { mutableStateOf(false) }
     var showNotificationsSheet by remember { mutableStateOf(false) }
+    LaunchedEffect(openNotificationsFromVoice) {
+        if (openNotificationsFromVoice) {
+            showNotificationsSheet = true
+            onVoiceNotificationsConsumed()
+        }
+    }
     var showAddReminderSheet by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope             = rememberCoroutineScope()
