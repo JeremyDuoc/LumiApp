@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Settings
@@ -23,5 +24,5 @@ sealed class BottomNavItem(
     object Chat     : BottomNavItem("chat",     Icons.Default.ChatBubbleOutline,  R.string.nav_chat)
     object Settings : BottomNavItem("settings", Icons.Default.Settings,           R.string.nav_settings)
     // Forum sigue siendo accesible pero ya no ocupa espacio en la barra principal
-    object Forum    : BottomNavItem("forum",    Icons.Default.Favorite,           R.string.nav_forum)
+    object Forum    : BottomNavItem("forum",    Icons.Default.Forum,               R.string.nav_voice)
 }
