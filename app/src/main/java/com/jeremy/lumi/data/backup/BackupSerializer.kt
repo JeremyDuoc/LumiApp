@@ -22,7 +22,9 @@ data class BackupPayloadDto(
     val createdAtMs: Long? = null,
     val cycles: List<CycleDto?>? = null,
     val dailyLogs: List<DailyLogDto?>? = null,
-    val symptoms: List<SymptomDto?>? = null
+    val symptoms: List<SymptomDto?>? = null,
+    // Introducido de forma opcional en el formato v1 para compatibilidad.
+    val profile: ProfileBackup? = null
 )
 
 data class CycleDto(
@@ -68,12 +70,13 @@ class RestoredData(
     val cycles: List<CycleEntity>,
     val dailyLogs: List<DailyLogEntity>,
     val symptoms: List<SymptomEntity>,
-    val createdAtMs: Long?
+    val createdAtMs: Long?,
+    val profile: ProfileBackup? = null
 )
 
 /**
  * Serialización del respaldo a JSON (lo que luego se comprime y se cifra).
- * Solo incluye datos de salud: ciclos, registros diarios y síntomas.
+ * Incluye ciclos, registros diarios, síntomas y (en copias nuevas) perfil menstrual.
  * Recordatorios y chat son locales del dispositivo y quedan fuera a propósito.
  */
 object BackupSerializer {
@@ -90,12 +93,14 @@ object BackupSerializer {
     fun toJson(
         cycles: List<CycleEntity>,
         logs: List<DailyLogEntity>,
-        symptoms: List<SymptomEntity>
+        symptoms: List<SymptomEntity>,
+        profile: ProfileBackup? = null
     ): String {
         val payload = BackupPayloadDto(
             formatVersion = FORMAT_VERSION,
             dbSchemaVersion = DB_SCHEMA_VERSION,
             createdAtMs = System.currentTimeMillis(),
+            profile = profile?.let(ProfileBackupCodec::validate),
             cycles = cycles.map {
                 CycleDto(
                     id = it.id,
@@ -229,6 +234,8 @@ object BackupSerializer {
             throw CorruptBackupException("Síntomas duplicados")
         }
 
-        return RestoredData(cycles, logs, symptoms, dto.createdAtMs)
+        // Malformed optional profile must fail before replacing ANY health data.
+        val profile = dto.profile?.let(ProfileBackupCodec::validate)
+        return RestoredData(cycles, logs, symptoms, dto.createdAtMs, profile)
     }
 }

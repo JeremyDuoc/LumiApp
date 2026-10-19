@@ -54,7 +54,7 @@ class HomeViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val repository       : LumiRepository,
     private val prefsManager     : OnboardingPreferenceManager,
-    private val partnerRepository: com.jeremy.lumi.domain.repository.PartnerRepository,
+    private val partnerRepositoryProvider: dagger.Lazy<com.jeremy.lumi.domain.repository.PartnerRepository>,
     private val rulesEngine      : LumiRulesEngine,
     private val healthConnectManager: com.jeremy.lumi.data.health.HealthConnectManager,
     private val widgetUpdater    : com.jeremy.lumi.ui.widget.WidgetUpdater,
@@ -66,6 +66,11 @@ class HomeViewModel @Inject constructor(
         data class CycleRestored(val message: String) : HomeEvent
     }
 
+    // Avoid initializing Firebase dependencies at all in the local-first release.
+    private val partnerRepository: com.jeremy.lumi.domain.repository.PartnerRepository by lazy {
+        partnerRepositoryProvider.get()
+    }
+
     private val _eventFlow = kotlinx.coroutines.flow.MutableSharedFlow<HomeEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
@@ -74,8 +79,11 @@ class HomeViewModel @Inject constructor(
 
     init {
         observePreferences()
-        observeHugs()
-        observeLinkedCycles()
+        // Bonds no se publica en release: no suscribirse a Firestore ni iniciar auth.
+        if (com.jeremy.lumi.BuildConfig.ENABLE_BONDS) {
+            observeHugs()
+            observeLinkedCycles()
+        }
         viewModelScope.launch {
             LumiClock.offsetDays.collect {
                 loadCurrentCycle()
@@ -256,6 +264,7 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun syncToPartner() {
+        if (!com.jeremy.lumi.BuildConfig.ENABLE_BONDS) return
         // Los observadores no publican snapshot propio
         if (_uiState.value.isObserverOnly) return
         viewModelScope.launch {

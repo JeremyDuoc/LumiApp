@@ -179,7 +179,9 @@ fun AppNavGraph() {
                 onHomeBrandBounds = { rect -> homeBrandBounds = rect },
                 suppressHomeBrandDuringHandoff = handoff != null,
                 onNavigateToPartner = {
-                    rootNavController.navigate(AppRoutes.BONDS_HOME)
+                    if (com.jeremy.lumi.BuildConfig.ENABLE_BONDS) {
+                        rootNavController.navigate(AppRoutes.BONDS_HOME)
+                    }
                 },
                 onNavigateToBackup = {
                     rootNavController.navigate(AppRoutes.BACKUP)
@@ -213,6 +215,8 @@ fun AppNavGraph() {
             )
         }
         
+        // Deshabilitar por completo las rutas/deep links de Bonds en release.
+        if (com.jeremy.lumi.BuildConfig.ENABLE_BONDS) {
         // ——— Onboarding del Modo Pareja (redirección automática hacia Bonds si viene con código) ———
         composable(
             route = AppRoutes.PARTNER,
@@ -432,6 +436,7 @@ fun AppNavGraph() {
                 onBack = { rootNavController.popBackStack() }
             )
         }
+        } // ENABLE_BONDS: sin rutas de pareja en release
     }
 
     val activeHandoff = handoff
@@ -474,13 +479,24 @@ fun MainScreen(
 ) {
     val navController = rememberNavController()
     
-    val partnerViewModel: com.jeremy.lumi.ui.screens.partner.PartnerViewModel = hiltViewModel()
-    val isObserver by remember(partnerViewModel) {
-        partnerViewModel.uiState.map { it.isObserverOnly }.distinctUntilChanged()
-    }.collectAsStateWithLifecycle(initialValue = false)
+    val isObserver = if (com.jeremy.lumi.BuildConfig.ENABLE_BONDS) {
+        val partnerViewModel: com.jeremy.lumi.ui.screens.partner.PartnerViewModel = hiltViewModel()
+        val observerFlow = remember(partnerViewModel) {
+            partnerViewModel.uiState.map { it.isObserverOnly }.distinctUntilChanged()
+        }
+        val observer by observerFlow.collectAsStateWithLifecycle(initialValue = false)
+        observer
+    } else false
 
     val tabs = remember(isObserver) {
-        if (isObserver) {
+        if (!com.jeremy.lumi.BuildConfig.ENABLE_BONDS) {
+            listOf(
+                BottomNavItem.Home,
+                BottomNavItem.Calendar,
+                BottomNavItem.Insights,
+                BottomNavItem.Settings
+            )
+        } else if (isObserver) {
             listOf(
                 BottomNavItem.Home,
                 BottomNavItem.Bonds,
@@ -596,7 +612,7 @@ fun MainScreen(
                                 val bondsIndex = tabs.indexOf(BottomNavItem.Bonds)
                                 if (bondsIndex >= 0) {
                                     coroutineScope.launch { pagerState.animateScrollToPage(bondsIndex) }
-                                } else {
+                                } else if (com.jeremy.lumi.BuildConfig.ENABLE_BONDS) {
                                     onNavigateToPartner()
                                 }
                             },

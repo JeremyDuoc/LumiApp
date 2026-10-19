@@ -101,6 +101,13 @@ fun SettingsScreen(
     var showPregnancyEndDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
+    // Manual backups: passwords exist in memory only until SAF returns and encryption finishes.
+    var showEncryptedExportPassword by remember { mutableStateOf(false) }
+    var showEncryptedRestorePassword by remember { mutableStateOf(false) }
+    var showLegacyImportWarning by remember { mutableStateOf(false) }
+    var pendingEncryptedExportPassword by remember { mutableStateOf<CharArray?>(null) }
+    var selectedEncryptedImportUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var manualBackupBusy by remember { mutableStateOf(false) }
 
     val context = androidx.compose.ui.platform.LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -119,32 +126,143 @@ fun SettingsScreen(
         }
     }
 
-    val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/zip")
+    val encryptedExportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/octet-stream")
     ) { uri ->
-        uri?.let {
+        val password = pendingEncryptedExportPassword
+        pendingEncryptedExportPassword = null
+        if (uri == null || password == null) {
+            password?.fill('\u0000')
+        } else {
             coroutineScope.launch {
-                context.contentResolver.openOutputStream(it)?.let { os ->
-                    val result = backupManager.exportDatabaseToZip(os)
-                    val msg = if (result.isSuccess) context.getString(R.string.settings_backup_export_success) else context.getString(R.string.settings_backup_export_error)
-                    android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
+                manualBackupBusy = true
+                try {
+                    val result = context.contentResolver.openOutputStream(uri)?.let {
+                        backupManager.exportEncryptedDatabaseArchive(it, password)
+                    }
+                    val success = result?.isSuccess == true
+                    if (!success) {
+                        // A failed export may have left an empty destination document.
+                        runCatching { android.provider.DocumentsContract.deleteDocument(context.contentResolver, uri) }
+                    }
+                    android.widget.Toast.makeText(
+                        context,
+                        context.getString(if (success) R.string.settings_backup_export_success else R.string.settings_backup_export_error),
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                } catch (e: Exception) {
+                    runCatching { android.provider.DocumentsContract.deleteDocument(context.contentResolver, uri) }
+                    android.widget.Toast.makeText(context, context.getString(R.string.settings_backup_export_error), android.widget.Toast.LENGTH_LONG).show()
+                } finally {
+                    password.fill('\u0000')
+                    manualBackupBusy = false
                 }
             }
         }
     }
 
-    val importLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+    val encryptedImportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
     ) { uri ->
-        uri?.let {
+        if (uri != null) {
+            selectedEncryptedImportUri = uri
+            showEncryptedRestorePassword = true
+        }
+    }
+
+    val legacyImportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
             coroutineScope.launch {
-                context.contentResolver.openInputStream(it)?.let { input ->
-                    val result = backupManager.importDatabaseFromZip(input)
-                    val msg = if (result.isSuccess) context.getString(R.string.settings_backup_import_success) else context.getString(R.string.settings_backup_import_error)
-                    android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_LONG).show()
+                manualBackupBusy = true
+                try {
+                    val result = context.contentResolver.openInputStream(uri)?.let { input ->
+                        backupManager.importDatabaseFromZip(input)
+                    }
+                    android.widget.Toast.makeText(
+                        context,
+                        context.getString(if (result?.isSuccess == true) R.string.settings_backup_import_success else R.string.settings_backup_import_error),
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                } catch (e: Exception) {
+                    android.widget.Toast.makeText(context, context.getString(R.string.settings_backup_import_error), android.widget.Toast.LENGTH_LONG).show()
+                } finally {
+                    manualBackupBusy = false
                 }
             }
         }
+    }
+
+    if (showEncryptedExportPassword) {
+        ManualBackupPasswordDialog(
+            exporting = true,
+            onDismiss = { showEncryptedExportPassword = false },
+            onConfirm = { password ->
+                showEncryptedExportPassword = false
+                pendingEncryptedExportPassword?.fill('\u0000')
+                pendingEncryptedExportPassword = password
+                encryptedExportLauncher.launch("Lumi_Backup_Encrypted.lbx")
+            }
+        )
+    }
+
+    if (showEncryptedRestorePassword) {
+        ManualBackupPasswordDialog(
+            exporting = false,
+            onDismiss = {
+                showEncryptedRestorePassword = false
+                selectedEncryptedImportUri = null
+            },
+            onConfirm = { password ->
+                showEncryptedRestorePassword = false
+                val uri = selectedEncryptedImportUri
+                selectedEncryptedImportUri = null
+                if (uri == null) {
+                    password.fill('\u0000')
+                } else {
+                    coroutineScope.launch {
+                        manualBackupBusy = true
+                        try {
+                            val result = context.contentResolver.openInputStream(uri)?.let {
+                                backupManager.importEncryptedDatabaseArchive(it, password)
+                            }
+                            val message = when {
+                                result?.isSuccess == true -> R.string.settings_backup_import_success
+                                result?.exceptionOrNull() is com.jeremy.lumi.data.backup.WrongPassphraseException -> R.string.backup_error_wrong_pass
+                                result?.exceptionOrNull() is com.jeremy.lumi.data.backup.CorruptBackupException -> R.string.backup_error_corrupt
+                                else -> R.string.settings_backup_import_error
+                            }
+                            android.widget.Toast.makeText(context, context.getString(message), android.widget.Toast.LENGTH_LONG).show()
+                        } catch (e: Exception) {
+                            android.widget.Toast.makeText(context, context.getString(R.string.settings_backup_import_error), android.widget.Toast.LENGTH_LONG).show()
+                        } finally {
+                            password.fill('\u0000')
+                            manualBackupBusy = false
+                        }
+                    }
+                }
+            }
+        )
+    }
+
+    if (showLegacyImportWarning) {
+        AlertDialog(
+            onDismissRequest = { showLegacyImportWarning = false },
+            title = { Text(stringResource(R.string.manual_backup_legacy_title)) },
+            text = { Text(stringResource(R.string.manual_backup_legacy_warning)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showLegacyImportWarning = false
+                    legacyImportLauncher.launch(arrayOf("application/zip", "application/octet-stream"))
+                }) { Text(stringResource(R.string.manual_backup_legacy_action)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLegacyImportWarning = false }) {
+                    Text(stringResource(R.string.backup_action_cancel))
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -342,30 +460,46 @@ fun SettingsScreen(
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
                 SettingsItem(
-                    icon = Icons.Rounded.Check,
-                    title = stringResource(R.string.settings_backup_zip_create),
-                    subtitle = stringResource(R.string.settings_backup_zip_create_desc),
-                    onClick = { exportLauncher.launch("Lumi_Backup.zip") }
+                    icon = Icons.Rounded.CloudUpload,
+                    title = stringResource(R.string.manual_backup_encrypted_export_title),
+                    subtitle = stringResource(R.string.manual_backup_encrypted_export_desc),
+                    onClick = { if (!manualBackupBusy) showEncryptedExportPassword = true }
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
+                SettingsItem(
+                    icon = Icons.Rounded.Security,
+                    title = stringResource(R.string.manual_backup_encrypted_restore_title),
+                    subtitle = stringResource(R.string.manual_backup_encrypted_restore_desc),
+                    onClick = { if (!manualBackupBusy) encryptedImportLauncher.launch(arrayOf("*/*")) }
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
                 SettingsItem(
                     icon = Icons.Rounded.Check,
-                    title = stringResource(R.string.settings_backup_zip_restore),
-                    subtitle = stringResource(R.string.settings_backup_zip_restore_desc),
-                    onClick = { importLauncher.launch(arrayOf("application/zip")) }
+                    title = stringResource(R.string.manual_backup_import_legacy_title),
+                    subtitle = stringResource(R.string.manual_backup_import_legacy_desc),
+                    onClick = { if (!manualBackupBusy) showLegacyImportWarning = true }
                 )
+                if (manualBackupBusy) {
+                    Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        Spacer(Modifier.width(12.dp))
+                        Text(stringResource(R.string.manual_backup_operation_busy))
+                    }
+                }
             }
 
             // ── PRIVACIDAD & PAREJA ───────────────────────────────────────────
             SettingsSectionTitle(stringResource(R.string.settings_section_advanced))
             SettingsCard {
-                SettingsItem(
-                    icon = Icons.Rounded.Favorite,
-                    title = stringResource(R.string.settings_partner),
-                    subtitle = stringResource(R.string.settings_partner_desc),
-                    onClick = { onNavigateToPartner() }
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
+                if (com.jeremy.lumi.BuildConfig.ENABLE_BONDS) {
+                    SettingsItem(
+                        icon = Icons.Rounded.Favorite,
+                        title = stringResource(R.string.settings_partner),
+                        subtitle = stringResource(R.string.settings_partner_desc),
+                        onClick = { onNavigateToPartner() }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
+                }
                 SettingsItem(
                     icon = Icons.Rounded.Security,
                     title = stringResource(R.string.settings_privacy),

@@ -269,8 +269,10 @@ fun OnboardingScreen(
                 ) {
                     when (step) {
                         0 -> Step0Welcome(
-                            mode = uiState.data.mode,
-                            onSelectMode = { viewModel.setMode(it) }
+                            // La versión pública no puede ofrecer el modo observador sin Bonds.
+                            mode = if (com.jeremy.lumi.BuildConfig.ENABLE_BONDS) uiState.data.mode else "track",
+                            onSelectMode = { viewModel.setMode(it) },
+                            showSupportMode = com.jeremy.lumi.BuildConfig.ENABLE_BONDS
                         )
                         1 -> Step1Safety(
                             accepted = uiState.data.medicalDisclaimerAccepted && uiState.data.privacyAccepted,

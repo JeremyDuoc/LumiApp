@@ -5,10 +5,13 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.withTransaction
 import com.jeremy.lumi.data.local.LumiDatabase
+import com.jeremy.lumi.data.preferences.OnboardingPreferenceManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
@@ -20,11 +23,118 @@ import javax.inject.Inject
 /** Consistent snapshots; imports never overwrite files used by a live Room connection. */
 class BackupManager @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val database: LumiDatabase
+    private val database: LumiDatabase,
+    private val profilePreferences: OnboardingPreferenceManager
 ) {
     private val tables = listOf("cycles", "daily_logs", "symptoms", "reminders", "chat_messages")
 
-    suspend fun exportDatabaseToZip(outputStream: OutputStream): Result<Unit> = archiveOperation { directory ->
+    // Wipe ByteArrayOutputStream's internal buffer after extracting the plaintext ZIP.
+    private class ErasableZipStream : ByteArrayOutputStream() {
+        fun erase() {
+            buf.fill(0)
+            reset()
+        }
+    }
+
+    companion object {
+        private const val MAX_ENCRYPTED_ARCHIVE_BYTES = 32L * 1024 * 1024
+        private const val MIN_PASSPHRASE_LENGTH = 12
+    }
+
+    /**
+     * Exportación manual protegida. No depende de Drive ni de una clave cacheada:
+     * cada archivo puede restaurarse en otro teléfono usando su contraseña.
+     * Nunca escribir el ZIP sin cifrar en el Storage Access Framework.
+     */
+    suspend fun exportEncryptedDatabaseArchive(
+        outputStream: OutputStream,
+        passphrase: CharArray
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        var plaintext: ByteArray? = null
+        var encrypted: ByteArray? = null
+        var key: BackupCrypto.DerivedKey? = null
+        try {
+            require(passphrase.size >= MIN_PASSPHRASE_LENGTH) { "Contraseña demasiado corta" }
+            val internalZip = ErasableZipStream()
+            val zipBytes = try {
+                exportDatabaseToZip(internalZip).getOrThrow()
+                internalZip.toByteArray()
+            } finally {
+                internalZip.erase()
+            }
+            plaintext = zipBytes
+            if (zipBytes.size.toLong() > MAX_ENCRYPTED_ARCHIVE_BYTES) {
+                throw CorruptBackupException("El respaldo supera el tamaño máximo")
+            }
+            val derived = BackupCrypto.deriveKey(passphrase, BackupCrypto.generateSalt())
+            key = derived
+            val encryptedBytes = BackupCrypto.encrypt(zipBytes, derived)
+            encrypted = encryptedBytes
+            outputStream.use { it.write(encryptedBytes) }
+            Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e)
+        } finally {
+            plaintext?.fill(0)
+            encrypted?.fill(0)
+            key?.clear()
+        }
+    }
+
+    /**
+     * Restauración manual cifrada: el tag de GCM se valida ANTES de tocar Room.
+     * No se aceptan ZIP sin cifrar por esta ruta.
+     */
+    suspend fun importEncryptedDatabaseArchive(
+        inputStream: InputStream,
+        passphrase: CharArray
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        var fileBytes: ByteArray? = null
+        var plaintext: ByteArray? = null
+        var key: BackupCrypto.DerivedKey? = null
+        try {
+            val file = readLimited(inputStream, MAX_ENCRYPTED_ARCHIVE_BYTES)
+            fileBytes = file
+            val header = BackupCrypto.readHeader(file)
+            val derived = BackupCrypto.deriveKey(passphrase, header.salt, header.iterations)
+            key = derived
+            val zipBytes = BackupCrypto.decrypt(file, derived.keyBytes)
+            plaintext = zipBytes
+            importDatabaseFromZip(ByteArrayInputStream(zipBytes)).getOrThrow()
+            Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e)
+        } finally {
+            fileBytes?.fill(0)
+            plaintext?.fill(0)
+            key?.clear()
+        }
+    }
+
+    private fun readLimited(stream: InputStream, maximumBytes: Long): ByteArray =
+        stream.use { source ->
+            ByteArrayOutputStream().use { out ->
+                val buffer = ByteArray(8192)
+                var total = 0L
+                while (true) {
+                    val read = source.read(buffer)
+                    if (read == -1) break
+                    total += read
+                    if (total > maximumBytes) {
+                        throw CorruptBackupException("El archivo cifrado supera el límite de seguridad")
+                    }
+                    out.write(buffer, 0, read)
+                }
+                out.toByteArray()
+            }
+        }
+
+
+    private suspend fun exportDatabaseToZip(outputStream: OutputStream): Result<Unit> = archiveOperation { directory ->
         val snapshotFile = File(directory, "lumi_db")
         SQLiteDatabase.openOrCreateDatabase(snapshotFile, null).use { snapshot ->
             database.withTransaction {
@@ -51,15 +161,28 @@ class BackupManager @Inject constructor(
                 }
             }
         }
+        // Capture the portable profile without exposing the raw DataStore file.
+        val profileJson = ProfileBackupCodec.toJson(profilePreferences.exportBackupProfile())
+        val profileBytes = profileJson.toByteArray(Charsets.UTF_8)
+        if (profileBytes.size > ProfileBackupCodec.MAX_JSON_BYTES) {
+            throw CorruptBackupException("Perfil de respaldo demasiado grande")
+        }
         ZipOutputStream(outputStream).use { zip ->
             zip.putNextEntry(ZipEntry("lumi_db"))
             snapshotFile.inputStream().use { it.copyTo(zip) }
             zip.closeEntry()
+            zip.putNextEntry(ZipEntry("profile.json"))
+            zip.write(profileBytes)
+            zip.closeEntry()
         }
     }
 
+    /**
+     * Solo compatibilidad con archivos ZIP exportados por versiones antiguas.
+     * Esta ruta no está cifrada: la UI debe pedir confirmación explícita.
+     */
     suspend fun importDatabaseFromZip(inputStream: InputStream): Result<Unit> = archiveOperation { directory ->
-        val allowed = setOf("lumi_db", "lumi_db-wal", "lumi_db-shm")
+        val allowed = setOf("lumi_db", "lumi_db-wal", "lumi_db-shm", "profile.json")
         val found = mutableSetOf<String>()
         var extractedBytes = 0L
         ZipInputStream(inputStream).use { zip ->
@@ -70,10 +193,15 @@ class BackupManager @Inject constructor(
                 }
                 File(directory, entry.name).outputStream().use { output ->
                     val buffer = ByteArray(8192)
+                    var entryBytes = 0L
                     var count = zip.read(buffer)
                     while (count != -1) {
                         extractedBytes += count
+                        entryBytes += count
                         if (extractedBytes > 25L * 1024 * 1024) throw CorruptBackupException("Respaldo demasiado grande")
+                        if (entry.name == "profile.json" && entryBytes > ProfileBackupCodec.MAX_JSON_BYTES) {
+                            throw CorruptBackupException("Perfil de respaldo demasiado grande")
+                        }
                         output.write(buffer, 0, count)
                         count = zip.read(buffer)
                     }
@@ -83,6 +211,11 @@ class BackupManager @Inject constructor(
             }
         }
         if ("lumi_db" !in found) throw CorruptBackupException("El respaldo no contiene una base de datos")
+        // Existing archives contain only lumi_db. Missing profile means preserve
+        // current DataStore; profile.json in new archives is checked before writes.
+        val profile = if ("profile.json" in found) {
+            ProfileBackupCodec.fromJson(File(directory, "profile.json").readText(Charsets.UTF_8))
+        } else null
         // Older archives may include a WAL; recovery happens only in this staging database.
         SQLiteDatabase.openDatabase(File(directory, "lumi_db").path, null, SQLiteDatabase.OPEN_READWRITE).use { source ->
             source.rawQuery("PRAGMA quick_check", null).use { cursor ->
@@ -129,6 +262,9 @@ class BackupManager @Inject constructor(
                         // Si la tabla no tiene autoincrement en sqlite_sequence, ignorar
                     }
                 }
+                // Do not restore permissions/consents or the raw DataStore. If this
+                // operation throws, Room rolls back the database transaction.
+                if (profile != null) profilePreferences.restoreBackupProfile(profile)
             }
             // Notificar a Room InvalidationTracker para refrescar los Flows activos
             database.invalidationTracker.refreshVersionsAsync()

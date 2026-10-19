@@ -23,7 +23,7 @@ data class OnboardingUiState(
 ) {
     // 0: Bienvenida, 1: Seguridad, 2: Tu nombre, 3: Tu ciclo, 4: Último periodo, 5: Preferencias, 6: Personalización, 7: Listo
     val visibleSteps: List<Int>
-        get() = if (data.mode == "support") listOf(0, 1, 2, 7) else listOf(0, 1, 2, 3, 4, 5, 6, 7)
+        get() = if (data.mode == "support" && com.jeremy.lumi.BuildConfig.ENABLE_BONDS) listOf(0, 1, 2, 7) else listOf(0, 1, 2, 3, 4, 5, 6, 7)
 
     val currentStepNumber: Int
         get() = visibleSteps.getOrElse(currentStepIndex.coerceIn(0, visibleSteps.lastIndex)) { 0 }
@@ -84,6 +84,8 @@ class OnboardingViewModel @Inject constructor(
     // ── Actualización de campos ───────────────────────────────────────────────
 
     fun setMode(mode: String) {
+        // No permitir que un estado heredado o una llamada directa active Bonds en release.
+        if (mode == "support" && !com.jeremy.lumi.BuildConfig.ENABLE_BONDS) return
         _uiState.update { state ->
             if (state.data.mode != mode) {
                 state.copy(
@@ -193,7 +195,7 @@ class OnboardingViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                if (data.mode == "support") {
+                if (data.mode == "support" && com.jeremy.lumi.BuildConfig.ENABLE_BONDS) {
                     prefs.saveOnboardingProfile(
                         userName = data.userName,
                         isRegular = null,

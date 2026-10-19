@@ -50,6 +50,7 @@ object BackupCrypto {
     private const val SALT_SIZE = 16
     private const val IV_SIZE = 12
     private const val KEY_BITS = 256
+    private const val MAX_PBKDF2_ITERATIONS = 1_000_000
     private const val TAG_BITS = 128
     private const val HEADER_SIZE = 8 + 1 + SALT_SIZE + 4 + IV_SIZE
     private const val TRANSFORMATION = "AES/GCM/NoPadding"
@@ -85,7 +86,7 @@ object BackupCrypto {
         iterations: Int = DEFAULT_ITERATIONS
     ): DerivedKey {
         require(salt.size == SALT_SIZE) { "El salt debe tener exactamente $SALT_SIZE bytes" }
-        require(iterations >= 50_000) { "Iteraciones insuficientes para PBKDF2" }
+        require(iterations in 50_000..MAX_PBKDF2_ITERATIONS) { "Iteraciones PBKDF2 fuera de los límites admitidos" }
         val spec = PBEKeySpec(passphrase, salt, iterations, KEY_BITS)
         val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
         val keyBytes = factory.generateSecret(spec).encoded
@@ -131,7 +132,7 @@ object BackupCrypto {
         }
         val salt = ByteArray(SALT_SIZE).also { buffer.get(it) }
         val iterations = buffer.int
-        if (iterations !in 50_000..10_000_000) {
+        if (iterations !in 50_000..MAX_PBKDF2_ITERATIONS) {
             throw CorruptBackupException("Cabecera de respaldo corrupta o iteraciones fuera de rango seguro")
         }
         val iv = ByteArray(IV_SIZE).also { buffer.get(it) }

@@ -179,7 +179,8 @@ fun OptionCard(
 fun Step0Welcome(
     mode: String,
     onSelectMode: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showSupportMode: Boolean = true
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -219,13 +220,15 @@ fun Step0Welcome(
                 selected = mode == "track",
                 onClick = { onSelectMode("track") }
             )
-            OptionCard(
-                title = stringResource(R.string.onboarding_mode_support_title),
-                subtitle = stringResource(R.string.onboarding_mode_support_subtitle),
-                icon = DefaultOnboardingIconProvider.getVector(OnboardingIconKey.People),
-                selected = mode == "support",
-                onClick = { onSelectMode("support") }
-            )
+            if (showSupportMode) {
+                OptionCard(
+                    title = stringResource(R.string.onboarding_mode_support_title),
+                    subtitle = stringResource(R.string.onboarding_mode_support_subtitle),
+                    icon = DefaultOnboardingIconProvider.getVector(OnboardingIconKey.People),
+                    selected = mode == "support",
+                    onClick = { onSelectMode("support") }
+                )
+            }
         }
     }
 }
