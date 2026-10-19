@@ -1,0 +1,20 @@
+name: Lumi Studio · Web
+on:
+  push:
+    paths: ["lumi-studio/**", ".github/workflows/lumi-studio.yml"]
+    branches: ["feat/lumi-studio-moderacion"]
+  pull_request:
+    paths: ["lumi-studio/**", ".github/workflows/lumi-studio.yml"]
+jobs:
+  vite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install & compile dashboard
+        working-directory: lumi-studio
+        run: |
+          npm install --no-audit --no-fund
+          npm run build

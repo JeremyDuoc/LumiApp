@@ -127,6 +127,11 @@ service cloud.firestore {
     // P1-5 RESUELTO: Ningún extraño puede enumerar ni hacer get de invitaciones.
     // Solo el titular puede ver su propia invitación. El canje lo ejecuta la Cloud Function.
     match /partner_invitations/{code} {
+      // Función local: la de partner_links no está visible en este match.
+      function invitationChangedOnly(fields) {
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+      }
+
       allow list: if false;
 
       allow get: if request.auth != null && resource.data.ownerUid == request.auth.uid;
@@ -142,7 +147,7 @@ service cloud.firestore {
       allow update: if request.auth != null
         && resource.data.ownerUid == request.auth.uid
         && request.resource.data.status == 'REVOKED'
-        && changedOnly(['status', 'revokedAtMs']);
+        && invitationChangedOnly(['status', 'revokedAtMs']);
 
       allow delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
     }
@@ -192,5 +197,155 @@ service cloud.firestore {
           get(/databases/$(database)/documents/partner_links/$(linkId)).data.partnerUid == request.auth.uid
         );
     }
+
+    // LUMI · TU VOZ · SPARK (sin Cloud Functions).
+    // Las propuestas y comentarios entran privados: un moderador local
+    // los mueve a voice_ideas y /comments usando el Admin SDK (no Cloud Functions).
+    // No guardar datos médicos ni identificadores de usuario en documentos públicos.
+    match /voice_ideas/{ideaId} {
+      function voterPath() {
+        return /databases/$(database)/documents/voice_votes/$(request.auth.uid)/items/$(ideaId);
+      }
+      function validVoteCounter() {
+        return request.auth != null
+          && resource.data.visible == true
+          && resource.data.votesCount is int
+          && request.resource.data.votesCount is int
+          && request.resource.data.votesCount >= 0
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votesCount'])
+          && (
+            (
+              request.resource.data.votesCount == resource.data.votesCount + 1
+              && existsAfter(voterPath())
+              && getAfter(voterPath()).data.active == true
+              && (!exists(voterPath()) || get(voterPath()).data.active == false)
+            ) ||
+            (
+              request.resource.data.votesCount == resource.data.votesCount - 1
+              && exists(voterPath())
+              && get(voterPath()).data.active == true
+              && existsAfter(voterPath())
+              && getAfter(voterPath()).data.active == false
+            )
+          );
+      }
+      allow get, list: if request.auth != null && resource.data.visible == true;
+      // Un cliente NO puede editar título, descripción, visibilidad o estado.
+      allow create, delete: if false;
+      allow update: if validVoteCounter();
+      match /comments/{commentId} {
+        allow get, list: if request.auth != null
+          && get(/databases/$(database)/documents/voice_ideas/$(ideaId)).data.visible == true;
+        allow create, update, delete: if false;
+      }
+    }
+
+    match /voice_votes/{uid}/items/{ideaId} {
+      function ideaPath() {
+        return /databases/$(database)/documents/voice_ideas/$(ideaId);
+      }
+      function validCountChange(delta) {
+        return exists(ideaPath())
+          && get(ideaPath()).data.visible == true
+          && getAfter(ideaPath()).data.votesCount == get(ideaPath()).data.votesCount + delta;
+      }
+      allow get, list: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['active'])
+        && request.resource.data.keys().hasAll(['active'])
+        && request.resource.data.active == true
+        && validCountChange(1);
+      allow update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active'])
+        && resource.data.active is bool
+        && request.resource.data.active is bool
+        && request.resource.data.active != resource.data.active
+        && validCountChange(request.resource.data.active ? 1 : -1);
+      allow delete: if false;
+    }
+
+    match /voice_pending_ideas/{ideaId} {
+      function ownPath() {
+        return /databases/$(database)/documents/voice_my_submissions/$(request.auth.uid)/items/$(ideaId);
+      }
+      allow read, update, delete: if false;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['title', 'description', 'category', 'ownerUid', 'createdAtMs'])
+        && request.resource.data.keys().hasAll(['title', 'description', 'category', 'ownerUid', 'createdAtMs'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 8
+        && request.resource.data.title.size() <= 95
+        && request.resource.data.description is string
+        && request.resource.data.description.size() >= 20
+        && request.resource.data.description.size() <= 650
+        && request.resource.data.category in ['Calendario', 'Registro diario', 'Apariencia', 'Privacidad', 'Recordatorios', 'Otro']
+        && request.resource.data.createdAtMs is int
+        && request.resource.data.createdAtMs > 0
+        && request.resource.data.createdAtMs <= request.time.toMillis() + 300000
+        && existsAfter(ownPath())
+        && getAfter(ownPath()).data.title == request.resource.data.title
+        && getAfter(ownPath()).data.description == request.resource.data.description
+        && getAfter(ownPath()).data.category == request.resource.data.category
+        && getAfter(ownPath()).data.status == 'Pendiente de revisión'
+        && getAfter(ownPath()).data.public == false
+        && getAfter(ownPath()).data.createdAtMs == request.resource.data.createdAtMs;
+    }
+    match /voice_my_submissions/{uid}/items/{ideaId} {
+      function pendingPath() {
+        return /databases/$(database)/documents/voice_pending_ideas/$(ideaId);
+      }
+      allow get, list: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['title','description','category','status','public','createdAtMs'])
+        && request.resource.data.keys().hasAll(['title','description','category','status','public','createdAtMs'])
+        && request.resource.data.status == 'Pendiente de revisión'
+        && request.resource.data.public == false
+        && existsAfter(pendingPath())
+        && getAfter(pendingPath()).data.ownerUid == uid
+        && getAfter(pendingPath()).data.title == request.resource.data.title
+        && getAfter(pendingPath()).data.description == request.resource.data.description
+        && getAfter(pendingPath()).data.category == request.resource.data.category
+        && getAfter(pendingPath()).data.createdAtMs == request.resource.data.createdAtMs;
+      allow update, delete: if false;
+    }
+    match /voice_pending_comments/{commentId} {
+      allow read, update, delete: if false;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['ideaId','body','ownerUid','createdAtMs'])
+        && request.resource.data.keys().hasAll(['ideaId','body','ownerUid','createdAtMs'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ideaId is string
+        && request.resource.data.body is string
+        && request.resource.data.body.size() >= 4
+        && request.resource.data.body.size() <= 420
+        && request.resource.data.createdAtMs is int
+        && request.resource.data.createdAtMs > 0
+        && request.resource.data.createdAtMs <= request.time.toMillis() + 300000
+        && exists(/databases/$(database)/documents/voice_ideas/$(request.resource.data.ideaId))
+        && get(/databases/$(database)/documents/voice_ideas/$(request.resource.data.ideaId)).data.visible == true;
+    }
+    match /voice_reports/{reportId} {
+      allow read, update, delete: if false;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['ideaId','reporterUid','reason','createdAtMs'])
+        && request.resource.data.keys().hasAll(['ideaId','reporterUid','reason','createdAtMs'])
+        && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.ideaId is string
+        && reportId == request.auth.uid + '_' + request.resource.data.ideaId
+        && request.resource.data.reason is string
+        && request.resource.data.reason.size() >= 4
+        && request.resource.data.reason.size() <= 160
+        && request.resource.data.createdAtMs is int
+        && request.resource.data.createdAtMs > 0
+        && request.resource.data.createdAtMs <= request.time.toMillis() + 300000
+        && exists(/databases/$(database)/documents/voice_ideas/$(request.resource.data.ideaId))
+        && get(/databases/$(database)/documents/voice_ideas/$(request.resource.data.ideaId)).data.visible == true;
+    }
+    match /voice_limits/{uid} { allow read, write: if false; }
+
   }
 }

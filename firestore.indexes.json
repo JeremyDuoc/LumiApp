@@ -1,10 +1,17 @@
 {
   "indexes": [
     {
-      "collectionGroup": "entries",
+      "collectionGroup": "voice_ideas",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "timestampMs", "order": "ASCENDING" }
+        {
+          "fieldPath": "visible",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAtMs",
+          "order": "DESCENDING"
+        }
       ]
     }
   ]

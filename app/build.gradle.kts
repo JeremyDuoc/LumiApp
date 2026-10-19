@@ -7,6 +7,7 @@ plugins {
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
     id("com.google.gms.google-services")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
@@ -14,6 +15,10 @@ android {
     compileSdk = 35
 
     defaultConfig {
+        // Únicamente clave PUBLISHABLE (pública), NUNCA service_role ni JWT secret.
+        // Guardar LUMI_SUPABASE_PUBLISHABLE_KEY en ~/.gradle/gradle.properties (fuera del repo).
+        buildConfigField("String", "SUPABASE_URL", "\"https://cochpdozndxoodioftzk.supabase.co\"")
+        buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"${providers.gradleProperty("LUMI_SUPABASE_PUBLISHABLE_KEY").orNull ?: ""}\"")
         applicationId = "com.jeremy.lumi"
         minSdk = 26
         targetSdk = 35
@@ -119,6 +124,14 @@ dependencies {
     implementation("com.google.firebase:firebase-functions-ktx")
     implementation("com.google.firebase:firebase-messaging-ktx")
     implementation("com.google.firebase:firebase-analytics-ktx")
+
+    // Tu voz (solo backend público del foro; sin datos del ciclo).
+    // Compatible con el compilador Kotlin 2.0.21 del proyecto.
+    implementation(platform("io.github.jan-tennert.supabase:bom:3.0.1"))
+    implementation("io.github.jan-tennert.supabase:auth-kt")
+    implementation("io.github.jan-tennert.supabase:postgrest-kt")
+    implementation("io.github.jan-tennert.supabase:realtime-kt")
+    implementation("io.ktor:ktor-client-okhttp:3.0.0")
 
     // 8. ZXing (Códigos QR)
     implementation("com.google.zxing:core:3.5.3")

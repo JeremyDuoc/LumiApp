@@ -22,6 +22,6 @@ sealed class BottomNavItem(
     object Bonds    : BottomNavItem("bonds",    Icons.Default.Favorite,           R.string.nav_bonds)
     object Chat     : BottomNavItem("chat",     Icons.Default.ChatBubbleOutline,  R.string.nav_chat)
     object Settings : BottomNavItem("settings", Icons.Default.Settings,           R.string.nav_settings)
-    // Forum sigue siendo accesible pero ya no ocupa espacio en la barra principal
-    object Forum    : BottomNavItem("forum",    Icons.Default.Favorite,           R.string.nav_forum)
+    // Tu voz ocupa la cuarta pestaña; Bonds continúa disponible por navegación secundaria.
+    object Forum    : BottomNavItem("forum",    Icons.Default.ChatBubbleOutline,  R.string.nav_forum)
 }

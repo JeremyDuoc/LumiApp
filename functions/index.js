@@ -495,3 +495,5 @@ async function limpiarTokenInvalidoSiAplica(linkId, campoToken, error) {
     }
   }
 }
+
+// Tu voz usa Firestore Spark sin Functions; solo Bonds necesita este módulo.
