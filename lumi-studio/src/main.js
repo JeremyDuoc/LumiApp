@@ -332,14 +332,16 @@ document.addEventListener('input',e=>{
   state.query=e.target.value
   const list=e.target.closest('.surface')
   if(list){
-   const parent=list.parentElement
-   if(parent){
     const before=window.scrollY
-    parent.innerHTML=renderSection()
+    list.outerHTML=renderSection()
     const input=document.querySelector('#list-search')
-    if(input){input.focus();input.setSelectionRange(start,start)}
-    window.scrollTo({top:before,behavior:'instant'})
-   }
+    if(input){
+      input.focus()
+      if(typeof input.setSelectionRange==='function'){
+        try { input.setSelectionRange(start,start) } catch(_) {}
+      }
+    }
+    window.scrollTo(0,before)
   }
  }
 })
