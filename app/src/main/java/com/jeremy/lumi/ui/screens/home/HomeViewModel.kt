@@ -57,7 +57,6 @@ class HomeViewModel @Inject constructor(
     private val partnerRepositoryProvider: dagger.Lazy<com.jeremy.lumi.domain.repository.PartnerRepository>,
     private val rulesEngine      : LumiRulesEngine,
     private val healthConnectManager: com.jeremy.lumi.data.health.HealthConnectManager,
-    private val widgetUpdater    : com.jeremy.lumi.ui.widget.WidgetUpdater,
     private val getEffectiveCyclePredictionUseCase: com.jeremy.lumi.domain.usecase.GetEffectiveCyclePredictionUseCase
 ) : ViewModel() {
 
@@ -524,18 +523,9 @@ class HomeViewModel @Inject constructor(
                 )
                 rulesEngine.updateContext(cycleContext)
                 
-                // Actualizar Widget
-                val phaseName = when (prediction.currentPhase) {
-                    CyclePhase.MENSTRUAL -> context.getString(R.string.pm_phase_menstrual)
-                    CyclePhase.FOLLICULAR -> context.getString(R.string.pm_phase_follicular)
-                    CyclePhase.OVULATION -> context.getString(R.string.pm_phase_ovulation)
-                    CyclePhase.LUTEAL -> context.getString(R.string.pm_phase_luteal)
-                    CyclePhase.PREGNANCY -> context.getString(R.string.phase_pregnancy)
-                    CyclePhase.UNKNOWN -> context.getString(R.string.phase_unknown)
-                }
-                val msg = if (prediction.isLate) context.getString(R.string.home_period_delayed_by, prediction.delayDays)
-                          else context.getString(R.string.home_period_next_in, prediction.daysUntilNextPeriod)
-                widgetUpdater.updateWidget(prediction.currentDayOfCycle, phaseName, msg, "#9B72C0")
+                // WorkManager recalculates widget data using the same effective predictor.
+                // Avoid stale hard-coded colors and bypassed pregnancy/contraception modes.
+                com.jeremy.lumi.ui.widget.WidgetRefreshScheduler.requestNow(context)
                 // FIX P2-3: Re-sincronizar Health Connect en cada carga del ciclo
                 // para mantener los datos de sueño/BBT actualizados durante la sesión.
                 val hcEnabled = prefsManager.isHealthConnectEnabledFlow.first()
@@ -544,6 +534,7 @@ class HomeViewModel @Inject constructor(
                 }
 
             } else {
+                com.jeremy.lumi.ui.widget.WidgetRefreshScheduler.requestNow(context)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
