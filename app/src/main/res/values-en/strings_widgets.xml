@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_cycle_description">Your cycle at a glance</string>
+    <string name="widget_week_description">Your week and estimated phases</string>
+    <string name="widget_quiet_description">Discreet Lumi widget, no health data</string>
+    <string name="widget_hidden_title">Your private space</string>
+    <string name="widget_hidden_desc">Enable cycle details in Settings to see your cycle.</string>
+    <string name="widget_empty_title">A new beginning</string>
+    <string name="widget_empty_desc">Open Lumi to record your first cycle.</string>
+    <string name="widget_pregnancy_label">PREGNANCY MODE</string>
+    <string name="widget_pregnancy_title">One day at a time</string>
+    <string name="widget_day_number">Day %1$d</string>
+    <string name="widget_next_estimate">Next period estimated in %1$d days</string>
+    <string name="widget_prediction_overdue">The estimated date has passed</string>
+    <string name="widget_week_title">Your upcoming days</string>
+    <string name="widget_estimation_note">Estimated phases, not medical certainties</string>
+    <string name="widget_quiet_subtitle">A moment for yourself</string>
+    <string name="widget_settings_title">Lumi widgets</string>
+    <string name="widget_settings_subtitle">Choose how Lumi joins your home screen.</string>
+    <string name="widget_reveal_title">Show cycle data in widgets</string>
+    <string name="widget_reveal_desc">Shows cycle information on your home screen, even while the phone is unlocked. Off by default.</string>
+    <string name="widget_type_cycle">My cycle</string>
+    <string name="widget_type_cycle_desc">Today, phase and status · 2 × 2</string>
+    <string name="widget_type_week">My week</string>
+    <string name="widget_type_week_desc">Seven days of tracking · 4 × 2</string>
+    <string name="widget_type_quiet">Take a pause</string>
+    <string name="widget_type_quiet_desc">Always discreet, no private data · 2 × 1</string>
+    <string name="widget_choose_widget">Choose widget</string>
+    <string name="widget_pin_unsupported">Open your system\'s widget picker and find Lumi.</string>
+    <string name="widget_privacy_note">For privacy, widgets show no cycle details without your permission.</string>
+</resources>
