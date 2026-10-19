@@ -8,7 +8,15 @@ const supabase = URL && KEY ? createClient(URL, KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 }) : null
 
-const STEPS = ['Recibida', 'En revisión', 'Aceptada', 'En desarrollo', 'Disponible', 'No prevista']
+const MILESTONES = ['Recibida', 'En revisión', 'Aceptada', 'En desarrollo', 'Disponible']
+const STEPS = [...MILESTONES, 'No prevista']
+const STEP_DESCRIPTIONS = [
+ 'La propuesta ha sido aprobada y publicada.',
+ 'Evaluamos su utilidad y viabilidad.',
+ 'La mejora ha sido incorporada a nuestra hoja de ruta.',
+ 'Estamos trabajando en su implementación.',
+ 'La mejora ya está disponible en Lumi.'
+]
 const TABS = [
   { key:'pendientes',label:'Bandeja de entrada',icon:'inbox' },
   { key:'roadmap',label:'Hoja de ruta',icon:'route' },
@@ -146,9 +154,9 @@ function renderRoadmap() {
  '<div class="entry-meta"><span class="category">'+clean(x.category)+'</span> '+badge(x.status)+' '+(!x.visible?'<span class="status status--muted">Oculta</span>':'')+'</div>'+
  '<h3>'+clean(x.title)+'</h3><p>'+clean(cut(x.description,200))+'</p>'+
  '<div class="roadmap-numbers"><span>'+svg('check',15)+' '+Number(x.votes_count||0)+' apoyos</span><span>'+svg('message',15)+' '+Number(x.comments_count||0)+' comentarios</span></div></div>'+
- '<div class="roadmap-tools"><label>ESTADO <select data-action="draft-status" data-id="'+clean(x.id)+'" aria-label="Estado de '+clean(x.title)+'">'+
- STEPS.map(s=>'<option value="'+clean(s)+'"'+(s===(state.draftStatus[x.id]||x.status)?' selected':'')+'>'+clean(s)+'</option>').join('')+'</select></label>'+
- act('save-status',x.id,'Guardar estado','primary','check')+
+ '<div class="roadmap-tools"><div class="roadmap-stage-count">'+
+ (MILESTONES.includes(x.status)?'ETAPA '+(MILESTONES.indexOf(x.status)+1)+' / '+MILESTONES.length:'ETAPA PAUSADA')+
+ '</div>'+act('open-progress',x.id,'Cambiar estado','primary','route')+
  '<div class="roadmap-secondary">'+act('open-reply',x.id,'Responder','light','message')+
  act('toggle-visibility',x.id,x.visible?'Ocultar':'Mostrar','ghost',x.visible?'eyeoff':'eye')+'</div></div></article>').join(''):
  empty('Aún no hay propuestas públicas','Las ideas aprobadas aparecerán aquí con su estado y los apoyos recibidos.'))+'</section>'
@@ -186,17 +194,52 @@ function renderSection() {
    default:return ''
  }
 }
+function renderProgressDialog(dialog,idea) {
+ const index=MILESTONES.indexOf(dialog.stage)
+ const isNotPlanned=dialog.stage==='No prevista'
+ const steps=MILESTONES.map((label,i)=>{
+   const kind=isNotPlanned?'pending':i<index?'completed':i===index?'current':'pending'
+   const marker=i<index&&!isNotPlanned?svg('check',19):String(i+1)
+   return '<div class="stepper-step stepper-'+kind+'">'+
+     '<div class="stepper-rail"><button type="button" class="stepper-circle" data-action="progress-step" data-step="'+clean(label)+'" aria-label="Elegir etapa '+clean(label)+'" aria-current="'+(kind==='current'?'step':'false')+'">'+marker+'</button>'+
+      (i===MILESTONES.length-1?'':'<div class="stepper-line"></div>')+'</div>'+
+     '<div class="stepper-content"><button type="button" class="stepper-title" data-action="progress-step" data-step="'+clean(label)+'">'+clean(label)+'</button>'+
+      '<div class="stepper-status">'+(kind==='completed'?'Completada':kind==='current'?'Etapa seleccionada':'Por venir')+'</div>'+
+      (kind==='current'?'<p class="stepper-caption">'+clean(STEP_DESCRIPTIONS[i])+'</p>':'')+
+     '</div></div>'
+ }).join('')
+ const before= index>0
+ const next= index>=0 && index<MILESTONES.length-1
+ const dirty= dialog.stage!==idea.status
+ return '<div class="modal-backdrop" data-action="dismiss-dialog"><section class="modal modal-progress" role="dialog" aria-modal="true" aria-labelledby="modal-title">'+
+ '<button class="close-modal icon-button" data-action="close-dialog" aria-label="Cerrar">'+svg('x')+'</button>'+
+ '<p class="eyebrow">HOJA DE RUTA · TU VOZ</p><h2 id="modal-title">El camino de esta idea.</h2>'+
+ '<p class="modal-context">'+clean(idea.title)+'</p>'+
+ '<p class="stepper-intro">Selecciona una etapa o avanza paso a paso. El cambio se publicará solo cuando pulses <b>Guardar estado</b>.</p>'+
+ (isNotPlanned?'<div class="stepper-paused">'+svg('circle',18)+' Propuesta marcada como «No prevista». Selecciona una etapa para retomarla.</div>':'')+
+ '<div class="stepper-box" aria-label="Etapas del progreso">'+steps+'</div>'+
+ '<div class="stepper-controls"><button class="btn ghost" type="button" data-action="progress-prev" '+(!before?'disabled':'')+'>'+svg('arrow',15)+' Anterior</button>'+
+ '<button class="btn light" type="button" data-action="progress-next" '+(!next?'disabled':'')+'>Siguiente '+svg('arrow',15)+'</button></div>'+
+ '<div class="stepper-alternative"><span>¿Esta propuesta no se implementará?</span>'+
+ '<button type="button" class="btn ghost" data-action="progress-not-planned"'+(isNotPlanned?' disabled':'')+'>Marcar No prevista</button></div>'+
+ '<div class="modal-actions stepper-save"><button class="btn light" type="button" data-action="close-dialog">Cancelar</button>'+
+ '<button class="btn primary" type="button" data-action="save-progress" '+(!dirty||state.busy?'disabled':'')+'>'+svg('check')+' Guardar estado</button></div>'+
+ '<p class="stepper-footnote">Mostramos el avance actual. Lumi no guarda fechas individuales de cada etapa.</p>'+
+ '</section></div>'
+}
 function renderDialog(){
  const dialog=state.dialog
  if(!dialog)return ''
  const idea=state.data.ideas.find(x=>x.id===dialog.idea)
  if(!idea)return ''
+ if(dialog.kind==='progress')return renderProgressDialog(dialog,idea)
  return '<div class="modal-backdrop" data-action="dismiss-dialog"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button class="close-modal icon-button" data-action="close-dialog" aria-label="Cerrar">'+svg('x')+'</button>'+
  '<span class="eyebrow">RESPONDER COMO EQUIPO LUMI</span><h2 id="modal-title">Una respuesta que importa.</h2>'+
  '<p class="modal-context">'+clean(idea.title)+'</p><form id="reply-form" data-id="'+clean(idea.id)+'"><label>Tu mensaje oficial<textarea name="body" maxlength="420" minlength="4" required placeholder="Cuéntales qué estamos preparando, explica una decisión o agradece una idea…"></textarea></label>'+
  '<p class="input-hint">Esta respuesta será pública y estará marcada como «Equipo Lumi».</p>'+
  '<div class="modal-actions"><button class="btn light" type="button" data-action="close-dialog">Cancelar</button><button class="btn primary" type="submit">'+svg('send')+' Publicar respuesta</button></div></form></section></div>'
 }
+
 function render() {
  if(!supabase){app.innerHTML=loginView(); app.querySelector('.auth-panel').insertAdjacentHTML('beforeend','<div class="error-banner">Faltan VITE_SUPABASE_URL y VITE_SUPABASE_PUBLISHABLE_KEY en el archivo .env local.</div>'); return}
  if(state.checking){app.innerHTML=loadingBlock();return}
@@ -289,9 +332,31 @@ async function action(e){
  if(name==='tab'){state.tab=target.dataset.tab;state.query='';render();return}
  if(name==='logout'){await logout();return}
  if(name==='refresh'){await loadAll(true);return}
- if(name==='draft-status')return
- if(name==='open-reply'){state.dialog={idea:id};render();return}
+ if(name==='open-reply'){state.dialog={kind:'reply',idea:id};render();return}
+ if(name==='open-progress'){
+   const idea=state.data.ideas.find(x=>x.id===id)
+   if(idea){state.dialog={kind:'progress',idea:id,stage:idea.status};render()}
+   return
+ }
  if(!state.authorized)return
+ if(state.dialog?.kind==='progress' && name.startsWith('progress-')){
+   const d=state.dialog
+   const i=MILESTONES.indexOf(d.stage)
+   if(name==='progress-step' && MILESTONES.includes(target.dataset.step))d.stage=target.dataset.step
+   if(name==='progress-prev' && i>0)d.stage=MILESTONES[i-1]
+   if(name==='progress-next' && i>=0 && i<MILESTONES.length-1)d.stage=MILESTONES[i+1]
+   if(name==='progress-not-planned')d.stage='No prevista'
+   render()
+   return
+ }
+ if(name==='save-progress' && state.dialog?.kind==='progress'){
+   const d=state.dialog
+   const idea=state.data.ideas.find(x=>x.id===d.idea)
+   if(!idea || !STEPS.includes(d.stage))return
+   if(d.stage==='No prevista' && !window.confirm('¿Marcar esta idea como «No prevista»? La comunidad verá este estado.'))return
+   await perform('voice_admin_set_status',{p_id:idea.id,p_status:d.stage},'Estado actualizado a «'+d.stage+'».')
+   return
+ }
  if(rpcActions[name]){
   const confirmed={
     'reject-idea':'¿Rechazar esta propuesta? No se publicará.',
@@ -301,13 +366,6 @@ async function action(e){
   if(confirmed&&!window.confirm(confirmed))return
   const [fn,params]=rpcActions[name]
   await perform(fn,params(id),'Operación completada.')
-  return
- }
- if(name==='save-status'){
-  const idea=state.data.ideas.find(x=>x.id===id)
-  const status=state.draftStatus[id]||idea?.status
-  if(!idea || !STEPS.includes(status))return
-  await perform('voice_admin_set_status',{p_id:id,p_status:status},'Estado actualizado a «'+status+'».')
   return
  }
  if(name==='toggle-visibility'){
@@ -323,9 +381,6 @@ async function action(e){
  }
 }
 document.addEventListener('click',e=>{action(e).catch(err=>toast(err.message||String(err),'error'))})
-document.addEventListener('change',e=>{
- if(e.target?.dataset?.action==='draft-status')state.draftStatus[e.target.dataset.id]=e.target.value
-})
 document.addEventListener('input',e=>{
  if(e.target?.id==='list-search'){
   const start=e.target.selectionStart
