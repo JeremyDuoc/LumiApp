@@ -1,15 +1,27 @@
 package com.jeremy.lumi.ui.screens.forum
 
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
-import kotlinx.coroutines.channels.awaitClose
+import com.jeremy.lumi.BuildConfig
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.realtime.Realtime
+import io.github.jan.supabase.realtime.selectAsFlow
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.isActive
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/** Modelos de UI estables. Nada de este repositorio accede a registros de salud. */
 data class VoiceIdea(
     val id: String,
     val title: String,
@@ -22,131 +34,168 @@ data class VoiceIdea(
     val public: Boolean = true
 )
 data class VoiceComment(val id: String, val body: String, val team: Boolean)
-data class VoiceMine(val id: String, val title: String, val description: String, val category: String, val status: String, val createdAtMs: Long, val public: Boolean)
+data class VoiceMine(
+    val id: String,
+    val title: String,
+    val description: String,
+    val category: String,
+    val status: String,
+    val createdAtMs: Long,
+    val public: Boolean
+)
 
-@Singleton
-class VoiceRepository @Inject constructor(
-    private val auth: FirebaseAuth,
-    private val db: FirebaseFirestore
+@Serializable
+private data class VoiceIdeaRow(
+    val id: String,
+    val title: String,
+    val description: String,
+    val category: String,
+    val status: String,
+    @SerialName("visible") val visible: Boolean = true,
+    @SerialName("votes_count") val votesCount: Int = 0,
+    @SerialName("comments_count") val commentsCount: Int = 0,
+    @SerialName("created_at_ms") val createdAtMs: Long = 0L,
 ) {
+    fun ui() = VoiceIdea(
+        id = id, title = title, description = description, category = category,
+        status = status, votes = votesCount, comments = commentsCount,
+        createdAtMs = createdAtMs
+    )
+}
+@Serializable
+private data class VoiceSubmissionRow(
+    val id: String, val title: String, val description: String,
+    val category: String, val status: String,
+    @SerialName("is_public") val isPublic: Boolean,
+    @SerialName("created_at_ms") val createdAtMs: Long
+) {
+    fun ui() = VoiceMine(id,title,description,category,status,createdAtMs,isPublic)
+}
+@Serializable
+private data class VoiceVoteRow(
+    @SerialName("idea_id") val ideaId: String
+)
+@Serializable
+private data class VoiceCommentRow(
+    val id: String, val body: String,
+    @SerialName("is_team") val isTeam: Boolean,
+    @SerialName("idea_id") val ideaId: String,
+    @SerialName("created_at_ms") val createdAtMs: Long
+) {
+    fun ui() = VoiceComment(id,body,isTeam)
+}
+@Serializable
+private data class SubmitIdeaParams(
+    @SerialName("p_title") val title: String,
+    @SerialName("p_description") val description: String,
+    @SerialName("p_category") val category: String
+)
+@Serializable
+private data class VoteParams(@SerialName("p_idea_id") val ideaId: String)
+@Serializable
+private data class CommentParams(
+    @SerialName("p_idea_id") val ideaId: String,
+    @SerialName("p_body") val body: String
+)
+@Serializable
+private data class ReportParams(
+    @SerialName("p_idea_id") val ideaId: String,
+    @SerialName("p_reason") val reason: String
+)
+
+/**
+ * Supabase sólo para «Tu voz». No enviar fechas de período, síntomas,
+ * preferencias ni otros datos privados a este cliente.
+ *
+ * Auth anónimo es independiente del Firebase Auth que se usa en otros módulos.
+ * RLS y RPCs transaccionales controlan permisos y conteos en PostgreSQL.
+ */
+@Singleton
+class VoiceRepository @Inject constructor() {
+
+    private val client: SupabaseClient by lazy {
+        require(BuildConfig.SUPABASE_PUBLISHABLE_KEY.isNotBlank()) {
+            "Falta configurar LUMI_SUPABASE_PUBLISHABLE_KEY en ~/.gradle/gradle.properties."
+        }
+        createSupabaseClient(
+            supabaseUrl = BuildConfig.SUPABASE_URL,
+            supabaseKey = BuildConfig.SUPABASE_PUBLISHABLE_KEY
+        ) {
+            install(Auth)
+            install(Postgrest)
+            install(Realtime)
+        }
+    }
+
     suspend fun connect(): String {
-        if (auth.currentUser == null) auth.signInAnonymously().await()
-        return auth.currentUser?.uid ?: error("No se pudo establecer la sesión anónima.")
+        client.auth.awaitInitialization()
+        if (client.auth.currentUserOrNull() == null) {
+            client.auth.signInAnonymously()
+        }
+        return client.auth.currentUserOrNull()?.id
+            ?: error("No se pudo iniciar la sesión anónima de Tu voz.")
     }
 
-    fun ideas(): Flow<List<VoiceIdea>> = callbackFlow {
-        // Filtrar visible en la consulta: las reglas no funcionan como filtros.
-        val registration = db.collection("voice_ideas")
-            .whereEqualTo("visible", true)
-            .orderBy("createdAtMs", Query.Direction.DESCENDING)
-            .limit(100)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) { close(error); return@addSnapshotListener }
-                trySend(snapshot?.documents.orEmpty().mapNotNull { doc ->
-                    if (doc.getBoolean("visible") != true) return@mapNotNull null
-                    VoiceIdea(
-                        id=doc.id,title=doc.getString("title").orEmpty(),
-                        description=doc.getString("description").orEmpty(),
-                        category=doc.getString("category").orEmpty(),
-                        status=doc.getString("status").orEmpty(),
-                        votes=(doc.getLong("votesCount") ?: 0).toInt(),
-                        comments=(doc.getLong("commentsCount") ?: 0).toInt(),
-                        createdAtMs=doc.getLong("createdAtMs") ?: 0
-                    )
-                })
-            }
-        awaitClose { registration.remove() }
-    }
-    fun votes(uid: String): Flow<Set<String>> = callbackFlow {
-        val registration=db.collection("voice_votes").document(uid).collection("items")
-            .addSnapshotListener { snapshot,error ->
-                if(error!=null){ close(error); return@addSnapshotListener }
-                trySend(snapshot?.documents.orEmpty().filter{it.getBoolean("active")==true}.map{it.id}.toSet())
-            }
-        awaitClose { registration.remove() }
-    }
-    fun submissions(uid: String): Flow<List<VoiceMine>> = callbackFlow {
-        val registration=db.collection("voice_my_submissions").document(uid).collection("items")
-            .addSnapshotListener { snapshot,error ->
-                if(error!=null){ close(error); return@addSnapshotListener }
-                trySend(snapshot?.documents.orEmpty().map{ doc -> VoiceMine(
-                    doc.id,doc.getString("title").orEmpty(),doc.getString("description").orEmpty(),
-                    doc.getString("category").orEmpty(),doc.getString("status").orEmpty(),
-                    doc.getLong("createdAtMs") ?: 0,doc.getBoolean("public")==true
-                ) })
-            }
-        awaitClose { registration.remove() }
-    }
-    fun comments(ideaId:String): Flow<List<VoiceComment>> = callbackFlow {
-        val registration=db.collection("voice_ideas").document(ideaId).collection("comments")
-            .orderBy("createdAtMs",Query.Direction.ASCENDING).limit(100)
-            .addSnapshotListener { snapshot,error ->
-                if(error!=null){ close(error); return@addSnapshotListener }
-                trySend(snapshot?.documents.orEmpty().map{doc ->
-                    VoiceComment(doc.id,doc.getString("body").orEmpty(),doc.getBoolean("team")==true)
-                })
-            }
-        awaitClose { registration.remove() }
-    }
+    /** Ideas públicas: primera carga + actualizaciones PostgreSQL Realtime. */
+    fun ideas(): Flow<List<VoiceIdea>> =
+        client.from("voice_ideas").selectAsFlow(VoiceIdeaRow::id).map { rows ->
+            rows.asSequence().filter { it.visible }
+                .sortedByDescending { it.createdAtMs }.take(100).map { it.ui() }.toList()
+        }
 
     /**
-     * Spark: la aprobación es manual desde consola/CLI local.
-     * Escribir ambas copias en un batch evita envíos incompletos.
+     * Los votos contienen UID privados. No publicamos la tabla en Realtime:
+     * se consulta únicamente la sesión propietaria cada pocos segundos.
      */
-    suspend fun suggest(title:String,description:String,category:String) {
-        val uid=connect()
-        val ref=db.collection("voice_pending_ideas").document()
-        val own=db.collection("voice_my_submissions").document(uid).collection("items").document(ref.id)
-        val whenMs=System.currentTimeMillis()
-        db.batch()
-            .set(ref,mapOf(
-                "title" to title,"description" to description,"category" to category,
-                "ownerUid" to uid,"createdAtMs" to whenMs
-            ))
-            .set(own,mapOf(
-                "title" to title,"description" to description,"category" to category,
-                "status" to "Pendiente de revisión","public" to false,"createdAtMs" to whenMs
-            )).commit().await()
+    fun votes(uid: String): Flow<Set<String>> = flow {
+        while (currentCoroutineContext().isActive) {
+            val rows=client.from("voice_votes").select {
+                filter { eq("owner_uid",uid) }
+                limit(500)
+            }.decodeList<VoiceVoteRow>()
+            emit(rows.map { it.ideaId }.toSet())
+            delay(7000)
+        }
     }
-    /**
-     * Voto único por UID: el cambio de active y votesCount son atómicos.
-     * Las reglas Firestore comprueban ambos lados antes de aceptar el commit.
-     */
+
+    fun submissions(uid: String): Flow<List<VoiceMine>> = flow {
+        while (currentCoroutineContext().isActive) {
+            val rows=client.from("voice_submissions").select {
+                filter { eq("owner_uid",uid) }
+                limit(100)
+            }.decodeList<VoiceSubmissionRow>()
+            emit(rows.sortedByDescending { it.createdAtMs }.map { it.ui() })
+            delay(7000)
+        }
+    }
+
+    /** Los comentarios son públicos solo después de aprobación del equipo. */
+    fun comments(ideaId: String): Flow<List<VoiceComment>> =
+        client.from("voice_comments").selectAsFlow(VoiceCommentRow::id).map { rows ->
+            rows.asSequence().filter { it.ideaId == ideaId }
+                .sortedBy { it.createdAtMs }.take(100).map { it.ui() }.toList()
+        }
+
+    suspend fun suggest(title:String, description:String, category:String) {
+        connect()
+        client.postgrest.rpc(
+            "voice_submit_idea",
+            SubmitIdeaParams(title.trim(),description.trim(),category)
+        )
+    }
+
     suspend fun vote(ideaId:String) {
-        val uid=connect()
-        val idea=db.collection("voice_ideas").document(ideaId)
-        val vote=db.collection("voice_votes").document(uid).collection("items").document(ideaId)
-        db.runTransaction { tx ->
-            val post=tx.get(idea)
-            if (!post.exists() || post.getBoolean("visible") != true) {
-                throw IllegalStateException("Esta propuesta ya no está disponible.")
-            }
-            val prior=tx.get(vote)
-            val previous=prior.getBoolean("active")==true
-            val previousCount=post.getLong("votesCount") ?: 0
-            val nextCount=(previousCount + if(previous) -1 else 1)
-            if(nextCount<0)throw IllegalStateException("Conteo inconsistente; vuelve a intentarlo.")
-            if(prior.exists())tx.update(vote,"active",!previous)
-            else tx.set(vote,mapOf("active" to true))
-            tx.update(idea,"votesCount",nextCount)
-            nextCount
-        }.await()
+        connect()
+        client.postgrest.rpc("voice_toggle_vote",VoteParams(ideaId))
     }
+
     suspend fun comment(ideaId:String,body:String) {
         connect()
-        val idea=db.collection("voice_ideas").document(ideaId).get().await()
-        if(idea.getBoolean("visible")!=true)error("La idea ya no está disponible.")
-        db.collection("voice_pending_comments").document().set(mapOf(
-            "ideaId" to ideaId,"body" to body,
-            "ownerUid" to (auth.currentUser?.uid ?: error("Sesión no disponible.")),
-            "createdAtMs" to System.currentTimeMillis()
-        )).await()
+        client.postgrest.rpc("voice_submit_comment",CommentParams(ideaId,body.trim()))
     }
+
     suspend fun report(ideaId:String,reason:String) {
-        val uid=connect()
-        db.collection("voice_reports").document(uid+"_"+ideaId).set(mapOf(
-            "ideaId" to ideaId,"reporterUid" to uid,
-            "reason" to reason,"createdAtMs" to System.currentTimeMillis()
-        )).await()
+        connect()
+        client.postgrest.rpc("voice_report",ReportParams(ideaId,reason.trim()))
     }
 }
