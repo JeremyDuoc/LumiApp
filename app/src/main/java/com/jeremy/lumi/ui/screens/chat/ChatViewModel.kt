@@ -227,7 +227,6 @@ class ChatViewModel @Inject constructor(
     fun askQuestion(question: ChatQuestion) {
         if (_isTyping.value) return
         val ctx = rulesEngine.currentCycleContext.value
-        _askedQuestions.value = _askedQuestions.value + question
         _isTyping.value = true
 
         viewModelScope.launch {
@@ -244,17 +243,13 @@ class ChatViewModel @Inject constructor(
                 }
 
                 // Simular indicador de escritura de Lumi
-                kotlinx.coroutines.delay(750)
 
-                val recentLogs = try {
-                    repository.getAllLogs(descending = true).firstOrNull() ?: emptyList()
-                } catch (e: Exception) {
-                    if (e is kotlinx.coroutines.CancellationException) throw e
-                    emptyList()
-                }
+                // A read failure is not equivalent to an empty history.
+                val recentLogs = repository.getAllLogs(descending = true).firstOrNull() ?: emptyList()
 
-                // Generar respuesta estructurada y clínicamente validada
+                // Generar respuesta guiada; nunca asumir que equivale a una evaluación médica.
                 val answer = smartChatEngine.generateAnswerForQuestion(question, ctx, recentLogs)
+                _askedQuestions.value = _askedQuestions.value + question
 
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                     chatDao.insertMessage(
@@ -264,6 +259,24 @@ class ChatViewModel @Inject constructor(
                             timestamp   = System.currentTimeMillis()
                         )
                     )
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Keep an explicit, localized error in the conversation rather than
+                // silently reporting "no personal records".
+                try {
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        chatDao.insertMessage(
+                            ChatMessageEntity(
+                                text = context.getString(R.string.chat_new_error),
+                                messageType = ChatMessageType.GREETING,
+                                timestamp = System.currentTimeMillis()
+                            )
+                        )
+                    }
+                } catch (_: Exception) {
+                    // Room can itself be unavailable; do not crash the UI.
                 }
             } finally {
                 _isTyping.value = false
@@ -294,15 +307,10 @@ class ChatViewModel @Inject constructor(
 
                 // 2. Obtener contexto del ciclo actual y registros recientes
                 val ctx = rulesEngine.currentCycleContext.value
-                val recentLogs = try {
-                    repository.getAllLogs(descending = true).firstOrNull() ?: emptyList()
-                } catch (e: Exception) {
-                    if (e is kotlinx.coroutines.CancellationException) throw e
-                    emptyList()
-                }
+                // A read failure is not equivalent to an empty history.
+                val recentLogs = repository.getAllLogs(descending = true).firstOrNull() ?: emptyList()
 
                 // 3. Pausa de realismo conversacional
-                kotlinx.coroutines.delay(850)
 
                 // 4. Generar respuesta contextual con el motor clínico inteligente
                 val responseText = smartChatEngine.generateResponse(trimmed, ctx, recentLogs)
@@ -315,6 +323,24 @@ class ChatViewModel @Inject constructor(
                 )
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                     chatDao.insertMessage(lumiMsg)
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Keep an explicit, localized error in the conversation rather than
+                // silently reporting "no personal records".
+                try {
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        chatDao.insertMessage(
+                            ChatMessageEntity(
+                                text = context.getString(R.string.chat_new_error),
+                                messageType = ChatMessageType.GREETING,
+                                timestamp = System.currentTimeMillis()
+                            )
+                        )
+                    }
+                } catch (_: Exception) {
+                    // Room can itself be unavailable; do not crash the UI.
                 }
             } finally {
                 _isTyping.value = false
