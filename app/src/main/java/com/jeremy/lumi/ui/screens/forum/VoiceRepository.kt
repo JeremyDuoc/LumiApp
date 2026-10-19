@@ -5,17 +5,21 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.realtime.selectAsFlow
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -131,13 +135,56 @@ class VoiceRepository @Inject constructor() {
         }
     }
 
-    suspend fun connect(): String {
+    @Volatile
+    private var activeUserId: String? = null
+
+    /**
+     * El SDK 3.x usa la publishable key como Bearer cuando no hay sesión
+     * (por ejemplo durante una renovación de JWT). Nunca consultar tablas
+     * privadas con ese fallback: esperar a que Auth se recupere.
+     */
+    private suspend fun awaitRecoveredAuth() {
         client.auth.awaitInitialization()
-        if (client.auth.currentUserOrNull() == null) {
+        if (client.auth.sessionStatus.value is SessionStatus.RefreshFailure) {
+            val recovered = withTimeoutOrNull(20_000L) {
+                client.auth.sessionStatus.first { status ->
+                    status is SessionStatus.Authenticated || status is SessionStatus.NotAuthenticated
+                }
+            }
+            if (recovered == null) {
+                error("No pudimos renovar la sesión de Tu voz. Revisa tu conexión e inténtalo nuevamente.")
+            }
+        }
+    }
+
+    suspend fun connect(): String {
+        awaitRecoveredAuth()
+        if (client.auth.currentSessionOrNull() == null) {
+            if (activeUserId != null) {
+                error("La sesión de Tu voz se cerró. Vuelve a abrir la sección para reconectar.")
+            }
             client.auth.signInAnonymously()
         }
-        return client.auth.currentUserOrNull()?.id
+        val session = client.auth.currentSessionOrNull()
             ?: error("No se pudo iniciar la sesión anónima de Tu voz.")
+        require(session.accessToken.count { it == '.' } == 2) {
+            "La sesión de Tu voz no tiene un token de usuario válido."
+        }
+        val uid = session.user?.id ?: error("Falta la identidad anónima de Tu voz.")
+        if (activeUserId != null && activeUserId != uid) {
+            error("Tu sesión de Tu voz cambió. Vuelve a abrir la sección.")
+        }
+        activeUserId = uid
+        return uid
+    }
+
+    private suspend fun requireSessionFor(uid: String) {
+        awaitRecoveredAuth()
+        val session = client.auth.currentSessionOrNull()
+            ?: error("La sesión de Tu voz no está disponible. Vuelve a abrir la sección.")
+        if (session.user?.id != uid || session.accessToken.count { it == '.' } != 2) {
+            error("No pudimos confirmar tu sesión de Tu voz. Vuelve a abrir la sección.")
+        }
     }
 
     /** Ideas públicas: primera carga + actualizaciones PostgreSQL Realtime. */
@@ -152,24 +199,44 @@ class VoiceRepository @Inject constructor() {
      * se consulta únicamente la sesión propietaria cada pocos segundos.
      */
     fun votes(uid: String): Flow<Set<String>> = flow {
+        var consecutiveErrors = 0
         while (currentCoroutineContext().isActive) {
-            val rows=client.from("voice_votes").select {
-                filter { eq("owner_uid",uid) }
-                limit(500)
-            }.decodeList<VoiceVoteRow>()
-            emit(rows.map { it.ideaId }.toSet())
-            delay(7000)
+            try {
+                requireSessionFor(uid)
+                val rows = client.from("voice_votes").select {
+                    filter { eq("owner_uid", uid) }
+                    limit(500)
+                }.decodeList<VoiceVoteRow>()
+                emit(rows.map { it.ideaId }.toSet())
+                consecutiveErrors = 0
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // La renovación de token y la conectividad pueden fallar
+                // momentáneamente: preservar el último estado y reintentar.
+                if (++consecutiveErrors >= 4) throw e
+            }
+            delay(7_000)
         }
     }
 
     fun submissions(uid: String): Flow<List<VoiceMine>> = flow {
+        var consecutiveErrors = 0
         while (currentCoroutineContext().isActive) {
-            val rows=client.from("voice_submissions").select {
-                filter { eq("owner_uid",uid) }
-                limit(100)
-            }.decodeList<VoiceSubmissionRow>()
-            emit(rows.sortedByDescending { it.createdAtMs }.map { it.ui() })
-            delay(7000)
+            try {
+                requireSessionFor(uid)
+                val rows = client.from("voice_submissions").select {
+                    filter { eq("owner_uid", uid) }
+                    limit(100)
+                }.decodeList<VoiceSubmissionRow>()
+                emit(rows.sortedByDescending { it.createdAtMs }.map { it.ui() })
+                consecutiveErrors = 0
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (++consecutiveErrors >= 4) throw e
+            }
+            delay(7_000)
         }
     }
 
