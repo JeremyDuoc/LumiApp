@@ -14,7 +14,6 @@ import com.jeremy.lumi.domain.usecase.ChatQuestion
 import com.jeremy.lumi.domain.usecase.CycleContext
 import com.jeremy.lumi.domain.usecase.CyclePredictor
 import com.jeremy.lumi.domain.usecase.CyclePrediction
-import com.jeremy.lumi.domain.usecase.DailyInsightGenerator
 import com.jeremy.lumi.domain.usecase.LumiRulesEngine
 import com.jeremy.lumi.domain.usecase.LumiSmartChatEngine
 import com.jeremy.lumi.domain.usecase.SymptomCorrelationEngine
@@ -26,7 +25,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
-import kotlin.random.Random
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
@@ -106,16 +104,10 @@ class ChatViewModel @Inject constructor(
                         )
                         seedChatContext(prediction, isOnContraceptive)
 
-                        // ── INYECCIÓN DE MENSAJE DE BIENVENIDA CONTEXTUAL ──
-                        val welcomeCtx = CycleContext(
-                            phase = prediction.currentPhase,
-                            dayOfCycle = prediction.currentDayOfCycle,
-                            dayOfPhase = prediction.dayOfPhase,
-                            daysUntilPeriod = 0, daysUntilOvulation = 0, cycleLength = cycleLen, isLate = false, delayDays = 0
-                        )
-                        rulesEngine.generateWelcomeMessage(welcomeCtx)
+                        // Welcome without claiming individual symptoms or confirmed phases.
+                        context.getString(R.string.chat_new_welcome)
                     } else {
-                        context.getString(R.string.chat_empty_welcome)
+                        context.getString(R.string.chat_new_welcome)
                     }
 
                     chatDao.insertMessage(
@@ -155,39 +147,22 @@ class ChatViewModel @Inject constructor(
                     val lastInsightDate = chatPrefs.lastInsightDateFlow.first()
 
                     if (lastInsightDate != todayStr) {
-                        val userGoal = onboardingPrefs.userGoalFlow.first().name
-                        val todayDate = LocalDate.now()
-                        val daysUntilPeriodReal = java.time.temporal.ChronoUnit.DAYS.between(todayDate, prediction.nextPeriodDate).toInt()
-                        val daysUntilOvulationReal = if (prediction.nextOvulationDate != LocalDate.MAX) {
-                            java.time.temporal.ChronoUnit.DAYS.between(todayDate, prediction.nextOvulationDate).toInt()
-                        } else {
-                            Int.MAX_VALUE
-                        }
+                        val daysUntilPeriodReal = java.time.temporal.ChronoUnit.DAYS
+                            .between(LocalDate.now(), prediction.nextPeriodDate).toInt()
 
-                        val chosenText = when {
-                            daysUntilPeriodReal in 0..2 -> context.getString(R.string.chat_proactive_period, daysUntilPeriodReal)
-                            daysUntilOvulationReal in 0..2 -> context.getString(R.string.chat_proactive_ovulation)
-                            else -> {
-                                val arrayResId = DailyInsightGenerator.getInsightForDay(
-                                    phase = prediction.currentPhase,
-                                    dayOfPhase = prediction.dayOfPhase,
-                                    cycleDay = prediction.currentDayOfCycle,
-                                    isLate = prediction.isLate,
-                                    userGoal = userGoal
+                        // Only add a proactive item for a close calendar estimate.
+                        // Random phase-based tips should not masquerade as personal insights.
+                        if (daysUntilPeriodReal in 0..2) {
+                            chatDao.insertMessage(
+                                ChatMessageEntity(
+                                    text = context.getString(
+                                        R.string.chat_proactive_period, daysUntilPeriodReal
+                                    ),
+                                    messageType = ChatMessageType.GREETING,
+                                    timestamp = System.currentTimeMillis()
                                 )
-                                val options = context.resources.getStringArray(arrayResId)
-                                if (options.isNotEmpty()) options[Random.nextInt(options.size)] else ""
-                            }
-                        }
-
-                        // Insertar físicamente en Room
-                        chatDao.insertMessage(
-                            ChatMessageEntity(
-                                text = chosenText,
-                                messageType = ChatMessageType.GREETING,
-                                timestamp = System.currentTimeMillis()
                             )
-                        )
+                        }
 
                         // ── Motor de Correlación de Síntomas ──
                         val daysUntilPeriod = cycleLen - prediction.currentDayOfCycle + 1
