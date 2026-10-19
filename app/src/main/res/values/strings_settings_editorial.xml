@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_editorial_intro">Decide cómo se ve y funciona Lumi.</string>
+    <string name="settings_theme_change_hint">Toca para elegir otra atmósfera</string>
+    <string name="settings_section_utilities_new">Tu día a día</string>
+    <string name="settings_section_protection_new">Privacidad y conexiones</string>
+    <string name="settings_health_status_unavailable_new">No disponible en este dispositivo</string>
+    <string name="settings_health_status_connected_new">Lectura autorizada de temperatura y sueño</string>
+    <string name="settings_health_status_off_new">No se importan datos de salud</string>
+    <string name="settings_pregnancy_mode_note">Pausa las estimaciones habituales del ciclo</string>
+    <string name="settings_contraceptive_mode_note">Adapta las estimaciones si usas anticonceptivos hormonales</string>
+    <string name="settings_palette_auto">Armonía con el tema</string>
+    <string name="settings_privacy_explained">Consulta dónde se guarda cada tipo de dato</string>
+    <string name="settings_drive_remains_note">Los respaldos de Google Drive no se eliminan con este botón.</string>
+    <string name="settings_privacy_details_title">Tus datos y tu privacidad</string>
+    <string name="settings_privacy_local_title">Seguimiento menstrual</string>
+    <string name="settings_privacy_local_desc">Los ciclos, síntomas y registros se guardan en la base de datos local de este dispositivo. No se suben automáticamente a Lumi.</string>
+    <string name="settings_privacy_backup_title">Copias de seguridad</string>
+    <string name="settings_privacy_backup_desc">Si activas Google Drive, los respaldos se cifran en tu teléfono antes de enviarse a tu cuenta. También puedes exportar un archivo cifrado. Los ZIP antiguos no están cifrados.</string>
+    <string name="settings_privacy_health_title">Health Connect</string>
+    <string name="settings_privacy_health_desc">La integración lee datos con tu permiso. Desactivar la lectura en Lumi no revoca los permisos del sistema; puedes revocarlos desde Health Connect.</string>
+    <string name="settings_privacy_social_title">Servicios opcionales</string>
+    <string name="settings_privacy_social_desc">Las funciones sociales o de comunidad, cuando están habilitadas, pueden utilizar servicios externos. No forman parte del respaldo local de tus ciclos.</string>
+    <string name="settings_reset_confirm_data_title">¿Borrar los datos de este dispositivo?</string>
+    <string name="settings_reset_confirm_data_desc">Se eliminarán tus registros locales, ajustes y recordatorios. No se borrarán las copias almacenadas en Google Drive.</string>
+    <string name="settings_reset_confirm_data_action">Borrar datos locales</string>
+    <string name="settings_pregnancy_end_confirmation">¿Salir del modo embarazo? Se reactivarán las estimaciones del ciclo, sin registrar automáticamente el motivo del cambio.</string>
+    <string name="settings_pregnancy_end_action">Salir del modo embarazo</string>
+    <string name="settings_prediction_not_contraception">Las predicciones del ciclo no son un método anticonceptivo.</string>
+</resources>
