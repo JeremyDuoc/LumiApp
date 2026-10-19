@@ -32,4 +32,6 @@
     <string name="widget_day_short">DÍA DEL CICLO</string>
     <string name="widget_today_short">HOY</string>
     <string name="widget_next_compact">Próximo estimado: %1$d d</string>
+    <string name="widget_open_to_view">ABRIR LUMI  →</string>
+    <string name="widget_today_initial">H</string>
 </resources>
