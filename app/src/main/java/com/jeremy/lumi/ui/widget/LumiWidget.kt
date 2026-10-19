@@ -239,7 +239,7 @@ class LumiWeekWidget : GlanceAppWidget() {
                                 }
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Box(
-                                        modifier = GlanceModifier.size(30.dp)
+                                        modifier = GlanceModifier.size(24.dp)
                                             .background(if (index == 0) colors.panel2 else colors.panel),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -248,7 +248,7 @@ class LumiWeekWidget : GlanceAppWidget() {
                                     Spacer(GlanceModifier.height(7.dp))
                                     Box(modifier = GlanceModifier.width(23.dp).height(4.dp).background(shade)) {}
                                 }
-                                if (index < days.lastIndex) Spacer(GlanceModifier.width(8.dp))
+                                if (index < days.lastIndex) Spacer(GlanceModifier.width(5.dp))
                             }
                         }
                         Spacer(GlanceModifier.height(13.dp))
