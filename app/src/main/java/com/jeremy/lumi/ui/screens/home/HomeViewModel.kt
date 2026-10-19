@@ -429,41 +429,49 @@ class HomeViewModel @Inject constructor(
                         prediction
                     }
 
-                    // ── Factores de predicción honestos ("Basado en:") ───────────
+                    // Indicadores de disponibilidad y consistencia de datos, NO probabilidades
+                    // de acierto ni contribuciones aprendidas de síntomas al predictor.
+                    val validPrior = com.jeremy.lumi.domain.usecase.CycleHistoryV2.validCycles(
+                        closedCycles, cycle.startDate
+                    )
                     val stdDev = computedActivePrediction.predictedCycleLengthStdDev
-                    val regScore = if (closedCycles.isEmpty()) {
-                        75
-                    } else {
-                        ((1f - (stdDev.coerceIn(0.5f, 6.0f) / 7.5f)) * 100f).coerceIn(45f, 98f).toInt()
-                    }
+                    val regScore = if (validPrior.size < 3) 0 else
+                        ((1f - stdDev.coerceIn(0f, 8f) / 8f) * 100f)
+                            .coerceIn(0f, 100f).toInt()
+                    val histScore = (validPrior.size.coerceAtMost(12) * 100) / 12
 
-                    val histScore = when (closedCycles.size) {
-                        0    -> 35
-                        1    -> 55
-                        2    -> 72
-                        3    -> 85
-                        else -> 96
+                    val currentCycleLogs = allLogs.filter {
+                        it.dailyLog.date >= cycle.startDate &&
+                            it.dailyLog.date <= today.atStartOfDay(java.time.ZoneOffset.UTC)
+                                .toInstant().toEpochMilli()
                     }
-
-                    val currentCycleLogs = allLogs.filter { it.dailyLog.date >= cycle.startDate }
-                    val daysWithSymptoms = currentCycleLogs.count { it.symptoms.isNotEmpty() || it.dailyLog.mood != null }
+                    val daysWithSymptoms = currentCycleLogs.count {
+                        it.symptoms.isNotEmpty() || it.dailyLog.mood != null
+                    }
                     val currentDayCoerced = computedActivePrediction.currentDayOfCycle.coerceAtLeast(1)
-                    val sympScore = ((daysWithSymptoms.toFloat() / currentDayCoerced) * 100f).coerceIn(25f, 95f).toInt()
+                    val sympScore = (daysWithSymptoms.toFloat() / currentDayCoerced * 100f)
+                        .coerceIn(0f, 100f).toInt()
 
                     val confLabel = when {
-                        computedActivePrediction.predictionConfidenceIndex >= 0.70f -> context.getString(R.string.home_confidence_high)
-                        computedActivePrediction.predictionConfidenceIndex >= 0.45f -> context.getString(R.string.home_confidence_moderate)
-                        else                                                         -> context.getString(R.string.home_calibrating)
+                        validPrior.size >= 6 -> context.getString(R.string.home_confidence_high)
+                        validPrior.size >= 3 -> context.getString(R.string.home_confidence_moderate)
+                        else -> context.getString(R.string.home_calibrating)
                     }
 
-                    val marginFormatted = if (stdDev <= 0.1f) "±1.5 d" 
-                                          else "±${String.format(java.util.Locale.US, "%.1f", stdDev.coerceAtLeast(1.0f))} d"
+                    // Display the same calibrated interval used by the underlying prediction.
+                    // Historical standard deviation alone is NOT the uncertainty bound.
+                    val marginDays = java.time.temporal.ChronoUnit.DAYS.between(
+                        computedActivePrediction.nextPeriodDate,
+                        computedActivePrediction.latestPeriodDate
+                    ).coerceIn(0L, 14L)
+                    val marginFormatted = if (isPregnant) context.getString(R.string.home_margin_unavailable)
+                        else "±${marginDays} d"
 
                     val computedFactors = PredictionFactorsUi(
                         regularityScore = regScore,
                         historyScore = histScore,
                         symptomsScore = sympScore,
-                        cycleCount = closedCycles.size,
+                        cycleCount = validPrior.size,
                         confidenceLabel = confLabel,
                         marginDaysText = marginFormatted
                     )

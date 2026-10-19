@@ -142,8 +142,7 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("com.valentinilk.shimmer:compose-shimmer:1.3.0")
 
-    // 13. TensorFlow Lite / LiteRT (Compatible con páginas de 16 KB en Android 15+)
-    implementation("com.google.ai.edge.litert:litert:1.4.2")
+    // Modelo histórico local v2: no requiere dependencias TensorFlow Lite.
 
     // 14. Health Connect (Sincronización de Salud)
     // NOTA P3-1: beta02 requiere compileSdk=36 (Android 16 preview), incompatible

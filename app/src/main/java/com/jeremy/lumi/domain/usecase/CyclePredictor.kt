@@ -36,10 +36,11 @@ data class CyclePrediction(
     val isInFertileWindow      : Boolean = false,
     val isOvulationPeak        : Boolean = false,
     // New probabilistic fields (defaults preserve existing behavior)
-    val earliestPeriodDate: LocalDate = nextPeriodDate, // 80% lower bound
-    val latestPeriodDate: LocalDate = nextPeriodDate,   // 80% upper bound  
-    val predictionConfidenceIndex: Float = 0.5f,         // 0.0 (no data) to 1.0 (high confidence)
-    val predictedCycleLengthStdDev: Float = 0f           // effective std dev used
+    val earliestPeriodDate: LocalDate = nextPeriodDate, // approximate lower bound
+    val latestPeriodDate: LocalDate = nextPeriodDate,   // approximate upper bound
+    val predictionConfidenceIndex: Float = 0.5f,         // historical info index, NOT accuracy probability
+    val predictedCycleLengthStdDev: Float = 0f,          // historical observed standard deviation
+    val fertilityIsEstimated: Boolean = true             // calendar estimate, NOT confirmed ovulation
 )
 
 object CyclePredictor {
@@ -180,10 +181,11 @@ object CyclePredictor {
      * @param closedCycles Lista de ciclos cerrados, ordenados más reciente primero.
      */
     fun weightedAverageCycleLength(closedCycles: List<CycleEntity>): Float {
-        if (closedCycles.isEmpty()) return 28f
+        val validHistory = CycleHistoryV2.validCycles(closedCycles)
+        if (validHistory.isEmpty()) return 28f
         
         // 1. Extraer duraciones válidas
-        val durations = closedCycles.mapNotNull { cycle ->
+        val durations = validHistory.mapNotNull { cycle ->
             if (cycle.endDate != null) {
                 val duration = cycle.closedLengthDays() ?: return@mapNotNull null
                 if (duration in 15..60) duration else null
@@ -219,7 +221,7 @@ object CyclePredictor {
         var weightedSum = 0.0
         var totalWeight = 0.0
         
-        closedCycles.forEachIndexed { index, cycle ->
+        validHistory.forEachIndexed { index, cycle ->
             if (cycle.endDate != null) {
                 val duration = cycle.closedLengthDays() ?: return@forEachIndexed
                 
@@ -240,9 +242,10 @@ object CyclePredictor {
     }
 
     fun weightedStdDevCycleLength(closedCycles: List<CycleEntity>): Float {
-        if (closedCycles.isEmpty()) return 0f
+        val validHistory = CycleHistoryV2.validCycles(closedCycles)
+        if (validHistory.isEmpty()) return 0f
         
-        val durations = closedCycles.mapNotNull { cycle ->
+        val durations = validHistory.mapNotNull { cycle ->
             if (cycle.endDate != null) {
                 val duration = cycle.closedLengthDays() ?: return@mapNotNull null
                 if (duration in 15..60) duration else null
@@ -271,7 +274,7 @@ object CyclePredictor {
         var totalWeight = 0.0
         val valuesAndWeights = mutableListOf<Pair<Int, Double>>()
         
-        closedCycles.forEachIndexed { index, cycle ->
+        validHistory.forEachIndexed { index, cycle ->
             if (cycle.endDate != null) {
                 val duration = cycle.closedLengthDays() ?: return@forEachIndexed
                 
@@ -387,6 +390,8 @@ object CyclePredictor {
         effectiveCycleLength: Int?     = null,
         predictionConfidence: Float?   = null
     ): CyclePrediction {
+        val cycleStartMs = startDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+        val validHistory = CycleHistoryV2.validCycles(closedCycles, cycleStartMs)
 
         if (isPregnant) {
             return CyclePrediction(
@@ -417,13 +422,13 @@ object CyclePredictor {
         val effectiveCycleLen = when {
             isOnContraceptive -> 28 // El ciclo de la píldora suele ser de 28 días
             effectiveCycleLength != null -> effectiveCycleLength.coerceIn(15, 60)
-            closedCycles.size >= MIN_CYCLES_FOR_HISTORY -> weightedAverageCycleLength(closedCycles).roundToInt().coerceIn(15, 60)
+            validHistory.size >= MIN_CYCLES_FOR_HISTORY -> weightedAverageCycleLength(validHistory).roundToInt().coerceIn(15, 60)
             else -> cycleLength.coerceAtLeast(15)
         }
 
         // ── Fase lútea personal ──────────────────────────────────────────────
-        val lutealLen = if (closedCycles.size >= MIN_CYCLES_FOR_HISTORY)
-            personalLutealLength(closedCycles)
+        val lutealLen = if (validHistory.size >= MIN_CYCLES_FOR_HISTORY)
+            personalLutealLength(validHistory)
         else LUTEAL_LENGTH_DEFAULT
 
         val c = effectiveCycleLen
@@ -432,7 +437,7 @@ object CyclePredictor {
         val realDay = dayInCycle(startDate, c, today)
 
         // ── Retraso real ─────────────────────────────────────────────────────
-        val maxDelay       = maxHistoricalDelay(closedCycles)
+        val maxDelay       = maxHistoricalDelay(validHistory)
         val rawDelay       = (realDay - c).coerceAtLeast(0)
         // FIX P3-4: Con anticonceptivos hormonales la hemorragia por privación
         // ocurre de forma regulada y no aplica el concepto de "retraso".
@@ -478,18 +483,26 @@ object CyclePredictor {
         val inFertile    = !isOnContraceptive && !today.isBefore(fertileStart) && !today.isAfter(fertileEnd)
         val isPeak       = !isOnContraceptive && today == nextOvulation
 
-        val stdDev = if (closedCycles.size >= MIN_CYCLES_FOR_HISTORY) 
-            weightedStdDevCycleLength(closedCycles) else 4f
+        val stdDev = if (validHistory.size >= MIN_CYCLES_FOR_HISTORY)
+            weightedStdDevCycleLength(validHistory) else 4f
 
-        val z80 = 1.282f
-        val intervalDays = (z80 * stdDev).roundToInt().coerceIn(1, 14)
+        // Historical residual calibration; approximate display range, not a guarantee.
+        val intervalDays = if (validHistory.size >= MIN_CYCLES_FOR_HISTORY) {
+            kotlin.math.ceil(PredictionCalibrationV2.RATIO * (1f + stdDev))
+                .toInt().coerceIn(2, 14)
+        } else 7
 
         val earliest = nextPeriod.minusDays(intervalDays.toLong())
         val latest = nextPeriod.plusDays(intervalDays.toLong())
 
-        val cycleCountBonus = (closedCycles.size.coerceAtMost(12) / 12f) * 0.50f
-        val regularityBonus = if (stdDev < 2f) 0.20f else if (stdDev < 4f) 0.10f else 0f
-        val confidenceIndex = (predictionConfidence ?: (0.30f + cycleCountBonus + regularityBonus)).coerceIn(0f, 1f)
+        // Availability-of-history index ONLY. Do not display as % certainty.
+        val historyIndex = when {
+            validHistory.size < 3 -> 0.25f
+            validHistory.size < 6 -> 0.40f
+            else -> 0.50f
+        }
+        val regularityBonus = if (stdDev < 2f) 0.10f else if (stdDev < 4f) 0.05f else 0f
+        val confidenceIndex = (historyIndex + regularityBonus).coerceIn(0f, 0.60f)
 
         return CyclePrediction(
             currentDayOfCycle   = realDay,
@@ -511,7 +524,8 @@ object CyclePredictor {
             earliestPeriodDate     = earliest,
             latestPeriodDate       = latest,
             predictionConfidenceIndex = confidenceIndex,
-            predictedCycleLengthStdDev = stdDev
+            predictedCycleLengthStdDev = stdDev,
+            fertilityIsEstimated = !isOnContraceptive
         )
     }
 }

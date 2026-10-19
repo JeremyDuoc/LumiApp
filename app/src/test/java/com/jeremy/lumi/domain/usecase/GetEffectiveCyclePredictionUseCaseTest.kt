@@ -137,7 +137,7 @@ class GetEffectiveCyclePredictionUseCaseTest {
     }
 
     @Test
-    fun testWhenAIPredictorReturnsBlendedResultUsesAIBlended() {
+    fun testLegacyBlendedTfliteResultIsRejected() {
         val startDate = LocalDate.of(2026, 9, 1)
         val today = LocalDate.of(2026, 9, 5)
         val activeCycle = mockCycleEntity(startDate, null, cycleLen = 28)
@@ -167,10 +167,10 @@ class GetEffectiveCyclePredictionUseCaseTest {
         )
 
         assertNotNull(result.prediction)
-        assertEquals(31, result.effectiveCycleLength)
-        assertEquals(PredictionSourceType.AI_BLENDED, result.source)
-        assertEquals(0.85f, result.aiConfidence ?: 0f, 0.001f)
-        assertEquals(0.85f, result.prediction!!.predictionConfidenceIndex, 0.001f)
+        assertEquals(30, result.effectiveCycleLength) // Historical prior cycles, not leaky TFLite
+        assertEquals(PredictionSourceType.HISTORICAL_MATH, result.source)
+        assertNull(result.aiConfidence)
+        assertTrue(result.prediction!!.predictionConfidenceIndex <= 0.60f)
     }
 
     @Test
@@ -213,5 +213,39 @@ class GetEffectiveCyclePredictionUseCaseTest {
         assertEquals(homeResult.prediction?.currentDayOfCycle, calendarResult.prediction?.currentDayOfCycle)
         assertEquals(homeResult.prediction?.nextPeriodDate, calendarResult.prediction?.nextPeriodDate)
         assertEquals(homeResult.prediction?.delayDays, calendarResult.prediction?.delayDays)
+    }
+    @Test
+    fun testNonFiniteResidualOutputFallsBackWithoutCrashing() {
+        val active = mockCycleEntity(LocalDate.of(2026, 9, 1), null, cycleLen = 28)
+        val prior = listOf(
+            mockCycleEntity(LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 30)),
+            mockCycleEntity(LocalDate.of(2026, 7, 2), LocalDate.of(2026, 7, 31)),
+            mockCycleEntity(LocalDate.of(2026, 6, 2), LocalDate.of(2026, 7, 1))
+        )
+        fakeAIPredictor.shouldBeReady = true
+        fakeAIPredictor.cannedResult = AIPredictionResult(
+            Float.NaN, 0.99f, false, 0, PredictionSource.RIDGE_V2
+        )
+        val result = useCase(active, prior, targetDate = LocalDate.of(2026, 9, 4))
+        assertEquals(30, result.effectiveCycleLength)
+        assertEquals(PredictionSourceType.HISTORICAL_MATH, result.source)
+        assertNull(result.aiConfidence)
+    }
+
+    @Test
+    fun testResidualMustBeExplicitlyEnabledBeforeApplyingCorrection() {
+        val active = mockCycleEntity(LocalDate.of(2026, 9, 1), null, cycleLen = 28)
+        val prior = listOf(
+            mockCycleEntity(LocalDate.of(2026, 8, 1), LocalDate.of(2026, 8, 30)),
+            mockCycleEntity(LocalDate.of(2026, 7, 2), LocalDate.of(2026, 7, 31)),
+            mockCycleEntity(LocalDate.of(2026, 6, 2), LocalDate.of(2026, 7, 1))
+        )
+        fakeAIPredictor.shouldBeReady = false
+        fakeAIPredictor.cannedResult = AIPredictionResult(
+            45f, 1f, false, 0, PredictionSource.RIDGE_V2
+        )
+        val result = useCase(active, prior, targetDate = LocalDate.of(2026, 9, 4))
+        assertEquals(30, result.effectiveCycleLength)
+        assertEquals(PredictionSourceType.HISTORICAL_MATH, result.source)
     }
 }
