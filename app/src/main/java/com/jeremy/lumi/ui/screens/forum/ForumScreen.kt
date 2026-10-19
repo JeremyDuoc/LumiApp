@@ -371,20 +371,11 @@ private fun DetailSheet(idea:VoiceIdea,theme:LumiDesignTokens,comments:List<Voic
                 }
             }
             HorizontalDivider(Modifier.padding(vertical=20.dp),color=theme.line)
-            Text("Seguimiento",fontSize=13.sp,fontWeight=FontWeight.Bold,color=theme.text)
-            Spacer(Modifier.height(13.dp))
-            STEPS.forEachIndexed{i,step->
-                val done=STEPS.indexOf(idea.status)>=i
-                Row(Modifier.padding(bottom=11.dp),verticalAlignment=Alignment.CenterVertically){
-                    Box(Modifier.size(9.dp).background(if(done)theme.accent else theme.panel2,CircleShape)
-                        .border(1.dp,if(done)theme.accent else theme.line,CircleShape))
-                    Spacer(Modifier.width(11.dp))
-                    Text(step+(if(step==idea.status)" · Actual" else ""),fontSize=12.sp,
-                        color=if(done)theme.text else theme.dim)
-                }
-            }
-            if(idea.status=="No prevista")Text("Esta idea no está prevista por ahora.",
-                fontSize=11.sp,color=theme.muted)
+            Text("El camino de esta idea",fontSize=14.sp,fontWeight=FontWeight.Bold,color=theme.text)
+            Text("Sigue cada etapa, desde que la recibimos hasta que llega a Lumi.",
+                fontSize=11.sp,lineHeight=16.sp,color=theme.muted,
+                modifier=Modifier.padding(top=5.dp,bottom=15.dp))
+            VoiceProgressStepper(idea.status,theme)
             HorizontalDivider(Modifier.padding(vertical=17.dp),color=theme.line)
             Text("Conversación · "+idea.comments+" comentarios",fontSize=13.sp,
                 fontWeight=FontWeight.Bold,color=theme.text)
@@ -415,6 +406,133 @@ private fun DetailSheet(idea:VoiceIdea,theme:LumiDesignTokens,comments:List<Voic
         }
     }
 }
+/**
+ * Adaptación del stepper vertical de PriyanshuGupta28 (Uiverse) a Lumi.
+ * Refleja el estado ACTUAL recibido de Supabase; las etapas anteriores son
+ * una representación del avance, NO un historial de fechas confirmado.
+ */
+@Composable
+private fun VoiceProgressStepper(status:String,theme:LumiDesignTokens) {
+    val current=STEPS.indexOf(status)
+    val notPlanned=status=="No prevista"
+    val descriptions=listOf(
+        "La sugerencia fue aprobada y publicada.",
+        "Estamos evaluando cómo encaja en Lumi.",
+        "La mejora forma parte de nuestros planes.",
+        "Estamos construyendo esta funcionalidad.",
+        "La mejora ya está disponible en Lumi."
+    )
+    Column(
+        modifier=Modifier.fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(theme.panel)
+            .border(1.dp,theme.line,RoundedCornerShape(18.dp))
+            .padding(horizontal=17.dp,vertical=20.dp)
+    ) {
+        if(notPlanned) {
+            Row(
+                Modifier.fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(theme.panel2)
+                    .padding(12.dp),
+                verticalAlignment=Alignment.CenterVertically,
+                horizontalArrangement=Arrangement.spacedBy(10.dp)
+            ){
+                Icon(Icons.Outlined.Info,null,tint=theme.accent,modifier=Modifier.size(19.dp))
+                Column{
+                    Text("No prevista por ahora",fontSize=12.sp,
+                        fontWeight=FontWeight.Bold,color=theme.text)
+                    Text("El equipo no tiene previsto desarrollar esta propuesta. Puede revisarse más adelante.",
+                        fontSize=10.sp,lineHeight=15.sp,color=theme.muted)
+                }
+            }
+            Spacer(Modifier.height(18.dp))
+        }
+        STEPS.forEachIndexed{index,label->
+            val completed=!notPlanned && index<current
+            val active=!notPlanned && index==current
+            val stageColor=when{
+                completed->theme.accent
+                active->theme.accent
+                else->theme.dim
+            }
+            Row(
+                modifier=Modifier.fillMaxWidth(),
+                verticalAlignment=Alignment.Top
+            ){
+                Column(
+                    horizontalAlignment=Alignment.CenterHorizontally,
+                    modifier=Modifier.width(38.dp)
+                ){
+                    Box(
+                        Modifier.size(36.dp)
+                            .background(
+                                if(completed)theme.accent else if(active)theme.accentSoft else theme.panel2,
+                                CircleShape
+                            )
+                            .border(
+                                if(active)2.dp else 1.dp,
+                                when{
+                                    completed||active->theme.accent
+                                    else->theme.line
+                                },
+                                CircleShape
+                            ),
+                        contentAlignment=Alignment.Center
+                    ){
+                        if(completed)Icon(Icons.Outlined.Check,null,
+                            tint=theme.bg,modifier=Modifier.size(19.dp))
+                        else Text((index+1).toString(),fontSize=13.sp,
+                            fontWeight=if(active)FontWeight.ExtraBold else FontWeight.SemiBold,
+                            color=stageColor)
+                    }
+                    if(index<STEPS.lastIndex) {
+                        Box(
+                            Modifier.width(2.dp).height(30.dp)
+                                .background(
+                                    if(completed)theme.accent.copy(alpha=.70f)
+                                    else theme.line,
+                                    RoundedCornerShape(1.dp)
+                                )
+                        )
+                    }
+                }
+                Spacer(Modifier.width(13.dp))
+                Column(
+                    Modifier.weight(1f)
+                        .padding(top=1.dp,bottom=if(index==STEPS.lastIndex)0.dp else 11.dp)
+                ){
+                    Text(
+                        label,fontSize=12.sp,fontWeight=FontWeight.Bold,
+                        color=if(active||completed)theme.text else theme.dim
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Surface(
+                        shape=CircleShape,
+                        color=if(active||completed)theme.accentSoft else theme.panel2,
+                    ){
+                        Text(
+                            when{
+                                completed->"Completada"
+                                active->"Etapa actual"
+                                else->"Por venir"
+                            },
+                            fontSize=10.sp,
+                            fontWeight=if(active)FontWeight.Bold else FontWeight.Medium,
+                            color=if(active||completed)theme.accent else theme.muted,
+                            modifier=Modifier.padding(horizontal=10.dp,vertical=4.dp)
+                        )
+                    }
+                    if(active){
+                        Text(descriptions[index],fontSize=10.sp,lineHeight=15.sp,
+                            color=theme.muted,modifier=Modifier.padding(top=7.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun SheetHeading(title:String,onClose:()->Unit,theme:LumiDesignTokens){
     Row(Modifier.fillMaxWidth().padding(bottom=13.dp),verticalAlignment=Alignment.CenterVertically){
