@@ -113,7 +113,7 @@ begin
   then raise exception 'No incluyas enlaces ni correos personales'; end if;
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtext(v_uid::text)::bigint);
   if exists (select 1 from public.voice_submissions
-       where owner_uid=v_uid and created_at_ms > (pg_catalog.extract(epoch from pg_catalog.now()-interval '5 minutes')*1000)::bigint)
+       where owner_uid=v_uid and created_at_ms > (extract(epoch FROM pg_catalog.now()-interval '5 minutes')*1000)::bigint)
   then raise exception 'Espera cinco minutos antes de enviar otra propuesta'; end if;
   insert into public.voice_submissions(owner_uid,title,description,category)
     values(v_uid,v_title,v_description,p_category) returning id into v_id;
@@ -135,14 +135,14 @@ begin
   delete from public.voice_votes where owner_uid=v_uid and idea_id=p_idea_id returning true into v_existing;
   if v_existing is true then
     update public.voice_ideas set votes_count=votes_count-1,
-      updated_at_ms=(pg_catalog.extract(epoch from pg_catalog.now())*1000)::bigint
+      updated_at_ms=(extract(epoch FROM pg_catalog.now())*1000)::bigint
       where id=p_idea_id and votes_count>0;
     if not found then raise exception 'Inconsistencia de votos'; end if;
     return false;
   end if;
   insert into public.voice_votes(owner_uid,idea_id) values(v_uid,p_idea_id);
   update public.voice_ideas set votes_count=votes_count+1,
-    updated_at_ms=(pg_catalog.extract(epoch from pg_catalog.now())*1000)::bigint where id=p_idea_id;
+    updated_at_ms=(extract(epoch FROM pg_catalog.now())*1000)::bigint where id=p_idea_id;
   return true;
 end;
 $$;
@@ -163,7 +163,7 @@ begin
   then raise exception 'La propuesta no está disponible'; end if;
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtext(v_uid::text)::bigint);
   if exists(select 1 from public.voice_pending_comments
-      where owner_uid=v_uid and created_at_ms>(pg_catalog.extract(epoch from pg_catalog.now()-interval '1 minute')*1000)::bigint)
+      where owner_uid=v_uid and created_at_ms>(extract(epoch FROM pg_catalog.now()-interval '1 minute')*1000)::bigint)
   then raise exception 'Espera un minuto para publicar otro comentario'; end if;
   insert into public.voice_pending_comments(idea_id,owner_uid,body)
     values(p_idea_id,v_uid,v_body) returning id into v_id;
@@ -221,7 +221,7 @@ begin
     insert into public.voice_comments(id,idea_id,body,created_at_ms)
       values(v.id,v.idea_id,v.body,v.created_at_ms);
     update public.voice_ideas set comments_count=comments_count+1,
-      updated_at_ms=(pg_catalog.extract(epoch from pg_catalog.now())*1000)::bigint
+      updated_at_ms=(extract(epoch FROM pg_catalog.now())*1000)::bigint
       where id=v.idea_id;
   end if;
   delete from public.voice_pending_comments where id=p_id;
@@ -235,7 +235,7 @@ begin
   if p_status not in ('Recibida','En revisión','Aceptada','En desarrollo','Disponible','No prevista')
   then raise exception 'Estado inválido'; end if;
   update public.voice_ideas set status=p_status,
-    updated_at_ms=(pg_catalog.extract(epoch from pg_catalog.now())*1000)::bigint where id=p_id;
+    updated_at_ms=(extract(epoch FROM pg_catalog.now())*1000)::bigint where id=p_id;
   if not found then raise exception 'Propuesta inexistente'; end if;
   update public.voice_submissions set status=p_status where id=p_id and is_public=true;
 end;
@@ -253,7 +253,7 @@ begin
   insert into public.voice_comments(idea_id,body,is_team)
     values(p_idea_id,pg_catalog.btrim(p_body),true) returning id into v_id;
   update public.voice_ideas set comments_count=comments_count+1,
-    updated_at_ms=(pg_catalog.extract(epoch from pg_catalog.now())*1000)::bigint where id=p_idea_id;
+    updated_at_ms=(extract(epoch FROM pg_catalog.now())*1000)::bigint where id=p_idea_id;
   return v_id;
 end;
 $$;
