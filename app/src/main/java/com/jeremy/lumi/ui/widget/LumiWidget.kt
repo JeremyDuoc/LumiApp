@@ -1,6 +1,7 @@
 package com.jeremy.lumi.ui.widget
 
 import android.content.Context
+import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
@@ -67,11 +68,14 @@ private fun LumiWidgetFrame(
     inset: Int = 16,
     content: @Composable () -> Unit
 ) {
+    val surface = GlanceModifier.fillMaxSize().background(palette.panel).appWidgetBackground()
+    val rounded = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        surface.cornerRadius(20.dp)
+    } else {
+        surface
+    }
     Box(
-        modifier = GlanceModifier.fillMaxSize()
-            .appWidgetBackground()
-            .background(palette.panel)
-            .cornerRadius(20.dp)
+        modifier = rounded
             .clickable(actionStartActivity<MainActivity>())
             .padding(inset.dp)
     ) { content() }
@@ -219,6 +223,11 @@ class LumiWeekWidget : GlanceAppWidget() {
                     } else if (!hasCycle) {
                         Spacer(GlanceModifier.height(15.dp))
                         Text(context.getString(R.string.widget_empty_title), style = textStyle(colors.text, 16, true))
+                    } else if (prefs[LumiWidgetPrefs.IS_PREGNANT] == true) {
+                        Spacer(GlanceModifier.height(16.dp))
+                        Text(context.getString(R.string.widget_pregnancy_label), style = textStyle(colors.rose, 11, true))
+                        Spacer(GlanceModifier.height(7.dp))
+                        Text(context.getString(R.string.widget_pregnancy_title), style = textStyle(colors.text, 19, true))
                     } else {
                         Spacer(GlanceModifier.height(16.dp))
                         val encoded = prefs[LumiWidgetPrefs.WEEK].orEmpty()
