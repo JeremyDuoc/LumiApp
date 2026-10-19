@@ -33,7 +33,7 @@ class ForumViewModel @Inject constructor(private val repository:VoiceRepository)
             try {
                 val uid=repository.connect()
                 launch {
-                    repository.ideas().catch { failure(it) }.collect { items ->
+                    repository.ideas().catch { failure(it, publicFeed = true) }.collect { items ->
                         _state.update { it.copy(ideas=items,loading=false,offlineMessage=null) }
                     }
                 }
@@ -47,11 +47,50 @@ class ForumViewModel @Inject constructor(private val repository:VoiceRepository)
                         _state.update { it.copy(mine=mine) }
                     }
                 }
-            } catch (e:Exception){ failure(e) }
+            } catch (e:Exception){ failure(e, publicFeed = true) }
         }
     }
-    private fun failure(e:Throwable) {
-        _state.update { it.copy(loading=false,busy=false,offlineMessage="No se pudo sincronizar Tu voz. Revisa tu conexión o la configuración de Supabase.",notice=e.localizedMessage) }
+
+    /**
+     * Nunca mostrar el mensaje técnico original de PostgREST: puede incluir
+     * URL, cabeceras Authorization y la clave publishable del cliente.
+     */
+    private fun safeMessage(e:Throwable):String {
+        val raw=e.localizedMessage.orEmpty()
+        val lower=raw.lowercase()
+        return when {
+            lower.contains("permission denied") || lower.contains("42501") ||
+                lower.contains("jwt") || lower.contains("sesión") ||
+                lower.contains("session") ->
+                "No pudimos confirmar tu sesión de Tu voz. Comprueba la conexión y vuelve a abrir la sección."
+            lower.contains("timeout") || lower.contains("unable to resolve") ||
+                lower.contains("network") || lower.contains("connect") ->
+                "No pudimos conectar con Tu voz. Comprueba internet e inténtalo de nuevo."
+            lower.contains("propuesta inválida") ->
+                "Revisa el título, la descripción y la categoría de la propuesta."
+            lower.contains("espera cinco minutos") ->
+                "Espera cinco minutos antes de enviar otra propuesta."
+            lower.contains("espera un minuto") ->
+                "Espera un minuto antes de enviar otro comentario."
+            lower.contains("no incluyas enlaces") ->
+                "Por privacidad, evita publicar enlaces o datos de contacto."
+            lower.contains("comentario inválido") ->
+                "El comentario debe tener entre 4 y 420 caracteres y no incluir datos de contacto."
+            else -> "No se pudo completar la operación. Inténtalo nuevamente."
+        }
+    }
+    private fun failure(e:Throwable, publicFeed:Boolean=false) {
+        _state.update {
+            it.copy(
+                loading=false,busy=false,
+                // Errores de votos o sugerencias propias no deben ocultar
+                // el listado de ideas públicas que sí está funcionando.
+                offlineMessage=if(publicFeed)
+                    "No se pudo actualizar el listado de ideas. Comprueba tu conexión."
+                    else it.offlineMessage,
+                notice=safeMessage(e)
+            )
+        }
     }
     fun showComments(ideaId:String?) {
         commentsJob?.cancel()
@@ -72,7 +111,7 @@ class ForumViewModel @Inject constructor(private val repository:VoiceRepository)
                 action()
                 _state.update{it.copy(busy=false,notice=success)}
             } catch(e:Exception) {
-                _state.update{it.copy(busy=false,notice=e.localizedMessage ?: "No se pudo completar la operación.")}
+                _state.update{it.copy(busy=false,notice=safeMessage(e))}
             }
         }
     }
