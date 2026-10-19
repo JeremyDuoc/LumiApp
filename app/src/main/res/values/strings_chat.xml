@@ -625,4 +625,5 @@
     <string name="chat_new_subtitle">Tu espacio, a tu ritmo</string>
     <string name="chat_new_discovery">Un patrón de tus registros</string>
     <string name="chat_new_error">No pude consultar tus registros en este momento. Inténtalo de nuevo; no quiero darte una respuesta basada en información incompleta.</string>
+    <string name="chat_new_welcome">Hola, soy Lumi. Puedo ayudarte a consultar tu ciclo, revisar tus registros y explorar posibles patrones cuando existan datos suficientes. Si todavía no puedo respaldar una conclusión, te lo diré.</string>
 </resources>
