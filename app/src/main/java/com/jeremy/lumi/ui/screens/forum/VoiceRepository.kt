@@ -3,7 +3,6 @@ package com.jeremy.lumi.ui.screens.forum
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import com.google.firebase.functions.FirebaseFunctions
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -28,8 +27,7 @@ data class VoiceMine(val id: String, val title: String, val description: String,
 @Singleton
 class VoiceRepository @Inject constructor(
     private val auth: FirebaseAuth,
-    private val db: FirebaseFirestore,
-    private val functions: FirebaseFunctions
+    private val db: FirebaseFirestore
 ) {
     suspend fun connect(): String {
         if (auth.currentUser == null) auth.signInAnonymously().await()
@@ -63,7 +61,7 @@ class VoiceRepository @Inject constructor(
         val registration=db.collection("voice_votes").document(uid).collection("items")
             .addSnapshotListener { snapshot,error ->
                 if(error!=null){ close(error); return@addSnapshotListener }
-                trySend(snapshot?.documents.orEmpty().map{it.id}.toSet())
+                trySend(snapshot?.documents.orEmpty().filter{it.getBoolean("active")==true}.map{it.id}.toSet())
             }
         awaitClose { registration.remove() }
     }
@@ -90,12 +88,65 @@ class VoiceRepository @Inject constructor(
             }
         awaitClose { registration.remove() }
     }
-    private suspend fun invoke(name:String, arguments:Map<String,Any>) {
-        functions.getHttpsCallable(name).call(arguments).await()
+
+    /**
+     * Spark: la aprobación es manual desde consola/CLI local.
+     * Escribir ambas copias en un batch evita envíos incompletos.
+     */
+    suspend fun suggest(title:String,description:String,category:String) {
+        val uid=connect()
+        val ref=db.collection("voice_pending_ideas").document()
+        val own=db.collection("voice_my_submissions").document(uid).collection("items").document(ref.id)
+        val whenMs=System.currentTimeMillis()
+        db.batch()
+            .set(ref,mapOf(
+                "title" to title,"description" to description,"category" to category,
+                "ownerUid" to uid,"createdAtMs" to whenMs
+            ))
+            .set(own,mapOf(
+                "title" to title,"description" to description,"category" to category,
+                "status" to "Pendiente de revisión","public" to false,"createdAtMs" to whenMs
+            )).commit().await()
     }
-    suspend fun suggest(title:String,description:String,category:String) =
-        invoke("submitVoiceIdea",mapOf("title" to title,"description" to description,"category" to category))
-    suspend fun vote(ideaId:String) = invoke("voteVoiceIdea",mapOf("ideaId" to ideaId))
-    suspend fun comment(ideaId:String,body:String) = invoke("submitVoiceComment",mapOf("ideaId" to ideaId,"body" to body))
-    suspend fun report(ideaId:String,reason:String) = invoke("reportVoiceIdea",mapOf("ideaId" to ideaId,"reason" to reason))
+    /**
+     * Voto único por UID: el cambio de active y votesCount son atómicos.
+     * Las reglas Firestore comprueban ambos lados antes de aceptar el commit.
+     */
+    suspend fun vote(ideaId:String) {
+        val uid=connect()
+        val idea=db.collection("voice_ideas").document(ideaId)
+        val vote=db.collection("voice_votes").document(uid).collection("items").document(ideaId)
+        db.runTransaction { tx ->
+            val post=tx.get(idea)
+            if (!post.exists() || post.getBoolean("visible") != true) {
+                throw IllegalStateException("Esta propuesta ya no está disponible.")
+            }
+            val prior=tx.get(vote)
+            val previous=prior.getBoolean("active")==true
+            val previousCount=post.getLong("votesCount") ?: 0
+            val nextCount=(previousCount + if(previous) -1 else 1)
+            if(nextCount<0)throw IllegalStateException("Conteo inconsistente; vuelve a intentarlo.")
+            if(prior.exists())tx.update(vote,"active",!previous)
+            else tx.set(vote,mapOf("active" to true))
+            tx.update(idea,"votesCount",nextCount)
+            nextCount
+        }.await()
+    }
+    suspend fun comment(ideaId:String,body:String) {
+        connect()
+        val idea=db.collection("voice_ideas").document(ideaId).get().await()
+        if(idea.getBoolean("visible")!=true)error("La idea ya no está disponible.")
+        db.collection("voice_pending_comments").document().set(mapOf(
+            "ideaId" to ideaId,"body" to body,
+            "ownerUid" to (auth.currentUser?.uid ?: error("Sesión no disponible.")),
+            "createdAtMs" to System.currentTimeMillis()
+        )).await()
+    }
+    suspend fun report(ideaId:String,reason:String) {
+        val uid=connect()
+        db.collection("voice_reports").document(uid+"_"+ideaId).set(mapOf(
+            "ideaId" to ideaId,"reporterUid" to uid,
+            "reason" to reason,"createdAtMs" to System.currentTimeMillis()
+        )).await()
+    }
 }
