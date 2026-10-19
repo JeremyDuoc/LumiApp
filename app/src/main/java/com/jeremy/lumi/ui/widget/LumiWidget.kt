@@ -25,6 +25,7 @@ import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
+import androidx.glance.layout.defaultWeight
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
@@ -45,9 +46,6 @@ import com.jeremy.lumi.domain.model.CyclePhase
 import com.jeremy.lumi.ui.theme.AppThemePalette
 import com.jeremy.lumi.ui.theme.LumiDesignTokens
 import com.jeremy.lumi.ui.theme.resolveLumiTokens
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 private fun Preferences.widgetPalette(): LumiDesignTokens {
     val key = this[LumiWidgetPrefs.THEME] ?: "NOIR"
@@ -123,9 +121,7 @@ private fun progressSegments(progress: Int): Int = when {
 /** 2x2 / 4x2: editorial compact summary, no unsupported pregnancy/contraception claims. */
 class LumiWidget : GlanceAppWidget() {
     override val stateDefinition: GlanceStateDefinition<*> = PreferencesGlanceStateDefinition
-    override val sizeMode: SizeMode = SizeMode.Responsive(
-        setOf(DpSize(140.dp, 130.dp), DpSize(260.dp, 130.dp))
-    )
+    override val sizeMode: SizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: androidx.glance.GlanceId) {
         provideContent {
@@ -134,10 +130,12 @@ class LumiWidget : GlanceAppWidget() {
             val revealed = prefs[LumiWidgetPrefs.REVEALED] ?: false
             val cycle = prefs[LumiWidgetPrefs.HAS_CYCLE] ?: false
             val big = LocalSize.current.width >= 240.dp
+            val tall = LocalSize.current.height >= 170.dp
 
             LumiWidgetFrame(colors, if (big) 19 else 13) {
                 Column(modifier = GlanceModifier.fillMaxSize()) {
                     LumiWidgetBrand(colors, compact = !big)
+                    Spacer(GlanceModifier.defaultWeight())
                     if (!revealed) {
                         PrivacyPrompt(colors, context)
                     } else if (!cycle) {
@@ -160,7 +158,7 @@ class LumiWidget : GlanceAppWidget() {
                             else -> colors.accent
                         }
                         val active = progressSegments(prefs[LumiWidgetPrefs.PROGRESS] ?: 0)
-                        Spacer(GlanceModifier.height(if (big) 10.dp else 4.dp))
+                        Spacer(GlanceModifier.height(if (big) 12.dp else 8.dp))
                         if (big) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Column {
@@ -195,7 +193,7 @@ class LumiWidget : GlanceAppWidget() {
                                 }
                             }
                         }
-                        Spacer(GlanceModifier.height(if (big) 10.dp else 6.dp))
+                        Spacer(GlanceModifier.height(if (big) 13.dp else 10.dp))
                         Row {
                             repeat(4) { segment ->
                                 Box(
@@ -207,7 +205,7 @@ class LumiWidget : GlanceAppWidget() {
                                 if (segment < 3) Spacer(GlanceModifier.width(4.dp))
                             }
                         }
-                        if (!big && prefs[LumiWidgetPrefs.NEXT_VALID] == true) {
+                        if ((!big || tall) && prefs[LumiWidgetPrefs.NEXT_VALID] == true) {
                             Spacer(GlanceModifier.height(6.dp))
                             val next = prefs[LumiWidgetPrefs.NEXT] ?: 0
                             Text(
@@ -216,6 +214,13 @@ class LumiWidget : GlanceAppWidget() {
                                 style = textStyle(colors.muted, 10)
                             )
                         }
+                    }
+                    Spacer(GlanceModifier.defaultWeight())
+                    if (tall) {
+                        Text(
+                            context.getString(R.string.widget_open_to_view),
+                            style = textStyle(colors.dim, 10)
+                        )
                     }
                 }
             }
@@ -226,13 +231,13 @@ class LumiWidget : GlanceAppWidget() {
 /** 4x2: small 7-day cycle overview. Uses the same cycle calculation as Home. */
 class LumiWeekWidget : GlanceAppWidget() {
     override val stateDefinition: GlanceStateDefinition<*> = PreferencesGlanceStateDefinition
-    override val sizeMode: SizeMode = SizeMode.Single
+    override val sizeMode: SizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: androidx.glance.GlanceId) {
         provideContent {
             val prefs = currentState<Preferences>()
             val colors = prefs.widgetPalette()
-            LumiWidgetFrame(colors, 17) {
+            LumiWidgetFrame(colors, 13) {
                 Column(modifier = GlanceModifier.fillMaxSize()) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         LumiWidgetBrand(colors, true)
@@ -252,7 +257,7 @@ class LumiWeekWidget : GlanceAppWidget() {
                         Spacer(GlanceModifier.height(7.dp))
                         Text(context.getString(R.string.widget_pregnancy_title), style = textStyle(colors.text, 19, true))
                     } else {
-                        Spacer(GlanceModifier.height(16.dp))
+                        Spacer(GlanceModifier.defaultWeight())
                         val encoded = prefs[LumiWidgetPrefs.WEEK].orEmpty()
                         val days = encoded.split(",").mapNotNull { item ->
                             val segments = item.split(":")
@@ -264,7 +269,7 @@ class LumiWeekWidget : GlanceAppWidget() {
                         val snapshotDate = runCatching {
                             java.time.LocalDate.parse(prefs[LumiWidgetPrefs.DATE].orEmpty())
                         }.getOrNull()
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             days.forEachIndexed { index, (number, phase) ->
                                 val shade = when (phase) {
                                     "M" -> colors.rose
@@ -274,9 +279,12 @@ class LumiWeekWidget : GlanceAppWidget() {
                                     "P" -> colors.rose
                                     else -> colors.muted
                                 }
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Column(
+                                    modifier = GlanceModifier.defaultWeight(),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
                                     Text(
-                                        text = if (index == 0) context.getString(R.string.widget_today_short)
+                                        text = if (index == 0) context.getString(R.string.widget_today_initial)
                                         else snapshotDate?.plusDays(index.toLong())?.dayOfWeek?.getDisplayName(
                                             java.time.format.TextStyle.NARROW,
                                             java.util.Locale.getDefault()
@@ -285,7 +293,7 @@ class LumiWeekWidget : GlanceAppWidget() {
                                     )
                                     Spacer(GlanceModifier.height(5.dp))
                                     Box(
-                                        modifier = GlanceModifier.size(25.dp)
+                                        modifier = GlanceModifier.size(24.dp)
                                             .background(if (index == 0) colors.panel2 else colors.panel),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -294,10 +302,9 @@ class LumiWeekWidget : GlanceAppWidget() {
                                     Spacer(GlanceModifier.height(6.dp))
                                     Box(modifier = GlanceModifier.width(23.dp).height(4.dp).background(shade)) {}
                                 }
-                                if (index < days.lastIndex) Spacer(GlanceModifier.width(5.dp))
                             }
                         }
-                        Spacer(GlanceModifier.height(13.dp))
+                        Spacer(GlanceModifier.defaultWeight())
                         Text(context.getString(R.string.widget_estimation_note), style = textStyle(colors.muted, 10))
                     }
                 }
@@ -316,7 +323,8 @@ class LumiQuietWidget : GlanceAppWidget() {
             val prefs = currentState<Preferences>()
             val colors = prefs.widgetPalette()
             LumiWidgetFrame(colors, 13) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                     Image(
                         provider = ImageProvider(R.drawable.lumi_widget_flower),
                         contentDescription = null,
@@ -327,6 +335,7 @@ class LumiQuietWidget : GlanceAppWidget() {
                         Text("lumi", style = textStyle(colors.text, 18, true))
                         Spacer(GlanceModifier.height(2.dp))
                         Text(context.getString(R.string.widget_quiet_subtitle), style = textStyle(colors.muted, 11))
+                    }
                     }
                 }
             }
