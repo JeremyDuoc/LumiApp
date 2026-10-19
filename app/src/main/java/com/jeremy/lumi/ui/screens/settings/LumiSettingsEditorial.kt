@@ -26,13 +26,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jeremy.lumi.R
 import com.jeremy.lumi.domain.model.UserGoal
-import com.jeremy.lumi.ui.components.LumiBrandFlower
 import com.jeremy.lumi.ui.theme.AppThemePalette
 import com.jeremy.lumi.ui.theme.BackgroundAmbient
 import com.jeremy.lumi.ui.theme.DialStyle
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
 import com.jeremy.lumi.ui.theme.PhaseColorPalette
-import com.jeremy.lumi.ui.theme.resolveLumiTokens
 
 /** The settings UI is a pure view. Existing ViewModel flows and launchers remain in SettingsScreen. */
 internal data class LumiSettingsSnapshot(
@@ -105,7 +103,6 @@ internal fun LumiSettingsBody(state: LumiSettingsSnapshot, actions: LumiSettings
                     color = tokens.muted
                 )
             }
-            LumiBrandFlower(size = 40, animated = false)
         }
 
         Spacer(Modifier.height(28.dp))
@@ -199,7 +196,7 @@ internal fun LumiSettingsBody(state: LumiSettingsSnapshot, actions: LumiSettings
         SettingsEditorialSection(stringResource(R.string.settings_section_protection_new)) {
             SettingsEditorialEntry(
                 icon = Icons.Rounded.Shield,
-                title = stringResource(R.string.settings_privacy),
+                title = stringResource(R.string.settings_privacy_row_title),
                 subtitle = stringResource(R.string.settings_privacy_explained),
                 onClick = actions.privacy
             )
