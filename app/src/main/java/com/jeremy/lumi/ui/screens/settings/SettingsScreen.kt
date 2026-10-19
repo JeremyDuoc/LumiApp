@@ -80,6 +80,7 @@ fun SettingsScreen(
     val backgroundAmbient   by viewModel.backgroundAmbient.collectAsStateWithLifecycle()
     val isDark = currentTheme.isDark()
     val saveReminders by viewModel.saveRemindersInChat.collectAsStateWithLifecycle()
+    val widgetDetailsVisible by viewModel.revealWidgetDetails.collectAsStateWithLifecycle()
     val userGoal by viewModel.userGoal.collectAsStateWithLifecycle()
     val isPregnant by viewModel.isPregnant.collectAsStateWithLifecycle()
     val isOnContraceptive by viewModel.isOnContraceptive.collectAsStateWithLifecycle()
@@ -99,6 +100,7 @@ fun SettingsScreen(
     var showPregnancyEndDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
     var showPrivacySheet by remember { mutableStateOf(false) }
+    var showWidgetPicker by remember { mutableStateOf(false) }
     var showMockDataDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     // Manual backups: passwords exist in memory only until SAF returns and encryption finishes.
@@ -321,6 +323,7 @@ fun SettingsScreen(
                     healthConnected = isHealthConnectEnabled,
                     healthAvailable = viewModel.isHealthConnectAvailable,
                     chatHistory = saveReminders,
+                    widgetDetailsVisible = widgetDetailsVisible,
                     language = currentLanguage,
                     backupBusy = manualBackupBusy,
                     bondsEnabled = com.jeremy.lumi.BuildConfig.ENABLE_BONDS,
@@ -356,22 +359,8 @@ fun SettingsScreen(
                     phaseColors = { showPhaseColorSheet = true },
                     dialStyle = { showDialStyleSheet = true },
                     ambient = { viewModel.changeBackgroundAmbient(it) },
-                    widget = {
-                        val manager = android.appwidget.AppWidgetManager.getInstance(context)
-                        val provider = android.content.ComponentName(
-                            context,
-                            com.jeremy.lumi.ui.widget.LumiWidgetReceiver::class.java
-                        )
-                        if (manager.isRequestPinAppWidgetSupported) {
-                            manager.requestPinAppWidget(provider, null, null)
-                        } else {
-                            android.widget.Toast.makeText(
-                                context,
-                                context.getString(R.string.settings_widget_unsupported),
-                                android.widget.Toast.LENGTH_LONG
-                            ).show()
-                        }
-                    },
+                    widget = { showWidgetPicker = true },
+                    widgetReveal = { viewModel.setRevealWidgetDetails(it) },
                     chatHistory = { viewModel.setSaveRemindersInChat(it) },
                     driveBackup = onNavigateToBackup,
                     encryptedExport = { if (!manualBackupBusy) showEncryptedExportPassword = true },
@@ -750,6 +739,35 @@ fun SettingsScreen(
                 dismissButton = {
                     TextButton(onClick = { showPregnancyEndDialog = false }) {
                         Text(stringResource(R.string.dialog_reset_cancel))
+                    }
+                }
+            )
+        }
+
+
+        if (showWidgetPicker) {
+            LumiWidgetPickerSheet(
+                onDismiss = { showWidgetPicker = false },
+                onSelect = { kind ->
+                    showWidgetPicker = false
+                    val receiverClass = when (kind) {
+                        com.jeremy.lumi.ui.widget.LumiWidgetKind.CYCLE ->
+                            com.jeremy.lumi.ui.widget.LumiWidgetReceiver::class.java
+                        com.jeremy.lumi.ui.widget.LumiWidgetKind.WEEK ->
+                            com.jeremy.lumi.ui.widget.LumiWeekWidgetReceiver::class.java
+                        com.jeremy.lumi.ui.widget.LumiWidgetKind.QUIET ->
+                            com.jeremy.lumi.ui.widget.LumiQuietWidgetReceiver::class.java
+                    }
+                    val manager = android.appwidget.AppWidgetManager.getInstance(context)
+                    val provider = android.content.ComponentName(context, receiverClass)
+                    if (manager.isRequestPinAppWidgetSupported) {
+                        manager.requestPinAppWidget(provider, null, null)
+                    } else {
+                        android.widget.Toast.makeText(
+                            context,
+                            context.getString(R.string.widget_pin_unsupported),
+                            android.widget.Toast.LENGTH_LONG
+                        ).show()
                     }
                 }
             )
