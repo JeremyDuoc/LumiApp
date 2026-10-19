@@ -32,4 +32,6 @@
     <string name="widget_day_short">CYCLE DAY</string>
     <string name="widget_today_short">TODAY</string>
     <string name="widget_next_compact">Next estimate: %1$d d</string>
+    <string name="widget_open_to_view">OPEN LUMI  →</string>
+    <string name="widget_today_initial">T</string>
 </resources>
