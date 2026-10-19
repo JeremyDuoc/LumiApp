@@ -226,7 +226,7 @@
     <string name="cycle_history_empty">No hay ciclos registrados aún</string>
     <string name="cycle_history_in_progress">En curso (%1$d días)</string>
     <string name="cycle_history_title">Historial de Ciclos</string>
-    <string name="cycle_ring_confidence_moderate">Fase estimada · certeza moderada</string>
+    <string name="cycle_ring_confidence_moderate">Fase estimada · fecha orientativa</string>
     <string name="cycle_variation_estimation">Los ciclos varían; esto es una estimación.</string>
     <string name="day_of_cycle">Día del ciclo</string>
     <string name="day_of_cycle_caps">DÍA DEL CICLO</string>
@@ -302,15 +302,16 @@
     <string name="home_delay_late_one">Tu periodo lleva %1$d día de retraso. Es normal que ocurra.</string>
     <string name="home_delay_late_other">Tu periodo lleva %1$d días de retraso. Es normal que ocurra.</string>
     <string name="home_delay_very_late">%1$d días de retraso. El estrés, cambios de peso o ejercicio intenso pueden causarlo.</string>
-    <string name="home_factors_calculating_subtitle">Analizando historial biológico y síntomas…</string>
+    <string name="home_factors_calculating_subtitle">Revisando historial de ciclos y registros de síntomas…</string>
     <string name="home_factors_calculating_title">Calculando predicción…</string>
     <string name="home_factors_collapse">Ocultar análisis</string>
     <string name="home_factors_confidence_high">Historial amplio</string>
     <string name="home_factors_confidence_low">Pocos registros aún</string>
     <string name="home_factors_confidence_medium">Historial parcial</string>
     <string name="home_factors_cycles_count">%1$d ciclos cerrados</string>
-    <string name="home_factors_history">Días registrados</string>
-    <string name="home_factors_margin_note">Margen estimado: %1$s</string>
+    <string name="home_factors_history">Ciclos anteriores</string>
+    <string name="home_margin_unavailable">Sin fecha proyectada</string>
+    <string name="home_factors_margin_note">Rango orientativo: %1$s</string>
     <string name="home_factors_model_certainty">Información disponible:</string>
     <string name="home_factors_regularity">Regularidad</string>
     <string name="home_factors_subtitle">FACTORES DE PREDICCIÓN</string>
@@ -949,8 +950,8 @@
     <string name="notif_custom_title">Recordatorio</string>
     <string name="notif_delay_days">Retraso de %1$d %2$s</string>
     <string name="notif_delay_desc">Tu periodo está demorado respecto a la estimación habitual. Si persiste, realiza un seguimiento de síntomas o consulta a tu especialista.</string>
-    <string name="notif_fertile_active_desc">Estás en los días de mayor probabilidad de concepción del ciclo.</string>
-    <string name="notif_fertile_active_title">Ventana fértil y ovulación activa</string>
+    <string name="notif_fertile_active_desc">Según tu calendario, podrías estar cerca de días fértiles. La ovulación real puede ocurrir en otras fechas.</string>
+    <string name="notif_fertile_active_title">Ventana fértil estimada por calendario</string>
     <string name="notif_injection_desc">Toca para revisar tu próxima dosis anticonceptiva.</string>
     <string name="notif_injection_title">Recordatorio de inyección</string>
     <string name="notif_log_desc">Toca para registrar tus síntomas y ánimo</string>
@@ -1368,15 +1369,13 @@
     <string name="pm_story_symptoms_title">Síntomas de hoy</string>
     <string name="pm_story_updated">Actualizado %1$s</string>
     <string name="pred_info_history_cycles">Historial acumulado (%1$d ciclos)</string>
-    <string name="pred_info_margin_summary">Margen de variabilidad: %1$s · %2$d ciclos completados</string>
+    <string name="pred_info_margin_summary">Rango orientativo: %1$s · %2$d ciclos anteriores</string>
     <string name="pred_info_medical_disclaimer">Aviso médico importante: Estas estimaciones tienen propósitos informativos y de bienestar. No constituyen un método anticonceptivo ni reemplazan el asesoramiento ginecológico profesional.</string>
-    <string name="pred_info_methodology_desc">En Lumi tu fecha estimada de periodo y fases se determinan mediante una media ponderada que da mayor peso a tus ciclos más recientes, calibrada con tus síntomas físicos diarios.
-    
-    No utilizamos cajas negras ni inventamos certezas: cuando hay pocos ciclos registrados, Lumi te lo indica con honestidad hasta que tu patrón biológico se consolide.</string>
+    <string name="pred_info_methodology_desc">Lumi estima el próximo periodo mediante las duraciones de ciclos anteriores y da más peso a los recientes. El rango de fechas refleja incertidumbre observada en un conjunto pequeño de datos históricos. Los síntomas se muestran como información registrada, pero todavía no ajustan la fecha predicha. Las fechas de fertilidad y ovulación estimadas no deben utilizarse como método anticonceptivo.</string>
     <string name="pred_info_methodology_title">Metodología honesta</string>
     <string name="pred_info_model_certainty">Información para estimar el ciclo</string>
     <string name="pred_info_regularity">Regularidad de ciclos</string>
-    <string name="pred_info_subtitle">Transparencia clínica y calibración basada en tus datos</string>
+    <string name="pred_info_subtitle">Cómo se calcula la estimación con tus registros</string>
     <string name="pred_info_symptom_tracking">Registro de síntomas y estado</string>
     <string name="pred_info_title">Cómo interpreta Lumi tu ciclo</string>
     <string name="predict_ovulation_in">Ovulación en %1$d días</string>
