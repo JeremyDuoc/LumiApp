@@ -43,7 +43,7 @@ internal object ChatIntentRouter {
                 "mis datos", "mis registros", "estadisticas", "se relaciona con",
                 "relacion entre", "sintomas recurrentes")) return ChatIntent.PERSONAL_PATTERNS
 
-        if (has("retraso", "atraso", "retrasada", "no me baja", "no me viene",
+        if (has("retraso", "atraso", "retrasada", "atrasada", "no me baja", "no me viene",
                 "no me llega", "periodo tarde", "regla tarde")) return ChatIntent.LATE_PERIOD
 
         if (has("cuando llega mi", "cuando viene mi", "proximo periodo",
