@@ -16,6 +16,10 @@ import androidx.activity.enableEdgeToEdge
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -45,6 +49,17 @@ class MainActivity : ComponentActivity() {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        lifecycleScope.launch {
+            themePreferenceManager.selectedThemeFlow.distinctUntilChanged().drop(1).collect {
+                com.jeremy.lumi.ui.widget.WidgetRefreshScheduler.requestNow(applicationContext)
+            }
+        }
+        // Refresh cached widget palette when the user selects another Lumi theme.
+        lifecycle.addObserver(object : androidx.lifecycle.DefaultLifecycleObserver {
+            override fun onResume(owner: androidx.lifecycle.LifecycleOwner) {
+                com.jeremy.lumi.ui.widget.WidgetRefreshScheduler.requestNow(applicationContext)
+            }
+        })
 
         setContent {
             // Escuchamos el Flow de DataStore en tiempo real en la raíz de la app

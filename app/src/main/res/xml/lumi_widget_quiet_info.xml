@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="140dp"
+    android:minHeight="58dp"
+    android:minResizeWidth="140dp"
+    android:minResizeHeight="58dp"
+    android:updatePeriodMillis="0"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:targetCellWidth="2"
+    android:targetCellHeight="1"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:previewLayout="@layout/lumi_widget_quiet_preview"
+    android:description="@string/widget_quiet_description" />

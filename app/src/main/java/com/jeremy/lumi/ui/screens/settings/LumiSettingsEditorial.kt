@@ -44,6 +44,7 @@ internal data class LumiSettingsSnapshot(
     val healthConnected: Boolean,
     val healthAvailable: Boolean,
     val chatHistory: Boolean,
+    val widgetDetailsVisible: Boolean,
     val language: String,
     val backupBusy: Boolean,
     val bondsEnabled: Boolean,
@@ -61,6 +62,7 @@ internal class LumiSettingsActions(
     val dialStyle: () -> Unit,
     val ambient: (BackgroundAmbient) -> Unit,
     val widget: () -> Unit,
+    val widgetReveal: (Boolean) -> Unit,
     val chatHistory: (Boolean) -> Unit,
     val driveBackup: () -> Unit,
     val encryptedExport: () -> Unit,
@@ -182,6 +184,14 @@ internal fun LumiSettingsBody(state: LumiSettingsSnapshot, actions: LumiSettings
                 title = stringResource(R.string.settings_add_widget),
                 subtitle = stringResource(R.string.settings_add_widget_desc),
                 onClick = actions.widget
+            )
+            SettingsEntryDivider()
+            SettingsEditorialToggle(
+                icon = Icons.Rounded.Visibility,
+                title = stringResource(R.string.widget_reveal_title),
+                subtitle = stringResource(R.string.widget_reveal_desc),
+                checked = state.widgetDetailsVisible,
+                onCheckedChange = actions.widgetReveal
             )
             SettingsEntryDivider()
             SettingsEditorialToggle(

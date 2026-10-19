@@ -10,12 +10,13 @@ class LumiApp : Application(){
         com.jeremy.lumi.notification.NotificationChannels.ensureAllChannelsExist(this)
         
         val workRequest = androidx.work.PeriodicWorkRequestBuilder<com.jeremy.lumi.ui.widget.WidgetUpdaterWorker>(
-            24, java.util.concurrent.TimeUnit.HOURS
+            6, java.util.concurrent.TimeUnit.HOURS
         ).build()
         androidx.work.WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "widget_updater",
-            androidx.work.ExistingPeriodicWorkPolicy.KEEP,
+            androidx.work.ExistingPeriodicWorkPolicy.UPDATE,
             workRequest
         )
+        com.jeremy.lumi.ui.widget.WidgetRefreshScheduler.requestNow(this)
     }
 }
