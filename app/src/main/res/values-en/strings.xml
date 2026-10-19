@@ -226,7 +226,7 @@
     <string name="cycle_history_empty">No cycles recorded yet</string>
     <string name="cycle_history_in_progress">In progress (%1$d days)</string>
     <string name="cycle_history_title">Cycle History</string>
-    <string name="cycle_ring_confidence_moderate">Estimated phase · moderate confidence</string>
+    <string name="cycle_ring_confidence_moderate">Estimated phase · date approximate</string>
     <string name="cycle_variation_estimation">Cycles vary; this is an estimation.</string>
     <string name="day_of_cycle">Cycle day</string>
     <string name="day_of_cycle_caps">DAY OF CYCLE</string>
@@ -302,15 +302,16 @@
     <string name="home_delay_late_one">Your period is %1$d day late. This is normal.</string>
     <string name="home_delay_late_other">Your period is %1$d days late. This is normal.</string>
     <string name="home_delay_very_late">%1$d days late. Stress, weight changes, or intense exercise can cause it.</string>
-    <string name="home_factors_calculating_subtitle">Analyzing biological history and symptoms…</string>
+    <string name="home_factors_calculating_subtitle">Reviewing recorded cycle history and symptom completeness…</string>
     <string name="home_factors_calculating_title">Calculating prediction…</string>
     <string name="home_factors_collapse">Hide analysis</string>
     <string name="home_factors_confidence_high">Extensive history</string>
     <string name="home_factors_confidence_low">Few records so far</string>
     <string name="home_factors_confidence_medium">Partial history</string>
     <string name="home_factors_cycles_count">%1$d completed cycles</string>
-    <string name="home_factors_history">Logged days</string>
-    <string name="home_factors_margin_note">Estimated margin: %1$s</string>
+    <string name="home_factors_history">Previous cycles</string>
+    <string name="home_margin_unavailable">No projected period date</string>
+    <string name="home_factors_margin_note">Approximate date range: %1$s</string>
     <string name="home_factors_model_certainty">Available history:</string>
     <string name="home_factors_regularity">Regularity</string>
     <string name="home_factors_subtitle">PREDICTION FACTORS</string>
@@ -949,8 +950,8 @@
     <string name="notif_custom_title">Reminder</string>
     <string name="notif_delay_days">Delayed by %1$d %2$s</string>
     <string name="notif_delay_desc">Your period is delayed compared to the usual estimation. If it persists, track your symptoms or consult a specialist.</string>
-    <string name="notif_fertile_active_desc">You are in the days with the highest likelihood of conception in your cycle.</string>
-    <string name="notif_fertile_active_title">Fertile window and ovulation active</string>
+    <string name="notif_fertile_active_desc">Your calendar-estimated fertile window may be approaching. Real ovulation can happen on different days.</string>
+    <string name="notif_fertile_active_title">Fertile window estimated from calendar</string>
     <string name="notif_injection_desc">Tap to review your next contraceptive dose.</string>
     <string name="notif_injection_title">Injection reminder</string>
     <string name="notif_log_desc">Tap to log your symptoms and mood</string>
@@ -1368,15 +1369,13 @@
     <string name="pm_story_symptoms_title">Today\'s symptoms</string>
     <string name="pm_story_updated">Updated %1$s</string>
     <string name="pred_info_history_cycles">Accumulated history (%1$d cycles)</string>
-    <string name="pred_info_margin_summary">Variability margin: %1$s · %2$d completed cycles</string>
+    <string name="pred_info_margin_summary">Approximate date range: %1$s · %2$d previous cycles</string>
     <string name="pred_info_medical_disclaimer">Important medical notice: These estimations are for informational and wellness purposes. They do not constitute contraception nor replace professional gynecological advice.</string>
-    <string name="pred_info_methodology_desc">In Lumi, your estimated period date and phases are determined using a weighted average that gives greater weight to your most recent cycles, calibrated with your daily physical symptoms.
-    
-    We do not use black boxes or invent certainties: when there are few logged cycles, Lumi tells you honestly until your biological pattern consolidates.</string>
+    <string name="pred_info_methodology_desc">Lumi estimates the next period using prior recorded cycle lengths, giving greater weight to recent cycles. The date range reflects uncertainty observed in a small historical dataset. Symptoms are shown as logged information, but do not currently calibrate the period prediction. Neither the estimated fertile days nor the predicted ovulation date can be used as contraception.</string>
     <string name="pred_info_methodology_title">Honest methodology</string>
     <string name="pred_info_model_certainty">Information for cycle estimation</string>
     <string name="pred_info_regularity">Cycle regularity</string>
-    <string name="pred_info_subtitle">Clinical transparency and calibration based on your data</string>
+    <string name="pred_info_subtitle">How the estimate is built from your records</string>
     <string name="pred_info_symptom_tracking">Symptom and status tracking</string>
     <string name="pred_info_title">How Lumi interprets your cycle</string>
     <string name="predict_ovulation_in">Ovulation in %1$d days</string>
