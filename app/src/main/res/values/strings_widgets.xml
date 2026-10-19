@@ -29,4 +29,9 @@
     <string name="widget_pin_unsupported">Abre los widgets del sistema y busca Lumi para añadirlo.</string>
     <string name="widget_privacy_note">Por privacidad, ningún widget muestra detalles del ciclo sin tu permiso.</string>
     <string name="widget_preview_day">Día 12</string>
+    <string name="widget_day_short">DÍA DEL CICLO</string>
+    <string name="widget_today_short">HOY</string>
+    <string name="widget_next_compact">Próximo estimado: %1$d d</string>
+    <string name="widget_open_to_view">ABRIR LUMI  →</string>
+    <string name="widget_today_initial">H</string>
 </resources>

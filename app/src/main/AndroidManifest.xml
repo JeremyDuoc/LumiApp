@@ -69,6 +69,7 @@
 
         <receiver
             android:name="com.jeremy.lumi.ui.widget.LumiWidgetReceiver"
+            android:label="@string/widget_type_cycle"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -77,14 +78,16 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/lumi_widget_info" />
         </receiver>
-        <receiver android:name=".ui.widget.LumiWeekWidgetReceiver" android:exported="true">
+        <receiver android:name=".ui.widget.LumiWeekWidgetReceiver"
+            android:label="@string/widget_type_week" android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider"
                 android:resource="@xml/lumi_widget_week_info" />
         </receiver>
-        <receiver android:name=".ui.widget.LumiQuietWidgetReceiver" android:exported="true">
+        <receiver android:name=".ui.widget.LumiQuietWidgetReceiver"
+            android:label="@string/widget_type_quiet" android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
