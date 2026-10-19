@@ -3,8 +3,8 @@
     <string name="widget_cycle_description">Your cycle at a glance</string>
     <string name="widget_week_description">Your week and estimated phases</string>
     <string name="widget_quiet_description">Discreet Lumi widget, no health data</string>
-    <string name="widget_hidden_title">Your private space</string>
-    <string name="widget_hidden_desc">Enable cycle details in Settings to see your cycle.</string>
+    <string name="widget_hidden_title">Details hidden</string>
+    <string name="widget_hidden_desc">Enable in Settings.</string>
     <string name="widget_empty_title">A new beginning</string>
     <string name="widget_empty_desc">Open Lumi to record your first cycle.</string>
     <string name="widget_pregnancy_label">PREGNANCY MODE</string>
@@ -14,7 +14,7 @@
     <string name="widget_prediction_overdue">The estimated date has passed</string>
     <string name="widget_week_title">Your upcoming days</string>
     <string name="widget_estimation_note">Estimated phases, not medical certainties</string>
-    <string name="widget_quiet_subtitle">A moment for yourself</string>
+    <string name="widget_quiet_subtitle">Here with you</string>
     <string name="widget_settings_title">Lumi widgets</string>
     <string name="widget_settings_subtitle">Choose how Lumi joins your home screen.</string>
     <string name="widget_reveal_title">Show cycle data in widgets</string>
@@ -28,4 +28,5 @@
     <string name="widget_choose_widget">Choose widget</string>
     <string name="widget_pin_unsupported">Open your system\'s widget picker and find Lumi.</string>
     <string name="widget_privacy_note">For privacy, widgets show no cycle details without your permission.</string>
+    <string name="widget_preview_day">Day 12</string>
 </resources>
