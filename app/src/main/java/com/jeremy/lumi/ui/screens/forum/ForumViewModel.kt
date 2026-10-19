@@ -51,7 +51,7 @@ class ForumViewModel @Inject constructor(private val repository:VoiceRepository)
         }
     }
     private fun failure(e:Throwable) {
-        _state.update { it.copy(loading=false,busy=false,offlineMessage="No se pudo sincronizar Tu voz. Revisa tu conexión o la configuración de Firebase.",notice=e.localizedMessage) }
+        _state.update { it.copy(loading=false,busy=false,offlineMessage="No se pudo sincronizar Tu voz. Revisa tu conexión o la configuración de Supabase.",notice=e.localizedMessage) }
     }
     fun showComments(ideaId:String?) {
         commentsJob?.cancel()
