@@ -496,8 +496,4 @@ async function limpiarTokenInvalidoSiAplica(linkId, campoToken, error) {
   }
 }
 
-// Lumi · Tu voz. Un único punto de exportación para las funciones moderadas.
-const voice = require('./voice');
-for (const [key, fn] of Object.entries(voice)) {
-  if (key !== '_voice') exports[key] = fn;
-}
+// Tu voz usa Firestore Spark sin Functions; solo Bonds necesita este módulo.
