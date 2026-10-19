@@ -4,7 +4,7 @@ Panel web privado y **separado de Android**. No tiene permisos sobre los datos d
 
 ## Funcionalidades
 - Revisión de sugerencias: aprobar / rechazar
-- Hoja de ruta: Recibida → En revisión → Aceptada → En desarrollo → Disponible
+- Hoja de ruta con stepper vertical interactivo (inspirado en Uiverse/PriyanshuGupta28): Recibida → En revisión → Aceptada → En desarrollo → Disponible. Seleccionar una etapa NO la publica hasta pulsar «Guardar estado». No prevista es una alternativa fuera de la progresión.
 - Alternativa No prevista y botón para ocultar / volver a mostrar una idea
 - Respuestas oficiales como Equipo Lumi
 - Moderación de comentarios y ocultación de comentarios aprobados
@@ -94,8 +94,8 @@ real son las restricciones RLS + operaciones SQL con chequeo de administrador.
 1. Desde Lumi Android, publica una sugerencia anónima.
 2. Actualiza Bandeja de entrada: debe mostrarse pendiente.
 3. Aprueba la propuesta. Confirma que aparece en el móvil.
-4. En Hoja de ruta selecciona «En revisión» y pulsa Guardar estado.
-5. Comprueba en Android que se actualiza automáticamente.
+4. En Hoja de ruta pulsa «Cambiar estado», selecciona «En revisión» en el stepper (o usa «Siguiente») y pulsa «Guardar estado». Cerrar sin guardar no debe modificar Supabase.
+5. Comprueba en Android que se actualiza automáticamente; abre «Ver avance» para ver el mismo stepper vertical adaptado a los temas de Lumi.
 6. Pasa por «Aceptada», «En desarrollo» y «Disponible».
 7. Abre Responder y publica un mensaje oficial.
 8. Envía un comentario anónimo desde otro teléfono, apruébalo.
