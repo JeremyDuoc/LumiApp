@@ -56,8 +56,11 @@ class WidgetUpdater @Inject constructor(
         val theme = themePrefs.selectedThemeFlow.first()
         val today = LumiClock.today()
         // Default private; observer-only installations also never reveal menstrual information.
-        val revealed = widgetPrefs.revealCycleDetails.first() &&
-            prefs.isOnboardingCompleted.first() && !prefs.isObserverOnly.first()
+        val revealed = WidgetPrivacyPolicy.canReveal(
+            optedIn = widgetPrefs.revealCycleDetails.first(),
+            completedOnboarding = prefs.isOnboardingCompleted.first(),
+            observerOnly = prefs.isObserverOnly.first()
+        )
 
         val snapshot = if (revealed) {
             val cycle = repository.getCurrentActiveCycle()
