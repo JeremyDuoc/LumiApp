@@ -127,6 +127,11 @@ service cloud.firestore {
     // P1-5 RESUELTO: Ningún extraño puede enumerar ni hacer get de invitaciones.
     // Solo el titular puede ver su propia invitación. El canje lo ejecuta la Cloud Function.
     match /partner_invitations/{code} {
+      // Función local: la de partner_links no está visible en este match.
+      function invitationChangedOnly(fields) {
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+      }
+
       allow list: if false;
 
       allow get: if request.auth != null && resource.data.ownerUid == request.auth.uid;
@@ -142,7 +147,7 @@ service cloud.firestore {
       allow update: if request.auth != null
         && resource.data.ownerUid == request.auth.uid
         && request.resource.data.status == 'REVOKED'
-        && changedOnly(['status', 'revokedAtMs']);
+        && invitationChangedOnly(['status', 'revokedAtMs']);
 
       allow delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
     }
