@@ -20,6 +20,9 @@ data class VoiceUiState(
     val voted:Set<String> = emptySet(),
     val mine:List<VoiceMine> = emptyList(),
     val comments:List<VoiceComment> = emptyList(),
+    val history:List<VoiceStatusChange> = emptyList(),
+    val historyLoading:Boolean = false,
+    val historyFailed:Boolean = false,
     val busy:Boolean=false,
     val notice:String?=null
 )
@@ -94,11 +97,21 @@ class ForumViewModel @Inject constructor(private val repository:VoiceRepository)
     }
     fun showComments(ideaId:String?) {
         commentsJob?.cancel()
-        _state.update { it.copy(comments=emptyList()) }
+        _state.update { it.copy(comments=emptyList(),history=emptyList(),historyLoading=ideaId!=null,historyFailed=false) }
         if(ideaId==null)return
         commentsJob=viewModelScope.launch {
-            repository.comments(ideaId).catch { failure(it) }.collect{ comments ->
-                _state.update { it.copy(comments=comments) }
+            launch {
+                repository.comments(ideaId).catch { failure(it) }.collect { comments ->
+                    _state.update { it.copy(comments=comments) }
+                }
+            }
+            launch {
+                repository.history(ideaId).catch { error ->
+                    _state.update { it.copy(historyLoading=false,historyFailed=true) }
+                    failure(error)
+                }.collect { records ->
+                    _state.update { it.copy(history=records,historyLoading=false,historyFailed=false) }
+                }
             }
         }
     }

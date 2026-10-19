@@ -38,6 +38,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import com.jeremy.lumi.ui.components.LumiBrandLockup
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
 import com.jeremy.lumi.ui.theme.LumiDesignTokens
@@ -47,6 +51,23 @@ private val SORTS = listOf("Más apoyadas","Más recientes","Más comentadas")
 private val CATEGORIES = listOf("Calendario","Registro diario","Apariencia","Privacidad","Recordatorios","Otro")
 private val STEPS = listOf("Recibida","En revisión","Aceptada","En desarrollo","Disponible")
 private val CTA = Brush.horizontalGradient(listOf(Color(0xFFEAB0CE),Color(0xFFC6B1F4)))
+
+private fun voiceFormattedTime(ms:Long):String =
+    SimpleDateFormat("d MMM yyyy · HH:mm",Locale.forLanguageTag("es-CL")).format(Date(ms))
+
+private fun voiceFormattedEstimate(iso:String?):String? {
+    if(iso.isNullOrBlank())return null
+    return runCatching {
+        val utc=TimeZone.getTimeZone("UTC")
+        val parsed=SimpleDateFormat("yyyy-MM-dd",Locale.US).apply {
+            isLenient=false
+            timeZone=utc
+        }.parse(iso) ?: return null
+        SimpleDateFormat("d MMM yyyy",Locale.forLanguageTag("es-CL")).apply {
+            timeZone=utc
+        }.format(parsed)
+    }.getOrNull()
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -180,7 +201,8 @@ fun ForumScreen(viewModel:ForumViewModel = hiltViewModel()) {
     }
     if(create) NewIdeaSheet(theme,state.busy,state.notice,onDismiss={create=false},onSubmit=viewModel::suggest)
     val detail=state.ideas.firstOrNull{it.id==selectedId}
-    if(detail!=null) DetailSheet(detail,theme,state.comments,detail.id in state.voted,state.busy,state.notice,
+    if(detail!=null) DetailSheet(detail,theme,state.comments,state.history,state.historyLoading,state.historyFailed,
+        detail.id in state.voted,state.busy,state.notice,
         onDismiss={selectedId=null},onVote={viewModel.vote(detail.id)},
         onComment={viewModel.comment(detail.id,it)},onReport={reportId=detail.id})
     if(help) AlertDialog(onDismissRequest={help=false},containerColor=theme.panel,
@@ -229,6 +251,12 @@ private fun FeaturedIdea(idea:VoiceIdea,theme:LumiDesignTokens,onOpen:()->Unit){
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){
                 ProgressDots(idea.status,theme)
                 Text(idea.votes.toString()+" apoyos",fontSize=10.sp,color=theme.muted)
+            }
+            val eta=voiceFormattedEstimate(idea.estimatedAvailableOn)
+            if(eta!=null && idea.status!="Disponible" && idea.status!="No prevista") {
+                Text("Disponibilidad estimada: "+eta,
+                    fontSize=10.sp,lineHeight=15.sp,color=theme.accent,
+                    modifier=Modifier.padding(top=12.dp))
             }
         }
     }
@@ -349,6 +377,8 @@ private fun NewIdeaSheet(theme:LumiDesignTokens,busy:Boolean,notice:String?,onDi
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DetailSheet(idea:VoiceIdea,theme:LumiDesignTokens,comments:List<VoiceComment>,
+                        history:List<VoiceStatusChange>,
+                        historyLoading:Boolean,historyFailed:Boolean,
                         voted:Boolean,busy:Boolean,notice:String?,onDismiss:()->Unit,onVote:()->Unit,
                         onComment:(String)->Unit,onReport:()->Unit){
     var message by rememberSaveable(idea.id){mutableStateOf("")}
@@ -375,7 +405,7 @@ private fun DetailSheet(idea:VoiceIdea,theme:LumiDesignTokens,comments:List<Voic
             Text("Sigue cada etapa, desde que la recibimos hasta que llega a Lumi.",
                 fontSize=11.sp,lineHeight=16.sp,color=theme.muted,
                 modifier=Modifier.padding(top=5.dp,bottom=15.dp))
-            VoiceProgressStepper(idea.status,theme)
+            VoiceProgressStepper(idea.status,history,historyLoading,historyFailed,idea.estimatedAvailableOn,theme)
             HorizontalDivider(Modifier.padding(vertical=17.dp),color=theme.line)
             Text("Conversación · "+idea.comments+" comentarios",fontSize=13.sp,
                 fontWeight=FontWeight.Bold,color=theme.text)
@@ -408,11 +438,18 @@ private fun DetailSheet(idea:VoiceIdea,theme:LumiDesignTokens,comments:List<Voic
 }
 /**
  * Adaptación del stepper vertical de PriyanshuGupta28 (Uiverse) a Lumi.
- * Refleja el estado ACTUAL recibido de Supabase; las etapas anteriores son
- * una representación del avance, NO un historial de fechas confirmado.
+ * Las fechas proceden EXCLUSIVAMENTE de eventos persistidos en Supabase.
+ * Etapas anteriores sin evento no reciben fechas estimadas ni retroactivas.
  */
 @Composable
-private fun VoiceProgressStepper(status:String,theme:LumiDesignTokens) {
+private fun VoiceProgressStepper(
+    status:String,
+    history:List<VoiceStatusChange>,
+    historyLoading:Boolean,
+    historyFailed:Boolean,
+    estimatedAvailableOn:String?,
+    theme:LumiDesignTokens
+) {
     val current=STEPS.indexOf(status)
     val notPlanned=status=="No prevista"
     val descriptions=listOf(
@@ -429,6 +466,14 @@ private fun VoiceProgressStepper(status:String,theme:LumiDesignTokens) {
             .border(1.dp,theme.line,RoundedCornerShape(18.dp))
             .padding(horizontal=17.dp,vertical=20.dp)
     ) {
+        if(historyLoading || historyFailed) {
+            Text(
+                if(historyLoading) "Consultando las fechas registradas…"
+                else "No pudimos consultar las fechas de los cambios.",
+                color=theme.muted,fontSize=11.sp,lineHeight=16.sp,
+                modifier=Modifier.padding(bottom=14.dp)
+            )
+        }
         if(notPlanned) {
             Row(
                 Modifier.fillMaxWidth()
@@ -444,13 +489,32 @@ private fun VoiceProgressStepper(status:String,theme:LumiDesignTokens) {
                         fontWeight=FontWeight.Bold,color=theme.text)
                     Text("El equipo no tiene previsto desarrollar esta propuesta. Puede revisarse más adelante.",
                         fontSize=10.sp,lineHeight=15.sp,color=theme.muted)
+                    val pausedAt=history.lastOrNull { it.toStatus=="No prevista" }?.changedAtMs
+                    if(!historyLoading && !historyFailed && pausedAt!=null) Text(voiceFormattedTime(pausedAt),
+                        fontSize=10.sp,color=theme.accent,modifier=Modifier.padding(top=5.dp))
                 }
             }
             Spacer(Modifier.height(18.dp))
         }
+        val estimate=voiceFormattedEstimate(estimatedAvailableOn)
+        if(estimate!=null && !notPlanned && status!="Disponible") {
+            Column(
+                Modifier.fillMaxWidth()
+                    .background(theme.accentSoft,RoundedCornerShape(12.dp))
+                    .padding(13.dp)
+            ) {
+                Text("Disponibilidad estimada · "+estimate,
+                    fontSize=12.sp,fontWeight=FontWeight.Bold,color=theme.accent)
+                Text("Fecha orientativa; podría cambiar durante el desarrollo.",
+                    fontSize=10.sp,lineHeight=15.sp,color=theme.muted,
+                    modifier=Modifier.padding(top=4.dp))
+            }
+            Spacer(Modifier.height(19.dp))
+        }
         STEPS.forEachIndexed{index,label->
             val completed=!notPlanned && index<current
             val active=!notPlanned && index==current
+            val recordedAt=history.lastOrNull { it.toStatus==label }?.changedAtMs
             val stageColor=when{
                 completed->theme.accent
                 active->theme.accent
@@ -526,6 +590,15 @@ private fun VoiceProgressStepper(status:String,theme:LumiDesignTokens) {
                     if(active){
                         Text(descriptions[index],fontSize=10.sp,lineHeight=15.sp,
                             color=theme.muted,modifier=Modifier.padding(top=7.dp))
+                    }
+                    if(!historyLoading && !historyFailed && recordedAt!=null && (completed||active)) {
+                        Text("Registrado: "+voiceFormattedTime(recordedAt),
+                            fontSize=10.sp,lineHeight=15.sp,color=theme.accent,
+                            modifier=Modifier.padding(top=6.dp))
+                    } else if(!historyLoading && !historyFailed && (completed||active)) {
+                        Text("Fecha anterior no registrada",
+                            fontSize=10.sp,color=theme.dim,
+                            modifier=Modifier.padding(top=6.dp))
                     }
                 }
             }

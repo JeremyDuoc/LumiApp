@@ -38,7 +38,12 @@ data class VoiceIdea(
     val votes: Int,
     val comments: Int,
     val createdAtMs: Long,
-    val public: Boolean = true
+    val public: Boolean = true,
+    val estimatedAvailableOn: String? = null
+)
+data class VoiceStatusChange(
+    val toStatus: String,
+    val changedAtMs: Long
 )
 data class VoiceComment(val id: String, val body: String, val team: Boolean)
 data class VoiceMine(
@@ -62,11 +67,12 @@ private data class VoiceIdeaRow(
     @SerialName("votes_count") val votesCount: Int = 0,
     @SerialName("comments_count") val commentsCount: Int = 0,
     @SerialName("created_at_ms") val createdAtMs: Long = 0L,
+    @SerialName("estimated_available_on") val estimatedAvailableOn: String? = null,
 ) {
     fun ui() = VoiceIdea(
         id = id, title = title, description = description, category = category,
         status = status, votes = votesCount, comments = commentsCount,
-        createdAtMs = createdAtMs
+        createdAtMs = createdAtMs, estimatedAvailableOn = estimatedAvailableOn
     )
 }
 @Serializable
@@ -78,6 +84,14 @@ private data class VoiceSubmissionRow(
 ) {
     fun ui() = VoiceMine(id,title,description,category,status,createdAtMs,isPublic)
 }
+@Serializable
+private data class VoiceHistoryRow(
+    @SerialName("to_status") val toStatus: String,
+    @SerialName("changed_at_ms") val changedAtMs: Long
+){
+    fun ui() = VoiceStatusChange(toStatus,changedAtMs)
+}
+
 @Serializable
 private data class VoiceVoteRow(
     @SerialName("idea_id") val ideaId: String
@@ -237,6 +251,31 @@ class VoiceRepository @Inject constructor() {
                 if (++consecutiveErrors >= 4) throw e
             }
             delay(7_000)
+        }
+    }
+
+    /**
+     * Únicamente estados comprobados desde la activación de la auditoría:
+     * NO inferir fechas para hitos históricos que nunca se almacenaron.
+     */
+    fun history(ideaId: String): Flow<List<VoiceStatusChange>> = flow {
+        var failures = 0
+        while (currentCoroutineContext().isActive) {
+            try {
+                val uid = connect()
+                requireSessionFor(uid)
+                val rows=client.from("voice_status_history").select {
+                    filter { eq("idea_id",ideaId) }
+                    limit(200)
+                }.decodeList<VoiceHistoryRow>()
+                emit(rows.sortedBy { it.changedAtMs }.map { it.ui() })
+                failures=0
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (++failures >= 4) throw e
+            }
+            delay(12_000)
         }
     }
 

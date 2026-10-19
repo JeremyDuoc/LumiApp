@@ -206,3 +206,17 @@ h3 { font-size:1rem;letter-spacing:-.015em }
   .stepper-controls .btn{min-width:0}
   .stepper-save .btn{min-width:0}
 }
+
+
+/* Fechas reales del historial y estimación orientativa de disponibilidad */
+.stepper-date{display:flex;align-items:center;gap:5px;margin-top:7px;color:#8a739e;font-size:.66rem;font-weight:600}
+.stepper-date.undated{font-weight:400;color:#a99ead}
+.eta-mini{display:flex;align-items:center;gap:6px;color:#8a6b9c;background:#f7f0fa;border:1px solid #f0e5f4;border-radius:9px;width:fit-content;padding:7px 10px;margin-top:13px;font-size:.7rem;font-weight:600}
+.estimate-panel{border-top:1px solid #eee8ef;margin:17px 0 0;padding:16px 0 2px}
+.estimate-panel>label{display:flex;align-items:center;gap:7px;color:#554060;font-weight:800;font-size:.77rem}
+.estimate-panel>label small{color:#92849e;font-weight:500}
+.estimate-panel input[type=date]{display:block;width:100%;max-width:260px;min-height:41px;margin-top:10px;padding:9px 11px;border:1px solid #e0d7e6;border-radius:10px;color:#594b67;background:#fff;font-size:.78rem}
+.estimate-panel input[type=date]:disabled{color:#b9b3c0;background:#faf8fb;cursor:not-allowed}
+.estimate-panel>p{margin:9px 0 0;color:#918499;font-size:.68rem;line-height:1.6}
+.estimate-panel strong{color:#665275}
+.estimate-clear{border:0;background:none;color:#82659f;text-decoration:underline;font-size:.68rem;font-weight:700;margin:7px 0 0;padding:4px 0;cursor:pointer}
