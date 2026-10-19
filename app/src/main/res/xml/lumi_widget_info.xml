@@ -10,4 +10,5 @@
     android:targetCellWidth="2"
     android:targetCellHeight="2"
     android:description="@string/widget_cycle_description"
-    android:initialLayout="@layout/glance_default_loading_layout" />
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:previewLayout="@layout/lumi_widget_cycle_preview" />
