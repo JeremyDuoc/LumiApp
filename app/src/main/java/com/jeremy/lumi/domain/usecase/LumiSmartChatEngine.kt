@@ -230,6 +230,7 @@ class LumiSmartChatEngine @Inject constructor(
                     dir,
                     formatVarName(ins.variableB),
                     (abs(ins.correlationScore) * 100).toInt(),
+                    ins.sampleSize,
                     lag
                 )
             }
