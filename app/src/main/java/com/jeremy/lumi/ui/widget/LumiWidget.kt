@@ -200,7 +200,7 @@ class LumiWidget : GlanceAppWidget() {
                             repeat(4) { segment ->
                                 Box(
                                     modifier = GlanceModifier
-                                        .width(if (big) 46.dp else 26.dp)
+                                        .width(if (big) 46.dp else 23.dp)
                                         .height(5.dp)
                                         .background(if (segment < active) highlight else colors.line)
                                 ) {}
