@@ -126,15 +126,24 @@ class SettingsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     fun setUserGoal(goal: UserGoal) {
-        viewModelScope.launch { onboardingPreferenceManager.setUserGoal(goal) }
+        viewModelScope.launch {
+            onboardingPreferenceManager.setUserGoal(goal)
+            com.jeremy.lumi.ui.widget.WidgetRefreshScheduler.requestNow(context)
+        }
     }
 
     fun setIsPregnant(isPregnant: Boolean) {
-        viewModelScope.launch { onboardingPreferenceManager.setIsPregnant(isPregnant) }
+        viewModelScope.launch {
+            onboardingPreferenceManager.setIsPregnant(isPregnant)
+            com.jeremy.lumi.ui.widget.WidgetRefreshScheduler.requestNow(context)
+        }
     }
 
     fun setIsOnContraceptive(isOnContraceptive: Boolean) {
-        viewModelScope.launch { onboardingPreferenceManager.setIsOnContraceptive(isOnContraceptive) }
+        viewModelScope.launch {
+            onboardingPreferenceManager.setIsOnContraceptive(isOnContraceptive)
+            com.jeremy.lumi.ui.widget.WidgetRefreshScheduler.requestNow(context)
+        }
     }
 
     fun setIsHealthConnectEnabled(isEnabled: Boolean) {
