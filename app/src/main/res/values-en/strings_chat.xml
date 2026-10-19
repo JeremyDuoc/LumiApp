@@ -614,7 +614,7 @@
     <string name="sos_tag_lmp">Last period 🗓️</string>
     <string name="sos_tag_pain">Cramps &amp; pain 🩺</string>
     <string name="sos_tag_period">Bleeding 🩸</string>
-    <string name="chat_smart_urgent_symptoms">What you describe may require urgent medical attention. Seek emergency care now, especially for fainting, bleeding that soaks a pad an hour, sudden severe pain, chest pain, or difficulty breathing. Do not wait for Lumi's predictions to seek care.</string>
+    <string name="chat_smart_urgent_symptoms">What you describe may require urgent medical attention. Seek emergency care now, especially for fainting, bleeding that soaks a pad an hour, sudden severe pain, chest pain, or difficulty breathing. Do not wait for Lumi\'s predictions to seek care.</string>
     <string name="chat_smart_pregnancy_risk">Cycle dates alone cannot confirm or rule out pregnancy. A pregnancy test is more reliable from the first missed period; if you do not know when it was due, test at least 21 days after unprotected sex. If less than 5 days have passed and pregnancy is not desired, promptly ask a healthcare professional about emergency contraception.</string>
     <string name="chat_new_intro_title">A space to understand your cycle</string>
     <string name="chat_new_intro_desc">Ask about your logs, explore possible patterns, or talk about how you feel. Lumi separates estimates from observations.</string>
@@ -624,5 +624,5 @@
     <string name="chat_new_explain">Associations do not demonstrate causation. Cycle estimates cannot confirm ovulation.</string>
     <string name="chat_new_subtitle">Your space, at your pace</string>
     <string name="chat_new_discovery">A pattern in your records</string>
-    <string name="chat_new_error">I couldn't read your records right now. Please try again; I don't want to answer using incomplete information.</string>
+    <string name="chat_new_error">I couldn\'t read your records right now. Please try again; I don\'t want to answer using incomplete information.</string>
 </resources>
