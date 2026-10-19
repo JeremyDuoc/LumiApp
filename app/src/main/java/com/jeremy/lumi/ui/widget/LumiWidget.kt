@@ -249,15 +249,19 @@ class LumiWeekWidget : GlanceAppWidget() {
                     val visible = prefs[LumiWidgetPrefs.REVEALED] == true
                     val hasCycle = prefs[LumiWidgetPrefs.HAS_CYCLE] == true
                     if (!visible) {
+                        Spacer(GlanceModifier.defaultWeight())
                         PrivacyPrompt(colors, context)
+                        Spacer(GlanceModifier.defaultWeight())
                     } else if (!hasCycle) {
-                        Spacer(GlanceModifier.height(15.dp))
+                        Spacer(GlanceModifier.defaultWeight())
                         Text(context.getString(R.string.widget_empty_title), style = textStyle(colors.text, 16, true))
+                        Spacer(GlanceModifier.defaultWeight())
                     } else if (prefs[LumiWidgetPrefs.IS_PREGNANT] == true) {
-                        Spacer(GlanceModifier.height(16.dp))
+                        Spacer(GlanceModifier.defaultWeight())
                         Text(context.getString(R.string.widget_pregnancy_label), style = textStyle(colors.rose, 11, true))
                         Spacer(GlanceModifier.height(7.dp))
                         Text(context.getString(R.string.widget_pregnancy_title), style = textStyle(colors.text, 19, true))
+                        Spacer(GlanceModifier.defaultWeight())
                     } else {
                         Spacer(GlanceModifier.defaultWeight())
                         val encoded = prefs[LumiWidgetPrefs.WEEK].orEmpty()
