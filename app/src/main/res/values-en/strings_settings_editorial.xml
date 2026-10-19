@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="settings_privacy_row_title">Privacy and data</string>
     <string name="settings_editorial_intro">Choose how Lumi looks and works.</string>
     <string name="settings_theme_change_hint">Tap to choose another atmosphere</string>
     <string name="settings_section_utilities_new">Everyday features</string>
