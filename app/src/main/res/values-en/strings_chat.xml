@@ -625,4 +625,5 @@
     <string name="chat_new_subtitle">Your space, at your pace</string>
     <string name="chat_new_discovery">A pattern in your records</string>
     <string name="chat_new_error">I couldn\'t read your records right now. Please try again; I don\'t want to answer using incomplete information.</string>
+    <string name="chat_new_welcome">Hello, this is Lumi. I can help you explore your cycle, review your records, and look for possible patterns when enough data is available. If evidence is insufficient, I will tell you.</string>
 </resources>
