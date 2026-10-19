@@ -89,6 +89,8 @@ private fun LumiWidgetBrand(palette: LumiDesignTokens, compact: Boolean = false)
         )
         Spacer(GlanceModifier.width(6.dp))
         Text("lumi", style = textStyle(palette.text, if (compact) 13 else 16, true))
+        Spacer(GlanceModifier.width(4.dp))
+        Text("✦", style = textStyle(palette.accent, if (compact) 9 else 11))
     }
 }
 
@@ -205,7 +207,7 @@ class LumiWidget : GlanceAppWidget() {
                                 if (segment < 3) Spacer(GlanceModifier.width(4.dp))
                             }
                         }
-                        if ((!big || tall) && prefs[LumiWidgetPrefs.NEXT_VALID] == true) {
+                        if (!big && prefs[LumiWidgetPrefs.NEXT_VALID] == true) {
                             Spacer(GlanceModifier.height(6.dp))
                             val next = prefs[LumiWidgetPrefs.NEXT] ?: 0
                             Text(
