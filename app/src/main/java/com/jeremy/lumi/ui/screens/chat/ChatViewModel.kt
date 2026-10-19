@@ -13,6 +13,7 @@ import com.jeremy.lumi.domain.repository.LumiRepository
 import com.jeremy.lumi.domain.usecase.ChatQuestion
 import com.jeremy.lumi.domain.usecase.CycleContext
 import com.jeremy.lumi.domain.usecase.CyclePredictor
+import com.jeremy.lumi.domain.usecase.CyclePrediction
 import com.jeremy.lumi.domain.usecase.DailyInsightGenerator
 import com.jeremy.lumi.domain.usecase.LumiRulesEngine
 import com.jeremy.lumi.domain.usecase.LumiSmartChatEngine
@@ -103,6 +104,7 @@ class ChatViewModel @Inject constructor(
                             closedCycles = closedCycles,
                             isOnContraceptive = isOnContraceptive
                         )
+                        seedChatContext(prediction, isOnContraceptive)
 
                         // ── INYECCIÓN DE MENSAJE DE BIENVENIDA CONTEXTUAL ──
                         val welcomeCtx = CycleContext(
@@ -146,6 +148,7 @@ class ChatViewModel @Inject constructor(
                         closedCycles = closedCycles,
                         isOnContraceptive = isOnContraceptive
                     )
+                    seedChatContext(prediction, isOnContraceptive)
 
                     // Lógica normal de Insights Diarios
                     val todayStr = LocalDate.now().toString()
@@ -214,6 +217,28 @@ class ChatViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    /**
+     * If the user opens Chat directly, Home might not have populated the
+     * singleton context yet. Seed only when absent; never overwrite live
+     * Home updates with a reduced snapshot.
+     */
+    private fun seedChatContext(prediction: CyclePrediction, isOnContraceptive: Boolean) {
+        if (rulesEngine.currentCycleContext.value != null) return
+        rulesEngine.updateContext(
+            CycleContext(
+                phase = prediction.currentPhase,
+                dayOfCycle = prediction.currentDayOfCycle,
+                dayOfPhase = prediction.dayOfPhase,
+                daysUntilPeriod = prediction.daysUntilNextPeriod,
+                daysUntilOvulation = prediction.daysUntilOvulation,
+                cycleLength = prediction.cycleLength,
+                isLate = prediction.isLate,
+                delayDays = prediction.delayDays,
+                isOnContraceptive = isOnContraceptive
+            )
+        )
     }
 
     fun markAllAsRead() {
