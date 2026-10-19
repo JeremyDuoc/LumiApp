@@ -1,3 +1,5 @@
+> **Actualización Lumi Studio (2026-10-19):** Los RPC `voice_admin_*` ahora requieren una cuenta autenticada, no anónima y expresamente autorizada en `public.voice_admins`. **Los ejemplos administrativos de SQL Editor de abajo ya no funcionan como comandos directos**, porque la sesión SQL Editor no lleva el JWT del administrador. Utiliza el panel en `lumi-studio/` y su guía `lumi-studio/README.md`. SQL Editor queda reservado para dar o revocar acceso a los UID, inspección y mantenimiento por el titular del proyecto.
+
 # Lumi · Migración de Tu voz a Supabase
 
 Proyecto destino: cochpdozndxoodioftzk
