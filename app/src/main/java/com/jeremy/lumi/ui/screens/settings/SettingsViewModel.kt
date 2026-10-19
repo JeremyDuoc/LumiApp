@@ -40,6 +40,8 @@ class SettingsViewModel @Inject constructor(
     private val healthConnectManager: HealthConnectManager,
     private val mockDataGeneratorUseCase: com.jeremy.lumi.domain.usecase.MockDataGeneratorUseCase,
     private val languagePreferenceManager: com.jeremy.lumi.data.preferences.LanguagePreferenceManager,
+    private val widgetPreferenceManager: com.jeremy.lumi.data.preferences.WidgetPreferenceManager,
+    private val widgetUpdater: com.jeremy.lumi.ui.widget.WidgetUpdater,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -67,6 +69,16 @@ class SettingsViewModel @Inject constructor(
             if (allowed == false) {
                 onboardingPreferenceManager.setIsHealthConnectEnabled(false)
             }
+        }
+    }
+
+    val revealWidgetDetails: StateFlow<Boolean> = widgetPreferenceManager.revealCycleDetails
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun setRevealWidgetDetails(reveal: Boolean) {
+        viewModelScope.launch {
+            widgetPreferenceManager.setRevealCycleDetails(reveal)
+            widgetUpdater.refresh()
         }
     }
 
@@ -141,6 +153,7 @@ class SettingsViewModel @Inject constructor(
     fun changeTheme(newTheme: AppThemePalette) {
         viewModelScope.launch {
             themePreferenceManager.saveTheme(newTheme)
+            widgetUpdater.refresh()
         }
     }
 
@@ -229,6 +242,7 @@ class SettingsViewModel @Inject constructor(
             repository.deleteAllData()
             // 2. Limpiar preferencias de onboarding
             onboardingPreferenceManager.clearAllPreferences()
+            widgetUpdater.refresh()
             // 3. Limpiar preferencias de chat
             chatPreferenceManager.clearAllPreferences()
             // 4. Relanzar limpiamente la aplicación eliminando la pila de actividades anterior
