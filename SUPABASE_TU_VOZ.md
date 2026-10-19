@@ -4,7 +4,7 @@ Proyecto destino: cochpdozndxoodioftzk
 URL pública: https://cochpdozndxoodioftzk.supabase.co
 Alcance: exclusivamente Tu voz; datos de salud siguen locales, Firebase de otros módulos no cambia.
 
-ESTADO: código y migración SQL preparados en GitHub. NO se aplicó el SQL al proyecto Supabase. No listo para producción sin validación.
+ESTADO: migración SQL aplicada a Supabase el 19/10/2026 (lumi_voice_initial, versión 20261019123605). Se verificaron seis tablas con RLS activado y permisos RPC para authenticated. Android CI correcto. No listo para lanzamiento público sin pruebas de dos dispositivos y mitigaciones antiabuso.
 
 ## 1. Autenticación
 Dashboard -> Authentication -> Providers -> Anonymous Sign-ins -> Enable.
