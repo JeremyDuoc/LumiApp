@@ -2,6 +2,7 @@ package com.jeremy.lumi.ui.screens.forum
 
 import com.jeremy.lumi.BuildConfig
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.createSupabaseClient
@@ -18,6 +19,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -110,6 +113,7 @@ private data class ReportParams(
  * Auth anónimo es independiente del Firebase Auth que se usa en otros módulos.
  * RLS y RPCs transaccionales controlan permisos y conteos en PostgreSQL.
  */
+@OptIn(SupabaseExperimental::class)
 @Singleton
 class VoiceRepository @Inject constructor() {
 
@@ -178,24 +182,33 @@ class VoiceRepository @Inject constructor() {
 
     suspend fun suggest(title:String, description:String, category:String) {
         connect()
-        client.postgrest.rpc(
-            "voice_submit_idea",
-            SubmitIdeaParams(title.trim(),description.trim(),category)
-        )
+        client.postgrest.rpc("voice_submit_idea", buildJsonObject {
+            put("p_title", title.trim())
+            put("p_description", description.trim())
+            put("p_category", category)
+        })
     }
 
     suspend fun vote(ideaId:String) {
         connect()
-        client.postgrest.rpc("voice_toggle_vote",VoteParams(ideaId))
+        client.postgrest.rpc("voice_toggle_vote", buildJsonObject {
+            put("p_idea_id",ideaId)
+        })
     }
 
     suspend fun comment(ideaId:String,body:String) {
         connect()
-        client.postgrest.rpc("voice_submit_comment",CommentParams(ideaId,body.trim()))
+        client.postgrest.rpc("voice_submit_comment",buildJsonObject {
+            put("p_idea_id",ideaId)
+            put("p_body",body.trim())
+        })
     }
 
     suspend fun report(ideaId:String,reason:String) {
         connect()
-        client.postgrest.rpc("voice_report",ReportParams(ideaId,reason.trim()))
+        client.postgrest.rpc("voice_report",buildJsonObject {
+            put("p_idea_id",ideaId)
+            put("p_reason",reason.trim())
+        })
     }
 }
