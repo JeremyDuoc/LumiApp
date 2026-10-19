@@ -1,11 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Static VectorDrawable equivalent of the official LumiBrandFlower SVG shape.
+     Glance widgets cannot run Compose Canvas animations. Supported since minSdk 26. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="46dp" android:height="46dp"
-    android:viewportWidth="46" android:viewportHeight="46">
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="46dp"
+    android:height="46dp"
+    android:viewportWidth="46"
+    android:viewportHeight="46">
     <path
-        android:fillColor="#DDB7E6"
-        android:pathData="M22,2.1C31,-0.3 42.1,6 44,15.9C46.3,24 42.3,36.2 35.6,41.3C30,45.8 19.6,46.2 12.3,42C4.6,38.1 0.9,30 0.9,22C1,12 10,3.6 22,2.1Z"/>
+        android:pathData="M22,2.1C31,-0.3 42.1,6 44,15.9C46.3,24 42.3,36.2 35.6,41.3C30,45.8 19.6,46.2 12.3,42C4.6,38.1 0.9,30 0.9,22C1,12 10,3.6 22,2.1Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear"
+                android:startX="4.14" android:startY="40.02"
+                android:endX="43.7" android:endY="5.52">
+                <item android:offset="0" android:color="#D8B3F0" />
+                <item android:offset="0.32" android:color="#E5B9D4" />
+                <item android:offset="0.62" android:color="#F5CAAA" />
+                <item android:offset="1" android:color="#A7D1CC" />
+            </gradient>
+        </aapt:attr>
+    </path>
     <path
-        android:fillColor="#66FFFFFF"
+        android:fillColor="#33FFFFFF"
         android:pathData="M15,7C23,3 32,6 37,12C30,9 19,11 13,18C12,13 13,10 15,7Z"/>
 </vector>
