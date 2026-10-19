@@ -761,7 +761,12 @@ fun SettingsScreen(
                     val manager = android.appwidget.AppWidgetManager.getInstance(context)
                     val provider = android.content.ComponentName(context, receiverClass)
                     if (manager.isRequestPinAppWidgetSupported) {
-                        manager.requestPinAppWidget(provider, null, null)
+                        if (!manager.requestPinAppWidget(provider, null, null)) {
+                            android.widget.Toast.makeText(
+                                context, context.getString(R.string.widget_pin_unsupported),
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
                     } else {
                         android.widget.Toast.makeText(
                             context,
