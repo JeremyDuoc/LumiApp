@@ -15,7 +15,7 @@ interface ChatDao {
     // Más reciente primero — es como se lee un chat normal (recientes abajo
     // en la UI, pero la query trae descendente para luego invertir o usar
     // reverseLayout en el LazyColumn, según prefieras en la pantalla)
-    @Query("SELECT * FROM chat_messages ORDER BY timestamp DESC")
+    @Query("SELECT * FROM chat_messages ORDER BY timestamp DESC, id DESC")
     fun getAllMessages(): Flow<List<ChatMessageEntity>>
 
     @Query("SELECT COUNT(*) FROM chat_messages WHERE isRead = 0")
