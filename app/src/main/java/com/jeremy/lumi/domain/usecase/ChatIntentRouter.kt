@@ -27,10 +27,11 @@ internal object ChatIntentRouter {
                 "sangrado incontrolable", "empapo una toalla por hora",
                 "dolor pelvico insoportable", "dolor abdominal insoportable",
                 "dolor muy fuerte y repentino", "dolor de cabeza repentino e intenso",
-                "dificultad para respirar", "dolor en el pecho")) return ChatIntent.URGENT_SYMPTOMS
+                "dificultad para respirar", "no puedo respirar", "dolor en el pecho")) return ChatIntent.URGENT_SYMPTOMS
 
         if (has("sin proteccion", "sin preservativo", "sin condon",
                 "se rompio el condon", "se rompio el preservativo",
+                "no usamos condon", "no usamos preservativo", "se salio el condon",
                 "anticoncepcion de emergencia", "anticonceptivo de emergencia",
                 "pastilla del dia despues", "postday", "ulipristal",
                 "levonorgestrel")) return ChatIntent.EMERGENCY_CONTRACEPTION
