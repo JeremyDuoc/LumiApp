@@ -44,7 +44,7 @@ class SymptomCorrelationEngine @Inject constructor(
         if (logsList.isEmpty()) return emptyList()
 
         // Map de (NombreSintoma -> Lista de DaysBeforePeriod)
-        val occurrencesMap = mutableMapOf<String, MutableList<Int>>()
+        val occurrencesMap = mutableMapOf<String, MutableList<Pair<Int, Int>>>()
 
         recentCycles.forEach { cycle ->
             if (cycle.endDate != null) {
@@ -61,7 +61,8 @@ class SymptomCorrelationEngine @Inject constructor(
                         val name = symptom.name.lowercase().trim()
                         if (name.isNotEmpty()) {
                             occurrencesMap.putIfAbsent(name, mutableListOf())
-                            occurrencesMap[name]!!.add(daysBefore)
+                            // Remember the cycle ID so multiple logs in the same cycle do not count as replication.
+                            if (daysBefore in 0..30) occurrencesMap[name]!!.add(cycle.id to daysBefore)
                         }
                     }
                 }
@@ -70,24 +71,24 @@ class SymptomCorrelationEngine @Inject constructor(
 
         val patterns = mutableListOf<SymptomPattern>()
 
-        // Buscar concentraciones
-        // Si un síntoma aparece minOccurrences veces dentro de un margen de +/- 1 día antes de la periodo
-        for ((symptomName, daysList) in occurrencesMap) {
-            if (daysList.size >= minOccurrences) {
-                // Agrupar por días aproximados (+/- 1 día)
-                val groupedDays = daysList.groupBy { it }
-                for ((dayBefore, count) in groupedDays) {
-                    val totalOccurrences = daysList.count { it in (dayBefore - 1)..(dayBefore + 1) }
-                    if (totalOccurrences >= minOccurrences) {
-                        patterns.add(
-                            SymptomPattern(
-                                symptomName = symptomName,
-                                daysBeforePeriod = dayBefore,
-                                occurrences = totalOccurrences
-                            )
+        // Require repetition in distinct cycles, not two observations from one cycle.
+        for ((symptomName, observations) in occurrencesMap) {
+            val candidates = observations.map { it.second }.distinct().sorted()
+            for (dayBefore in candidates) {
+                val supportingCycles = observations
+                    .filter { kotlin.math.abs(it.second - dayBefore) <= 1 }
+                    .map { it.first }
+                    .distinct()
+                    .size
+                if (supportingCycles >= minOccurrences) {
+                    patterns.add(
+                        SymptomPattern(
+                            symptomName = symptomName,
+                            daysBeforePeriod = dayBefore,
+                            occurrences = supportingCycles
                         )
-                        break // Encontramos un patrón para este síntoma, pasamos al siguiente
-                    }
+                    )
+                    break
                 }
             }
         }
