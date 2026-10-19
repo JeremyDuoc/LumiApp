@@ -624,4 +624,5 @@
     <string name="chat_new_explain">Associations do not demonstrate causation. Cycle estimates cannot confirm ovulation.</string>
     <string name="chat_new_subtitle">Your space, at your pace</string>
     <string name="chat_new_discovery">A pattern in your records</string>
+    <string name="chat_new_error">I couldn't read your records right now. Please try again; I don't want to answer using incomplete information.</string>
 </resources>
