@@ -47,6 +47,23 @@ class WidgetUpdater @Inject constructor(
     private val themePrefs: ThemePreferenceManager,
     private val effectivePrediction: GetEffectiveCyclePredictionUseCase
 ) {
+    /**
+     * Immediately remove cached health information from every installed widget.
+     * This path deliberately does not query Room or the prediction model: a damaged
+     * database must never prevent the user from hiding launcher health data.
+     */
+    suspend fun concealSensitiveNow() {
+        val manager = GlanceAppWidgetManager(context)
+        listOf<GlanceAppWidget>(LumiWidget(), LumiWeekWidget(), LumiQuietWidget()).forEach { widget ->
+            manager.getGlanceIds(widget.javaClass).forEach { id ->
+                updateAppWidgetState(context, PreferencesGlanceStateDefinition, id) { existing ->
+                    existing.toMutablePreferences().apply { putSnapshot(WidgetSnapshot()) }
+                }
+                widget.update(context, id)
+            }
+        }
+    }
+
     suspend fun refresh() {
         val manager = GlanceAppWidgetManager(context)
         val variants: List<GlanceAppWidget> = listOf(LumiWidget(), LumiWeekWidget(), LumiQuietWidget())
