@@ -19,4 +19,13 @@ object LumiWidgetPrefs {
     val THEME = stringPreferencesKey("v2_theme")
 }
 
+/**
+ * Home-screen permissions are device-local. Partner/observer mode must not reveal a cycle
+ * even when an earlier user granted access on the same phone.
+ */
+internal object WidgetPrivacyPolicy {
+    fun canReveal(optedIn: Boolean, completedOnboarding: Boolean, observerOnly: Boolean): Boolean =
+        optedIn && completedOnboarding && !observerOnly
+}
+
 enum class LumiWidgetKind { CYCLE, WEEK, QUIET }
