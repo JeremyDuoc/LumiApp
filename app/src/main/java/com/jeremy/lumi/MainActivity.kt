@@ -45,6 +45,12 @@ class MainActivity : ComponentActivity() {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // Refresh cached widget palette when the user selects another Lumi theme.
+        lifecycle.addObserver(object : androidx.lifecycle.DefaultLifecycleObserver {
+            override fun onResume(owner: androidx.lifecycle.LifecycleOwner) {
+                com.jeremy.lumi.ui.widget.WidgetRefreshScheduler.requestNow(applicationContext)
+            }
+        })
 
         setContent {
             // Escuchamos el Flow de DataStore en tiempo real en la raíz de la app
