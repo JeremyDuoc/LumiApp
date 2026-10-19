@@ -14,7 +14,7 @@ class LumiApp : Application(){
         ).build()
         androidx.work.WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "widget_updater",
-            androidx.work.ExistingPeriodicWorkPolicy.KEEP,
+            androidx.work.ExistingPeriodicWorkPolicy.UPDATE,
             workRequest
         )
         com.jeremy.lumi.ui.widget.WidgetRefreshScheduler.requestNow(this)
