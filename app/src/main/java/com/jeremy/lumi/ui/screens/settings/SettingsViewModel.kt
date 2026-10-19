@@ -23,6 +23,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -49,6 +50,25 @@ class SettingsViewModel @Inject constructor(
     /** Conjunto de permisos que la app necesita solicitar a Health Connect. */
     val healthConnectPermissions: Set<String>
         get() = healthConnectManager.permissions
+
+    /**
+     * Health Connect permissions can be revoked outside Lumi. A persisted opt-in is
+     * not proof of access: re-check it when Settings returns to the foreground.
+     * A temporary SDK error is not interpreted as consent withdrawal.
+     */
+    fun refreshHealthConnectPermissions() {
+        viewModelScope.launch {
+            if (!onboardingPreferenceManager.isHealthConnectEnabledFlow.first()) return@launch
+            if (!healthConnectManager.isAvailable()) {
+                onboardingPreferenceManager.setIsHealthConnectEnabled(false)
+                return@launch
+            }
+            val allowed = runCatching { healthConnectManager.hasAllPermissions() }.getOrNull()
+            if (allowed == false) {
+                onboardingPreferenceManager.setIsHealthConnectEnabled(false)
+            }
+        }
+    }
 
     // ── Idioma de la Aplicación ────────────────────────────────────────────
     val currentLanguage: StateFlow<String> = languagePreferenceManager.selectedLanguageFlow

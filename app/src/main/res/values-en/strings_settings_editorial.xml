@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_privacy_row_title">Privacy and data</string>
+    <string name="settings_editorial_intro">Choose how Lumi looks and works.</string>
+    <string name="settings_theme_change_hint">Tap to choose another atmosphere</string>
+    <string name="settings_section_utilities_new">Everyday features</string>
+    <string name="settings_section_protection_new">Privacy and connections</string>
+    <string name="settings_health_status_unavailable_new">Unavailable on this device</string>
+    <string name="settings_health_status_connected_new">Temperature and sleep data authorized</string>
+    <string name="settings_health_status_off_new">No health data will be imported</string>
+    <string name="settings_pregnancy_mode_note">Pauses regular cycle estimates</string>
+    <string name="settings_contraceptive_mode_note">Adjusts estimates when using hormonal birth control</string>
+    <string name="settings_palette_auto">Harmony with theme</string>
+    <string name="settings_privacy_explained">See where each type of data is stored</string>
+    <string name="settings_drive_remains_note">Google Drive backups are not deleted by this action.</string>
+    <string name="settings_privacy_details_title">Your data and privacy</string>
+    <string name="settings_privacy_local_title">Menstrual tracking</string>
+    <string name="settings_privacy_local_desc">Cycles, symptoms and daily logs are stored in this device\'s local database. They are not automatically uploaded to Lumi.</string>
+    <string name="settings_privacy_backup_title">Backups</string>
+    <string name="settings_privacy_backup_desc">If you enable Google Drive, backups are encrypted on your phone before being uploaded to your account. You can also export an encrypted file. Older ZIP backups are unencrypted.</string>
+    <string name="settings_privacy_health_title">Health Connect</string>
+    <string name="settings_privacy_health_desc">This integration reads data with your permission. Turning it off in Lumi does not revoke system permissions; you can revoke them in Health Connect.</string>
+    <string name="settings_privacy_social_title">Optional services</string>
+    <string name="settings_privacy_social_desc">Social or community features, when enabled, may use external services. They are not part of your local cycle backups.</string>
+    <string name="settings_reset_confirm_data_title">Delete data from this device?</string>
+    <string name="settings_reset_confirm_data_desc">Local records, settings and reminders will be removed. Backups in Google Drive will not be deleted.</string>
+    <string name="settings_reset_confirm_data_action">Delete local data</string>
+    <string name="settings_pregnancy_end_confirmation">Leave pregnancy mode? Regular cycle estimates will resume. Lumi will not automatically record the reason for this change.</string>
+    <string name="settings_pregnancy_end_action">Leave pregnancy mode</string>
+    <string name="settings_prediction_not_contraception">Cycle predictions are not birth control.</string>
+</resources>
