@@ -635,7 +635,7 @@ private fun groupByDay(
                 yesterday -> yesterdayLabel
                 else      -> date.toString()
             }
-            label to msgs.sortedBy { it.timestamp }
+            label to msgs.sortedWith(compareBy<ChatMessageEntity> { it.timestamp }.thenBy { it.id })
         }
 }
 
