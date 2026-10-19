@@ -78,6 +78,7 @@ class SettingsViewModel @Inject constructor(
     fun setRevealWidgetDetails(reveal: Boolean) {
         viewModelScope.launch {
             widgetPreferenceManager.setRevealCycleDetails(reveal)
+            if (!reveal) widgetUpdater.concealSensitiveNow()
             widgetUpdater.refresh()
         }
     }
