@@ -51,7 +51,7 @@ const badge = status => '<span class="status status--'+(['En desarrollo','Dispon
 const state = {
   session:null, authorized:false, checking:true, fetching:false, busy:false,
   tab:'pendientes', query:'', dialog:null, error:null,
-  data:{ submissions:[], ideas:[], pendingComments:[], comments:[], reports:[] },
+  data:{ submissions:[], ideas:[], pendingComments:[], comments:[], reports:[], history:[] },
   draftStatus:{}, changedAt:null
 }
 let realtimeChannel = null
@@ -147,13 +147,25 @@ function renderPending(){
   actions:act('reject-idea',x.id,'Rechazar','ghost','x')+act('approve-idea',x.id,'Aprobar','primary','check')
  })).join(''):empty('Todo al día','Las sugerencias nuevas que envíen las usuarias aparecerán aquí.'))+'</section>'
 }
+function milestoneDate(ideaId,status) {
+ const list=state.data.history.filter(h=>h.idea_id===ideaId && h.to_status===status)
+ if (!list.length) return ''
+ const newest=list.reduce((a,b)=>Number(a.changed_at_ms)>Number(b.changed_at_ms)?a:b)
+ return fmt(newest.changed_at_ms)
+}
+function friendlyEta(iso) {
+ if(!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso))return ''
+ return new Intl.DateTimeFormat('es-CL',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(iso+'T12:00:00Z'))
+}
 function renderRoadmap() {
  const list=state.data.ideas.filter(matches).sort((a,b)=>b.created_at_ms-a.created_at_ms)
  return '<section class="surface">'+toolbar('Todas las propuestas',list.length)+
  (list.length?list.map(x=>'<article class="roadmap-row"><div class="roadmap-copy">'+
  '<div class="entry-meta"><span class="category">'+clean(x.category)+'</span> '+badge(x.status)+' '+(!x.visible?'<span class="status status--muted">Oculta</span>':'')+'</div>'+
  '<h3>'+clean(x.title)+'</h3><p>'+clean(cut(x.description,200))+'</p>'+
- '<div class="roadmap-numbers"><span>'+svg('check',15)+' '+Number(x.votes_count||0)+' apoyos</span><span>'+svg('message',15)+' '+Number(x.comments_count||0)+' comentarios</span></div></div>'+
+ '<div class="roadmap-numbers"><span>'+svg('check',15)+' '+Number(x.votes_count||0)+' apoyos</span><span>'+svg('message',15)+' '+Number(x.comments_count||0)+' comentarios</span></div>'+
+ (x.estimated_available_on && x.status!=='Disponible' && x.status!=='No prevista'?'<div class="eta-mini">'+svg('clock',15)+' Disponibilidad estimada: '+clean(friendlyEta(x.estimated_available_on))+'</div>':'')+
+ '</div>'+
  '<div class="roadmap-tools"><div class="roadmap-stage-count">'+
  (MILESTONES.includes(x.status)?'ETAPA '+(MILESTONES.indexOf(x.status)+1)+' / '+MILESTONES.length:'ETAPA PAUSADA')+
  '</div>'+act('open-progress',x.id,'Cambiar estado','primary','route')+
@@ -206,11 +218,18 @@ function renderProgressDialog(dialog,idea) {
      '<div class="stepper-content"><button type="button" class="stepper-title" data-action="progress-step" data-step="'+clean(label)+'">'+clean(label)+'</button>'+
       '<div class="stepper-status">'+(kind==='completed'?'Completada':kind==='current'?'Etapa seleccionada':'Por venir')+'</div>'+
       (kind==='current'?'<p class="stepper-caption">'+clean(STEP_DESCRIPTIONS[i])+'</p>':'')+
+ (milestoneDate(idea.id,label)?'<span class="stepper-date">'+svg('clock',13)+' '+clean(milestoneDate(idea.id,label))+'</span>':
+ (kind==='completed'||(kind==='current'&&dialog.stage===idea.status)?'<span class="stepper-date undated">Fecha anterior no registrada</span>':''))+
      '</div></div>'
  }).join('')
  const before= index>0
  const next= index>=0 && index<MILESTONES.length-1
- const dirty= dialog.stage!==idea.status
+ const etaActive=!['Disponible','No prevista'].includes(dialog.stage)
+ const eta=etaActive && dialog.eta ? dialog.eta : null
+ const today=new Date().toISOString().slice(0,10)
+ const end=new Date(); end.setFullYear(end.getFullYear()+3)
+ const limit=end.toISOString().slice(0,10)
+ const dirty= dialog.stage!==idea.status || eta!==(idea.estimated_available_on||null)
  return '<div class="modal-backdrop" data-action="dismiss-dialog"><section class="modal modal-progress" role="dialog" aria-modal="true" aria-labelledby="modal-title">'+
  '<button class="close-modal icon-button" data-action="close-dialog" aria-label="Cerrar">'+svg('x')+'</button>'+
  '<p class="eyebrow">HOJA DE RUTA · TU VOZ</p><h2 id="modal-title">El camino de esta idea.</h2>'+
@@ -222,9 +241,15 @@ function renderProgressDialog(dialog,idea) {
  '<button class="btn light" type="button" data-action="progress-next" '+(!next?'disabled':'')+'>Siguiente '+svg('arrow',15)+'</button></div>'+
  '<div class="stepper-alternative"><span>¿Esta propuesta no se implementará?</span>'+
  '<button type="button" class="btn ghost" data-action="progress-not-planned"'+(isNotPlanned?' disabled':'')+'>Marcar No prevista</button></div>'+
+ '<div class="estimate-panel"><label for="progress-eta">'+svg('clock',16)+' Disponibilidad estimada <small>(opcional)</small></label>'+
+ '<input id="progress-eta" type="date" min="'+today+'" max="'+limit+'" value="'+clean(eta||'')+'"'+(!etaActive?' disabled':'')+' />'+
+ (eta?'<button type="button" class="estimate-clear" data-action="clear-eta">Quitar estimación</button>':'')+
+ '<p>Esta fecha es <strong>orientativa, no una promesa</strong>. Puedes modificarla o dejarla vacía.</p>'+
+ (!etaActive?'<p>Una propuesta «Disponible» o «No prevista» no muestra estimación futura.</p>':'')+
+ '</div>'+
  '<div class="modal-actions stepper-save"><button class="btn light" type="button" data-action="close-dialog">Cancelar</button>'+
- '<button class="btn primary" type="button" data-action="save-progress" '+(!dirty||state.busy?'disabled':'')+'>'+svg('check')+' Guardar estado</button></div>'+
- '<p class="stepper-footnote">Mostramos el avance actual. Lumi no guarda fechas individuales de cada etapa.</p>'+
+ '<button class="btn primary" type="button" data-action="save-progress" '+(!dirty||state.busy?'disabled':'')+'>'+svg('check')+' Guardar cambios</button></div>'+
+ '<p class="stepper-footnote">Los cambios nuevos quedan fechados automáticamente al guardarlos. Las transiciones anteriores a activar el historial no tienen fecha registrada.</p>'+
  '</section></div>'
 }
 function renderDialog(){
@@ -258,14 +283,15 @@ async function loadAll(showSuccess=false) {
  try {
   const req=[
    supabase.from('voice_submissions').select('id,title,description,category,status,is_public,created_at_ms').order('created_at_ms',{ascending:false}).limit(250),
-   supabase.from('voice_ideas').select('id,title,description,category,status,visible,votes_count,comments_count,created_at_ms').order('created_at_ms',{ascending:false}).limit(250),
+   supabase.from('voice_ideas').select('id,title,description,category,status,visible,votes_count,comments_count,created_at_ms,estimated_available_on').order('created_at_ms',{ascending:false}).limit(250),
    supabase.from('voice_pending_comments').select('id,idea_id,body,created_at_ms').order('created_at_ms',{ascending:false}).limit(250),
    supabase.from('voice_comments').select('id,idea_id,body,is_team,visible,created_at_ms').order('created_at_ms',{ascending:false}).limit(250),
-   supabase.from('voice_reports').select('id,idea_id,reason,status,created_at_ms').order('created_at_ms',{ascending:false}).limit(250)
+   supabase.from('voice_reports').select('id,idea_id,reason,status,created_at_ms').order('created_at_ms',{ascending:false}).limit(250),
+   supabase.from('voice_status_history').select('id,idea_id,from_status,to_status,changed_at_ms').order('changed_at_ms',{ascending:false}).limit(1000)
   ]
   const res=await Promise.all(req)
   for(const r of res)if(r.error)throw r.error
-  ;['submissions','ideas','pendingComments','comments','reports'].forEach((name,i)=>state.data[name]=res[i].data||[])
+  ;['submissions','ideas','pendingComments','comments','reports','history'].forEach((name,i)=>state.data[name]=res[i].data||[])
   state.changedAt=new Date()
   render()
   if(showSuccess)toast('Información actualizada.')
@@ -300,7 +326,7 @@ async function logout(){
   await supabase.auth.signOut()
  }
  state.session=null;state.authorized=false;state.dialog=null;state.tab='pendientes';state.checking=false
- state.data={submissions:[],ideas:[],pendingComments:[],comments:[],reports:[]}
+ state.data={submissions:[],ideas:[],pendingComments:[],comments:[],reports:[],history:[]}
  render()
 }
 const rpcActions={
@@ -335,10 +361,13 @@ async function action(e){
  if(name==='open-reply'){state.dialog={kind:'reply',idea:id};render();return}
  if(name==='open-progress'){
    const idea=state.data.ideas.find(x=>x.id===id)
-   if(idea){state.dialog={kind:'progress',idea:id,stage:idea.status};render()}
+   if(idea){state.dialog={kind:'progress',idea:id,stage:idea.status,eta:idea.estimated_available_on||''};render()}
    return
  }
  if(!state.authorized)return
+ if(state.dialog?.kind==='progress' && name==='clear-eta'){
+   state.dialog.eta='';render();return
+ }
  if(state.dialog?.kind==='progress' && name.startsWith('progress-')){
    const d=state.dialog
    const i=MILESTONES.indexOf(d.stage)
@@ -346,6 +375,7 @@ async function action(e){
    if(name==='progress-prev' && i>0)d.stage=MILESTONES[i-1]
    if(name==='progress-next' && i>=0 && i<MILESTONES.length-1)d.stage=MILESTONES[i+1]
    if(name==='progress-not-planned')d.stage='No prevista'
+   if(['Disponible','No prevista'].includes(d.stage))d.eta=''
    render()
    return
  }
@@ -354,7 +384,12 @@ async function action(e){
    const idea=state.data.ideas.find(x=>x.id===d.idea)
    if(!idea || !STEPS.includes(d.stage))return
    if(d.stage==='No prevista' && !window.confirm('¿Marcar esta idea como «No prevista»? La comunidad verá este estado.'))return
-   await perform('voice_admin_set_status',{p_id:idea.id,p_status:d.stage},'Estado actualizado a «'+d.stage+'».')
+   const eta=['Disponible','No prevista'].includes(d.stage)?null:(d.eta||null)
+   if(eta && (!/^\d{4}-\d{2}-\d{2}$/.test(eta) || new Date(eta)<new Date(new Date().toISOString().slice(0,10)))) {
+     toast('Comprueba la fecha estimada: debe ser hoy o posterior.','error');return
+   }
+   await perform('voice_admin_update_roadmap',{p_id:idea.id,p_status:d.stage,p_eta:eta},
+     'Hoja de ruta actualizada. Los cambios están visibles en Lumi.')
    return
  }
  if(rpcActions[name]){
@@ -382,6 +417,14 @@ async function action(e){
 }
 document.addEventListener('click',e=>{action(e).catch(err=>toast(err.message||String(err),'error'))})
 document.addEventListener('input',e=>{
+ if(e.target?.id==='progress-eta'&&state.dialog?.kind==='progress'){
+   state.dialog.eta=e.target.value
+   const save=document.querySelector('[data-action="save-progress"]')
+   const idea=state.data.ideas.find(x=>x.id===state.dialog.idea)
+   if(save&&idea) save.disabled=state.busy||
+     (idea.status===state.dialog.stage && (idea.estimated_available_on||'')===state.dialog.eta)
+   return
+ }
  if(e.target?.id==='list-search'){
   const start=e.target.selectionStart
   state.query=e.target.value
