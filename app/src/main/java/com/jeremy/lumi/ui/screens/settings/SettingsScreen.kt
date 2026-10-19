@@ -60,6 +60,7 @@ private data class PhasePaletteOption(
 )
 
 private val phasePaletteOptions = listOf(
+    PhasePaletteOption(PhaseColorPalette.AUTO_HARMONY, "Armonía"),
     PhasePaletteOption(PhaseColorPalette.MINIMALISTA, "Noir"),
     PhasePaletteOption(PhaseColorPalette.PASTEL,      "Blush")
 )
@@ -85,6 +86,7 @@ fun SettingsScreen(
     val saveReminders by viewModel.saveRemindersInChat.collectAsStateWithLifecycle()
     val userGoal by viewModel.userGoal.collectAsStateWithLifecycle()
     val isPregnant by viewModel.isPregnant.collectAsStateWithLifecycle()
+    val isOnContraceptive by viewModel.isOnContraceptive.collectAsStateWithLifecycle()
     val currentLanguage by viewModel.currentLanguage.collectAsStateWithLifecycle()
 
     val customPhaseColorsVal = customPhaseColors
@@ -100,6 +102,8 @@ fun SettingsScreen(
     var showGoalSheet by remember { mutableStateOf(false) }
     var showPregnancyEndDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
+    var showPrivacySheet by remember { mutableStateOf(false) }
+    var showMockDataDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     // Manual backups: passwords exist in memory only until SAF returns and encryption finishes.
     var showEncryptedExportPassword by remember { mutableStateOf(false) }
@@ -124,6 +128,19 @@ fun SettingsScreen(
             viewModel.setIsHealthConnectEnabled(false)
             android.widget.Toast.makeText(context, context.getString(R.string.settings_health_connect_denied), android.widget.Toast.LENGTH_SHORT).show()
         }
+    }
+
+    // A permission can be revoked in Android while Lumi is in the background.
+    // Reconcile the stored opt-in with the actual Health Connect permission state on resume.
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                viewModel.refreshHealthConnectPermissions()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     val encryptedExportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -267,321 +284,109 @@ fun SettingsScreen(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        stringResource(R.string.nav_settings),
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                },
+            TopAppBar(
+                title = { },
                 navigationIcon = {
                     if (onNavigateBack != null) {
                         IconButton(onClick = onNavigateBack) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                                 contentDescription = stringResource(R.string.btn_back),
-                                tint = MaterialTheme.colorScheme.onBackground
+                                tint = LumiThemeTokens.current.text
                             )
                         }
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                actions = {
+                    com.jeremy.lumi.ui.components.LumiBrandLockup(
+                        modifier = Modifier.padding(end = 22.dp),
+                        flowerSize = 18,
+                        fontSize = 19.sp,
+                        animated = false
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = LumiThemeTokens.current.bg
                 )
             )
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = LumiThemeTokens.current.bg
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Spacer(Modifier.height(8.dp))
-
-            // â”€â”€ SALUD Y OBJETIVOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-            SettingsSectionTitle(stringResource(R.string.settings_health_goals))
-            SettingsCard {
-                SettingsItem(
-                    icon = Icons.Rounded.Favorite,
-                    title = stringResource(R.string.settings_user_goal),
-                    subtitle = when (userGoal) {
-                        com.jeremy.lumi.domain.model.UserGoal.TRACK_CYCLE -> stringResource(R.string.settings_goal_track)
-                        com.jeremy.lumi.domain.model.UserGoal.AVOID_PREGNANCY -> stringResource(R.string.settings_goal_avoid)
-                        com.jeremy.lumi.domain.model.UserGoal.SEEK_PREGNANCY -> stringResource(R.string.settings_goal_seek)
-                        com.jeremy.lumi.domain.model.UserGoal.HEALTH_MONITORING -> stringResource(R.string.settings_goal_health)
-                        else -> ""
-                    },
-                    onClick = { showGoalSheet = true }
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
-                SettingsSwitchItem(
-                    icon = Icons.Rounded.Favorite, // Un ícono apropiado temporal
-                    title = stringResource(R.string.settings_pregnant),
-                    subtitle = stringResource(R.string.settings_pregnant_desc),
-                    checked = isPregnant,
-                    onCheckedChange = { checked ->
+        Box(Modifier.fillMaxSize().padding(paddingValues)) {
+            LumiSettingsBody(
+                state = LumiSettingsSnapshot(
+                    theme = currentTheme,
+                    phasePalette = currentPhasePalette,
+                    dialStyle = dialStyle,
+                    ambient = backgroundAmbient,
+                    goal = userGoal,
+                    pregnant = isPregnant,
+                    contraceptive = isOnContraceptive,
+                    healthConnected = isHealthConnectEnabled,
+                    healthAvailable = viewModel.isHealthConnectAvailable,
+                    chatHistory = saveReminders,
+                    language = currentLanguage,
+                    backupBusy = manualBackupBusy,
+                    bondsEnabled = com.jeremy.lumi.BuildConfig.ENABLE_BONDS,
+                    developerBuild = com.jeremy.lumi.BuildConfig.DEBUG
+                ),
+                actions = LumiSettingsActions(
+                    goal = { showGoalSheet = true },
+                    pregnancy = { checked ->
                         if (!checked && isPregnant) {
                             showPregnancyEndDialog = true
                         } else {
                             viewModel.setIsPregnant(checked)
                         }
-                    }
-                )
-                
-                val isOnContraceptive by viewModel.isOnContraceptive.collectAsStateWithLifecycle()
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
-                SettingsSwitchItem(
-                    icon = Icons.Rounded.Security,
-                    title = stringResource(R.string.settings_contraceptive_title),
-                    subtitle = stringResource(R.string.settings_contraceptive_desc),
-                    checked = isOnContraceptive,
-                    onCheckedChange = { viewModel.setIsOnContraceptive(it) }
-                )
-                
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
-                SettingsSwitchItem(
-                    icon = Icons.Rounded.Favorite,
-                    title = stringResource(R.string.settings_health_connect_title),
-                    subtitle = stringResource(R.string.settings_health_connect_desc),
-                    checked = isHealthConnectEnabled,
-                    onCheckedChange = { checked -> 
+                    },
+                    contraceptive = { viewModel.setIsOnContraceptive(it) },
+                    health = { checked ->
                         if (checked) {
-                            // FIX P3-2: Usar propiedades del ViewModel en lugar del manager público.
                             if (viewModel.isHealthConnectAvailable) {
                                 healthConnectLauncher.launch(viewModel.healthConnectPermissions)
                             } else {
-                                android.widget.Toast.makeText(context, context.getString(R.string.settings_health_connect_unavailable), android.widget.Toast.LENGTH_SHORT).show()
+                                android.widget.Toast.makeText(
+                                    context,
+                                    context.getString(R.string.settings_health_connect_unavailable),
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
                             }
                         } else {
                             viewModel.setIsHealthConnectEnabled(false)
                         }
-                    }
-                )
-            }
-
-            // ── APARIENCIA Y TEMA ─────────────────────────────────────────────
-            SettingsSectionTitle(stringResource(R.string.settings_section_appearance))
-            SettingsCard {
-                SettingsItem(
-                    icon = Icons.Rounded.Language,
-                    title = stringResource(R.string.settings_language_title),
-                    subtitle = when (currentLanguage) {
-                        "en" -> stringResource(R.string.settings_language_en)
-                        "es" -> stringResource(R.string.settings_language_es)
-                        else -> stringResource(R.string.settings_language_system)
                     },
-                    onClick = { showLanguageDialog = true }
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
-                SettingsItem(
-                    icon = Icons.Rounded.Palette,
-                    title = stringResource(R.string.settings_theme_general),
-                    subtitle = when (currentTheme) {
-                        AppThemePalette.NOIR -> "Noir"
-                        AppThemePalette.CIRUELA, AppThemePalette.VINO -> "Ciruela"
-                        AppThemePalette.BOSQUE, AppThemePalette.LUMI_FOREST, AppThemePalette.LUMI_FOREST_DARK -> "Bosque"
-                        AppThemePalette.INDIGO, AppThemePalette.LUMI_OCEAN, AppThemePalette.LUMI_OCEAN_DARK -> "Índigo"
-                        AppThemePalette.PETALO -> "Pétalo"
-                        AppThemePalette.MARFIL, AppThemePalette.ARENA -> "Marfil"
-                        AppThemePalette.SALVIA, AppThemePalette.LUMI_SAGE, AppThemePalette.LUMI_SAGE_DARK, AppThemePalette.CACTUS -> "Salvia"
-                        AppThemePalette.LAVANDA, AppThemePalette.LUMI_LAVENDER, AppThemePalette.LUMI_LAVENDER_DARK -> "Lavanda"
-                        else -> if (currentTheme.isDark()) "Noir" else "Pétalo"
-                    },
-                    onClick = { showThemeSheet = true }
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
-                SettingsItem(
-                    icon = Icons.Rounded.Tune,
-                    title = stringResource(R.string.settings_cycle_colors),
-                    subtitle = when (currentPhasePalette) {
-                        PhaseColorPalette.PASTEL -> "Blush"
-                        PhaseColorPalette.MINIMALISTA -> "Noir"
-                        else -> if (currentTheme.isDark()) "Noir" else "Blush"
-                    },
-                    onClick = { showPhaseColorSheet = true }
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
-                SettingsItem(
-                    icon = Icons.Rounded.DonutLarge,
-                    title = stringResource(R.string.settings_dial_style_title),
-                    subtitle = when (dialStyle) {
-                        DialStyle.GRADIENT -> stringResource(R.string.settings_dial_style_gradient)
-                        DialStyle.CYCLE_MAP -> stringResource(R.string.settings_dial_style_cycle_map)
-                        DialStyle.MINIMALIST -> stringResource(R.string.settings_dial_style_minimalist)
-                    },
-                    onClick = { showDialStyleSheet = true }
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
-                AmbientPickerRow(
-                    current  = backgroundAmbient,
-                    onChange = { viewModel.changeBackgroundAmbient(it) }
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
-                SettingsItem(
-                    icon = Icons.Rounded.Favorite,
-                    title = stringResource(R.string.settings_add_widget),
-                    subtitle = stringResource(R.string.settings_add_widget_desc),
-                    onClick = {
-                        val appWidgetManager = android.appwidget.AppWidgetManager.getInstance(context)
-                        val myProvider = android.content.ComponentName(context, com.jeremy.lumi.ui.widget.LumiWidgetReceiver::class.java)
-                        if (appWidgetManager.isRequestPinAppWidgetSupported) {
-                            appWidgetManager.requestPinAppWidget(myProvider, null, null)
+                    language = { showLanguageDialog = true },
+                    theme = { showThemeSheet = true },
+                    phaseColors = { showPhaseColorSheet = true },
+                    dialStyle = { showDialStyleSheet = true },
+                    ambient = { viewModel.changeBackgroundAmbient(it) },
+                    widget = {
+                        val manager = android.appwidget.AppWidgetManager.getInstance(context)
+                        val provider = android.content.ComponentName(
+                            context,
+                            com.jeremy.lumi.ui.widget.LumiWidgetReceiver::class.java
+                        )
+                        if (manager.isRequestPinAppWidgetSupported) {
+                            manager.requestPinAppWidget(provider, null, null)
                         } else {
-                            android.widget.Toast.makeText(context, context.getString(R.string.settings_widget_unsupported), android.widget.Toast.LENGTH_LONG).show()
+                            android.widget.Toast.makeText(
+                                context,
+                                context.getString(R.string.settings_widget_unsupported),
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
                         }
-                    }
+                    },
+                    chatHistory = { viewModel.setSaveRemindersInChat(it) },
+                    driveBackup = onNavigateToBackup,
+                    encryptedExport = { if (!manualBackupBusy) showEncryptedExportPassword = true },
+                    encryptedRestore = { if (!manualBackupBusy) encryptedImportLauncher.launch(arrayOf("*/*")) },
+                    legacyImport = { if (!manualBackupBusy) showLegacyImportWarning = true },
+                    privacy = { showPrivacySheet = true },
+                    bonds = onNavigateToPartner,
+                    reset = { showResetDialog = true },
+                    mockData = { showMockDataDialog = true }
                 )
-            }
-
-            // ── CHAT Y RECORDATORIOS ──────────────────────────────────────────
-            SettingsSectionTitle(stringResource(R.string.settings_chat_reminders_section))
-            SettingsCard {
-                SettingsSwitchItem(
-                    icon = Icons.Rounded.ChatBubbleOutline,
-                    title = stringResource(R.string.settings_chat_reminders_title),
-                    subtitle = stringResource(R.string.settings_chat_reminders_desc),
-                    checked = saveReminders,
-                    onCheckedChange = { viewModel.setSaveRemindersInChat(it) }
-                )
-            }
-
-            // ── RESPALDO DE DATOS ─────────────────────────────────────────────
-            SettingsSectionTitle(stringResource(R.string.settings_data_backup_section))
-            SettingsCard {
-                SettingsItem(
-                    icon = Icons.Rounded.CloudUpload,
-                    title = stringResource(R.string.backup_settings_entry_title),
-                    subtitle = stringResource(R.string.backup_settings_entry_subtitle),
-                    onClick = onNavigateToBackup
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
-                SettingsItem(
-                    icon = Icons.Rounded.CloudUpload,
-                    title = stringResource(R.string.manual_backup_encrypted_export_title),
-                    subtitle = stringResource(R.string.manual_backup_encrypted_export_desc),
-                    onClick = { if (!manualBackupBusy) showEncryptedExportPassword = true }
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
-                SettingsItem(
-                    icon = Icons.Rounded.Security,
-                    title = stringResource(R.string.manual_backup_encrypted_restore_title),
-                    subtitle = stringResource(R.string.manual_backup_encrypted_restore_desc),
-                    onClick = { if (!manualBackupBusy) encryptedImportLauncher.launch(arrayOf("*/*")) }
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
-                SettingsItem(
-                    icon = Icons.Rounded.Check,
-                    title = stringResource(R.string.manual_backup_import_legacy_title),
-                    subtitle = stringResource(R.string.manual_backup_import_legacy_desc),
-                    onClick = { if (!manualBackupBusy) showLegacyImportWarning = true }
-                )
-                if (manualBackupBusy) {
-                    Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                        Spacer(Modifier.width(12.dp))
-                        Text(stringResource(R.string.manual_backup_operation_busy))
-                    }
-                }
-            }
-
-            // ── PRIVACIDAD & PAREJA ───────────────────────────────────────────
-            SettingsSectionTitle(stringResource(R.string.settings_section_advanced))
-            SettingsCard {
-                if (com.jeremy.lumi.BuildConfig.ENABLE_BONDS) {
-                    SettingsItem(
-                        icon = Icons.Rounded.Favorite,
-                        title = stringResource(R.string.settings_partner),
-                        subtitle = stringResource(R.string.settings_partner_desc),
-                        onClick = { onNavigateToPartner() }
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.1f))
-                }
-                SettingsItem(
-                    icon = Icons.Rounded.Security,
-                    title = stringResource(R.string.settings_privacy),
-                    subtitle = stringResource(R.string.settings_privacy_desc),
-                    onClick = { /* TODO */ }
-                )
-            }
-
-            // ——— ZONA DE PELIGRO ——————————————————————————————————————————————
-            SettingsSectionTitle(stringResource(R.string.settings_danger_zone))
-            // Botón de borrar datos — sin envolver en SettingsCard para mayor énfasis visual
-            OutlinedButton(
-                onClick  = { showResetDialog = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .height(52.dp),
-                shape  = RoundedCornerShape(16.dp),
-                border = androidx.compose.foundation.BorderStroke(
-                    1.5.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
-                ),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Icon(
-                    imageVector        = Icons.Rounded.DeleteForever,
-                    contentDescription = null,
-                    modifier           = Modifier.size(18.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text       = stringResource(R.string.settings_reset),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize   = 15.sp
-                )
-            }
-            Text(
-                text     = stringResource(R.string.settings_reset_desc),
-                fontSize = 12.sp,
-                color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
-                modifier = Modifier.padding(horizontal = 28.dp)
             )
-
-            Spacer(Modifier.height(16.dp))
-            
-            // ——— HERRAMIENTAS DE DESARROLLO ———————————————————————————————————
-            SettingsSectionTitle(stringResource(R.string.settings_dev_tools))
-            OutlinedButton(
-                onClick  = { viewModel.injectMockData() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .height(52.dp),
-                shape  = RoundedCornerShape(16.dp),
-                border = androidx.compose.foundation.BorderStroke(
-                    1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                ),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                Icon(
-                    imageVector        = Icons.Rounded.Tune,
-                    contentDescription = null,
-                    modifier           = Modifier.size(18.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text       = stringResource(R.string.settings_dev_generate_mock),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize   = 15.sp
-                )
-            }
-            Text(
-                text     = stringResource(R.string.settings_dev_generate_mock_desc),
-                fontSize = 12.sp,
-                color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
-                modifier = Modifier.padding(horizontal = 28.dp)
-            )
-
-            Spacer(Modifier.height(32.dp))
         }
 
         if (showResetDialog) {
@@ -597,14 +402,14 @@ fun SettingsScreen(
                 },
                 title = {
                     Text(
-                        text       = stringResource(R.string.dialog_reset_title),
+                        text       = stringResource(R.string.settings_reset_confirm_data_title),
                         fontWeight = FontWeight.Bold,
                         color      = MaterialTheme.colorScheme.error
                     )
                 },
                 text  = {
                     Text(
-                        text      = stringResource(R.string.dialog_reset_desc),
+                        text      = stringResource(R.string.settings_reset_confirm_data_desc),
                         fontSize  = 14.sp,
                         lineHeight = 20.sp,
                         color     = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
@@ -620,7 +425,7 @@ fun SettingsScreen(
                             containerColor = MaterialTheme.colorScheme.error
                         )
                     ) {
-                        Text(stringResource(R.string.dialog_reset_confirm))
+                        Text(stringResource(R.string.settings_reset_confirm_data_action))
                     }
                 },
                 dismissButton = {
@@ -923,6 +728,14 @@ fun SettingsScreen(
                             Text(text, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        stringResource(R.string.settings_prediction_not_contraception),
+                        fontSize = 12.sp,
+                        lineHeight = 18.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                    )
                 }
             }
         }
@@ -931,18 +744,43 @@ fun SettingsScreen(
             AlertDialog(
                 onDismissRequest = { showPregnancyEndDialog = false },
                 title = { Text(stringResource(R.string.dialog_pregnancy_end_title), fontWeight = FontWeight.Bold) },
-                text = { Text(stringResource(R.string.dialog_pregnancy_end_desc)) },
+                text = { Text(stringResource(R.string.settings_pregnancy_end_confirmation)) },
                 confirmButton = {
                     Button(onClick = {
                         viewModel.setIsPregnant(false)
                         showPregnancyEndDialog = false
-                    }) { Text(stringResource(R.string.dialog_pregnancy_birth)) }
+                    }) { Text(stringResource(R.string.settings_pregnancy_end_action)) }
                 },
                 dismissButton = {
-                    OutlinedButton(onClick = {
-                        viewModel.setIsPregnant(false)
-                        showPregnancyEndDialog = false
-                    }) { Text(stringResource(R.string.dialog_pregnancy_loss)) }
+                    TextButton(onClick = { showPregnancyEndDialog = false }) {
+                        Text(stringResource(R.string.dialog_reset_cancel))
+                    }
+                }
+            )
+        }
+
+        if (showPrivacySheet) {
+            LumiSettingsPrivacySheet(
+                onDismiss = { showPrivacySheet = false },
+                onOpenBackup = onNavigateToBackup
+            )
+        }
+
+        if (showMockDataDialog && com.jeremy.lumi.BuildConfig.DEBUG) {
+            AlertDialog(
+                onDismissRequest = { showMockDataDialog = false },
+                title = { Text(stringResource(R.string.settings_dev_generate_mock)) },
+                text = { Text(stringResource(R.string.settings_dev_generate_mock_desc)) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showMockDataDialog = false
+                        viewModel.injectMockData()
+                    }) { Text(stringResource(android.R.string.ok)) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showMockDataDialog = false }) {
+                        Text(stringResource(R.string.dialog_reset_cancel))
+                    }
                 }
             )
         }
