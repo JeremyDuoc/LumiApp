@@ -489,115 +489,81 @@ private fun AnimatedChatBubble(message: ChatMessageEntity) {
 
 @Composable
 private fun PremiumChatBubble(message: ChatMessageEntity) {
-    val primary = MaterialTheme.colorScheme.primary
     val isUser = message.messageType == ChatMessageType.USER
-
-    val isHighlighted = message.messageType in setOf(
+    val isInsight = message.messageType == ChatMessageType.INSIGHT
+    val isReminder = message.messageType in setOf(
         ChatMessageType.SUPPLY_REMINDER,
         ChatMessageType.METHOD_REMINDER,
         ChatMessageType.CUSTOM
     )
 
     Row(
-        modifier              = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
     ) {
-        // ── Burbuja estilo iOS: fondo sólido, esquinas muy redondeadas ───────
         Surface(
-            modifier  = Modifier.widthIn(max = 300.dp),
-            shape     = RoundedCornerShape(
-                topStart     = if (isUser) 20.dp else 4.dp,
-                topEnd       = if (isUser) 4.dp else 20.dp,
-                bottomStart  = 20.dp,
-                bottomEnd    = 20.dp
+            modifier = Modifier.widthIn(max = 335.dp),
+            shape = RoundedCornerShape(
+                topStart = if (isUser) 20.dp else 6.dp,
+                topEnd = if (isUser) 6.dp else 20.dp,
+                bottomStart = 20.dp,
+                bottomEnd = 20.dp
             ),
-            color     = if (isUser) primary else MaterialTheme.colorScheme.surfaceVariant,
-            tonalElevation = 1.dp,
-            shadowElevation = 2.dp
+            color = if (isUser) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = .66f),
+            border = if (isUser) null else androidx.compose.foundation.BorderStroke(
+                .75.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .36f)
+            ),
+            shadowElevation = 0.dp,
+            tonalElevation = 0.dp
         ) {
-            Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-
-                // â”€â”€ Etiqueta de tipo resaltado â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-                if (isHighlighted) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+                if (isInsight || isReminder) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier          = Modifier.padding(bottom = 5.dp)
+                        modifier = Modifier.padding(bottom = 10.dp)
                     ) {
                         Icon(
-                            imageVector        = chatTypeIcon(message.messageType),
+                            imageVector = if (isInsight) Icons.Rounded.Insights else chatTypeIcon(message.messageType),
                             contentDescription = null,
-                            modifier           = Modifier.size(13.dp),
-                            tint               = primary
+                            modifier = Modifier.size(15.dp),
+                            tint = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(Modifier.width(5.dp))
+                        Spacer(Modifier.width(7.dp))
                         Text(
-                            text       = chatTypeLabelRes(message.messageType)
-                                ?.let { stringResource(it) } ?: "",
-                            fontSize   = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color      = primary
+                            text = if (isInsight) stringResource(R.string.chat_new_discovery)
+                                   else chatTypeLabelRes(message.messageType)?.let { stringResource(it) }.orEmpty(),
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                 }
-
-                // â”€â”€ Ícono de Lumi + texto del mensaje â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Row(verticalAlignment = Alignment.Top) {
                     if (!isUser) {
-                        Box(
-                            modifier = Modifier
-                                .size(26.dp)
-                                .clip(CircleShape)
-                                .background(primary.copy(alpha = 0.10f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector        = Icons.Rounded.AutoAwesome,
-                                contentDescription = null,
-                                tint               = primary,
-                                modifier           = Modifier.size(14.dp)
-                            )
-                        }
-                        Spacer(Modifier.width(10.dp))
+                        com.jeremy.lumi.ui.components.LumiBrandFlower(
+                            size = 16, animated = false
+                        )
+                        Spacer(Modifier.width(11.dp))
                     }
                     FormattedChatMessage(
-                        text       = message.text,
-                        isUser     = isUser,
-                        modifier   = Modifier.weight(1f, fill = false)
+                        text = message.text,
+                        isUser = isUser,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
                 }
-
-                Spacer(Modifier.height(6.dp))
-
-                // ──────────────── Timestamp + punto "visto" ────────────────
-                Row(
-                    modifier              = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment     = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text     = formatTime(message.timestamp),
-                        fontSize = 10.sp,
-                        color    = if (isUser) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f) 
-                                   else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
-                    )
-                    if (!isUser) {
-                        Spacer(Modifier.width(5.dp))
-                        Box(
-                            Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(primary.copy(alpha = 0.55f))
-                        )
-                    }
-                }
+                Spacer(Modifier.height(9.dp))
+                Text(
+                    text = formatTime(message.timestamp),
+                    fontSize = 10.sp,
+                    color = if (isUser) MaterialTheme.colorScheme.onPrimary.copy(alpha = .68f)
+                            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .64f),
+                    modifier = Modifier.align(Alignment.End)
+                )
             }
         }
     }
 }
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  EMPTY STATE
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun EmptyChatState(modifier: Modifier = Modifier) {
@@ -776,11 +742,9 @@ private fun QuestionChip(text: String, enabled: Boolean = true, onClick: () -> U
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Icon(
-                Icons.Rounded.AutoAwesome,
-                contentDescription = null,
-                modifier = Modifier.size(13.dp),
-                tint = if (enabled) primary else Color.Gray
+            com.jeremy.lumi.ui.components.LumiBrandFlower(
+                size = 12,
+                animated = false
             )
             Text(
                 text = text,
