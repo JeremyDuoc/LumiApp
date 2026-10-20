@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,7 +62,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private const val STAGGER_MS = 20
+private const val STAGGER_MS = 90
 private const val BREATH_MS  = 3800
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,7 +97,8 @@ fun HomeScreen(
     val scope             = rememberCoroutineScope()
     val context           = androidx.compose.ui.platform.LocalContext.current
 
-    var screenReady by remember { mutableStateOf(false) }
+    // Preserve first-entry completion when the pager saves/restores its page state.
+    var screenReady by rememberSaveable { mutableStateOf(false) }
     // Data readiness is separate from permission to reveal the visible Home.
     // Existing entrances behave normally outside the onboarding handoff.
     LaunchedEffect(uiState.isLoading, uiState.homeMode, allowEntrance) {
