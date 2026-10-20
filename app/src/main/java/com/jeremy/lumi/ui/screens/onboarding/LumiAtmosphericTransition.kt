@@ -54,21 +54,12 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /**
- * Traducción del HTML Lumi v11/v12, secuencia ATMOSFÉRICA.
+ * Native Lumi first-run ceremony (6.5s at normal animation scale).
  *
- * Diferencias relevantes respecto al código anterior:
- *  - La pantalla previa permanece bajo un velo que aparece progresivamente.
- *  - Se usan CUATRO luces independientes, NO un halo circular único.
- *  - La marca parte de sus coordenadas reales (Step7Summary), no de 80.dp.
- *  - La marca se transforma desde TopStart, como CSS transform-origin: top left.
- *  - Las frases permanecen debajo del logo, con indicador de tres puntos.
- *  - El tiempo está sincronizado con los fotogramas de Compose, no con un
- *    bucle de System.currentTimeMillis() + delay(16).
- *
- * Para un handoff visual 100% continuo al Home real, suministrar homeRevealContent
- * desde un contenedor que pueda mantener el Home compuesto debajo del logo.
- * Sin ese contenedor la transición termina limpiamente en el fondo de Lumi,
- * pero la navegación final sigue siendo responsabilidad de onFinished.
+ * One VSYNC-driven timeline coordinates the covering veil, shared-brand flight,
+ * localized welcome, flower dissolve and Home reveal. At 3.44s the clock waits
+ * for actual Home data and destination measurements, not a fixed loading delay.
+ * The overlay lives outside NavHost; Home is composed exactly once below it.
  */
 private val enterCurve = CubicBezierEasing(.18f, 1f, .3f, 1f)
 private val firstFlightCurve = CubicBezierEasing(.16f, .89f, .24f, 1f)
