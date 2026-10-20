@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,7 +61,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private const val STAGGER_MS = 90
+private const val STAGGER_MS = 20
 private const val BREATH_MS  = 3800
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,9 +79,7 @@ fun HomeScreen(
     settingsViewModel: SettingsViewModel = hiltViewModel(),
     // Hooks optativos para el logo compartido con la transición del onboarding.
     onBrandBounds: ((Rect) -> Unit)? = null,
-    suppressBrandDuringHandoff: Boolean = false,
-    onHomeReady: ((Boolean) -> Unit)? = null,
-    allowEntrance: Boolean = true
+    suppressBrandDuringHandoff: Boolean = false
 ) {
     val uiState           by viewModel.uiState.collectAsStateWithLifecycle()
     val tokens            = LumiThemeTokens.current
@@ -97,15 +94,9 @@ fun HomeScreen(
     val scope             = rememberCoroutineScope()
     val context           = androidx.compose.ui.platform.LocalContext.current
 
-    // Preserve first-entry completion when the pager saves/restores its page state.
-    var screenReady by rememberSaveable { mutableStateOf(false) }
-    // Data readiness is separate from permission to reveal the visible Home.
-    // Existing entrances behave normally outside the onboarding handoff.
-    LaunchedEffect(uiState.isLoading, uiState.homeMode, allowEntrance) {
-        if (!uiState.isLoading) {
-            onHomeReady?.invoke(uiState.homeMode == HomeMode.NORMAL)
-            if (allowEntrance) screenReady = true
-        }
+    var screenReady by remember { mutableStateOf(false) }
+    LaunchedEffect(uiState.isLoading) {
+        if (!uiState.isLoading) { screenReady = true }
     }
 
     val activeReminders by remindersViewModel.activeReminders.collectAsStateWithLifecycle()

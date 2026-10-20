@@ -151,8 +151,7 @@ fun LumiBrandLockup(
     textColor: Color = LumiThemeTokens.current.text,
     starColor: Color = LumiThemeTokens.current.accent,
     animated: Boolean = true,
-    ceremonial: Boolean = false,
-    flowerAlpha: Float = 1f
+    ceremonial: Boolean = false
 ) {
     val infiniteTransition = if (animated) rememberInfiniteTransition(label = "brand_lockup_twinkle") else null
     val starTwinkle = infiniteTransition?.animateFloat(
@@ -176,10 +175,7 @@ fun LumiBrandLockup(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        LumiBrandFlower(
-            modifier = Modifier.graphicsLayer { alpha = flowerAlpha.coerceIn(0f, 1f) },
-            size = flowerSize, animated = animated, ceremonial = ceremonial
-        )
+        LumiBrandFlower(size = flowerSize, animated = animated, ceremonial = ceremonial)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = "lumi",
