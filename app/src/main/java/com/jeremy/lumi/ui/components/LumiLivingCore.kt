@@ -3,36 +3,24 @@ package com.jeremy.lumi.ui.components
 import android.animation.ValueAnimator
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -40,10 +28,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.withTransform
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -52,13 +41,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.jeremy.lumi.domain.model.CyclePhase
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.cos
-import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.sin
 
 /**
@@ -66,7 +58,7 @@ import kotlin.math.sin
  *
  * Port de lumi_home_nucleo_vivo_v3.html:
  * - Movimiento Natural, intensidad orgánica 50 %.
- * - Célula 135 %, 10 partículas, Aurora al 30 %.
+ * - Célula 135 %, 10 partículas, aura tomada de su superficie.
  * - Número real del día dentro del núcleo, color según fase.
  * - Se respeta el tema Android elegido; si el usuario usa OLED Noir,
  *   no se cambia ni se sustituye por una paleta clara.
@@ -77,38 +69,71 @@ import kotlin.math.sin
 private const val ORGANIC_INTENSITY = .50f
 private const val CORE_SCALE = 1.35f
 private const val PARTICLE_COUNT = 10
-private const val AURORA_POWER = .30f
 private const val TWO_PI = (PI * 2.0).toFloat()
 
 private data class CellPalette(
     val first: Color, val second: Color, val third: Color, val fourth: Color,
-    val aura: Color, val pace: Float
+    val pace: Float
 )
 
 private fun cellPalette(phase: CyclePhase): CellPalette = when (phase) {
     CyclePhase.MENSTRUAL -> CellPalette(
         Color(0xFFB881A4), Color(0xFFDB94AE), Color(0xFFEDB3BF),
-        Color(0xFFDFC3C7), Color(0xFFDFA5BB), .82f
+        Color(0xFFDFC3C7), .82f
     )
     CyclePhase.FOLLICULAR -> CellPalette(
         Color(0xFFCBB4EE), Color(0xFFE5B9D4), Color(0xFFF3CEB4),
-        Color(0xFFB2D7CD), Color(0xFFE4C1EF), 1f
+        Color(0xFFB2D7CD), 1f
     )
     CyclePhase.OVULATION -> CellPalette(
         Color(0xFFE8B7E4), Color(0xFFF4C4C8), Color(0xFFFBD7A9),
-        Color(0xFFBCDED0), Color(0xFFF3C9CB), 1.12f
+        Color(0xFFBCDED0), 1.12f
     )
     CyclePhase.LUTEAL -> CellPalette(
         Color(0xFFAC96BD), Color(0xFFD7A6BF), Color(0xFFEBBBAB),
-        Color(0xFFD4C0B3), Color(0xFFDEB7CA), .87f
+        Color(0xFFD4C0B3), .87f
     )
     else -> CellPalette(
         Color(0xFFD8B3F0), Color(0xFFE5B9D4), Color(0xFFF5CAAA),
-        Color(0xFFA7D1CC), Color(0xFFE4C1EF), 1f
+        Color(0xFFA7D1CC), 1f
     )
 }
 
-private fun organPath(phase: Float, pace: Float, beat: Float, expansion: Float = 1f): Path {
+private data class CellGeometry(val path: Path, val edge: Array<Offset>)
+
+private val SKIN_START = Offset(126f, 294f)
+private val SKIN_END = Offset(272f, 108f)
+
+/** Same gradient and moving light fields as the skin, sampled at the living edge. */
+private fun surfaceColorAt(
+    point: Offset, palette: List<Color>, mintCenter: Offset, roseCenter: Offset,
+    highlightAlpha: Float, depthAlpha: Float
+): Color {
+    val axis = SKIN_END - SKIN_START
+    val delta = point - SKIN_START
+    val fraction = ((delta.x * axis.x + delta.y * axis.y) /
+        (axis.x * axis.x + axis.y * axis.y)).coerceIn(0f, 1f)
+    var color = when {
+        fraction < .33f -> lerp(palette[0], palette[1], fraction / .33f)
+        fraction < .67f -> lerp(palette[1], palette[2], (fraction - .33f) / .34f)
+        else -> lerp(palette[2], palette[3], (fraction - .67f) / .33f)
+    }
+    val highlight = ((point - Offset(152f, 143f)).getDistance() / 109f).coerceIn(0f, 1f)
+    val whiteAlpha = if (highlight < .5f) {
+        highlightAlpha + (.12f - highlightAlpha) * highlight * 2f
+    } else .12f * (1f - highlight) * 2f
+    color = Color.White.copy(alpha = whiteAlpha).compositeOver(color)
+    fun light(tint: Color, center: Offset, radius: Float, alpha: Float) {
+        val falloff = (1f - (point - center).getDistance() / radius).coerceIn(0f, 1f)
+        color = tint.copy(alpha = alpha * falloff).compositeOver(color)
+    }
+    light(palette[3], mintCenter, 88f, .49f)
+    light(palette[1], roseCenter, 100f, .52f)
+    light(Color(0xFF6D447E), Offset(263f, 264f), 105f, depthAlpha)
+    return color
+}
+
+private fun organGeometry(time: Float, breathTime: Float, beat: Float): CellGeometry {
     val n = 68
     val points = Array(n) { i ->
         val a = i.toFloat() / n * TWO_PI
@@ -118,17 +143,17 @@ private fun organPath(phase: Float, pace: Float, beat: Float, expansion: Float =
             2f * cos(5f * a + .85f)
         // Natural 50% = 0.72 (natural) * 0.50 (intensity).
         val drift = (.72f * ORGANIC_INTENSITY) * (
-            3.25f * sin(3f * a + 3f * phase) +
-                2.2f * sin(5f * a - 5f * phase + .8f) +
-                cos(7f * a + 2f * phase)
+            3.25f * sin(3f * a + .62f * time) +
+                2.2f * sin(5f * a - .91f * time + .8f) +
+                cos(7f * a + .39f * time)
             )
-        val breath = 1.2f * sin(3f * phase * pace)
-        val ripple = beat * 3f * sin(2.1f * TWO_PI * (1f - beat))
-        val radius = (91.1f + anatomy + drift + breath + ripple) * expansion
+        val breath = 1.2f * sin(1.13f * breathTime)
+        val ripple = beat * 3.6f * sin(1.05f * TWO_PI * (1f - beat))
+        val radius = 91.1f + anatomy + drift + breath + ripple
         Offset(200f + radius * cos(a), 199f + radius * sin(a))
     }
     // Same closed Catmull–Rom to cubic Bézier interpolation as the HTML.
-    return Path().apply {
+    return CellGeometry(Path().apply {
         moveTo(points[0].x, points[0].y)
         for (i in 0 until n) {
             val p0 = points[(i - 1 + n) % n]
@@ -144,7 +169,7 @@ private fun organPath(phase: Float, pace: Float, beat: Float, expansion: Float =
             )
         }
         close()
-    }
+    }, points)
 }
 
 @Composable
@@ -163,20 +188,36 @@ fun LumiLivingCore(
     val b by animateColorAsState(colors.second, tween(1700), label = "lumi_skin_b")
     val c by animateColorAsState(colors.third, tween(1700), label = "lumi_skin_c")
     val d by animateColorAsState(colors.fourth, tween(1700), label = "lumi_skin_d")
-    val aura by animateColorAsState(colors.aura, tween(1700), label = "lumi_aura_phase")
 
-    // Android 'remove animations' setting: do not animate or simulate a loader.
-    val mayAnimate = remember { ValueAnimator.areAnimatorsEnabled() }
-    val t = if (mayAnimate) {
-        val transition = rememberInfiniteTransition(label = "lumi_living_core_natural")
-        val motion by transition.animateFloat(
-            initialValue = 0f,
-            targetValue = TWO_PI,
-            animationSpec = infiniteRepeatable(tween(24_000, easing = LinearEasing)),
-            label = "lumi_membrane_24s"
-        )
-        motion
-    } else 0f
+    // Continuous time avoids the old 24s reset of non-periodic particle/light motion.
+    // Read time only while drawing: labels and layout do not recompose every frame.
+    val time = remember { mutableFloatStateOf(0f) }
+    val breathTime = remember { mutableFloatStateOf(0f) }
+    val pace = rememberUpdatedState(colors.pace)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        val motionScale = coroutineContext[MotionDurationScale]
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            snapshotFlow {
+                motionScale?.scaleFactor ?: if (ValueAnimator.areAnimatorsEnabled()) 1f else 0f
+            }.collectLatest { durationScale ->
+                if (durationScale > 0f) {
+                    var previousFrame = 0L
+                    while (isActive) {
+                        withFrameNanos { frame ->
+                            if (previousFrame != 0L) {
+                                val delta = ((frame - previousFrame) / 1_000_000_000f)
+                                    .coerceAtMost(.048f) / durationScale
+                                time.floatValue += delta
+                                breathTime.floatValue += delta * pace.value
+                            }
+                            previousFrame = frame
+                        }
+                    }
+                }
+            }
+        }
+    }
     val pulse = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
     val ink = Color(0xFF35283E) // Inside is a light translucent cell, including OLED Noir.
@@ -191,7 +232,7 @@ fun LumiLivingCore(
         ) {
             val diameter = minOf(maxWidth - 24.dp, 328.dp)
             Box(
-                modifier = Modifier.size(diameter)
+                modifier = Modifier.size(width = diameter, height = diameter * .86f)
                     .semantics(mergeDescendants = true) {
                         contentDescription = if (currentDay > 0)
                             "Núcleo vivo Lumi, día $currentDay del ciclo, $phaseName. Toca para sentir un latido."
@@ -202,47 +243,63 @@ fun LumiLivingCore(
                         role = Role.Button,
                         onClickLabel = "Latido del núcleo Lumi"
                     ) {
-                        if (mayAnimate) scope.launch {
+                        if (ValueAnimator.areAnimatorsEnabled()) scope.launch {
                             pulse.snapTo(1f)
-                            pulse.animateTo(0f, tween(850))
+                            pulse.animateTo(0f, tween(850, easing = LinearEasing))
                         }
                     },
                 contentAlignment = Alignment.Center
             ) {
                 Canvas(modifier = Modifier.matchParentSize()) {
-                    val ratio = size.minDimension / 400f
+                    val ratio = size.width / 400f
                     val center = Offset(200f, 200f)
                     val palette = listOf(a, b, c, d)
-                    val shape = organPath(t, colors.pace, pulse.value)
-                    val rim = organPath(t, colors.pace, pulse.value, 1.14f)
-                    val inner = organPath(t, colors.pace, pulse.value, .77f)
+                    val seconds = time.floatValue
+                    val t = seconds * TWO_PI / 24f
+                    val geometry = organGeometry(seconds, breathTime.floatValue, pulse.value)
+                    val shape = geometry.path
+                    val mintCenter = Offset(238f + 5f * sin(t), 247f)
+                    val roseCenter = Offset(158f - 5f * sin(t * .6f), 214f)
+                    val highlightAlpha = if (tokens.isDark) .72f else .48f
+                    val depthAlpha = if (tokens.isDark) .11f else .17f
 
                     withTransform({
+                        translate(top = (size.height - size.width) / 2f)
                         scale(ratio, ratio, pivot = Offset.Zero)
                     }) {
-                        // Aurora 30 %: three low-energy atmospheric colors.
-                        drawCircle(
-                            brush = Brush.radialGradient(
-                                listOf(aura.copy(alpha = .28f * AURORA_POWER), Color.Transparent),
-                                center = Offset(154f, 161f), radius = 175f
-                            ), radius = 175f, center = Offset(154f, 161f)
-                        )
-                        drawCircle(
-                            brush = Brush.radialGradient(
-                                listOf(b.copy(alpha = .22f * AURORA_POWER), Color.Transparent),
-                                center = Offset(248f, 223f), radius = 164f
-                            ), radius = 164f, center = Offset(248f, 223f)
-                        )
-                        drawCircle(
-                            brush = Brush.radialGradient(
-                                listOf(d.copy(alpha = .21f * AURORA_POWER), Color.Transparent),
-                                center = Offset(210f, 286f), radius = 166f
-                            ), radius = 166f, center = Offset(210f, 286f)
-                        )
+                        withTransform({ scale(CORE_SCALE, CORE_SCALE, pivot = center) }) {
+                            if (!tokens.isDark) {
+                                // Contact shading follows the silhouette, never a detached oval below it.
+                                withTransform({ translate(top = 3f) }) {
+                                    for (width in 32 downTo 2 step 2) {
+                                        drawPath(shape, ink.copy(alpha = .003f), style = Stroke(width.toFloat()))
+                                    }
+                                }
+                            }
+                            // Overlapping soft lights inherit the nearest edge, including liquid drift.
+                            for (i in geometry.edge.indices step 3) {
+                                val point = geometry.edge[i]
+                                val surface = surfaceColorAt(
+                                    point, palette, mintCenter, roseCenter, highlightAlpha, depthAlpha
+                                )
+                                val tint = if (tokens.isDark) surface else lerp(surface, ink, .14f)
+                                val strength = if (tokens.isDark) .13f else .20f
+                                drawCircle(
+                                    brush = Brush.radialGradient(
+                                        0f to tint.copy(alpha = strength),
+                                        .35f to tint.copy(alpha = strength * .55f),
+                                        .7f to tint.copy(alpha = strength * .12f),
+                                        1f to tint.copy(alpha = 0f),
+                                        center = point, radius = 38f
+                                    ),
+                                    center = point, radius = 38f
+                                )
+                            }
+                        }
 
                         // Stationary dotted orbital reference, very faint; never a progress ring.
                         drawCircle(
-                            color = tokens.accent.copy(alpha = if (tokens.isDark) .22f else .14f),
+                            color = tokens.accent.copy(alpha = if (tokens.isDark) .22f else .07f),
                             radius = 153f,
                             center = center,
                             style = Stroke(
@@ -268,21 +325,25 @@ fun LumiLivingCore(
 
                         // The two soft membrane layers scale together around 200,200.
                         withTransform({ scale(CORE_SCALE, CORE_SCALE, pivot = center) }) {
-                            drawPath(
-                                rim, Color.White.copy(alpha = .26f),
-                                style = Stroke(width = .9f)
-                            )
+                            withTransform({ scale(1.14f, 1.14f, pivot = center) }) {
+                                drawPath(
+                                    shape,
+                                    if (tokens.isDark) Color.White.copy(alpha = .26f)
+                                    else tokens.accent.copy(alpha = .18f),
+                                    style = Stroke(width = .9f / 1.14f)
+                                )
+                            }
                             drawPath(
                                 shape,
                                 brush = Brush.linearGradient(
                                     0f to a, .33f to b, .67f to c, 1f to d,
-                                    start = Offset(126f, 294f), end = Offset(272f, 108f)
+                                    start = SKIN_START, end = SKIN_END
                                 )
                             )
                             clipPath(shape) {
                                 drawCircle(
                                     brush = Brush.radialGradient(
-                                        listOf(Color.White.copy(alpha = .72f), Color.White.copy(alpha = .12f), Color.Transparent),
+                                        listOf(Color.White.copy(alpha = highlightAlpha), Color.White.copy(alpha = .12f), Color.Transparent),
                                         center = Offset(152f, 143f), radius = 109f
                                     ),
                                     center = Offset(152f, 143f), radius = 109f
@@ -290,18 +351,18 @@ fun LumiLivingCore(
                                 drawCircle(
                                     brush = Brush.radialGradient(
                                         listOf(d.copy(alpha = .49f), Color.Transparent),
-                                        center = Offset(238f + 5f * sin(t), 247f), radius = 88f
-                                    ), center = Offset(238f + 5f * sin(t), 247f), radius = 88f
+                                        center = mintCenter, radius = 88f
+                                    ), center = mintCenter, radius = 88f
                                 )
                                 drawCircle(
                                     brush = Brush.radialGradient(
                                         listOf(b.copy(alpha = .52f), Color.Transparent),
-                                        center = Offset(158f - 5f * sin(t * .6f), 214f), radius = 100f
-                                    ), center = Offset(158f - 5f * sin(t * .6f), 214f), radius = 100f
+                                        center = roseCenter, radius = 100f
+                                    ), center = roseCenter, radius = 100f
                                 )
                                 drawCircle(
                                     brush = Brush.radialGradient(
-                                        listOf(Color(0xFF6D447E).copy(alpha = .11f), Color.Transparent),
+                                        listOf(Color(0xFF6D447E).copy(alpha = depthAlpha), Color.Transparent),
                                         center = Offset(263f, 264f), radius = 105f
                                     ), center = Offset(263f, 264f), radius = 105f
                                 )
@@ -326,10 +387,12 @@ fun LumiLivingCore(
                                     Color.White.copy(alpha = .24f), radius = 1.8f,
                                     center = Offset(259f, 174f)
                                 )
-                                drawPath(
-                                    inner, Color.White.copy(alpha = .17f),
-                                    style = Stroke(width = .7f)
-                                )
+                                withTransform({ scale(.77f, .77f, pivot = center) }) {
+                                    drawPath(
+                                        shape, Color.White.copy(alpha = .17f),
+                                        style = Stroke(width = .7f / .77f)
+                                    )
+                                }
                             }
                             drawPath(
                                 shape, Color.White.copy(alpha = .52f),
@@ -351,8 +414,8 @@ fun LumiLivingCore(
                         if (currentDay > 0) "$currentDay" else "—",
                         color = ink,
                         fontWeight = FontWeight.ExtraBold,
-                        fontSize = 57.sp,
-                        lineHeight = 63.sp,
+                        fontSize = 68.sp,
+                        lineHeight = 74.sp,
                         letterSpacing = (-3).sp
                     )
                     if (currentDay > 0) {
@@ -385,15 +448,6 @@ fun LumiLivingCore(
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 20.dp)
         )
-        Spacer(Modifier.height(5.dp))
-        Text(
-            estimatedDaysText,
-            color = tokens.muted,
-            fontSize = 11.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 20.dp)
-        )
-        Spacer(Modifier.height(8.dp))
         val confidenceModifier = if (onConfidenceClick != null) {
             Modifier.clickable(
                 role = Role.Button,
@@ -401,78 +455,32 @@ fun LumiLivingCore(
                 onClick = onConfidenceClick
             )
         } else Modifier
-        Row(
+        // Keep calibration attached to the estimate, with one accessible touch target.
+        Column(
             modifier = confidenceModifier
-                .defaultMinSize(minHeight = 44.dp)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+                .defaultMinSize(minHeight = 48.dp)
+                .padding(horizontal = 20.dp, vertical = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically)
         ) {
-            Surface(
-                shape = CircleShape,
-                color = tokens.accent.copy(alpha = .7f),
-                modifier = Modifier.size(5.dp)
-            ) { }
-            Spacer(Modifier.width(7.dp))
             Text(
-                confidenceLabel,
+                estimatedDaysText,
                 color = tokens.muted,
-                fontSize = 10.sp,
+                fontSize = 11.sp,
                 textAlign = TextAlign.Center
             )
-            Spacer(Modifier.width(5.dp))
-            LumiIconInfo(tint = tokens.dim, size = 12.dp)
-        }
-    }
-}
-
-/**
- * 30% Aurora atmosphere spread over the Home, like the HTML background pools.
- * Purely decorative, beneath the Scaffold. Does not replace the user's theme.
- */
-@Composable
-fun LumiLivingAuroraBackdrop(
-    currentPhase: CyclePhase,
-    modifier: Modifier = Modifier.fillMaxSize()
-) {
-    val tokens = LumiThemeTokens.current
-    val colors = remember(currentPhase) { cellPalette(currentPhase) }
-    val first by animateColorAsState(colors.first, tween(1700), label = "aurora_phase_a")
-    val second by animateColorAsState(colors.second, tween(1700), label = "aurora_phase_b")
-    val third by animateColorAsState(colors.fourth, tween(1700), label = "aurora_phase_c")
-    val animate = remember { ValueAnimator.areAnimatorsEnabled() }
-    val movement = if (animate) {
-        val transition = rememberInfiniteTransition(label = "lumi_aurora_backdrop")
-        val drift by transition.animateFloat(
-            initialValue = -1f, targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(24_000),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "aurora_drift"
-        )
-        drift
-    } else 0f
-    Canvas(modifier) {
-        val strength = AURORA_POWER * if (tokens.isDark) .75f else 1f
-        val w = size.width
-        val h = size.height
-        val pools = listOf(
-            Triple(Offset(w * .05f + 22f * movement, h * .24f - 21f * movement), first, .60f),
-            Triple(Offset(w * .95f - 19f * movement, h * .43f + 24f * movement), second, .52f),
-            Triple(Offset(w * .42f + 10f * movement, h * .81f - 26f * movement), third, .43f)
-        )
-        for ((center, color, opacity) in pools) {
-            val radius = max(w * .90f, h * .29f)
-            drawCircle(
-                brush = Brush.radialGradient(
-                    listOf(color.copy(alpha = strength * opacity), Color.Transparent),
-                    center = center,
-                    radius = radius
-                ),
-                center = center,
-                radius = radius
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                LumiIconInfo(tint = tokens.dim, size = 12.dp)
+                Text(
+                    confidenceLabel,
+                    color = tokens.dim,
+                    fontSize = 10.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }
