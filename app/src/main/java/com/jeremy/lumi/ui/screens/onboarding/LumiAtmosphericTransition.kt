@@ -198,7 +198,8 @@ fun LumiAtmosphericTransition(
     onCurtainOpaque: () -> Unit = {},
     homeReady: Boolean = true,
     onBrandArrived: () -> Unit = {},
-    forceSkip: Boolean = false
+    forceSkip: Boolean = false,
+    targetBrandRequired: Boolean = true
 ) {
     // One clock, with an explicit hold while the REAL Home becomes ready.
     // The ceremony never starts a second Home or hides missing data behind a delay.
@@ -238,7 +239,8 @@ fun LumiAtmosphericTransition(
     val revealStart = 5450f
     val brandTransfer = 5490f
     val duration = 6500f
-    val destinationReady = homeReady && targetBrandBounds != null
+    // Observer/support Home has no top-bar brand to measure.
+    val destinationReady = homeReady && (!targetBrandRequired || targetBrandBounds != null || !revealUnderlyingHome)
 
     fun finishOnce() {
         if (!completed) {
