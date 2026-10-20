@@ -1,5 +1,6 @@
 package com.jeremy.lumi.ui.components
 
+import android.animation.ValueAnimator
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -43,6 +45,7 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -50,6 +53,7 @@ import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -151,31 +155,23 @@ fun LumiBrandLockup(
     textColor: Color = LumiThemeTokens.current.text,
     starColor: Color = LumiThemeTokens.current.accent,
     animated: Boolean = true,
-    ceremonial: Boolean = false
+    ceremonial: Boolean = false,
+    flowerVisibility: Float = 1f
 ) {
-    val infiniteTransition = if (animated) rememberInfiniteTransition(label = "brand_lockup_twinkle") else null
-    val starTwinkle = infiniteTransition?.animateFloat(
-        initialValue = 0f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(
-            animation = keyframes {
-                durationMillis = 6200
-                0f at 0 using FastOutSlowInEasing
-                1f at 900 using FastOutSlowInEasing
-                0f at 2100
-                0f at 6200
-            },
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "star_twinkle"
-    )
-
     Row(
         modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        LumiBrandFlower(size = flowerSize, animated = animated, ceremonial = ceremonial)
+        val flowerAmount = flowerVisibility.coerceIn(0f, 1f)
+        if (flowerAmount > 0f) {
+            Box(Modifier.width(((flowerSize + 8) * flowerAmount).dp)) {
+                LumiBrandFlower(
+                    modifier = Modifier.requiredSize(flowerSize.dp)
+                        .graphicsLayer { alpha = flowerAmount },
+                    size = flowerSize, animated = animated, ceremonial = ceremonial
+                )
+            }
+        }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = "lumi",
@@ -185,26 +181,66 @@ fun LumiBrandLockup(
                 color = textColor
             )
             Spacer(modifier = Modifier.width(3.dp))
-            Text(
-                text = "✦",
-                fontSize = starSize,
-                color = starColor,
-                modifier = Modifier
-                    .graphicsLayer {
-                        val twinkle = starTwinkle?.value ?: 0f
-                        scaleX = 1f + twinkle * 0.16f
-                        scaleY = scaleX
-                        alpha = if (animated) 0.72f + twinkle * 0.28f else 1f
-                        rotationZ = twinkle * 12f
-                    }
+            LumiBrandStar(starSize, starColor, animated)
+        }
+    }
+}
+
+/** A brief luminous turn followed by rest; quarter-turn symmetry makes the loop seamless. */
+@Composable
+private fun LumiBrandStar(starSize: TextUnit, color: Color, animated: Boolean) {
+    val transition = if (animated && ValueAnimator.areAnimatorsEnabled()) {
+        rememberInfiniteTransition(label = "brand_star_light")
+    } else null
+    val turn = transition?.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(keyframes {
+            durationMillis = 7200
+            0f at 0
+            0f at 1600 using FastOutSlowInEasing
+            1f at 3400
+            1f at 7200
+        }),
+        label = "brand_star_turn"
+    )
+    val star = remember {
+        Path().apply {
+            moveTo(0f, -1f)
+            cubicTo(.14f, -.14f, .14f, -.14f, 1f, 0f)
+            cubicTo(.14f, .14f, .14f, .14f, 0f, 1f)
+            cubicTo(-.14f, .14f, -.14f, .14f, -1f, 0f)
+            cubicTo(-.14f, -.14f, -.14f, -.14f, 0f, -1f)
+            close()
+        }
+    }
+    val diameter = with(LocalDensity.current) { starSize.toDp() }
+    Canvas(Modifier.size(diameter)) {
+        val progress = turn?.value ?: 0f
+        val glint = sin(progress * PI.toFloat()).coerceIn(0f, 1f)
+        val radius = size.minDimension * (.48f + .08f * glint)
+        if (glint > .001f) {
+            drawCircle(
+                brush = Brush.radialGradient(
+                    0f to color.copy(alpha = .32f * glint),
+                    1f to color.copy(alpha = 0f),
+                    center = center, radius = size.minDimension
+                ),
+                center = center, radius = size.minDimension
             )
+        }
+        withTransform({
+            translate(center.x, center.y)
+            rotate(90f * progress, pivot = Offset.Zero)
+            scale(radius, radius, pivot = Offset.Zero)
+        }) {
+            drawPath(star, lerp(color, Color.White, .30f * glint).copy(alpha = .85f + .15f * glint))
         }
     }
 }
 
 /**
  * Cabecera superior unificada de Lumi:
- * - Brand: [LumiBrandLockup] con flor animada y destello vivo
+ * - Brand: [LumiBrandLockup] con texto y destello vivo, sin flor en Home
  * - Acciones: Selector de tema (paleta) + Notificaciones con badge dot
  */
 @Composable
@@ -245,6 +281,7 @@ fun LumiTopBar(
             fontSize = 24.sp,
             starSize = 11.sp,
             letterSpacing = (-1.5).sp,
+            flowerVisibility = 0f,
             animated = true
         )
 

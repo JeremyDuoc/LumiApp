@@ -1,5 +1,6 @@
 package com.jeremy.lumi.ui.components
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -54,14 +55,13 @@ fun AmbientBackgroundLayer(
     val isDark           = LocalIsDarkTheme.current
     val brandBgGradient  = LocalBrandBackgroundGradient.current
 
-    // El CSS de Lumi dibuja .ambient CON INDEPENDENCIA de Celestial/Flat.
-    // Antes, FLAT sin gradiente de marca no dibujaba nada (caso NOIR).
+    // Home owns one restrained atmosphere; stacking brand/legacy glows washes out Noir.
     Box(modifier = modifier) {
-        if (ambient == BackgroundAmbient.FLAT && brandBgGradient != null) {
+        if (screenType != AmbientScreen.HOME && ambient == BackgroundAmbient.FLAT && brandBgGradient != null) {
             Box(Modifier.fillMaxSize().background(brandBgGradient))
         }
         if (screenType == AmbientScreen.HOME) {
-            LumiHomeCssAmbient(Modifier.fillMaxSize())
+            LumiHomeMistAmbient(accentColor, Modifier.fillMaxSize())
         }
         if (ambient == BackgroundAmbient.CELESTIAL) {
             CelestialLayer(
@@ -75,15 +75,18 @@ fun AmbientBackgroundLayer(
 }
 
 /**
- * Calco de la capa .ambient del Home HTML v12 (no la escena de estrellas):
- *  ellipse 70% 28% at 23% 14%, var(--glow), transparent;
- *  ellipse 95% 28% at 92% 53%, color-mix(accent 9%,transparent), transparent;
- *  opacity: .65.
- * En Compose cada óvalo conserva su radio XY sin añadir una "nebulosa" artificial.
+ * HTML v3: bruma al 52 %, atenuada en oscuro. Los pools ya incluyen la
+ * transparencia de color-mix y la de su contenedor; no son luces aditivas.
+ * El halo de la célula se dibuja aparte, dentro de LumiLivingCore.
  */
 @Composable
-private fun LumiHomeCssAmbient(modifier: Modifier = Modifier) {
+private fun LumiHomeMistAmbient(accentColor: Color?, modifier: Modifier = Modifier) {
     val tokens = LumiThemeTokens.current
+    val accent by animateColorAsState(
+        targetValue = accentColor ?: tokens.accent,
+        animationSpec = tween(1700),
+        label = "home_mist_tint"
+    )
     Canvas(modifier) {
         fun ellipseGlow(cx: Float, cy: Float, rx: Float, ry: Float, color: Color) {
             if (rx <= 0f || ry <= 0f || color.alpha <= 0f) return
@@ -94,7 +97,8 @@ private fun LumiHomeCssAmbient(modifier: Modifier = Modifier) {
                 drawCircle(
                     brush = Brush.radialGradient(
                         0f to color,
-                        1f to Color.Transparent,
+                        .4f to color.copy(alpha = color.alpha * .42f),
+                        1f to color.copy(alpha = 0f),
                         center = center,
                         radius = radius
                     ),
@@ -103,10 +107,21 @@ private fun LumiHomeCssAmbient(modifier: Modifier = Modifier) {
                 )
             }
         }
-        ellipseGlow(.23f, .14f, .70f, .28f,
-            tokens.glow.copy(alpha = tokens.glow.alpha * .65f))
-        ellipseGlow(.92f, .53f, .95f, .28f,
-            tokens.accent.copy(alpha = .09f * .65f))
+        // Light surfaces need less page-wide tint so the local cell aura stays readable.
+        val power = if (tokens.isDark) .52f else .32f
+        val poolPower = power * if (tokens.isDark) .75f else 1f
+        // The theme supplies the hue; its dark base remains visible around the core.
+        ellipseGlow(.52f, .31f, .72f, .42f,
+            tokens.glow.copy(alpha = .25f * power * .85f))
+        ellipseGlow(-.09f, .84f, .64f, .34f,
+            tokens.rose.copy(alpha = .11f * power * .85f))
+        // Broad, quiet pools approximate the blurred CSS ellipses without hot spots.
+        ellipseGlow(.20f, .36f, .58f, .30f,
+            accent.copy(alpha = .60f * .30f * poolPower))
+        ellipseGlow(.88f, .41f, .56f, .29f,
+            tokens.rose.copy(alpha = .68f * .18f * poolPower))
+        ellipseGlow(.62f, 1.04f, .60f, .30f,
+            tokens.mint.copy(alpha = .65f * .16f * poolPower))
     }
 }
 

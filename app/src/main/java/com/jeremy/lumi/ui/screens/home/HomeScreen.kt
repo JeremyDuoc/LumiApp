@@ -182,7 +182,7 @@ fun HomeScreen(
             var radialOpen by remember { mutableStateOf(false) }
 
             val blurEased = remember { CubicBezierEasing(0.16f, 1f, 0.3f, 1f) }
-            val targetBlur = if (radialOpen) (if (isDark) 12.dp else 5.dp) else 0.dp
+            val targetBlur = if (radialOpen) (if (isDark) 8.dp else 5.dp) else 0.dp
             val blurRadius by animateDpAsState(
                 targetValue = targetBlur,
                 animationSpec = if (radialOpen) {
@@ -220,10 +220,6 @@ fun HomeScreen(
                         screenType           = AmbientScreen.HOME,
                         accentColor          = currentAuraColor,
                         scrollOffsetProvider = { homeScrollState.value.toFloat() }
-                    )
-                    // Capa Aurora del prototipo aprobado: 30%, bajo el contenido.
-                    LumiLivingAuroraBackdrop(
-                        currentPhase = uiState.currentPhase ?: CyclePhase.UNKNOWN
                     )
 
         Scaffold(
@@ -312,7 +308,7 @@ fun HomeScreen(
                         }
                     }
 
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(8.dp))
 
                     // 2. NÚCLEO VIVO DE LUMI + STATUS DE PREDICCIÓN (Hero central)
                     FadeSlideIn(screenReady, STAGGER_MS) {
@@ -344,10 +340,13 @@ fun HomeScreen(
                         )
                     }
 
-                    Spacer(Modifier.height(20.dp))
-
-                    // 3. TIMELINE SEMANAL (Minicalendario desplazado abajo del aro central)
+                    // 3. Separador fino y semana, como en el prototipo.
                     if (uiState.weekDays.isNotEmpty()) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                            color = tokens.line.copy(alpha = .8f),
+                            thickness = .5.dp
+                        )
                         FadeSlideIn(screenReady, STAGGER_MS * 2) {
                             LumiWeekTimeline(
                                 weekDays = uiState.weekDays,
@@ -395,13 +394,13 @@ fun HomeScreen(
         if (scrimAlpha > 0.001f) {
             val scrimColors = if (isDark) {
                 listOf(
-                    Color(0xFF09070E).copy(alpha = 0.40f),
-                    Color(0xFF09070E).copy(alpha = 0.58f)
+                    tokens.bg.copy(alpha = 0.18f),
+                    tokens.bg.copy(alpha = 0.32f)
                 )
             } else {
                 listOf(
-                    Color(0xFF1E1428).copy(alpha = 0.05f),
-                    Color(0xFF1E1428).copy(alpha = 0.10f)
+                    tokens.bg.copy(alpha = 0.16f),
+                    tokens.bg.copy(alpha = 0.28f)
                 )
             }
 
