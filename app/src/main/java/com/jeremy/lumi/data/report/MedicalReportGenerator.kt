@@ -146,7 +146,7 @@ class MedicalReportGenerator @Inject constructor() {
             textSize = 7.5f
             textAlign = Paint.Align.RIGHT
         }
-        val fmtDate = data.generatedAt.format(DateTimeFormatter.ofPattern("d 'de' MMMM, yyyy", Locale("es")))
+        val fmtDate = data.generatedAt.format(DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.LONG).withLocale(Locale.getDefault()))
         c.drawText("Emisión: $fmtDate", PAGE_W - MARGIN, 46f, dateP)
 
         y = headerH + 14f
@@ -210,7 +210,7 @@ class MedicalReportGenerator @Inject constructor() {
         }
         c.drawText("F.U.M. (ÚLTIMO PERIODO)", rightX + (rightW / 2f), y + 20f, fumTitleP)
 
-        val fumDateStr = data.lastMenstrualPeriodDate?.format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale("es"))) ?: "No registrada"
+        val fumDateStr = data.lastMenstrualPeriodDate?.format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault())) ?: "No registrada"
         val fumDateP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = COLOR_PRIMARY
             textSize = 14f
@@ -385,7 +385,7 @@ class MedicalReportGenerator @Inject constructor() {
 
         var rowY = tableY + 15f
         val tbP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_DARK; textSize = 7.5f }
-        val dateFmt = DateTimeFormatter.ofPattern("d MMM yyyy", Locale("es"))
+        val dateFmt = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault())
 
         if (cycles.isEmpty()) {
             c.drawText("No hay ciclos cerrados registrados aún en la base de datos.", MARGIN + 10f, rowY + 13f, tbP)

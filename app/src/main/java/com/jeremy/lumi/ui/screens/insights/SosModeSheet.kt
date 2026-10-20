@@ -74,7 +74,7 @@ fun SosModeSheet(
     val maxPain = recentCycles.maxOfOrNull { it.avgPainLevel } ?: 0f
     val avgPain = if (recentCycles.isNotEmpty()) recentCycles.map { it.avgPainLevel }.average().toFloat() else 0f
 
-    val lmpFormatted = lmpDate?.format(DateTimeFormatter.ofPattern("d 'de' MMMM, yyyy", Locale("es")))
+    val lmpFormatted = lmpDate?.format(DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.LONG).withLocale(java.util.Locale.getDefault()))
         ?: stringResource(R.string.sos_lmp_not_registered)
     val daysElapsedText = daysSinceLmp?.let {
         stringResource(R.string.sos_days_elapsed, it, it)

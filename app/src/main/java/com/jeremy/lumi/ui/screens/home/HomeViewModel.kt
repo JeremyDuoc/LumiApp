@@ -403,7 +403,7 @@ class HomeViewModel @Inject constructor(
                             date = date,
                             dayOfMonth = date.dayOfMonth,
                             weekdayLabel = date.dayOfWeek
-                                .getDisplayName(TextStyle.SHORT, Locale("es"))
+                                .getDisplayName(TextStyle.SHORT, Locale.getDefault())
                                 .replaceFirstChar { it.uppercase() },
                             phase = phase,
                             isToday = isToday,
@@ -535,11 +535,19 @@ class HomeViewModel @Inject constructor(
 
             } else {
                 com.jeremy.lumi.ui.widget.WidgetRefreshScheduler.requestNow(context)
+                cachedStartDate = null
+                cachedCycleLen = 28
+                cachedPeriodLen = 5
+                cachedClosedCycles = emptyList()
+                baseTodayPrediction = null
                 _uiState.update {
                     it.copy(
                         isLoading = false,
+                        activeCycle = null,
                         currentPhase = CyclePhase.UNKNOWN,
+                        currentDayOfCycle = 0,
                         prediction = null,
+                        predictionFactors = null,
                         weekDays = emptyList(),
                         delayState = DelayState.ON_TIME,
                         delayDays = 0,

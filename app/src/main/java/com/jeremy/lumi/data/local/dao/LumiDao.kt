@@ -34,7 +34,13 @@ interface LumiDao {
     suspend fun deleteCycle(cycle: CycleEntity)
 
     @Query("DELETE FROM cycles WHERE id = :cycleId")
-    suspend fun deleteCycleById(cycleId: Int)
+    suspend fun deleteCycleRowById(cycleId: Int)
+
+    @Transaction
+    suspend fun deleteCycleById(cycleId: Int) {
+        reassignDailyLogs(sourceCycleId = cycleId, targetCycleId = 0)
+        deleteCycleRowById(cycleId)
+    }
 
     @Query("SELECT * FROM cycles WHERE id = :cycleId LIMIT 1")
     suspend fun getCycleById(cycleId: Int): CycleEntity?

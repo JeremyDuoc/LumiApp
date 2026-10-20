@@ -192,11 +192,12 @@ private fun CycleHistoryCard(
     val startStr = startDate.format(dateFormatter)
     val endStr = endDate?.format(dateFormatter) ?: stringResource(R.string.cycle_history_active_today)
 
+    val today = com.jeremy.lumi.utils.LumiClock.today()
     val durationDays = if (endDate != null) {
         ChronoUnit.DAYS.between(startDate, endDate).toInt() + 1
     } else {
-        ChronoUnit.DAYS.between(startDate, LocalDate.now()).toInt() + 1
-    }
+        ChronoUnit.DAYS.between(startDate, today).toInt() + 1
+    }.coerceAtLeast(1)
 
     Card(
         modifier = Modifier.fillMaxWidth(),

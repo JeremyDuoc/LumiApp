@@ -41,8 +41,8 @@ class GraficasViewModel @Inject constructor(
     val estadoUi: StateFlow<EstadoGraficasUi> = _estadoUi.asStateFlow()
 
     private val zona         = ZoneOffset.UTC
-    private val formatoCorto = DateTimeFormatter.ofPattern("d MMM", java.util.Locale("es"))
-    private val formatoDia   = DateTimeFormatter.ofPattern("EEE d", java.util.Locale("es"))
+    private val formatoCorto = DateTimeFormatter.ofPattern("d MMM", java.util.Locale.getDefault())
+    private val formatoDia   = DateTimeFormatter.ofPattern("EEE d", java.util.Locale.getDefault())
 
     init {
         viewModelScope.launch {
@@ -134,7 +134,7 @@ class GraficasViewModel @Inject constructor(
                 val diaActual = cicloActivo?.let { ciclo ->
                     ChronoUnit.DAYS.between(
                         Instant.ofEpochMilli(ciclo.startDate).atZone(zona).toLocalDate(),
-                        Instant.now().atZone(zona).toLocalDate()
+                        com.jeremy.lumi.utils.LumiClock.today()
                     ).toInt() + 1
                 } ?: 0
 
