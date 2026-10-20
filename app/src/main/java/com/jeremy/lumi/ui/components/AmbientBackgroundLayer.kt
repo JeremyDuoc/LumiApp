@@ -48,6 +48,7 @@ fun AmbientBackgroundLayer(
     screenType: AmbientScreen = AmbientScreen.HOME,
     accentColor: Color? = null,
     scrollOffsetProvider: () -> Float = { 0f },
+    homeGlowStrength: Float = 1f,
     modifier: Modifier = Modifier.fillMaxSize()
 ) {
     val ambient          = LocalBackgroundAmbient.current
@@ -61,7 +62,7 @@ fun AmbientBackgroundLayer(
             Box(Modifier.fillMaxSize().background(brandBgGradient))
         }
         if (screenType == AmbientScreen.HOME) {
-            LumiHomeCssAmbient(Modifier.fillMaxSize())
+            LumiHomeCssAmbient(Modifier.fillMaxSize(),strength = homeGlowStrength)
         }
         if (ambient == BackgroundAmbient.CELESTIAL) {
             CelestialLayer(
@@ -82,7 +83,7 @@ fun AmbientBackgroundLayer(
  * En Compose cada óvalo conserva su radio XY sin añadir una "nebulosa" artificial.
  */
 @Composable
-private fun LumiHomeCssAmbient(modifier: Modifier = Modifier) {
+private fun LumiHomeCssAmbient(modifier: Modifier = Modifier,strength:Float = 1f) {
     val tokens = LumiThemeTokens.current
     Canvas(modifier) {
         fun ellipseGlow(cx: Float, cy: Float, rx: Float, ry: Float, color: Color) {
@@ -104,9 +105,9 @@ private fun LumiHomeCssAmbient(modifier: Modifier = Modifier) {
             }
         }
         ellipseGlow(.23f, .14f, .70f, .28f,
-            tokens.glow.copy(alpha = tokens.glow.alpha * .65f))
+            tokens.glow.copy(alpha = tokens.glow.alpha * .65f * strength.coerceIn(0f,1f)))
         ellipseGlow(.92f, .53f, .95f, .28f,
-            tokens.accent.copy(alpha = .09f * .65f))
+            tokens.accent.copy(alpha = .09f * .65f * strength.coerceIn(0f,1f)))
     }
 }
 
