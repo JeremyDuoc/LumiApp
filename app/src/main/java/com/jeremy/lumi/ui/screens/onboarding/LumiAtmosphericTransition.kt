@@ -331,7 +331,12 @@ fun LumiAtmosphericTransition(
     val centerScale = if (clockMs < flightStart) {
         lerp(1f, 1.06f, centerEase)
     } else lerp(1.06f, 1f, travelEase)
-    val travelingAlpha = keyframes(
+    // Observer/support routes have no measured Home lockup to receive the wordmark.
+    val brandlessDestination = revealUnderlyingHome && !targetBrandRequired
+    val travelingAlpha = if (brandlessDestination) keyframes(
+        clockMs, 0f to 1f, flightStart to 1f,
+        flightStart + 780f to 0f, duration to 0f
+    ) else keyframes(
         clockMs, 0f to 1f, flightEnd - 90f to 1f,
         brandArrive + 25f to 0f, duration to 0f
     )
@@ -433,12 +438,12 @@ fun LumiAtmosphericTransition(
         val wordmarkX = when {
             clockMs < centerEnd -> lerp(wordmarkStart, wordmarkCenter, centerEase)
             clockMs < flightStart -> wordmarkCenter
-            else -> lerp(wordmarkCenter, destination?.left ?: 24f * px, travelEase)
+            else -> if (brandlessDestination) wordmarkCenter else lerp(wordmarkCenter, destination?.left ?: 24f * px, travelEase)
         }
         val wordmarkY = when {
             clockMs < centerEnd -> lerp(startTop, centeredTop, centerEase)
             clockMs < flightStart -> centeredTop
-            else -> lerp(centeredTop, destination?.top ?: 50f * px, travelEase)
+            else -> if (brandlessDestination) centeredTop else lerp(centeredTop, destination?.top ?: 50f * px, travelEase)
         }
 
         // Flower has its OWN position/opacity; fading it never squeezes the wordmark.
