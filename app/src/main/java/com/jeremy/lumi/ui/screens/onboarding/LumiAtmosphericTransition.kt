@@ -431,6 +431,7 @@ fun LumiAtmosphericTransition(
                 starSize = 16.sp,
                 letterSpacing = (-2.8).sp,
                 ceremonial = true,
+                flowerVisibility = 1f - outroEased,
                 textColor = tokens.text,
                 starColor = tokens.accent,
                 animated = true
