@@ -69,14 +69,6 @@ import kotlin.math.sin
  * Sin ese contenedor la transición termina limpiamente en el fondo de Lumi,
  * pero la navegación final sigue siendo responsabilidad de onFinished.
  */
-private val ceremonyTexts = listOf(
-    R.string.atmospheric_title_1 to R.string.atmospheric_sub_1,
-    R.string.atmospheric_title_2 to R.string.atmospheric_sub_2,
-    R.string.atmospheric_title_3 to R.string.atmospheric_sub_3,
-    R.string.atmospheric_title_4 to R.string.atmospheric_sub_4,
-    R.string.atmospheric_title_5 to R.string.atmospheric_sub_5
-)
-private val messageStarts = listOf(1300f, 3450f, 5550f, 7780f, 9770f)
 private val enterCurve = CubicBezierEasing(.18f, 1f, .3f, 1f)
 private val firstFlightCurve = CubicBezierEasing(.16f, .89f, .24f, 1f)
 private val lastFlightCurve = CubicBezierEasing(.17f, .79f, .21f, 1f)
@@ -184,6 +176,13 @@ private fun CssAuraLayer(
     }
 }
 
+/**
+ * Six-to-seven second first-run welcome. The single frame-clock waits at a
+ * contemplative phase for real Home data and a measured destination.
+ * No duplicate Home, no artificial loading timer, no extra network requests.
+ */
+private enum class HandoffPhase { COVER, WELCOME, FLIGHT, REVEAL, FINISHED }
+
 @Composable
 fun LumiAtmosphericTransition(
     onFinished: () -> Unit,
@@ -194,320 +193,317 @@ fun LumiAtmosphericTransition(
     onRevealStart: () -> Unit = {},
     homeRevealContent: (@Composable () -> Unit)? = null,
     revealUnderlyingHome: Boolean = false,
-    onCurtainOpaque: () -> Unit = {}
+    onCurtainOpaque: () -> Unit = {},
+    homeReady: Boolean = true,
+    targetBrandRequired: Boolean = true,
+    onBrandArrived: () -> Unit = {},
+    forceSkip: Boolean = false
 ) {
     val tokens = LumiOnboardingThemeTokens.current
+    val brandColors = com.jeremy.lumi.ui.theme.LumiThemeTokens.current
     val density = LocalDensity.current
-    val latestFinished by rememberUpdatedState(onFinished)
-    val latestRevealStart by rememberUpdatedState(onRevealStart)
-    val latestCurtainOpaque by rememberUpdatedState(onCurtainOpaque)
-    var curtainNotified by remember { mutableStateOf(false) }
-    var elapsedMs by remember { mutableFloatStateOf(0f) }
-    var completeRequested by remember { mutableStateOf(false) }
-    var revealNotified by remember { mutableStateOf(false) }
-    var layerOrigin by remember { mutableStateOf(Offset.Zero) }
-    val duration = 11520f
-    val centerEnd = 900f
-    val flightStart = 10760f
-    val flightEnd = 11350f
-    val revealStart = 10400f
-    val opaqueAt = 1350f // El velo ya alcanzó el 100%; cargar Home detrás.
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val durationScale = remember(context) {
+        android.provider.Settings.Global.getFloat(
+            context.contentResolver,
+            android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f
+        ).coerceAtLeast(0f)
+    }
+    val latestFinish by rememberUpdatedState(onFinished)
+    val latestReveal by rememberUpdatedState(onRevealStart)
+    val latestCover by rememberUpdatedState(onCurtainOpaque)
+    val latestBrand by rememberUpdatedState(onBrandArrived)
+    val destinationReady by rememberUpdatedState(
+        homeReady && (!targetBrandRequired || targetBrandBounds != null || !revealUnderlyingHome)
+    )
+
+    var clockMs by remember { mutableFloatStateOf(0f) }
+    var done by remember { mutableStateOf(false) }
+    var coverSent by remember { mutableStateOf(false) }
+    var revealSent by remember { mutableStateOf(false) }
+    var brandSent by remember { mutableStateOf(false) }
+    var skipRequested by remember { mutableStateOf(false) }
+    var overlayOrigin by remember { mutableStateOf(Offset.Zero) }
+
+    val coverEnd = 460f
+    val centerStart = 300f
+    val centerEnd = 1460f
+    val welcomeIn = 1200f
+    val welcomeSteady = 1670f
+    val holdAt = 3750f
+    val welcomeOut = 3930f
+    val welcomeGone = 4410f
+    val flightStart = 4380f
+    val flightEnd = 5580f
+    val brandArrive = 5610f
+    val revealStart = 5650f
+    val duration = 6800f
 
     fun finishOnce() {
-        if (!completeRequested) {
-            completeRequested = true
-            latestFinished()
+        if (!done) {
+            done = true
+            latestFinish()
+        }
+    }
+    fun notifyCover() {
+        if (!coverSent) {
+            coverSent = true
+            latestCover()
+        }
+    }
+    fun notifyReveal() {
+        if (!revealSent) {
+            revealSent = true
+            latestReveal()
+        }
+    }
+    fun notifyBrand() {
+        if (!brandSent) {
+            brandSent = true
+            latestBrand()
         }
     }
 
-    LaunchedEffect(reducedMotion) {
-        if (reducedMotion) {
+    val fastExit = forceSkip || skipRequested
+    LaunchedEffect(fastExit, reducedMotion, durationScale) {
+        if (fastExit || reducedMotion || durationScale == 0f) {
+            notifyCover()
+            notifyReveal()
+            notifyBrand()
+            // Real route is composed before removing the outside-NavHost overlay.
+            if (fastExit && durationScale > 0f && !reducedMotion) {
+                kotlinx.coroutines.delay((180f * durationScale).toLong())
+            } else withFrameNanos { }
             finishOnce()
             return@LaunchedEffect
         }
-        // Ticker sincronizado al VSYNC: el timeline CSS (11520ms) es la única fuente.
-        val initialNs = withFrameNanos { it }
-        while (isActive && !completeRequested) {
-            val nowNs = withFrameNanos { it }
-            val t = ((nowNs - initialNs) / 1_000_000f).coerceAtMost(duration + 36f)
-            elapsedMs = t
-            if (t >= opaqueAt && !curtainNotified) {
-                curtainNotified = true
-                latestCurtainOpaque()
-            }
-            if (t >= revealStart && !revealNotified) {
-                revealNotified = true
-                latestRevealStart()
-            }
-            if (t >= duration + 35f) finishOnce()
+
+        var lastNs = withFrameNanos { it }
+        while (isActive && !done) {
+            val frameNs = withFrameNanos { it }
+            val delta = ((frameNs - lastNs) / 1_000_000f)
+                .coerceIn(0f, 55f) / durationScale
+            lastNs = frameNs
+            // This pause has no arbitrary timeout: the Home ViewModel must be ready.
+            // The user can still choose "Entrar ahora" while waiting.
+            val clockLimit = if (destinationReady) duration + 40f else holdAt
+            clockMs = (clockMs + delta).coerceAtMost(clockLimit)
+            if (clockMs >= coverEnd) notifyCover()
+            if (clockMs >= brandArrive) notifyBrand()
+            if (clockMs >= revealStart) notifyReveal()
+            if (clockMs >= duration + 25f) finishOnce()
         }
     }
-    if (reducedMotion) return
 
-    val progress = (elapsedMs / duration).coerceIn(0f, 1f)
-    val veilAlpha = keyframes(progress, 0f to 0f, .11f to 1f, .84f to 1f, .93f to .98f, 1f to 0f)
-    val fieldAlpha = keyframes(progress, 0f to 0f, .13f to .78f, .37f to 1f, .66f to .97f, .84f to .85f, 1f to 0f)
-    val fieldScale = keyframes(progress, 0f to .80f, .13f to .95f, .37f to 1.07f, .66f to 1.02f, .84f to 1.12f, 1f to 1.24f)
-    val messageIndex = messageStarts.indexOfLast { elapsedMs >= it }
-    val exitMessageAlpha = (1f - (elapsedMs - revealStart).coerceIn(0f, 440f) / 440f)
-    val homeAlpha = if (elapsedMs < revealStart) 0f else
-        curve(elapsedMs - revealStart, 850f, enterCurve)
-    // Bajo el overlay ya existe MainScreen; descubrirlo sin volver a crearlo.
-    val curtainAlpha = if (revealUnderlyingHome) {
-        veilAlpha * (1f - homeAlpha)
-    } else veilAlpha
+    if (reducedMotion || durationScale == 0f) return
+
+    val quickExitAlpha by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (fastExit) 0f else 1f,
+        animationSpec = tween(durationMillis = (180f * durationScale).roundToInt().coerceAtLeast(1)),
+        label = "ceremony_quick_exit"
+    )
+    val phase = when {
+        clockMs < coverEnd -> HandoffPhase.COVER
+        clockMs < flightStart -> HandoffPhase.WELCOME
+        clockMs < revealStart -> HandoffPhase.FLIGHT
+        clockMs < duration -> HandoffPhase.REVEAL
+        else -> HandoffPhase.FINISHED
+    }
+
+    val veilAlpha = if (fastExit) 1f else keyframes(
+        clockMs,
+        0f to 0f, coverEnd to 1f, revealStart to 1f,
+        6300f to 0f, duration to 0f
+    )
+    val homeAlpha = curve(clockMs - revealStart, 850f, enterCurve)
+    val lightAlpha = keyframes(
+        clockMs,
+        0f to 0f, 700f to .4f, 2100f to .6f,
+        3900f to .52f, 5500f to .16f, 6300f to 0f
+    )
+    val welcomeAlpha = keyframes(
+        clockMs,
+        0f to 0f, welcomeIn to 0f,
+        welcomeSteady to 1f, welcomeOut to 1f, welcomeGone to 0f
+    )
+    val centerEase = curve(clockMs - centerStart, centerEnd - centerStart, firstFlightCurve)
+    val travelEase = curve(clockMs - flightStart, flightEnd - flightStart, lastFlightCurve)
+    val centerScale = if (clockMs < flightStart) {
+        lerp(1f, 1.06f, centerEase)
+    } else lerp(1.06f, 1f, travelEase)
+    val travelingAlpha = keyframes(
+        clockMs, 0f to 1f, flightEnd - 90f to 1f,
+        brandArrive + 25f to 0f, duration to 0f
+    )
+    val flowerAlpha = 1f - curve(clockMs - 4680f, 710f, enterCurve)
 
     BoxWithConstraints(
-        modifier = modifier
-            .fillMaxSize()
-            .onGloballyPositioned { layerOrigin = it.positionInRoot() }
+        modifier = modifier.fillMaxSize()
+            .graphicsLayer { alpha = quickExitAlpha }
+            .onGloballyPositioned { overlayOrigin = it.positionInRoot() }
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null, onClick = {}
+            )
     ) {
-        val widthPx = constraints.maxWidth.toFloat()
-        val heightPx = constraints.maxHeight.toFloat()
-        val dp = density.density
+        val w = constraints.maxWidth.toFloat()
+        val h = constraints.maxHeight.toFloat()
+        val px = density.density
 
-        // El fondo previo NO debe desaparecer al instante: HTML .handoff-veil.
         Box(
             Modifier.fillMaxSize()
-                .graphicsLayer { alpha = curtainAlpha }
-                .background(Brush.verticalGradient(listOf(
-                    tokens.bg,
-                    lerpColor(tokens.bg, tokens.panel, .64f),
-                    tokens.bg
-                )))
-                // Mientras transcurre la ceremonia, no permitir pulsar el
-                // botón de Guardar que permanece montado detrás del velo.
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = {}
+                .graphicsLayer {
+                    alpha = if (revealUnderlyingHome) veilAlpha * (1f - homeAlpha) else veilAlpha
+                }
+                .background(
+                    Brush.verticalGradient(listOf(
+                        tokens.bg, lerpColor(tokens.bg, tokens.panel, .35f), tokens.bg
+                    ))
                 )
         )
-
-        // Destapar el Home real desde 10.400 ms, detrás del logo viajero.
-        // El compositor padre debe proporcionar la pantalla REAL y ocultar su marca
-        // durante el vuelo para que no aparezcan dos logos.
-        if (!revealUnderlyingHome && homeRevealContent != null && elapsedMs >= revealStart) {
-            Box(
-                Modifier.fillMaxSize().graphicsLayer {
-                    alpha = homeAlpha
-                    translationY = 10f * dp * (1f - homeAlpha)
-                }.blur(((1f - homeAlpha) * 3f).dp)
-            ) { homeRevealContent() }
+        // Normally unused: the root graph already owns the only Home.
+        if (!revealUnderlyingHome && homeRevealContent != null && phase == HandoffPhase.REVEAL) {
+            Box(Modifier.fillMaxSize().graphicsLayer { alpha = homeAlpha }) {
+                homeRevealContent()
+            }
         }
 
-        // ONE transformed parent matches `.handoff-glow`:
-        // opacity/scale apply to STATIC gradient washes, moving orbs and ring.
-        // V16 scaled/blended separate canvases inconsistently, generating a
-        // visually exaggerated drop of one colored cloud in the emulator.
-        if (fieldAlpha > 0f) {
-            Box(
-                Modifier.fillMaxSize()
-                    .graphicsLayer {
-                        alpha = fieldAlpha
-                        scaleX = fieldScale
-                        scaleY = fieldScale
-                    }
-                    .clipToBounds()
-            ) {
-                // CSS .handoff-glow::before uses ellipse radii IN PERCENT OF
-                // THE WHOLE VIEWPORT. The old code incorrectly halved them.
-                Canvas(Modifier.fillMaxSize().graphicsLayer {
-                    alpha = if (tokens.isDark) 1f else .28f
-                }) {
-                    fun wash(
-                        centerPoint: Offset,
-                        radiusX: Float,
-                        radiusY: Float,
-                        tint: Color,
-                        transparentAt: Float
-                    ) {
-                        withTransform({ scale(radiusX / radiusY, 1f, centerPoint) }) {
-                            drawCircle(
-                                brush = Brush.radialGradient(
-                                    0f to tint,
-                                    transparentAt to Color.Transparent,
-                                    1f to Color.Transparent,
-                                    center = centerPoint,
-                                    radius = radiusY
-                                ),
-                                center = centerPoint,
-                                radius = radiusY
-                            )
-                        }
-                    }
-                    wash(Offset(widthPx * .32f, heightPx * .37f),
-                        widthPx * .50f, heightPx * .34f, Color(0x2EE865AC), .83f)
-                    wash(Offset(widthPx * .71f, heightPx * .38f),
-                        widthPx * .49f, heightPx * .42f, Color(0x30855CE5), .83f)
-                    wash(Offset(widthPx * .66f, heightPx * .53f),
-                        widthPx * .34f, heightPx * .25f, Color(0x215FC8B0), .88f)
-                    wash(Offset(widthPx * .36f, heightPx * .54f),
-                        widthPx * .36f, heightPx * .31f, Color(0x1FF5A369), .87f)
-                }
-
-                // Separate CSS filter(blur(30px)) on each of four positioned
-                // elements; own-element percentage translation and scale.
-                Box(Modifier.fillMaxSize().graphicsLayer {
-                    alpha = if (tokens.isDark) 1f else .46f
-                }) {
-                    cssAuras.forEach { aura ->
-                        key(aura.id) {
-                            CssAuraLayer(aura, elapsedMs, widthPx, heightPx, dp)
-                        }
-                    }
-                }
-
-                val ringPhase = .5f - .5f * cos(2f * PI.toFloat() * elapsedMs / 5400f)
-                Canvas(Modifier.fillMaxSize().graphicsLayer {
-                    alpha = if (tokens.isDark) 1f else .2f
-                }) {
+        // Quiet organic light. No changes to the permanent approved Home backdrop.
+        if (lightAlpha > 0f) {
+            Box(Modifier.fillMaxSize().graphicsLayer { alpha = lightAlpha }) {
+                Canvas(Modifier.fillMaxSize()) {
+                    val center = Offset(w * .5f, h * .4f)
+                    val radius = 172.dp.toPx()
                     drawCircle(
-                        color = Color(0xFFD7A4DD).copy(alpha = .014f + .042f * ringPhase),
-                        center = Offset(widthPx * .5f, heightPx * .40f),
-                        radius = 130.dp.toPx() * lerp(.85f, 1.22f, ringPhase),
+                        brush = Brush.radialGradient(
+                            0f to tokens.accent.copy(alpha = .17f),
+                            .48f to tokens.accent.copy(alpha = .045f),
+                            1f to Color.Transparent,
+                            center = center, radius = radius
+                        ),
+                        center = center, radius = radius
+                    )
+                    val breath = .5f - .5f * cos(
+                        2f * PI.toFloat() * clockMs / 5200f
+                    )
+                    drawCircle(
+                        color = tokens.accent.copy(alpha = .02f + .035f * breath),
+                        center = center,
+                        radius = 124.dp.toPx() * lerp(.96f, 1.05f, breath),
                         style = Stroke(width = 1.dp.toPx())
                     )
                 }
+                Box(Modifier.fillMaxSize().graphicsLayer {
+                    alpha = if (tokens.isDark) .28f else .13f
+                }) {
+                    cssAuras.forEach { aura ->
+                        key(aura.id) {
+                            CssAuraLayer(aura, clockMs, w, h, px)
+                        }
+                    }
+                }
             }
         }
 
-        // Compartir la misma marca de Step7Summary: tamaño y posición REALES.
-        // HTML usa `source.getBoundingClientRect()` y `target.getBoundingClientRect()`.
-        val measuredSource = sourceBrandBounds?.let {
-            Rect(it.left - layerOrigin.x, it.top - layerOrigin.y,
-                it.right - layerOrigin.x, it.bottom - layerOrigin.y)
+        val source = sourceBrandBounds?.let {
+            Rect(it.left - overlayOrigin.x, it.top - overlayOrigin.y,
+                 it.right - overlayOrigin.x, it.bottom - overlayOrigin.y)
         }
-        val initialWidth = measuredSource?.width?.takeIf { it > 0f } ?: (181f * dp)
-        val initialHeight = measuredSource?.height?.takeIf { it > 0f } ?: (48f * dp)
-        val sourceLeft = measuredSource?.left ?: (widthPx - initialWidth) / 2f
-        val sourceTop = measuredSource?.top ?: (100f * dp)
-        val centeredLeft = (widthPx - initialWidth) / 2f
-        val centeredTop = heightPx * .397f - initialHeight / 2f
-        val target = targetBrandBounds?.let {
-            Rect(it.left - layerOrigin.x, it.top - layerOrigin.y,
-                it.right - layerOrigin.x, it.bottom - layerOrigin.y)
+        val destination = targetBrandBounds?.let {
+            Rect(it.left - overlayOrigin.x, it.top - overlayOrigin.y,
+                 it.right - overlayOrigin.x, it.bottom - overlayOrigin.y)
         }
-        val destinationX = target?.left ?: 24f * dp
-        val destinationY = target?.top ?: 50f * dp
-        val destinationScale = target?.height?.let { it / initialHeight } ?: 0.48f
-        val introEased = curve(elapsedMs, centerEnd, firstFlightCurve)
-        val outroEased = curve(elapsedMs - flightStart, flightEnd - flightStart, lastFlightCurve)
-        val brandX: Float
-        val brandY: Float
-        val brandScale: Float
-        when {
-            elapsedMs < centerEnd -> {
-                brandX = lerp(sourceLeft, centeredLeft, introEased)
-                brandY = lerp(sourceTop, centeredTop, introEased)
-                brandScale = lerp(1f, 1.17f, introEased)
-            }
-            elapsedMs < flightStart -> {
-                brandX = centeredLeft
-                brandY = centeredTop
-                brandScale = 1.17f
-            }
-            else -> {
-                brandX = lerp(centeredLeft, destinationX, outroEased)
-                brandY = lerp(centeredTop, destinationY, outroEased)
-                brandScale = lerp(1.17f, destinationScale, outroEased)
-            }
+        val initialWidth = source?.width?.takeIf { it > 0f } ?: 181f * px
+        val initialHeight = source?.height?.takeIf { it > 0f } ?: 48f * px
+        val centeredLeft = (w - initialWidth * 1.06f) / 2f
+        val centeredTop = h * .39f - initialHeight * 1.06f / 2f
+        val startLeft = source?.left ?: centeredLeft
+        val startTop = source?.top ?: centeredTop
+        val groupX = when {
+            clockMs < centerEnd -> lerp(startLeft, centeredLeft, centerEase)
+            else -> centeredLeft
+        }
+        val groupY = when {
+            clockMs < centerEnd -> lerp(startTop, centeredTop, centerEase)
+            else -> centeredTop
+        }
+
+        val wordmarkStart = startLeft + 54f * px
+        val wordmarkCenter = centeredLeft + 54f * px * 1.06f
+        val wordmarkX = when {
+            clockMs < centerEnd -> lerp(wordmarkStart, wordmarkCenter, centerEase)
+            clockMs < flightStart -> wordmarkCenter
+            else -> lerp(wordmarkCenter, destination?.left ?: 24f * px, travelEase)
+        }
+        val wordmarkY = when {
+            clockMs < centerEnd -> lerp(startTop, centeredTop, centerEase)
+            clockMs < flightStart -> centeredTop
+            else -> lerp(centeredTop, destination?.top ?: 50f * px, travelEase)
+        }
+
+        // Flower has its OWN position/opacity; fading it never squeezes the wordmark.
+        val flowerX = groupX
+        val flowerY = groupY + (initialHeight - 46f * px) * .5f
+        if (flowerAlpha > .001f && !fastExit) {
+            com.jeremy.lumi.ui.components.LumiBrandFlower(
+                modifier = Modifier
+                    .offset { IntOffset(flowerX.roundToInt(), flowerY.roundToInt()) }
+                    .graphicsLayer {
+                        transformOrigin = TransformOrigin(0f, 0f)
+                        scaleX = centerScale
+                        scaleY = centerScale
+                        alpha = flowerAlpha
+                    },
+                size = 46, animated = true, ceremonial = true
+            )
         }
 
         Box(
             modifier = Modifier
+                .offset { IntOffset(wordmarkX.roundToInt(), wordmarkY.roundToInt()) }
                 .graphicsLayer {
                     transformOrigin = TransformOrigin(0f, 0f)
-                    translationX = brandX
-                    translationY = brandY
-                    scaleX = brandScale
-                    scaleY = brandScale
+                    scaleX = centerScale
+                    scaleY = centerScale
+                    alpha = travelingAlpha
                 },
             contentAlignment = Alignment.TopStart
         ) {
             LumiBrandLockup(
-                flowerSize = 46,
-                fontSize = 42.sp,
-                starSize = 16.sp,
-                letterSpacing = (-2.8).sp,
-                ceremonial = true,
-                flowerVisibility = 1f - outroEased,
-                textColor = tokens.text,
-                starColor = tokens.accent,
+                flowerVisibility = 0f,
+                fontSize = lerp(42f, 24f, travelEase).sp,
+                starSize = lerp(16f, 11f, travelEase).sp,
+                letterSpacing = lerp(-2.8f, -1.5f, travelEase).sp,
+                textColor = lerpColor(tokens.text, brandColors.text, travelEase),
+                starColor = lerpColor(tokens.accent, brandColors.accent, travelEase),
                 animated = true
             )
         }
 
-        // HTML showMessage(ix): los 400ms de salida TERMINAN antes de
-        // sustituir el texto. AnimatedContent simultáneo causaba solapamiento.
-        if (messageIndex >= 0 && elapsedMs < revealStart + 440f) {
-            val since = (elapsedMs - messageStarts[messageIndex]).coerceAtLeast(0f)
-            val isOutgoing = messageIndex > 0 && since < 400f
-            val displayedIndex = if (isOutgoing) messageIndex - 1 else messageIndex
-            val textAlpha: Float
-            val textOffsetY: Float
-            if (isOutgoing) {
-                val f = (since / 400f).coerceIn(0f, 1f)
-                textAlpha = 1f - f
-                textOffsetY = -13f * f
-            } else {
-                val enterElapsed = if (messageIndex == 0) since else since - 400f
-                val ease = curve(enterElapsed,
-                    if (messageIndex == 0) 750f else 680f, enterCurve)
-                textAlpha = ease
-                textOffsetY = (if (messageIndex == 0) 13f else 15f) * (1f - ease)
-            }
-            Column(
-                Modifier.fillMaxWidth()
-                    .offset { IntOffset(0, (heightPx * .55f).roundToInt()) }
+        if (welcomeAlpha > 0f && !fastExit) {
+            Text(
+                stringResource(R.string.atmospheric_welcome_single),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                lineHeight = 22.sp,
+                color = tokens.text,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+                    .offset { IntOffset(0, (h * .54f).roundToInt()) }
+                    .padding(horizontal = 28.dp)
                     .graphicsLayer {
-                        alpha = exitMessageAlpha * textAlpha
-                        translationY = textOffsetY * dp
+                        alpha = welcomeAlpha
+                        translationY = (1f - welcomeAlpha) * 10f * px
                     }
-                    .padding(horizontal = 34.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    stringResource(ceremonyTexts[displayedIndex].first),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-.16).sp,
-                    lineHeight = 20.sp,
-                    color = tokens.text,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(Modifier.height(7.dp))
-                Text(
-                    stringResource(ceremonyTexts[displayedIndex].second),
-                    fontSize = 11.5.sp,
-                    color = tokens.muted.copy(alpha = .85f),
-                    lineHeight = 17.sp,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(Modifier.height(20.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                    repeat(3) { dot ->
-                        val wave = sin((elapsedMs / 1650f - dot * .22f / 1.65f) * 2f * PI.toFloat())
-                        val pulse = (.5f + .5f * wave)
-                        Box(
-                            Modifier.size(4.dp)
-                                .graphicsLayer {
-                                    alpha = lerp(.25f, .94f, pulse)
-                                    scaleX = lerp(.85f, 1.24f, pulse)
-                                    scaleY = lerp(.85f, 1.24f, pulse)
-                                }
-                                .background(tokens.accent, CircleShape)
-                        )
-                    }
-                }
-            }
+            )
         }
 
         AnimatedVisibility(
-            visible = elapsedMs >= 850f && elapsedMs < revealStart,
-            enter = fadeIn(tween(350)),
-            exit = fadeOut(tween(200)),
-            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 25.dp, bottom = 53.dp)
+            visible = phase == HandoffPhase.WELCOME,
+            enter = fadeIn(tween(280)),
+            exit = fadeOut(tween(220)),
+            modifier = Modifier.align(Alignment.BottomEnd)
+                .padding(end = 25.dp, bottom = 53.dp)
         ) {
             Box(
                 Modifier.clip(RoundedCornerShape(999.dp))
@@ -516,11 +512,14 @@ fun LumiAtmosphericTransition(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = { finishOnce() }
+                        onClick = { skipRequested = true }
                     )
                     .padding(horizontal = 13.dp, vertical = 10.dp)
             ) {
-                Text(stringResource(R.string.atmospheric_enter_now), fontSize = 11.sp, color = tokens.text)
+                Text(
+                    stringResource(R.string.atmospheric_enter_now),
+                    fontSize = 11.sp, color = tokens.text
+                )
             }
         }
     }
