@@ -9,6 +9,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -165,16 +166,18 @@ fun LumiLivingCore(
 
     // Android 'remove animations' setting: do not animate or simulate a loader.
     val mayAnimate = remember { ValueAnimator.areAnimatorsEnabled() }
-    val transition = rememberInfiniteTransition(label = "lumi_living_core_natural")
-    val motion by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = TWO_PI,
-        animationSpec = infiniteRepeatable(tween(24_000, easing = LinearEasing)),
-        label = "lumi_membrane_24s"
-    )
+    val t = if (mayAnimate) {
+        val transition = rememberInfiniteTransition(label = "lumi_living_core_natural")
+        val motion by transition.animateFloat(
+            initialValue = 0f,
+            targetValue = TWO_PI,
+            animationSpec = infiniteRepeatable(tween(24_000, easing = LinearEasing)),
+            label = "lumi_membrane_24s"
+        )
+        motion
+    } else 0f
     val pulse = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
-    val t = if (mayAnimate) motion else 0f
     val ink = Color(0xFF35283E) // Inside is a light translucent cell, including OLED Noir.
 
     Column(
@@ -390,12 +393,15 @@ fun LumiLivingCore(
         )
         Spacer(Modifier.height(8.dp))
         val confidenceModifier = if (onConfidenceClick != null) {
-            Modifier.pointerInput(onConfidenceClick) {
-                detectTapGestures { onConfidenceClick() }
-            }
+            Modifier.clickable(
+                role = Role.Button,
+                onClickLabel = confidenceLabel,
+                onClick = onConfidenceClick
+            )
         } else Modifier
         Row(
             modifier = confidenceModifier
+                .defaultMinSize(minHeight = 44.dp)
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
