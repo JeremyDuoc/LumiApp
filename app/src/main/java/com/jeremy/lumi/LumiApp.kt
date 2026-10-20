@@ -1,22 +1,37 @@
 package com.jeremy.lumi
 
 import android.app.Application
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import com.jeremy.lumi.notification.NotificationChannels
+import com.jeremy.lumi.ui.widget.WidgetUpdaterWorker
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 
 @HiltAndroidApp
-class LumiApp : Application(){
+class LumiApp : Application() {
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun onCreate() {
         super.onCreate()
-        com.jeremy.lumi.notification.NotificationChannels.ensureAllChannelsExist(this)
-        
-        val workRequest = androidx.work.PeriodicWorkRequestBuilder<com.jeremy.lumi.ui.widget.WidgetUpdaterWorker>(
-            6, java.util.concurrent.TimeUnit.HOURS
-        ).build()
-        androidx.work.WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "widget_updater",
-            androidx.work.ExistingPeriodicWorkPolicy.UPDATE,
-            workRequest
-        )
-        com.jeremy.lumi.ui.widget.WidgetRefreshScheduler.requestNow(this)
+        NotificationChannels.ensureAllChannelsExist(this)
+
+        // Encolado en segundo plano para evitar contención de SQLite y bloqueo del hilo
+        // principal durante el arranque en frío (previene ANR en SystemJobService.onStartJob).
+        appScope.launch {
+            val workRequest = PeriodicWorkRequestBuilder<WidgetUpdaterWorker>(
+                6, TimeUnit.HOURS
+            ).build()
+            WorkManager.getInstance(this@LumiApp).enqueueUniquePeriodicWork(
+                "widget_updater",
+                ExistingPeriodicWorkPolicy.KEEP,
+                workRequest
+            )
+        }
     }
 }

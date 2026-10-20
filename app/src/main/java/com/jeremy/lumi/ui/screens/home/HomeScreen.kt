@@ -419,9 +419,18 @@ fun HomeScreen(
         LumiRadialQuickMenu(
             expanded = radialOpen,
             onExpandedChange = { radialOpen = it },
-            onLogClick = { showQuickLogSheet = true },
-            onPeriodClick = { showConfirmPeriod = true },
-            onReminderClick = { showAddReminderSheet = true },
+            onLogClick = {
+                radialOpen = false
+                showQuickLogSheet = true
+            },
+            onPeriodClick = {
+                radialOpen = false
+                showConfirmPeriod = true
+            },
+            onReminderClick = {
+                radialOpen = false
+                showAddReminderSheet = true
+            },
             diaryAlreadyLogged = hasEntry,
             modifier = Modifier.align(Alignment.BottomEnd)
         )

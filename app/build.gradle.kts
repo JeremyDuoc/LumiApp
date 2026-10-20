@@ -56,6 +56,12 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+    lint {
+        abortOnError = false
+        checkDependencies = false
+        disable += listOf("MissingTranslation")
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true

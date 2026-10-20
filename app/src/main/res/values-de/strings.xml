@@ -219,7 +219,7 @@
     <string name="desc_pregnancy">Schwangerschaft</string>
     <string name="desc_unknown">Erfasse deine nächste Periode, um deinen Zyklus zu synchronisieren.</string>
     <string name="dialog_pregnancy_birth">Geburt</string>
-    <string name="dialog_pregnancy_end_desc">Um einen neuen Zyklus zu starten, teile uns mit, was passiert ist (deine Daten bleiben zu 100 % privat).</string>
+    <string name="dialog_pregnancy_end_desc" formatted="false">Um einen neuen Zyklus zu starten, teile uns mit, was passiert ist (deine Daten bleiben zu 100 % privat).</string>
     <string name="dialog_pregnancy_end_title">Zyklus zurücksetzen</string>
     <string name="dialog_pregnancy_loss">Schwangerschaftsverlust</string>
     <string name="dialog_reset_cancel">Abbrechen</string>
@@ -248,7 +248,7 @@
     <string name="flow_medium">Mittel</string>
     <string name="forum_report_desc">Möchtest du diesen Beitrag wirklich wegen unangemessenen Inhalts oder respektlosen Verhaltens melden?</string>
     <string name="forum_report_title">Beitrag melden</string>
-    <string name="forum_subtitle">Stelle deine Fragen 100 % anonym. Sei freundlich.</string>
+    <string name="forum_subtitle" formatted="false">Stelle deine Fragen 100 % anonym. Sei freundlich.</string>
     <string name="forum_title">Sichere Community</string>
     <string name="graficas_bbt_prudent_note">Die Temperatur allein bestätigt keinen exakten Eisprungtag und darf nicht als Verhütungsmethode verwendet werden.</string>
     <string name="graficas_bbt_subtitle">°C pro Zyklustag</string>
@@ -657,7 +657,7 @@
     <string name="log_period_status_desc">Wähle deine Blutungsstärke oder gib an, wenn keine Blutung vorlag.</string>
     <string name="log_period_status_question">Wie verläuft deine Periode?</string>
     <string name="log_privacy_banner_desc">Deine Einträge werden ausschließlich auf deinem Telefon gespeichert. Ohne Kontopflicht, kein Datenverkauf.</string>
-    <string name="log_privacy_banner_title">100 % privat und sicher</string>
+    <string name="log_privacy_banner_title" formatted="false">100 % privat und sicher</string>
     <string name="log_private_note_desc">Wenn du dir eine besondere Einzelheit von heute merken möchtest.</string>
     <string name="log_private_note_title">Private Notiz für heute</string>
     <string name="log_protected_general">Geschützt</string>

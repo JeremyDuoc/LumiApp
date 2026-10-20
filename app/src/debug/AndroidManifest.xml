@@ -2,7 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
         <!-- Las invitaciones se conservan únicamente en compilaciones internas de desarrollo. -->
-        <activity android:name="com.jeremy.lumi.MainActivity">
+        <activity
+            android:name="com.jeremy.lumi.MainActivity"
+            android:exported="true">
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />

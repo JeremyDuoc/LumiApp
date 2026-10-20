@@ -1,4 +1,4 @@
-<resources>
+﻿<resources>
     <string name="alert_endo_desc">Your logs indicate recurrent high levels of pain during menstruation. Mild discomfort is common, but incapacitating pain is not and may be a symptom of Endometriosis. \n\n*Note: Lumi is not a diagnostic tool. We recommend discussing this with a specialist.*</string>
     <string name="alert_endo_title">Severe Pain Pattern Detected</string>
     <string name="alert_lpd_desc">Your temperature records show that your luteal phase (from ovulation to menstruation) is consistently shorter than expected. This can influence cycle regularity. A consultation with your gynecologist can help clarify what is happening and whether hormonal support is beneficial. ⚕️</string>
@@ -237,7 +237,7 @@
     <string name="desc_pregnancy">Gestation</string>
     <string name="desc_unknown">Log your next period to synchronize your cycle.</string>
     <string name="dialog_pregnancy_birth">Birth</string>
-    <string name="dialog_pregnancy_end_desc">To start a new cycle, tell us what happened (your data remains 100% private).</string>
+    <string name="dialog_pregnancy_end_desc" formatted="false">To start a new cycle, tell us what happened (your data remains 100% private).</string>
     <string name="dialog_pregnancy_end_title">Reset Cycle</string>
     <string name="dialog_pregnancy_loss">Loss</string>
     <string name="dialog_reset_cancel">Cancel</string>
@@ -868,7 +868,7 @@
     <string name="log_period_status_desc">Mark your bleeding level or indicate if there was none.</string>
     <string name="log_period_status_question">How is your period?</string>
     <string name="log_privacy_banner_desc">Your logs are stored exclusively on your phone. No mandatory accounts, no selling of data.</string>
-    <string name="log_privacy_banner_title">100% private and secure</string>
+    <string name="log_privacy_banner_title" formatted="false">100% private and secure</string>
     <string name="log_private_note_desc">If you want to remember a special detail today.</string>
     <string name="log_private_note_title">Private note for today</string>
     <string name="log_protected_general">With protection</string>

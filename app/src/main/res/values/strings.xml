@@ -1,4 +1,4 @@
-<resources>
+﻿<resources>
     <string name="alert_endo_desc">Tus registros indican niveles de dolor muy altos de forma repetida durante la menstruación. Sentir un poco de molestia es común, pero el dolor incapacitante no lo es y podría ser un síntoma de Endometriosis. \n\n*Nota: LumiApp no es una herramienta de diagnóstico. Te recomendamos hablar de esto con un especialista.*</string>
     <string name="alert_endo_title">Patrón de Dolor Severo Detectado</string>
     <string name="alert_lpd_desc">Tus registros de temperatura muestran que tu fase lútea (desde la ovulación hasta la menstruación) es consistentemente más corta de lo esperado. Esto puede afectar la regularidad del ciclo. Una consulta con tu ginecóloga puede ayudarte a entender qué está pasando y si necesitas apoyo hormonal. ⚕️</string>
@@ -237,7 +237,7 @@
     <string name="desc_pregnancy">Gestación</string>
     <string name="desc_unknown">Registra tu próximo periodo para sincronizar tu ciclo.</string>
     <string name="dialog_pregnancy_birth">Nacimiento</string>
-    <string name="dialog_pregnancy_end_desc">Para iniciar un nuevo ciclo, cuéntanos qué sucedió (tus datos siguen siendo 100% privados).</string>
+    <string name="dialog_pregnancy_end_desc" formatted="false">Para iniciar un nuevo ciclo, cuéntanos qué sucedió (tus datos siguen siendo 100% privados).</string>
     <string name="dialog_pregnancy_end_title">Restablecer Ciclo</string>
     <string name="dialog_pregnancy_loss">Pérdida</string>
     <string name="dialog_reset_cancel">Cancelar</string>
@@ -868,7 +868,7 @@
     <string name="log_period_status_desc">Marca el nivel de sangrado o indica si no hubo.</string>
     <string name="log_period_status_question">¿Cómo va tu periodo?</string>
     <string name="log_privacy_banner_desc">Tus registros se guardan exclusivamente en tu teléfono. Sin cuentas obligatorias ni venta de datos.</string>
-    <string name="log_privacy_banner_title">100% privado y seguro</string>
+    <string name="log_privacy_banner_title" formatted="false">100% privado y seguro</string>
     <string name="log_private_note_desc">Si quieres recordar algún detalle especial de hoy.</string>
     <string name="log_private_note_title">Nota privada del día</string>
     <string name="log_protected_general">Con protección</string>

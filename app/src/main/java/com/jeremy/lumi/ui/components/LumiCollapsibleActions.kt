@@ -134,7 +134,10 @@ fun LumiCollapsibleActions(
                 .clickable(role = Role.Button, onClickLabel = if (expanded) "Cerrar menú" else "Abrir menú") {
                     expanded = !expanded
                 }
-                .semantics { stateDescription = if (expanded) "Expandido" else "Contraído" },
+                .semantics {
+                    contentDescription = if (expanded) "Cerrar menú de opciones" else "Abrir menú de opciones"
+                    stateDescription = if (expanded) "Expandido" else "Contraído"
+                },
             contentAlignment = Alignment.Center
         ) {
             Canvas(Modifier.size(26.dp)) {

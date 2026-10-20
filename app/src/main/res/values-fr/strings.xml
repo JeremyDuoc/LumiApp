@@ -219,7 +219,7 @@
     <string name="desc_pregnancy">Grossesse</string>
     <string name="desc_unknown">Enregistre tes prochaines règles pour synchroniser ton cycle.</string>
     <string name="dialog_pregnancy_birth">Naissance</string>
-    <string name="dialog_pregnancy_end_desc">Pour commencer un nouveau cycle, dis-nous ce qui s\'est passé (tes données restent 100 % privées).</string>
+    <string name="dialog_pregnancy_end_desc" formatted="false">Pour commencer un nouveau cycle, dis-nous ce qui s\'est passé (tes données restent 100 % privées).</string>
     <string name="dialog_pregnancy_end_title">Réinitialiser le cycle</string>
     <string name="dialog_pregnancy_loss">Perte de grossesse</string>
     <string name="dialog_reset_cancel">Annuler</string>
@@ -248,7 +248,7 @@
     <string name="flow_medium">Moyen</string>
     <string name="forum_report_desc">Es-tu sûre de vouloir signaler cette publication pour contenu inapproprié ou manque de respect ?</string>
     <string name="forum_report_title">Signaler la publication</string>
-    <string name="forum_subtitle">Pose tes questions de façon 100 % anonyme. Sois bienveillante.</string>
+    <string name="forum_subtitle" formatted="false">Pose tes questions de façon 100 % anonyme. Sois bienveillante.</string>
     <string name="forum_title">Communauté bienveillante</string>
     <string name="graficas_bbt_prudent_note">La température seule ne confirme pas une date d\'ovulation exacte et ne doit pas servir de méthode contraceptive.</string>
     <string name="graficas_bbt_subtitle">°C par jour du cycle</string>
@@ -657,7 +657,7 @@
     <string name="log_period_status_desc">Indique le niveau de flux ou signale s\'il n\'y en a pas eu.</string>
     <string name="log_period_status_question">Où en sont tes règles ?</string>
     <string name="log_privacy_banner_desc">Tes données sont stockées exclusivement sur ton téléphone. Sans compte obligatoire ni revente de données.</string>
-    <string name="log_privacy_banner_title">100 % privé et sécurisé</string>
+    <string name="log_privacy_banner_title" formatted="false">100 % privé et sécurisé</string>
     <string name="log_private_note_desc">Si tu souhaites te souvenir d\'un détail particulier d\'aujourd\'hui.</string>
     <string name="log_private_note_title">Note privée du jour</string>
     <string name="log_protected_general">Avec protection</string>

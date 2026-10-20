@@ -219,7 +219,7 @@
     <string name="desc_pregnancy">Gestação</string>
     <string name="desc_unknown">Registre sua próxima menstruação para sincronizar seu ciclo.</string>
     <string name="dialog_pregnancy_birth">Nascimento</string>
-    <string name="dialog_pregnancy_end_desc">Para iniciar um novo ciclo, conte-nos o que aconteceu (seus dados continuam 100% privados).</string>
+    <string name="dialog_pregnancy_end_desc" formatted="false">Para iniciar um novo ciclo, conte-nos o que aconteceu (seus dados continuam 100% privados).</string>
     <string name="dialog_pregnancy_end_title">Redefinir Ciclo</string>
     <string name="dialog_pregnancy_loss">Perda gestacional</string>
     <string name="dialog_reset_cancel">Cancelar</string>
@@ -248,7 +248,7 @@
     <string name="flow_medium">Médio</string>
     <string name="forum_report_desc">Tem certeza de que deseja denunciar esta publicação por conteúdo inadequado ou desrespeitoso?</string>
     <string name="forum_report_title">Denunciar publicação</string>
-    <string name="forum_subtitle">Faça suas perguntas de forma 100% anônima. Seja gentil.</string>
+    <string name="forum_subtitle" formatted="false">Faça suas perguntas de forma 100% anônima. Seja gentil.</string>
     <string name="forum_title">Comunidade Segura</string>
     <string name="graficas_bbt_prudent_note">A temperatura sozinha não confirma a data exata da ovulação nem deve ser usada como método anticoncepcional.</string>
     <string name="graficas_bbt_subtitle">°C por dia do ciclo</string>
@@ -657,7 +657,7 @@
     <string name="log_period_status_desc">Marque o nível de sangramento ou indique se não houve.</string>
     <string name="log_period_status_question">Como está sua menstruação?</string>
     <string name="log_privacy_banner_desc">Seus registros ficam salvos exclusivamente no seu celular. Sem contas obrigatórias nem venda de dados.</string>
-    <string name="log_privacy_banner_title">100% privado e seguro</string>
+    <string name="log_privacy_banner_title" formatted="false">100% privado e seguro</string>
     <string name="log_private_note_desc">Se quiser lembrar de algum detalhe especial de hoje.</string>
     <string name="log_private_note_title">Nota privada do dia</string>
     <string name="log_protected_general">Com proteção</string>
