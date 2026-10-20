@@ -221,6 +221,10 @@ fun HomeScreen(
                         accentColor          = currentAuraColor,
                         scrollOffsetProvider = { homeScrollState.value.toFloat() }
                     )
+                    // Capa Aurora del prototipo aprobado: 30%, bajo el contenido.
+                    LumiLivingAuroraBackdrop(
+                        currentPhase = uiState.currentPhase ?: CyclePhase.UNKNOWN
+                    )
 
         Scaffold(
             topBar = {
