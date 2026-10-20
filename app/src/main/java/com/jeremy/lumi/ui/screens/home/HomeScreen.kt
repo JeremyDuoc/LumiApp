@@ -219,8 +219,7 @@ fun HomeScreen(
                     AmbientBackgroundLayer(
                         screenType           = AmbientScreen.HOME,
                         accentColor          = currentAuraColor,
-                        scrollOffsetProvider = { homeScrollState.value.toFloat() },
-                        homeGlowStrength     = .24f
+                        scrollOffsetProvider = { homeScrollState.value.toFloat() }
                     )
                     // Capa Aurora del prototipo aprobado: 30%, bajo el contenido.
                     LumiLivingAuroraBackdrop(

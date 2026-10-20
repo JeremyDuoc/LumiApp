@@ -37,7 +37,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
@@ -109,44 +108,23 @@ private fun cellPalette(phase: CyclePhase): CellPalette = when (phase) {
     )
 }
 
-/**
- * Color local de la membrana. Mismo vector y cuatro stops del Brush de la célula.
- * La luz cercana toma el color del fragmento de superficie que realmente enfrenta.
- */
-private fun colorAtMembrane(point: Offset, stops: List<Color>): Color {
-    val start = Offset(126f, 294f)
-    val dx = 146f
-    val dy = -186f
-    val fraction = (((point.x - start.x) * dx + (point.y - start.y) * dy) /
-        (dx * dx + dy * dy)).coerceIn(0f, 1f)
-    return when {
-        fraction < .33f -> lerp(stops[0], stops[1], fraction / .33f)
-        fraction < .67f -> lerp(stops[1], stops[2], (fraction - .33f) / .34f)
-        else -> lerp(stops[2], stops[3], (fraction - .67f) / .33f)
-    }
-}
-
-/** Radio sincronizado con las deformaciones del mismo path Bézier. */
-private fun membraneRadius(a: Float, phase: Float, pace: Float, beat: Float): Float {
-    val anatomy = 4.1f * sin(a - 1.05f) +
-        3.8f * sin(2f * a + .30f) +
-        2.8f * sin(3f * a - 1.68f) +
-        2f * cos(5f * a + .85f)
-    val drift = (.72f * ORGANIC_INTENSITY) * (
-        3.25f * sin(3f * a + 3f * phase) +
-            2.2f * sin(5f * a - 5f * phase + .8f) +
-            cos(7f * a + 2f * phase)
-        )
-    val breath = 1.2f * sin(3f * phase * pace)
-    val ripple = beat * 3f * sin(2.1f * TWO_PI * (1f - beat))
-    return 91.1f + anatomy + drift + breath + ripple
-}
-
 private fun organPath(phase: Float, pace: Float, beat: Float, expansion: Float = 1f): Path {
     val n = 68
     val points = Array(n) { i ->
         val a = i.toFloat() / n * TWO_PI
-        val radius = membraneRadius(a, phase, pace, beat) * expansion
+        val anatomy = 4.1f * sin(a - 1.05f) +
+            3.8f * sin(2f * a + .30f) +
+            2.8f * sin(3f * a - 1.68f) +
+            2f * cos(5f * a + .85f)
+        // Natural 50% = 0.72 (natural) * 0.50 (intensity).
+        val drift = (.72f * ORGANIC_INTENSITY) * (
+            3.25f * sin(3f * a + 3f * phase) +
+                2.2f * sin(5f * a - 5f * phase + .8f) +
+                cos(7f * a + 2f * phase)
+            )
+        val breath = 1.2f * sin(3f * phase * pace)
+        val ripple = beat * 3f * sin(2.1f * TWO_PI * (1f - beat))
+        val radius = (91.1f + anatomy + drift + breath + ripple) * expansion
         Offset(200f + radius * cos(a), 199f + radius * sin(a))
     }
     // Same closed Catmull–Rom to cubic Bézier interpolation as the HTML.
@@ -185,6 +163,7 @@ fun LumiLivingCore(
     val b by animateColorAsState(colors.second, tween(1700), label = "lumi_skin_b")
     val c by animateColorAsState(colors.third, tween(1700), label = "lumi_skin_c")
     val d by animateColorAsState(colors.fourth, tween(1700), label = "lumi_skin_d")
+    val aura by animateColorAsState(colors.aura, tween(1700), label = "lumi_aura_phase")
 
     // Android 'remove animations' setting: do not animate or simulate a loader.
     val mayAnimate = remember { ValueAnimator.areAnimatorsEnabled() }
@@ -207,10 +186,8 @@ fun LumiLivingCore(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         BoxWithConstraints(
-            // El contenido visual mantiene el tamaño del HTML (135 %), pero
-            // reservamos menos espacio vertical bajo el núcleo para subir la fase.
-            modifier = Modifier.fillMaxWidth().height(304.dp),
-            contentAlignment = Alignment.TopCenter
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
         ) {
             val diameter = minOf(maxWidth - 24.dp, 328.dp)
             Box(
@@ -243,47 +220,25 @@ fun LumiLivingCore(
                     withTransform({
                         scale(ratio, ratio, pivot = Offset.Zero)
                     }) {
-                        // En temas claros, una sombra cromática tenue devuelve
-                        // contraste a la membrana sin crear otra franja luminosa.
-                        if (!tokens.isDark) {
-                            drawCircle(
-                                brush = Brush.radialGradient(
-                                    0f to tokens.accent.copy(alpha = .075f),
-                                    1f to Color.Transparent,
-                                    center = Offset(200f, 207f), radius = 164f
-                                ),
-                                center = Offset(200f, 207f), radius = 164f
-                            )
-                        }
-
-                        // AURA CROMÁTICA LOCAL: 16 halos direccionales siguen
-                        // las deformaciones reales y muestrean la paleta en
-                        // el punto de membrana más cercano. No hay luz blanca
-                        // uniforme ni gradiente grande sobre toda la pantalla.
-                        for (i in 0 until 16) {
-                            val angle = TWO_PI * i / 16f
-                            val radius = membraneRadius(angle, t, colors.pace, pulse.value)
-                            val x = 200f + cos(angle) * radius
-                            val y = 199f + sin(angle) * radius
-                            val sampled = colorAtMembrane(Offset(x, y), palette)
-                            val haloCenter = Offset(
-                                200f + cos(angle) * (radius * CORE_SCALE + 11f),
-                                199f + sin(angle) * (radius * CORE_SCALE + 11f)
-                            )
-                            val strength = AURORA_POWER *
-                                if (tokens.isDark) .40f else .33f
-                            drawCircle(
-                                brush = Brush.radialGradient(
-                                    0f to sampled.copy(alpha = strength),
-                                    .33f to sampled.copy(alpha = strength * .42f),
-                                    1f to Color.Transparent,
-                                    center = haloCenter,
-                                    radius = 47f
-                                ),
-                                center = haloCenter,
-                                radius = 47f
-                            )
-                        }
+                        // Aurora 30 %: three low-energy atmospheric colors.
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                listOf(aura.copy(alpha = .28f * AURORA_POWER), Color.Transparent),
+                                center = Offset(154f, 161f), radius = 175f
+                            ), radius = 175f, center = Offset(154f, 161f)
+                        )
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                listOf(b.copy(alpha = .22f * AURORA_POWER), Color.Transparent),
+                                center = Offset(248f, 223f), radius = 164f
+                            ), radius = 164f, center = Offset(248f, 223f)
+                        )
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                listOf(d.copy(alpha = .21f * AURORA_POWER), Color.Transparent),
+                                center = Offset(210f, 286f), radius = 166f
+                            ), radius = 166f, center = Offset(210f, 286f)
+                        )
 
                         // Stationary dotted orbital reference, very faint; never a progress ring.
                         drawCircle(
@@ -314,8 +269,7 @@ fun LumiLivingCore(
                         // The two soft membrane layers scale together around 200,200.
                         withTransform({ scale(CORE_SCALE, CORE_SCALE, pivot = center) }) {
                             drawPath(
-                                rim, if (tokens.isDark) Color.White.copy(alpha = .19f)
-                                else tokens.accent.copy(alpha = .23f),
+                                rim, Color.White.copy(alpha = .26f),
                                 style = Stroke(width = .9f)
                             )
                             drawPath(
@@ -378,9 +332,7 @@ fun LumiLivingCore(
                                 )
                             }
                             drawPath(
-                                shape,
-                                if (tokens.isDark) Color.White.copy(alpha = .44f)
-                                else tokens.accent.copy(alpha = .28f),
+                                shape, Color.White.copy(alpha = .52f),
                                 style = Stroke(width = 1.1f, cap = StrokeCap.Round)
                             )
                         }
@@ -433,51 +385,43 @@ fun LumiLivingCore(
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 20.dp)
         )
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(5.dp))
+        Text(
+            estimatedDaysText,
+            color = tokens.muted,
+            fontSize = 11.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 20.dp)
+        )
+        Spacer(Modifier.height(8.dp))
+        val confidenceModifier = if (onConfidenceClick != null) {
+            Modifier.clickable(
+                role = Role.Button,
+                onClickLabel = confidenceLabel,
+                onClick = onConfidenceClick
+            )
+        } else Modifier
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 15.dp),
+            modifier = confidenceModifier
+                .defaultMinSize(minHeight = 44.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Surface(
+                shape = CircleShape,
+                color = tokens.accent.copy(alpha = .7f),
+                modifier = Modifier.size(5.dp)
+            ) { }
+            Spacer(Modifier.width(7.dp))
             Text(
-                estimatedDaysText,
+                confidenceLabel,
                 color = tokens.muted,
-                fontSize = 11.sp,
-                lineHeight = 15.sp,
-                textAlign = TextAlign.End,
-                maxLines = 2,
-                modifier = Modifier.weight(1f, fill = false)
+                fontSize = 10.sp,
+                textAlign = TextAlign.Center
             )
-            if (confidenceLabel.isNotBlank()) {
-                Spacer(Modifier.width(9.dp))
-                val confidenceModifier = if (onConfidenceClick != null) {
-                    Modifier.clickable(
-                        role = Role.Button,
-                        onClickLabel = "Información de la estimación: $confidenceLabel",
-                        onClick = onConfidenceClick
-                    )
-                } else Modifier
-                Row(
-                    modifier = confidenceModifier
-                        .defaultMinSize(minHeight = 44.dp)
-                        .padding(horizontal = 3.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = tokens.accent.copy(alpha = .75f),
-                        modifier = Modifier.size(4.dp)
-                    ) { }
-                    Text(
-                        confidenceLabel,
-                        color = tokens.dim,
-                        fontSize = 10.sp,
-                        maxLines = 1
-                    )
-                    LumiIconInfo(tint = tokens.dim, size = 12.dp)
-                }
-            }
+            Spacer(Modifier.width(5.dp))
+            LumiIconInfo(tint = tokens.dim, size = 12.dp)
         }
     }
 }
@@ -510,7 +454,7 @@ fun LumiLivingAuroraBackdrop(
         drift
     } else 0f
     Canvas(modifier) {
-        val strength = AURORA_POWER * if (tokens.isDark) .14f else .09f
+        val strength = AURORA_POWER * if (tokens.isDark) .75f else 1f
         val w = size.width
         val h = size.height
         val pools = listOf(
