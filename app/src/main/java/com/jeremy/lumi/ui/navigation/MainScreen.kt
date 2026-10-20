@@ -101,6 +101,10 @@ fun AppNavGraph() {
     var mainNavigationStarted by remember { mutableStateOf(false) }
     var homeBrandBounds by remember { mutableStateOf<Rect?>(null) }
     var handoffFinishing by remember { mutableStateOf(false) }
+    var homeContentReady by remember { mutableStateOf(false) }
+    var homeRevealAuthorized by remember { mutableStateOf(false) }
+    var brandArrived by remember { mutableStateOf(false) }
+    var skipHandoff by remember { mutableStateOf(false) }
     val handoffScope = rememberCoroutineScope()
 
     // La animación reside FUERA del NavHost, y sobrevive al cambio de ruta.
@@ -165,6 +169,10 @@ fun AppNavGraph() {
                 onCeremonyStart = { bounds, selectedTokens ->
                     if (handoff == null) {
                         homeBrandBounds = null
+                        homeContentReady = false
+                        homeRevealAuthorized = false
+                        brandArrived = false
+                        skipHandoff = false
                         mainNavigationStarted = false
                         handoffFinishing = false
                         handoff = LumiHandoff(bounds, selectedTokens)
@@ -177,7 +185,9 @@ fun AppNavGraph() {
         composable(route = AppRoutes.MAIN) {
             MainScreen(
                 onHomeBrandBounds = { rect -> homeBrandBounds = rect },
-                suppressHomeBrandDuringHandoff = handoff != null,
+                suppressHomeBrandDuringHandoff = handoff != null && !brandArrived,
+                allowHomeEntrance = handoff == null || homeRevealAuthorized,
+                onHomeReady = { homeContentReady = true },
                 onNavigateToPartner = {
                     if (com.jeremy.lumi.BuildConfig.ENABLE_BONDS) {
                         rootNavController.navigate(AppRoutes.BONDS_HOME)
@@ -441,16 +451,19 @@ fun AppNavGraph() {
 
     val activeHandoff = handoff
     if (activeHandoff != null) {
-        BackHandler { finishHandoff() }
+        BackHandler { skipHandoff = true }
         CompositionLocalProvider(LocalLumiOnboardingTokens provides activeHandoff.theme) {
             LumiAtmosphericTransition(
                 sourceBrandBounds = activeHandoff.sourceBounds,
                 targetBrandBounds = homeBrandBounds,
                 revealUnderlyingHome = true,
-                // 1350 ms: el velo es completamente opaco. Cambiamos de ruta
-                // para que Home se componga UNA SOLA VEZ y prepare sus datos.
+                homeReady = homeContentReady,
+                forceSkip = skipHandoff,
+                onRevealStart = { homeRevealAuthorized = true },
+                onBrandArrived = { brandArrived = true },
+                // At 460ms the curtain is opaque: mount exactly one real Home.
                 onCurtainOpaque = { navigateToRealHome() },
-                onFinished = { finishHandoff() } // Incluye el botón de omitir.
+                onFinished = { finishHandoff() }
             )
         }
     }
@@ -470,6 +483,8 @@ fun AppNavGraph() {
 fun MainScreen(
     onHomeBrandBounds: ((Rect) -> Unit)? = null,
     suppressHomeBrandDuringHandoff: Boolean = false,
+    allowHomeEntrance: Boolean = true,
+    onHomeReady: (() -> Unit)? = null,
     onNavigateToPartner: () -> Unit = {},
     onNavigateToBackup: () -> Unit = {},
     onOpenBondsPairing: () -> Unit = {},
@@ -557,7 +572,7 @@ fun MainScreen(
     Scaffold(
         bottomBar = {
             AnimatedVisibility(
-                visible = showBottomBar,
+                visible = showBottomBar && allowHomeEntrance,
                 enter = slideInVertically(initialOffsetY = { it }, animationSpec = tween(300)) + fadeIn(animationSpec = tween(300)),
                 exit = slideOutVertically(targetOffsetY = { it }, animationSpec = tween(300)) + fadeOut(animationSpec = tween(300))
             ) {
@@ -596,6 +611,8 @@ fun MainScreen(
                         BottomNavItem.Home -> HomeScreen(
                             onBrandBounds = onHomeBrandBounds,
                             suppressBrandDuringHandoff = suppressHomeBrandDuringHandoff,
+                            allowEntrance = allowHomeEntrance,
+                            onHomeReady = onHomeReady,
                             onNavigateToInsights = {
                                 val insightsIndex = tabs.indexOf(BottomNavItem.Insights)
                                 if (insightsIndex >= 0) {
