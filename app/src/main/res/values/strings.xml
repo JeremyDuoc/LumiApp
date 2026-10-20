@@ -1,4 +1,5 @@
 <resources>
+    <string name="atmospheric_welcome_single">Tu espacio, a tu ritmo.</string>
     <string name="alert_endo_desc">Tus registros indican niveles de dolor muy altos de forma repetida durante la menstruación. Sentir un poco de molestia es común, pero el dolor incapacitante no lo es y podría ser un síntoma de Endometriosis. \n\n*Nota: LumiApp no es una herramienta de diagnóstico. Te recomendamos hablar de esto con un especialista.*</string>
     <string name="alert_endo_title">Patrón de Dolor Severo Detectado</string>
     <string name="alert_lpd_desc">Tus registros de temperatura muestran que tu fase lútea (desde la ovulación hasta la menstruación) es consistentemente más corta de lo esperado. Esto puede afectar la regularidad del ciclo. Una consulta con tu ginecóloga puede ayudarte a entender qué está pasando y si necesitas apoyo hormonal. ⚕️</string>
