@@ -79,7 +79,9 @@ fun HomeScreen(
     settingsViewModel: SettingsViewModel = hiltViewModel(),
     // Hooks optativos para el logo compartido con la transición del onboarding.
     onBrandBounds: ((Rect) -> Unit)? = null,
-    suppressBrandDuringHandoff: Boolean = false
+    suppressBrandDuringHandoff: Boolean = false,
+    onHomeReady: (() -> Unit)? = null,
+    allowEntrance: Boolean = true
 ) {
     val uiState           by viewModel.uiState.collectAsStateWithLifecycle()
     val tokens            = LumiThemeTokens.current
@@ -95,8 +97,13 @@ fun HomeScreen(
     val context           = androidx.compose.ui.platform.LocalContext.current
 
     var screenReady by remember { mutableStateOf(false) }
-    LaunchedEffect(uiState.isLoading) {
-        if (!uiState.isLoading) { screenReady = true }
+    // Data readiness is separate from permission to reveal the visible Home.
+    // Existing entrances behave normally outside the onboarding handoff.
+    LaunchedEffect(uiState.isLoading, allowEntrance) {
+        if (!uiState.isLoading) {
+            onHomeReady?.invoke()
+            if (allowEntrance) screenReady = true
+        }
     }
 
     val activeReminders by remindersViewModel.activeReminders.collectAsStateWithLifecycle()
