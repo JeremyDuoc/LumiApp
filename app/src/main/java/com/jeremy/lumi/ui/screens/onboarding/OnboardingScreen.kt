@@ -95,11 +95,6 @@ fun OnboardingScreen(
     var themeRevealCenter by remember { mutableStateOf<Offset?>(null) }
 
     var showAtmosphericTransition by remember { mutableStateOf(false) }
-    val outgoingAlpha by animateFloatAsState(
-        targetValue = if (showAtmosphericTransition) 0f else 1f,
-        animationSpec = tween(durationMillis = 360),
-        label = "onboarding_outgoing_scene"
-    )
     var hideOnboardingAtReveal by remember { mutableStateOf(false) }
     var sourceBrandBounds by remember { mutableStateOf<Rect?>(null) }
 
@@ -129,7 +124,7 @@ fun OnboardingScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .graphicsLayer { alpha = if (hideOnboardingAtReveal) 0f else outgoingAlpha }
+                    .graphicsLayer { alpha = if (hideOnboardingAtReveal) 0f else 1f }
             ) {
             // Cielo estrellado en 3 capas ascendentes en paralaje (solo temas oscuros)
             LumiSkyBackground(stepNumber = stepNumber)
