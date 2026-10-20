@@ -310,7 +310,7 @@ fun HomeScreen(
 
                     Spacer(Modifier.height(16.dp))
 
-                    // 2. ARO DEL CICLO + STATUS DE PREDICCIÓN (Hero central)
+                    // 2. NÚCLEO VIVO DE LUMI + STATUS DE PREDICCIÓN (Hero central)
                     FadeSlideIn(screenReady, STAGGER_MS) {
                         val phaseName = when (uiState.currentPhase) {
                             CyclePhase.MENSTRUAL -> stringResource(R.string.pm_phase_menstrual)
@@ -330,9 +330,9 @@ fun HomeScreen(
                         val confidenceLabel = uiState.predictionFactors?.confidenceLabel
                             ?: stringResource(R.string.cycle_ring_confidence_moderate)
 
-                        LumiCycleRing(
+                        LumiLivingCore(
                             currentDay = uiState.currentDayOfCycle,
-                            cycleLength = uiState.prediction?.cycleLength ?: 28,
+                            currentPhase = uiState.currentPhase ?: CyclePhase.UNKNOWN,
                             phaseName = phaseName,
                             estimatedDaysText = estimatedDaysText,
                             confidenceLabel = confidenceLabel,
