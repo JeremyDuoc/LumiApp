@@ -251,7 +251,7 @@ fun LumiAtmosphericTransition(
         if (!skipRequested) skipRequested = true
     }
 
-    LaunchedEffect(reducedMotion, durationScale, forceSkip, skipRequested) {
+    LaunchedEffect(reducedMotion, durationScale, forceSkip, skipRequested, destinationReady) {
         if (reducedMotion || durationScale == 0f || forceSkip || skipRequested) {
             if (!curtainNotified) {
                 curtainNotified = true
