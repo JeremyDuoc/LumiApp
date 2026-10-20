@@ -265,8 +265,12 @@ fun LumiAtmosphericTransition(
                 brandNotified = true
                 latestBrand()
             }
-            // Keep the real route mounted for a frame before removing the overlay.
-            withFrameNanos { }
+            // A genuine short exit for Back / Enter now; zero motion stays immediate.
+            if (!reducedMotion && durationScale > 0f) {
+                kotlinx.coroutines.delay((180f * durationScale).toLong())
+            } else {
+                withFrameNanos { }
+            }
             finishOnce()
             return@LaunchedEffect
         }
@@ -295,7 +299,13 @@ fun LumiAtmosphericTransition(
         }
     }
 
-    if (reducedMotion || durationScale == 0f || forceSkip || skipRequested) return
+    if (reducedMotion || durationScale == 0f) return
+
+    val exitAlpha by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (forceSkip || skipRequested) 0f else 1f,
+        animationSpec = tween((180f * durationScale).toInt().coerceAtLeast(1)),
+        label = "ceremony_fast_exit"
+    )
 
     val veilAlpha = keyframes(
         elapsedMs, 0f to 0f, coverEnd to 1f,
@@ -319,6 +329,7 @@ fun LumiAtmosphericTransition(
 
     BoxWithConstraints(
         modifier = modifier.fillMaxSize()
+            .graphicsLayer { alpha = exitAlpha }
             .onGloballyPositioned { origin = it.positionInRoot() }
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
