@@ -70,14 +70,6 @@ import kotlin.math.sin
  * Sin ese contenedor la transición termina limpiamente en el fondo de Lumi,
  * pero la navegación final sigue siendo responsabilidad de onFinished.
  */
-private val ceremonyTexts = listOf(
-    R.string.atmospheric_title_1 to R.string.atmospheric_sub_1,
-    R.string.atmospheric_title_2 to R.string.atmospheric_sub_2,
-    R.string.atmospheric_title_3 to R.string.atmospheric_sub_3,
-    R.string.atmospheric_title_4 to R.string.atmospheric_sub_4,
-    R.string.atmospheric_title_5 to R.string.atmospheric_sub_5
-)
-private val messageStarts = listOf(1300f, 3450f, 5550f, 7780f, 9770f)
 private val enterCurve = CubicBezierEasing(.18f, 1f, .3f, 1f)
 private val firstFlightCurve = CubicBezierEasing(.16f, .89f, .24f, 1f)
 private val lastFlightCurve = CubicBezierEasing(.17f, .79f, .21f, 1f)
@@ -150,7 +142,8 @@ private fun CssAuraLayer(
     elapsedMs: Float,
     screenWidthPx: Float,
     screenHeightPx: Float,
-    density: Float
+    density: Float,
+    accent: Color
 ) {
     val t = cssAlternateEased(elapsedMs, aura.durationMs)
     val orbWidthPx = aura.widthDp * density
@@ -174,8 +167,8 @@ private fun CssAuraLayer(
         val cssRadius = hypot(size.width / 2f, size.height / 2f)
         drawRect(
             brush = Brush.radialGradient(
-                0f to aura.inner,
-                aura.middleStop to aura.middle,
+                0f to lerpColor(aura.inner, accent, .24f).copy(alpha = aura.inner.alpha * .84f),
+                aura.middleStop to lerpColor(aura.middle, accent, .24f).copy(alpha = aura.middle.alpha * .84f),
                 aura.transparentStop to Color.Transparent,
                 1f to Color.Transparent,
                 center = center,
@@ -391,7 +384,7 @@ fun LumiAtmosphericTransition(
                 }) {
                     cssAuras.forEach { aura ->
                         key(aura.id) {
-                            CssAuraLayer(aura, elapsedMs, widthPx, heightPx, px)
+                            CssAuraLayer(aura, elapsedMs, widthPx, heightPx, px, tokens.accent)
                         }
                     }
                 }
