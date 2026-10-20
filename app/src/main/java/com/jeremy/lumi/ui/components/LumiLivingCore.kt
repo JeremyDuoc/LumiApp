@@ -497,7 +497,7 @@ fun LumiLivingAuroraBackdrop(
         drift
     } else 0f
     Canvas(modifier) {
-        val strength = AURORA_POWER * if (tokens.isDark) .75f else 1f
+        val strength = AURORA_POWER * if (tokens.isDark) .14f else .09f
         val w = size.width
         val h = size.height
         val pools = listOf(
