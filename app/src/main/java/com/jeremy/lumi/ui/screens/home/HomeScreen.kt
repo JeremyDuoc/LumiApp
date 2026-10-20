@@ -80,7 +80,7 @@ fun HomeScreen(
     // Hooks optativos para el logo compartido con la transición del onboarding.
     onBrandBounds: ((Rect) -> Unit)? = null,
     suppressBrandDuringHandoff: Boolean = false,
-    onHomeReady: (() -> Unit)? = null,
+    onHomeReady: ((Boolean) -> Unit)? = null,
     allowEntrance: Boolean = true
 ) {
     val uiState           by viewModel.uiState.collectAsStateWithLifecycle()
@@ -99,9 +99,9 @@ fun HomeScreen(
     var screenReady by remember { mutableStateOf(false) }
     // Data readiness is separate from permission to reveal the visible Home.
     // Existing entrances behave normally outside the onboarding handoff.
-    LaunchedEffect(uiState.isLoading, allowEntrance) {
+    LaunchedEffect(uiState.isLoading, uiState.homeMode, allowEntrance) {
         if (!uiState.isLoading) {
-            onHomeReady?.invoke()
+            onHomeReady?.invoke(uiState.homeMode == HomeMode.NORMAL)
             if (allowEntrance) screenReady = true
         }
     }
