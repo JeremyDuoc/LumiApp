@@ -197,12 +197,13 @@ fun LumiLivingCore(
                         else "Núcleo vivo Lumi, $phaseName. Toca para sentir un latido."
                         role = Role.Button
                     }
-                    .pointerInput(Unit) {
-                        detectTapGestures {
-                            if (mayAnimate) scope.launch {
-                                pulse.snapTo(1f)
-                                pulse.animateTo(0f, tween(850))
-                            }
+                    .clickable(
+                        role = Role.Button,
+                        onClickLabel = "Latido del núcleo Lumi"
+                    ) {
+                        if (mayAnimate) scope.launch {
+                            pulse.snapTo(1f)
+                            pulse.animateTo(0f, tween(850))
                         }
                     },
                 contentAlignment = Alignment.Center
