@@ -1,4 +1,5 @@
 <resources>
+    <string name="atmospheric_welcome_single">Your space, your pace.</string>
     <string name="alert_endo_desc">Your logs indicate recurrent high levels of pain during menstruation. Mild discomfort is common, but incapacitating pain is not and may be a symptom of Endometriosis. \n\n*Note: Lumi is not a diagnostic tool. We recommend discussing this with a specialist.*</string>
     <string name="alert_endo_title">Severe Pain Pattern Detected</string>
     <string name="alert_lpd_desc">Your temperature records show that your luteal phase (from ovulation to menstruation) is consistently shorter than expected. This can influence cycle regularity. A consultation with your gynecologist can help clarify what is happening and whether hormonal support is beneficial. ⚕️</string>
