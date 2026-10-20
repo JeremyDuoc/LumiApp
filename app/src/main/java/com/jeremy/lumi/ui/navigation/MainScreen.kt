@@ -102,6 +102,7 @@ fun AppNavGraph() {
     var homeBrandBounds by remember { mutableStateOf<Rect?>(null) }
     var handoffFinishing by remember { mutableStateOf(false) }
     var homeContentReady by remember { mutableStateOf(false) }
+    var homeExpectsBrand by remember { mutableStateOf(true) }
     var homeRevealAuthorized by remember { mutableStateOf(false) }
     var brandArrived by remember { mutableStateOf(false) }
     var skipHandoff by remember { mutableStateOf(false) }
@@ -170,6 +171,7 @@ fun AppNavGraph() {
                     if (handoff == null) {
                         homeBrandBounds = null
                         homeContentReady = false
+                        homeExpectsBrand = true
                         homeRevealAuthorized = false
                         brandArrived = false
                         skipHandoff = false
@@ -187,7 +189,10 @@ fun AppNavGraph() {
                 onHomeBrandBounds = { rect -> homeBrandBounds = rect },
                 suppressHomeBrandDuringHandoff = handoff != null && !brandArrived,
                 allowHomeEntrance = handoff == null || homeRevealAuthorized,
-                onHomeReady = { homeContentReady = true },
+                onHomeReady = { expectsBrand ->
+                    homeExpectsBrand = expectsBrand
+                    homeContentReady = true
+                },
                 onNavigateToPartner = {
                     if (com.jeremy.lumi.BuildConfig.ENABLE_BONDS) {
                         rootNavController.navigate(AppRoutes.BONDS_HOME)
@@ -458,6 +463,7 @@ fun AppNavGraph() {
                 targetBrandBounds = homeBrandBounds,
                 revealUnderlyingHome = true,
                 homeReady = homeContentReady,
+                targetBrandRequired = homeExpectsBrand,
                 forceSkip = skipHandoff,
                 onRevealStart = { homeRevealAuthorized = true },
                 onBrandArrived = { brandArrived = true },
@@ -484,7 +490,7 @@ fun MainScreen(
     onHomeBrandBounds: ((Rect) -> Unit)? = null,
     suppressHomeBrandDuringHandoff: Boolean = false,
     allowHomeEntrance: Boolean = true,
-    onHomeReady: (() -> Unit)? = null,
+    onHomeReady: ((Boolean) -> Unit)? = null,
     onNavigateToPartner: () -> Unit = {},
     onNavigateToBackup: () -> Unit = {},
     onOpenBondsPairing: () -> Unit = {},
