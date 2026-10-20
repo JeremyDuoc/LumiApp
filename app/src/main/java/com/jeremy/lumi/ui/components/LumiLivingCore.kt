@@ -3,6 +3,7 @@ package com.jeremy.lumi.ui.components
 import android.animation.ValueAnimator
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -421,6 +422,57 @@ fun LumiLivingCore(
             )
             Spacer(Modifier.width(5.dp))
             LumiIconInfo(tint = tokens.dim, size = 12.dp)
+        }
+    }
+}
+
+/**
+ * 30% Aurora atmosphere spread over the Home, like the HTML background pools.
+ * Purely decorative, beneath the Scaffold. Does not replace the user's theme.
+ */
+@Composable
+fun LumiLivingAuroraBackdrop(
+    currentPhase: CyclePhase,
+    modifier: Modifier = Modifier.fillMaxSize()
+) {
+    val tokens = LumiThemeTokens.current
+    val colors = remember(currentPhase) { cellPalette(currentPhase) }
+    val first by animateColorAsState(colors.first, tween(1700), label = "aurora_phase_a")
+    val second by animateColorAsState(colors.second, tween(1700), label = "aurora_phase_b")
+    val third by animateColorAsState(colors.fourth, tween(1700), label = "aurora_phase_c")
+    val animate = remember { ValueAnimator.areAnimatorsEnabled() }
+    val movement = if (animate) {
+        val transition = rememberInfiniteTransition(label = "lumi_aurora_backdrop")
+        val drift by transition.animateFloat(
+            initialValue = -1f, targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(24_000),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "aurora_drift"
+        )
+        drift
+    } else 0f
+    Canvas(modifier) {
+        val strength = AURORA_POWER * if (tokens.isDark) .75f else 1f
+        val w = size.width
+        val h = size.height
+        val pools = listOf(
+            Triple(Offset(w * .05f + 22f * movement, h * .24f - 21f * movement), first, .60f),
+            Triple(Offset(w * .95f - 19f * movement, h * .43f + 24f * movement), second, .52f),
+            Triple(Offset(w * .42f + 10f * movement, h * .81f - 26f * movement), third, .43f)
+        )
+        for ((center, color, opacity) in pools) {
+            val radius = max(w * .90f, h * .29f)
+            drawCircle(
+                brush = Brush.radialGradient(
+                    listOf(color.copy(alpha = strength * opacity), Color.Transparent),
+                    center = center,
+                    radius = radius
+                ),
+                center = center,
+                radius = radius
+            )
         }
     }
 }
