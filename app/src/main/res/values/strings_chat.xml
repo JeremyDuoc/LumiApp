@@ -86,9 +86,9 @@
     <string name="chat_smart_patterns_dir_direct">directamente</string>
     <string name="chat_smart_patterns_dir_inverse">inversamente</string>
     <string name="chat_smart_patterns_empty">Descubrimientos bioestadísticos de tu perfil 🤍\n\nAún no disponemos de registros suficientes para calcular correlaciones. A medida que completes tus registros de sueño, dolor y síntomas durante un par de ciclos, Lumi descubrirá tus patrones personales de forma automática y privada en tu dispositivo.</string>
-    <string name="chat_smart_patterns_insight_item">• %1$s se relaciona %2$s con %3$s (fuerza de correlación: %4$d%%)%5$s.</string>
-    <string name="chat_smart_patterns_insight_stable">• Tus variables fisiológicas registradas muestran estabilidad general sin desviaciones significativas.</string>
-    <string name="chat_smart_patterns_lag"> (efecto acumulado de un día a otro)</string>
+    <string name="chat_smart_patterns_insight_item">• %1$s presenta una asociación %2$s con %3$s (ρ ≈ %4$d/100; %5$d días con ambos registros)%6$s. Esto no demuestra una causa.</string>
+    <string name="chat_smart_patterns_insight_stable">• Aún no hay asociaciones suficientemente respaldadas entre las variables registradas; esto no significa que no existan.</string>
+    <string name="chat_smart_patterns_lag"> (asociación entre días consecutivos, no predicción causal)</string>
     <string name="chat_smart_sleep_body">Sueño, temperatura corporal y descanso ☁️\n\n%1$sEn la fase lútea, la progesterona eleva la temperatura basal en unos 0.3 a 0.5 °C. Para conciliar el sueño profundo, el cuerpo necesita descender su temperatura central, motivo por el cual es frecuente experimentar despertares nocturnos o sensación de calor antes del periodo.\n\nPautas para favorecer el descanso:\n• Ambiente fresco: Mantén la habitación entre 18 °C y 20 °C con tejidos transpirables de algodón.\n• Cena ligera: Alimentos con triptófano (plátano, avena o semillas) consumidos dos horas antes de dormir facilitan la producción de melatonina.\n• Filtro de luz azul: Evita pantallas al menos 30 minutos antes de acostarte para permitir la secreción natural de melatonina.\n• Impacto en el dolor: Un sueño inferior a 6 horas incrementa la sensibilidad al dolor y la intensidad de los cólicos al día siguiente.</string>
     <string name="chat_smart_sleep_today">Hoy registraste %1$s horas de sueño. </string>
     <string name="chat_smart_stress_body">Impacto del estrés en tu ciclo menstrual 🌿\n\nEl estrés agudo o continuado activa la secreción de cortisol a través del eje neurohormonal. Niveles elevados de cortisol inhiben temporalmente la liberación de GnRH, lo cual puede posponer la ovulación varios días o provocar la falta transitoria del periodo.\n\nUna vez que el factor estresante disminuye y el cuerpo recupera el equilibrio, el eje hormonal suele regularizarse por sí mismo.</string>
@@ -614,4 +614,16 @@
     <string name="sos_tag_lmp">Último periodo 🗓️</string>
     <string name="sos_tag_pain">Cólicos y dolor 🩺</string>
     <string name="sos_tag_period">Sangrado 🩸</string>
+    <string name="chat_smart_urgent_symptoms">Lo que describes puede requerir atención médica urgente. Busca atención de urgencia ahora, especialmente si hay desmayo, sangrado que empapa una toalla por hora, dolor repentino muy intenso, dolor de pecho o dificultad para respirar. No esperes a una predicción de Lumi para solicitar ayuda.</string>
+    <string name="chat_smart_pregnancy_risk">No puedo confirmar ni descartar un embarazo con las fechas del ciclo. Una prueba de embarazo es más fiable desde el primer día de retraso; si no sabes cuándo debía llegar, hazla al menos 21 días después de la relación sin protección. Si han pasado menos de 5 días y no deseas un embarazo, consulta cuanto antes por anticoncepción de emergencia.</string>
+    <string name="chat_new_intro_title">Un espacio para entender tu ciclo</string>
+    <string name="chat_new_intro_desc">Pregunta por tus registros, explora posibles patrones o habla de lo que sientes. Lumi distingue estimaciones de observaciones.</string>
+    <string name="chat_new_privacy">Tus registros se analizan en este dispositivo</string>
+    <string name="chat_new_suggestions">Para explorar</string>
+    <string name="chat_new_history_search">Buscar en esta conversación</string>
+    <string name="chat_new_explain">Las asociaciones no demuestran causas. Las estimaciones del ciclo no confirman ovulación.</string>
+    <string name="chat_new_subtitle">Tu espacio, a tu ritmo</string>
+    <string name="chat_new_discovery">Un patrón de tus registros</string>
+    <string name="chat_new_error">No pude consultar tus registros en este momento. Inténtalo de nuevo; no quiero darte una respuesta basada en información incompleta.</string>
+    <string name="chat_new_welcome">Hola, soy Lumi. Puedo ayudarte a consultar tu ciclo, revisar tus registros y explorar posibles patrones cuando existan datos suficientes. Si todavía no puedo respaldar una conclusión, te lo diré.</string>
 </resources>

@@ -13,7 +13,7 @@ import com.jeremy.lumi.domain.repository.LumiRepository
 import com.jeremy.lumi.domain.usecase.ChatQuestion
 import com.jeremy.lumi.domain.usecase.CycleContext
 import com.jeremy.lumi.domain.usecase.CyclePredictor
-import com.jeremy.lumi.domain.usecase.DailyInsightGenerator
+import com.jeremy.lumi.domain.usecase.CyclePrediction
 import com.jeremy.lumi.domain.usecase.LumiRulesEngine
 import com.jeremy.lumi.domain.usecase.LumiSmartChatEngine
 import com.jeremy.lumi.domain.usecase.SymptomCorrelationEngine
@@ -25,7 +25,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
-import kotlin.random.Random
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
@@ -103,17 +102,12 @@ class ChatViewModel @Inject constructor(
                             closedCycles = closedCycles,
                             isOnContraceptive = isOnContraceptive
                         )
+                        seedChatContext(prediction, isOnContraceptive)
 
-                        // ── INYECCIÓN DE MENSAJE DE BIENVENIDA CONTEXTUAL ──
-                        val welcomeCtx = CycleContext(
-                            phase = prediction.currentPhase,
-                            dayOfCycle = prediction.currentDayOfCycle,
-                            dayOfPhase = prediction.dayOfPhase,
-                            daysUntilPeriod = 0, daysUntilOvulation = 0, cycleLength = cycleLen, isLate = false, delayDays = 0
-                        )
-                        rulesEngine.generateWelcomeMessage(welcomeCtx)
+                        // Welcome without claiming individual symptoms or confirmed phases.
+                        context.getString(R.string.chat_new_welcome)
                     } else {
-                        context.getString(R.string.chat_empty_welcome)
+                        context.getString(R.string.chat_new_welcome)
                     }
 
                     chatDao.insertMessage(
@@ -146,45 +140,29 @@ class ChatViewModel @Inject constructor(
                         closedCycles = closedCycles,
                         isOnContraceptive = isOnContraceptive
                     )
+                    seedChatContext(prediction, isOnContraceptive)
 
                     // Lógica normal de Insights Diarios
                     val todayStr = LocalDate.now().toString()
                     val lastInsightDate = chatPrefs.lastInsightDateFlow.first()
 
                     if (lastInsightDate != todayStr) {
-                        val userGoal = onboardingPrefs.userGoalFlow.first().name
-                        val todayDate = LocalDate.now()
-                        val daysUntilPeriodReal = java.time.temporal.ChronoUnit.DAYS.between(todayDate, prediction.nextPeriodDate).toInt()
-                        val daysUntilOvulationReal = if (prediction.nextOvulationDate != LocalDate.MAX) {
-                            java.time.temporal.ChronoUnit.DAYS.between(todayDate, prediction.nextOvulationDate).toInt()
-                        } else {
-                            Int.MAX_VALUE
-                        }
+                        val daysUntilPeriodReal = java.time.temporal.ChronoUnit.DAYS
+                            .between(LocalDate.now(), prediction.nextPeriodDate).toInt()
 
-                        val chosenText = when {
-                            daysUntilPeriodReal in 0..2 -> context.getString(R.string.chat_proactive_period, daysUntilPeriodReal)
-                            daysUntilOvulationReal in 0..2 -> context.getString(R.string.chat_proactive_ovulation)
-                            else -> {
-                                val arrayResId = DailyInsightGenerator.getInsightForDay(
-                                    phase = prediction.currentPhase,
-                                    dayOfPhase = prediction.dayOfPhase,
-                                    cycleDay = prediction.currentDayOfCycle,
-                                    isLate = prediction.isLate,
-                                    userGoal = userGoal
+                        // Only add a proactive item for a close calendar estimate.
+                        // Random phase-based tips should not masquerade as personal insights.
+                        if (daysUntilPeriodReal in 0..2) {
+                            chatDao.insertMessage(
+                                ChatMessageEntity(
+                                    text = context.getString(
+                                        R.string.chat_proactive_period, daysUntilPeriodReal
+                                    ),
+                                    messageType = ChatMessageType.GREETING,
+                                    timestamp = System.currentTimeMillis()
                                 )
-                                val options = context.resources.getStringArray(arrayResId)
-                                if (options.isNotEmpty()) options[Random.nextInt(options.size)] else ""
-                            }
-                        }
-
-                        // Insertar físicamente en Room
-                        chatDao.insertMessage(
-                            ChatMessageEntity(
-                                text = chosenText,
-                                messageType = ChatMessageType.GREETING,
-                                timestamp = System.currentTimeMillis()
                             )
-                        )
+                        }
 
                         // ── Motor de Correlación de Síntomas ──
                         val daysUntilPeriod = cycleLen - prediction.currentDayOfCycle + 1
@@ -216,6 +194,28 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    /**
+     * If the user opens Chat directly, Home might not have populated the
+     * singleton context yet. Seed only when absent; never overwrite live
+     * Home updates with a reduced snapshot.
+     */
+    private fun seedChatContext(prediction: CyclePrediction, isOnContraceptive: Boolean) {
+        if (rulesEngine.currentCycleContext.value != null) return
+        rulesEngine.updateContext(
+            CycleContext(
+                phase = prediction.currentPhase,
+                dayOfCycle = prediction.currentDayOfCycle,
+                dayOfPhase = prediction.dayOfPhase,
+                daysUntilPeriod = prediction.daysUntilNextPeriod,
+                daysUntilOvulation = prediction.daysUntilOvulation,
+                cycleLength = prediction.cycleLength,
+                isLate = prediction.isLate,
+                delayDays = prediction.delayDays,
+                isOnContraceptive = isOnContraceptive
+            )
+        )
+    }
+
     fun markAllAsRead() {
         viewModelScope.launch { chatDao.markAllAsRead() }
     }
@@ -227,7 +227,6 @@ class ChatViewModel @Inject constructor(
     fun askQuestion(question: ChatQuestion) {
         if (_isTyping.value) return
         val ctx = rulesEngine.currentCycleContext.value
-        _askedQuestions.value = _askedQuestions.value + question
         _isTyping.value = true
 
         viewModelScope.launch {
@@ -244,17 +243,13 @@ class ChatViewModel @Inject constructor(
                 }
 
                 // Simular indicador de escritura de Lumi
-                kotlinx.coroutines.delay(750)
 
-                val recentLogs = try {
-                    repository.getAllLogs(descending = true).firstOrNull() ?: emptyList()
-                } catch (e: Exception) {
-                    if (e is kotlinx.coroutines.CancellationException) throw e
-                    emptyList()
-                }
+                // A read failure is not equivalent to an empty history.
+                val recentLogs = repository.getAllLogs(descending = true).firstOrNull() ?: emptyList()
 
-                // Generar respuesta estructurada y clínicamente validada
+                // Generar respuesta guiada; nunca asumir que equivale a una evaluación médica.
                 val answer = smartChatEngine.generateAnswerForQuestion(question, ctx, recentLogs)
+                _askedQuestions.value = _askedQuestions.value + question
 
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                     chatDao.insertMessage(
@@ -264,6 +259,24 @@ class ChatViewModel @Inject constructor(
                             timestamp   = System.currentTimeMillis()
                         )
                     )
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Keep an explicit, localized error in the conversation rather than
+                // silently reporting "no personal records".
+                try {
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        chatDao.insertMessage(
+                            ChatMessageEntity(
+                                text = context.getString(R.string.chat_new_error),
+                                messageType = ChatMessageType.GREETING,
+                                timestamp = System.currentTimeMillis()
+                            )
+                        )
+                    }
+                } catch (_: Exception) {
+                    // Room can itself be unavailable; do not crash the UI.
                 }
             } finally {
                 _isTyping.value = false
@@ -294,15 +307,10 @@ class ChatViewModel @Inject constructor(
 
                 // 2. Obtener contexto del ciclo actual y registros recientes
                 val ctx = rulesEngine.currentCycleContext.value
-                val recentLogs = try {
-                    repository.getAllLogs(descending = true).firstOrNull() ?: emptyList()
-                } catch (e: Exception) {
-                    if (e is kotlinx.coroutines.CancellationException) throw e
-                    emptyList()
-                }
+                // A read failure is not equivalent to an empty history.
+                val recentLogs = repository.getAllLogs(descending = true).firstOrNull() ?: emptyList()
 
                 // 3. Pausa de realismo conversacional
-                kotlinx.coroutines.delay(850)
 
                 // 4. Generar respuesta contextual con el motor clínico inteligente
                 val responseText = smartChatEngine.generateResponse(trimmed, ctx, recentLogs)
@@ -315,6 +323,24 @@ class ChatViewModel @Inject constructor(
                 )
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                     chatDao.insertMessage(lumiMsg)
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Keep an explicit, localized error in the conversation rather than
+                // silently reporting "no personal records".
+                try {
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        chatDao.insertMessage(
+                            ChatMessageEntity(
+                                text = context.getString(R.string.chat_new_error),
+                                messageType = ChatMessageType.GREETING,
+                                timestamp = System.currentTimeMillis()
+                            )
+                        )
+                    }
+                } catch (_: Exception) {
+                    // Room can itself be unavailable; do not crash the UI.
                 }
             } finally {
                 _isTyping.value = false

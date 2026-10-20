@@ -86,9 +86,9 @@
     <string name="chat_smart_patterns_dir_direct">directly</string>
     <string name="chat_smart_patterns_dir_inverse">inversely</string>
     <string name="chat_smart_patterns_empty">Bio-statistical insights for your profile 🤍\n\nWe do not have enough logged entries yet to calculate correlations. As you log sleep, pain, and symptoms across a couple of cycles, Lumi will automatically and privately discover your unique patterns on your device.</string>
-    <string name="chat_smart_patterns_insight_item">• %1$s correlates %2$s with %3$s (correlation strength: %4$d%%)%5$s.</string>
-    <string name="chat_smart_patterns_insight_stable">• Your logged physiological indicators show general stability with no significant deviations.</string>
-    <string name="chat_smart_patterns_lag"> (lagged effect across consecutive days)</string>
+    <string name="chat_smart_patterns_insight_item">• %1$s shows a %2$s association with %3$s (ρ ≈ %4$d/100; %5$d days recorded together)%6$s. This does not prove causation.</string>
+    <string name="chat_smart_patterns_insight_stable">• No sufficiently supported associations were found in the available records. This does not mean none exist.</string>
+    <string name="chat_smart_patterns_lag"> (next-day association, not a causal prediction)</string>
     <string name="chat_smart_sleep_body">Sleep, body temperature, and rest ☁️\n\n%1$sIn the luteal phase, progesterone elevates basal body temperature by 0.3 to 0.5 °C. To reach deep sleep, the body needs to cool its core temperature, which explains frequent night wakings or feeling overheated before your period.\n\nRest tips:\n• Cool bedroom: Keep the room between 18 °C and 20 °C (64–68 °F) with breathable cotton bedding.\n• Light dinner: Foods with tryptophan (bananas, oats, seeds) eaten two hours before sleep aid melatonin production.\n• Blue light filter: Avoid screens at least 30 minutes before bedtime to encourage natural melatonin release.\n• Impact on pain: Sleeping under 6 hours increases pain sensitivity and next-day cramp severity.</string>
     <string name="chat_smart_sleep_today">Today you logged %1$s hours of sleep. </string>
     <string name="chat_smart_stress_body">Impact of stress on your menstrual cycle 🌿\n\nAcute or prolonged stress triggers cortisol release via the neurohormonal axis. High cortisol temporarily suppresses GnRH release, which can postpone ovulation by several days or lead to a missed period.\n\nOnce stressors subside and the body regains balance, the hormonal axis typically resets itself.</string>
@@ -614,4 +614,16 @@
     <string name="sos_tag_lmp">Last period 🗓️</string>
     <string name="sos_tag_pain">Cramps &amp; pain 🩺</string>
     <string name="sos_tag_period">Bleeding 🩸</string>
+    <string name="chat_smart_urgent_symptoms">What you describe may require urgent medical attention. Seek emergency care now, especially for fainting, bleeding that soaks a pad an hour, sudden severe pain, chest pain, or difficulty breathing. Do not wait for Lumi\'s predictions to seek care.</string>
+    <string name="chat_smart_pregnancy_risk">Cycle dates alone cannot confirm or rule out pregnancy. A pregnancy test is more reliable from the first missed period; if you do not know when it was due, test at least 21 days after unprotected sex. If less than 5 days have passed and pregnancy is not desired, promptly ask a healthcare professional about emergency contraception.</string>
+    <string name="chat_new_intro_title">A space to understand your cycle</string>
+    <string name="chat_new_intro_desc">Ask about your logs, explore possible patterns, or talk about how you feel. Lumi separates estimates from observations.</string>
+    <string name="chat_new_privacy">Your records are analyzed on this device</string>
+    <string name="chat_new_suggestions">Ideas to explore</string>
+    <string name="chat_new_history_search">Search this conversation</string>
+    <string name="chat_new_explain">Associations do not demonstrate causation. Cycle estimates cannot confirm ovulation.</string>
+    <string name="chat_new_subtitle">Your space, at your pace</string>
+    <string name="chat_new_discovery">A pattern in your records</string>
+    <string name="chat_new_error">I couldn\'t read your records right now. Please try again; I don\'t want to answer using incomplete information.</string>
+    <string name="chat_new_welcome">Hello, this is Lumi. I can help you explore your cycle, review your records, and look for possible patterns when enough data is available. If evidence is insufficient, I will tell you.</string>
 </resources>

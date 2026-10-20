@@ -46,7 +46,13 @@ class AdvancedBioCorrelationMatrixEngine @Inject constructor() {
             e.printStackTrace()
         }
 
-        return@withContext insights.sortedByDescending { abs(it.correlationScore) }
+        // Conservative family-wise error control across all variable pairs and lags.
+        val variableCount = BioVariable.values().size
+        val hypothesisCount = (variableCount * (variableCount - 1) / 2) * 3
+        val adjustedAlpha = 0.05f / hypothesisCount
+        return@withContext insights
+            .filter { it.pValue.isFinite() && it.pValue < adjustedAlpha }
+            .sortedByDescending { abs(it.correlationScore) }
     }
 
     private fun evaluatePair(

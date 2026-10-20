@@ -57,75 +57,31 @@ class LumiSmartChatEngine @Inject constructor(
         cycleContext: CycleContext?,
         recentLogs: List<DailyLogWithSymptoms> = emptyList()
     ): String = withContext(Dispatchers.Default) {
-        val cleanQuery = normalizeText(query)
-
-        // Relaciones sin protección / Emergencia
-        if (containsAny(cleanQuery, listOf("sin proteccion", "se rompio", "postday", "pastilla del dia despues", "anticonceptivo de emergencia", "riesgo de embarazo", "coito"))) {
-            return@withContext buildUnprotectedSexResponse(cycleContext)
+        when (ChatIntentRouter.classify(query)) {
+            ChatIntent.URGENT_SYMPTOMS ->
+                stringResolver.getString(R.string.chat_smart_urgent_symptoms)
+            ChatIntent.EMERGENCY_CONTRACEPTION -> buildUnprotectedSexResponse(cycleContext)
+            ChatIntent.PREGNANCY_RISK ->
+                stringResolver.getString(R.string.chat_smart_pregnancy_risk)
+            ChatIntent.PERSONAL_PATTERNS -> buildPersonalInsightsSummary(cycleContext, recentLogs)
+            ChatIntent.LATE_PERIOD -> buildLatePeriodResponse(cycleContext)
+            ChatIntent.NEXT_PERIOD -> buildNextPeriodResponse(cycleContext)
+            ChatIntent.CURRENT_PHASE -> buildCurrentPhaseResponse(cycleContext)
+            ChatIntent.FERTILITY -> buildFertilityResponse(cycleContext)
+            ChatIntent.CONTRACEPTION -> buildContraceptionResponse(cycleContext)
+            ChatIntent.CRAMPS -> buildCrampsResponse(cycleContext)
+            ChatIntent.HEADACHE -> buildHeadacheResponse(cycleContext)
+            ChatIntent.DIGESTION -> buildDigestiveResponse(cycleContext)
+            ChatIntent.SPOTTING -> buildDischargeResponse(cycleContext)
+            ChatIntent.MOOD -> buildMoodResponse(cycleContext)
+            ChatIntent.SLEEP -> buildSleepResponse(cycleContext)
+            ChatIntent.STRESS -> buildStressResponse(cycleContext)
+            ChatIntent.ENERGY -> buildEnergyResponse(cycleContext)
+            ChatIntent.NUTRITION -> buildNutritionResponse(cycleContext)
+            ChatIntent.EXERCISE -> buildExerciseResponse(cycleContext)
+            ChatIntent.GREETING -> buildGreetingResponse(cycleContext)
+            ChatIntent.UNKNOWN -> buildContextualFallback(query, cycleContext)
         }
-
-        // Dolor y cólicos
-        if (containsAny(cleanQuery, listOf("colico", "colicos", "vientre", "ovarios", "dolor pelvico", "calambre", "dismenorrea"))) {
-            return@withContext buildCrampsResponse(cycleContext)
-        }
-
-        // Dolor de cabeza / migraña
-        if (containsAny(cleanQuery, listOf("cabeza", "migrana", "jaqueca", "cefalea"))) {
-            return@withContext buildHeadacheResponse(cycleContext)
-        }
-
-        // Retraso menstrual
-        if (containsAny(cleanQuery, listOf("retraso", "atraso", "no me baja", "no me viene", "periodo tarde", "tarde mi periodo"))) {
-            return@withContext buildLatePeriodResponse(cycleContext)
-        }
-
-        // Fertilidad / ovulación
-        if (containsAny(cleanQuery, listOf("fertil", "ovulacion", "ovulando", "dias fertiles", "embarazada", "quedar embarazada"))) {
-            return@withContext buildFertilityResponse(cycleContext)
-        }
-
-        // Estado de ánimo / SPM
-        if (containsAny(cleanQuery, listOf("animo", "humor", "irritable", "enojada", "llorar", "ansiedad", "triste", "spm", "pms"))) {
-            return@withContext buildMoodResponse(cycleContext)
-        }
-
-        // Sueño / cansancio
-        if (containsAny(cleanQuery, listOf("sueno", "insomnio", "dormir", "cansada", "agotada", "energia"))) {
-            return@withContext buildSleepResponse(cycleContext)
-        }
-
-        // Digestión / náuseas
-        if (containsAny(cleanQuery, listOf("nausea", "nauseas", "asco", "vomito", "hinchazon", "inflamada", "gases"))) {
-            return@withContext buildDigestiveResponse(cycleContext)
-        }
-
-        // Patrones y descubrimientos
-        if (containsAny(cleanQuery, listOf("patrones", "descubrimientos", "correlaciones", "datos", "estadisticas"))) {
-            return@withContext buildPersonalInsightsSummary(cycleContext, recentLogs)
-        }
-
-        // Nutrición
-        if (containsAny(cleanQuery, listOf("comer", "comida", "dieta", "alimentacion", "nutricion", "alimentos"))) {
-            return@withContext buildNutritionResponse(cycleContext)
-        }
-
-        // Ejercicio
-        if (containsAny(cleanQuery, listOf("ejercicio", "entrenar", "gimnasio", "gym", "pesas", "cardio", "deporte"))) {
-            return@withContext buildExerciseResponse(cycleContext)
-        }
-
-        // Flujo vaginal / manchado
-        if (containsAny(cleanQuery, listOf("flujo", "manchado", "spotting", "moco"))) {
-            return@withContext buildDischargeResponse(cycleContext)
-        }
-
-        // Saludos
-        if (containsAny(cleanQuery, listOf("hola", "buenos dias", "buenas tardes", "buenas noches", "que tal", "lumi"))) {
-            return@withContext buildGreetingResponse(cycleContext)
-        }
-
-        // Fallback contextualizado
-        return@withContext buildContextualFallback(query, cycleContext)
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -274,6 +230,7 @@ class LumiSmartChatEngine @Inject constructor(
                     dir,
                     formatVarName(ins.variableB),
                     (abs(ins.correlationScore) * 100).toInt(),
+                    ins.sampleSize,
                     lag
                 )
             }
