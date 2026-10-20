@@ -243,6 +243,19 @@ fun LumiLivingCore(
                     withTransform({
                         scale(ratio, ratio, pivot = Offset.Zero)
                     }) {
+                        // En temas claros, una sombra cromática tenue devuelve
+                        // contraste a la membrana sin crear otra franja luminosa.
+                        if (!tokens.isDark) {
+                            drawCircle(
+                                brush = Brush.radialGradient(
+                                    0f to tokens.accent.copy(alpha = .075f),
+                                    1f to Color.Transparent,
+                                    center = Offset(200f, 207f), radius = 164f
+                                ),
+                                center = Offset(200f, 207f), radius = 164f
+                            )
+                        }
+
                         // AURA CROMÁTICA LOCAL: 16 halos direccionales siguen
                         // las deformaciones reales y muestrean la paleta en
                         // el punto de membrana más cercano. No hay luz blanca
