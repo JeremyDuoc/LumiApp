@@ -22,8 +22,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,6 +47,7 @@ import com.jeremy.lumi.ui.theme.LocalPhaseColors
 import com.jeremy.lumi.ui.theme.LumiMotion
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
 import com.jeremy.lumi.utils.LumiClock
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -82,7 +85,8 @@ fun LumiWeekTimeline(
         weeks.indexOfFirst { week -> week.any { it.date == today } }.coerceAtLeast(0)
     }
     val pager = rememberPagerState(initialPage = todayWeekIndex, pageCount = { weeks.size })
-    val selected = selectedDate ?: today
+    var transientSelected by remember { mutableStateOf<LocalDate?>(null) }
+    val selected = transientSelected ?: selectedDate ?: today
     LaunchedEffect(selectedDate, weeks) {
         val target = weeks.indexOfFirst { week -> week.any { it.date == selected } }
         if (target >= 0 && target != pager.currentPage) pager.animateScrollToPage(target)
@@ -173,7 +177,17 @@ fun LumiWeekTimeline(
                                 .clip(RoundedCornerShape(10.dp))
                                 .clickable(role = Role.Button) {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    onOpenDate?.invoke(day.date) ?: onSelectDate(day.date)
+                                    if (onOpenDate != null) {
+                                        transientSelected = day.date
+                                        scope.launch {
+                                            delay(95)
+                                            onOpenDate(day.date)
+                                            delay(260)
+                                            transientSelected = null
+                                        }
+                                    } else {
+                                        onSelectDate(day.date)
+                                    }
                                 }
                                 .semantics {
                                     contentDescription = day.date.toString() + ", " +
