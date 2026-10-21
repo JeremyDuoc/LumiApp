@@ -340,6 +340,11 @@ fun HomeScreen(
                                 DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
                             )?.uppercase(Locale.getDefault())
                                 ?: stringResource(R.string.cal_today_cd).uppercase(Locale.getDefault()),
+                            phaseContextLabel = stringResource(
+                                if (uiState.selectedDate != null &&
+                                    uiState.selectedDate != com.jeremy.lumi.utils.LumiClock.today()
+                                ) R.string.lumi_selected_day_phase else R.string.cal_current_phase
+                            ).uppercase(Locale.getDefault()),
                             onConfidenceClick = { showPredictionInfoSheet = true }
                         )
                     }
