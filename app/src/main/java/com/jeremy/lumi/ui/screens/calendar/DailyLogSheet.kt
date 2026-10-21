@@ -672,7 +672,8 @@ private fun DailyLogHeader(
     stepLabel: String,
     onClose: () -> Unit
 ) {
-    val monthName = remember(month, year) {
+    val tokens = LumiThemeTokens.current
+    val monthName = remember(month, year, day) {
         val pattern = if (Locale.getDefault().language == "en") "MMMM d" else "d 'de' MMMM"
         LocalDate.of(year, month, day)
             .format(DateTimeFormatter.ofPattern(pattern, Locale.getDefault()))
@@ -694,14 +695,14 @@ private fun DailyLogHeader(
                     modifier = Modifier
                         .size(42.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
+                        .background(tokens.accentSoft),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = day.toString(),
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = tokens.accent
                     )
                 }
                 Spacer(Modifier.width(12.dp))
@@ -709,13 +710,17 @@ private fun DailyLogHeader(
                     Text(
                         text = stringResource(R.string.log_title),
                         fontSize = 19.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
+                        fontFamily = LumiSans,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = (-0.4).sp,
+                        color = tokens.text
                     )
                     Text(
                         text = monthName,
-                        fontSize = 12.5.sp,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f)
+                        fontSize = 14.sp,
+                        fontFamily = LumiEditorialSerif,
+                        fontStyle = FontStyle.Italic,
+                        color = tokens.accent
                     )
                 }
             }
@@ -725,13 +730,13 @@ private fun DailyLogHeader(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                    .background(tokens.panel)
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Close,
                     contentDescription = stringResource(R.string.btn_close),
                     modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                    tint = tokens.muted
                 )
             }
         }
@@ -2346,6 +2351,7 @@ private fun DailyLogStickyFooter(
     onSaveClick: () -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
+    val tokens = LumiThemeTokens.current
 
     Column(
         modifier = Modifier
@@ -2388,8 +2394,8 @@ private fun DailyLogStickyFooter(
         // Botón principal de Guardar con degradado
         val gradient = Brush.horizontalGradient(
             listOf(
-                MaterialTheme.colorScheme.primary,
-                MaterialTheme.colorScheme.secondary
+                tokens.rose,
+                tokens.accent
             )
         )
 
@@ -2413,7 +2419,7 @@ private fun DailyLogStickyFooter(
                     CircularProgressIndicator(
                         modifier = Modifier.size(18.dp),
                         strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        color = if (tokens.isDark) tokens.bg else tokens.text
                     )
                     Spacer(Modifier.width(8.dp))
                 } else {
@@ -2430,7 +2436,7 @@ private fun DailyLogStickyFooter(
                            else stringResource(R.string.btn_save_log),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary,
+                    color = if (tokens.isDark) tokens.bg else tokens.text,
                     letterSpacing = 0.4.sp
                 )
             }
