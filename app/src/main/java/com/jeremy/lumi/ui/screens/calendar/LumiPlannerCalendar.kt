@@ -2,7 +2,11 @@ package com.jeremy.lumi.ui.screens.calendar
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -234,15 +238,60 @@ private fun PlannerTopBar(
     onMore: () -> Unit
 ) {
     val tokens = LumiThemeTokens.current
+    val logoMotion = rememberInfiniteTransition(label = "planner_logo_breathe")
+    val logoRotation by logoMotion.animateFloat(
+        initialValue = -5f,
+        targetValue = 7f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(7000, easing = LumiMotion.EaseInOutQuart),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "planner_logo_rotation"
+    )
+    val logoScale by logoMotion.animateFloat(
+        initialValue = .96f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(7000, easing = LumiMotion.EaseInOutQuart),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "planner_logo_scale"
+    )
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-            Box(
-                Modifier.size(26.dp).clip(RoundedCornerShape(11.dp)).background(
-                    Brush.linearGradient(listOf(tokens.accent, tokens.rose, tokens.peach, tokens.mint))
-                )
+            val logoShape = RoundedCornerShape(
+                topStart = 11.dp, topEnd = 15.dp, bottomEnd = 12.dp, bottomStart = 14.dp
             )
+            Box(
+                Modifier.size(26.dp)
+                    .graphicsLayer {
+                        rotationZ = logoRotation
+                        scaleX = logoScale
+                        scaleY = logoScale
+                    }
+                    .clip(logoShape)
+                    .background(
+                        Brush.linearGradient(
+                            listOf(tokens.accent, tokens.rose, tokens.peach, tokens.mint)
+                        )
+                    )
+            ) {
+                Box(
+                    Modifier.fillMaxSize().padding(5.dp).clip(logoShape).background(
+                        Brush.radialGradient(
+                            listOf(Color.White.copy(alpha = .55f), Color.Transparent)
+                        )
+                    )
+                )
+            }
             Spacer(Modifier.width(9.dp))
-            Text("lumi", color = tokens.text, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+            Text(
+                "lumi",
+                color = tokens.text,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = (-1.25).sp
+            )
         }
         Box {
             PlannerIconButton(onClick = onInbox) {
@@ -257,6 +306,7 @@ private fun PlannerTopBar(
                 Box(
                     Modifier.align(Alignment.TopEnd).offset(x = 3.dp, y = (-3).dp)
                         .heightIn(min = 17.dp).clip(CircleShape).background(tokens.rose)
+                        .border(2.dp, tokens.bg, CircleShape)
                         .padding(horizontal = 5.dp),
                     contentAlignment = Alignment.Center
                 ) {
