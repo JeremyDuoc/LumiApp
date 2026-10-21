@@ -1136,70 +1136,61 @@ private fun MoodGridSelector(
     selected: Int?,
     onSelect: (Int) -> Unit
 ) {
-    val chunked = options.chunked(3)
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        chunked.forEachIndexed { rowIndex, rowOptions ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                rowOptions.forEachIndexed { colIndex, optionRes ->
-                    val globalIndex = rowIndex * 3 + colIndex
-                    val isSelected = selected == optionRes
-                    val bg by animateColorAsState(
-                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
-                        else MaterialTheme.colorScheme.surfaceVariant,
-                        label = "mood_bg_$globalIndex"
+    val tokens = LumiThemeTokens.current
+    // Compact 44dp pill rows, still large enough to tap reliably.
+    // Three columns retain readable labels unlike an overcrowded four-column grid.
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        options.chunked(3).forEachIndexed { rowIndex, rowOptions ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                rowOptions.forEachIndexed { column, optionRes ->
+                    val index = rowIndex * 3 + column
+                    val active = selected == optionRes
+                    val background by animateColorAsState(
+                        targetValue = if (active) tokens.accentSoft else tokens.panel,
+                        animationSpec = tween(240),
+                        label = "lumi_mood_bg_$index"
                     )
-                    val fg by animateColorAsState(
-                        if (isSelected) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
-                        label = "mood_fg_$globalIndex"
+                    val foreground by animateColorAsState(
+                        targetValue = if (active) tokens.accent else tokens.text,
+                        animationSpec = tween(240),
+                        label = "lumi_mood_ink_$index"
                     )
-                    val border = if (isSelected) {
-                        Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
-                    } else Modifier
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(68.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .then(border)
-                            .background(bg)
+                    val outline by animateColorAsState(
+                        targetValue = if (active) tokens.accent.copy(alpha = .82f)
+                            else tokens.line.copy(alpha = .65f),
+                        animationSpec = tween(240),
+                        label = "lumi_mood_border_$index"
+                    )
+                    val shape = RoundedCornerShape(22.dp)
+                    Row(
+                        modifier = Modifier.weight(1f)
+                            .height(44.dp)
+                            .clip(shape)
+                            .background(background)
+                            .border(1.dp, outline, shape)
                             .clickable { onSelect(optionRes) }
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
-                        contentAlignment = Alignment.Center
+                            .padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                imageVector = moodIconList.getOrElse(globalIndex) { Icons.Rounded.SentimentSatisfied },
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = fg
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = stringResource(id = optionRes),
-                                fontSize = 11.5.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = fg,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
+                        Icon(
+                            imageVector = moodIconList.getOrElse(index) { Icons.Rounded.SentimentSatisfied },
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = foreground
+                        )
+                        Spacer(Modifier.width(5.dp))
+                        Text(
+                            text = stringResource(optionRes),
+                            fontSize = 11.sp,
+                            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
+                            color = foreground,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
-                // Si la última fila tiene menos de 3 elementos, agregamos spacers para que no se estiren
-                if (rowOptions.size < 3) {
-                    repeat(3 - rowOptions.size) {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
-                }
+                repeat(3 - rowOptions.size) { Spacer(modifier = Modifier.weight(1f)) }
             }
         }
     }
