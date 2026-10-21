@@ -21,7 +21,6 @@ data class CalendarDay(
     val phase: CyclePhase = CyclePhase.UNKNOWN,
     val isToday: Boolean = false,
     val hasLog: Boolean = false,
-    val logPreview: CalendarLogPreview? = null,
     val isEmptyOffset: Boolean = false,
     val isPrediction: Boolean = false,
     /** true cuando el día es estrictamente futuro (después de hoy). */
@@ -29,5 +28,6 @@ data class CalendarDay(
     // true solo si hubo relación sexual ese día Y la usuaria permitió mostrarlo en el calendario
     val showIntercourseHeart: Boolean = false,
     // null = no aplica / no mostrado. true = con protección, false = sin protección.
-    val intercourseProtected: Boolean? = null
+    val intercourseProtected: Boolean? = null,
+    val logPreview: CalendarLogPreview? = null
 )
