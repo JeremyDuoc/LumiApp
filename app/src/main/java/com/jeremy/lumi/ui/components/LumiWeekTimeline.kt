@@ -98,14 +98,6 @@ fun LumiWeekTimeline(
     }
     val selected = selectedDate ?: today
     val selectedModel = weekDays.firstOrNull { it.date == selected }
-    val selectedPhaseName = when (selectedModel?.phase) {
-        CyclePhase.MENSTRUAL -> stringResource(R.string.pm_phase_menstrual)
-        CyclePhase.FOLLICULAR -> stringResource(R.string.pm_phase_follicular)
-        CyclePhase.OVULATION -> stringResource(R.string.pm_phase_ovulation)
-        CyclePhase.LUTEAL -> stringResource(R.string.pm_phase_luteal)
-        else -> ""
-    }
-
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -159,20 +151,20 @@ fun LumiWeekTimeline(
                 animationSpec = LumiMotion.SpatialSpring,
                 label = "lumi_week_selection_travel"
             )
-            BoxWithConstraints(Modifier.fillMaxWidth().height(79.dp)) {
+            BoxWithConstraints(Modifier.fillMaxWidth().height(83.dp)) {
                 val dayWidth = (maxWidth - 24.dp) / 7
                 if (selectedIndex >= 0) {
                     Box(
                         Modifier
                             .offset(x = (dayWidth + 4.dp) * markerIndex)
                             .width(dayWidth)
-                            .height(79.dp)
-                            .clip(RoundedCornerShape(15.dp))
+                            .height(83.dp)
+                            .clip(RoundedCornerShape(16.dp))
                             .background(tokens.accentSoft)
                             .border(
                                 width = 1.dp,
                                 color = tokens.accent.copy(alpha = .82f),
-                                shape = RoundedCornerShape(15.dp)
+                                shape = RoundedCornerShape(16.dp)
                             )
                     )
                 }
@@ -206,22 +198,15 @@ fun LumiWeekTimeline(
                         animationSpec = tween(260),
                         label = "mini_day_fill"
                     )
-                    val outline by animateColorAsState(
-                        when {
-                            active -> Color.Transparent
-                            day.isToday -> Color.Transparent // 'Hoy' se distingue con el micropunto; no simular una segunda selección
-                            else -> Color.Transparent
-                        }, label = "mini_day_outline"
-                    )
-                    val shape = RoundedCornerShape(15.dp)
+                    // La selección viaja como una pieza única, sin bordes duplicados.
+                    val shape = RoundedCornerShape(16.dp)
                     Column(
                         modifier = Modifier
                             .weight(1f)
-                            .height(79.dp)
+                            .height(83.dp)
                             .graphicsLayer { scaleX = scale; scaleY = scale }
                             .clip(shape)
                             .background(fill)
-                            .border(1.dp, outline, shape)
                             .clickable(
                                 interactionSource = interaction,
                                 indication = null,
@@ -239,32 +224,49 @@ fun LumiWeekTimeline(
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            day.weekdayLabel.take(3).replaceFirstChar { it.uppercase() },
-                            fontSize = 11.sp,
-                            color = if (active) tokens.text else tokens.muted,
+                            if (day.isToday) stringResource(R.string.cal_today_cd).uppercase(locale)
+                            else day.weekdayLabel.take(3).replaceFirstChar { it.uppercase(locale) },
+                            fontSize = 10.sp,
+                            fontWeight = if (day.isToday) FontWeight.Bold else FontWeight.Medium,
+                            color = if (day.isToday) tokens.accent else if (active) tokens.text else tokens.muted,
                             maxLines = 1
                         )
-                        Text(
-                            day.dayOfMonth.toString(),
-                            fontSize = 17.sp,
-                            fontWeight = if (active || day.isToday) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (active) tokens.text
-                                else if (day.isPrediction) tokens.muted else tokens.text,
-                            textAlign = TextAlign.Center
-                        )
+                        Box(
+                            modifier = Modifier.size(32.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    when {
+                                        periodDay && !day.isPrediction -> phaseColor.copy(alpha = .90f)
+                                        periodDay && day.isPrediction -> phaseColor.copy(alpha = .16f)
+                                        else -> Color.Transparent
+                                    }
+                                )
+                                .then(if (periodDay && day.isPrediction) Modifier.border(
+                                    1.dp, phaseColor.copy(alpha = .50f), CircleShape
+                                ) else Modifier),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                day.dayOfMonth.toString(),
+                                fontSize = 16.sp,
+                                fontWeight = if (active || day.isToday || periodDay)
+                                    FontWeight.SemiBold else FontWeight.Normal,
+                                color = if (periodDay && !day.isPrediction) tokens.bg
+                                    else tokens.text.copy(alpha = if (day.isPrediction && !active) .77f else 1f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(3.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            if (day.isToday && !active) {
-                                Box(Modifier.size(3.dp).clip(CircleShape).background(tokens.accent))
+                            if (day.phase != CyclePhase.UNKNOWN) {
+                                Box(Modifier.size(4.dp).clip(CircleShape)
+                                    .background(phaseColor.copy(alpha = if (day.isPrediction) .56f else .9f)))
                             }
-                            Box(
-                                Modifier.size(if (day.hasLog) 5.dp else 3.5.dp)
-                                    .clip(CircleShape)
-                                    .background(if (day.hasLog) tokens.accent
-                                        else phaseColor.copy(alpha = if (day.isPrediction) .45f else .9f))
-                            )
+                            if (day.hasLog) {
+                                Box(Modifier.size(5.dp).clip(CircleShape).background(tokens.accent))
+                            }
                         }
                     }
                 }
@@ -281,18 +283,33 @@ fun LumiWeekTimeline(
                 .background(if (selectedModel?.hasLog == true) tokens.accent else tokens.dim))
             Spacer(Modifier.width(9.dp))
             AnimatedContent(
-                targetState = Triple(selected, selectedPhaseName, selectedModel?.isPrediction ?: false),
-                transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(140)) },
+                targetState = selectedModel,
+                transitionSpec = { fadeIn(tween(240)) togetherWith fadeOut(tween(140)) },
                 modifier = Modifier.weight(1f),
                 label = "mini_selected_context"
-            ) { (_, phase, prediction) ->
-                val text = when {
-                    selected == today && phase.isNotEmpty() -> stringResource(R.string.lumi_cal_today_phase, phase)
-                    phase.isNotEmpty() && prediction -> stringResource(R.string.lumi_cal_estimate_phase, phase)
-                    phase.isNotEmpty() -> phase
+            ) { previewDay ->
+                // Fecha y contexto del día seleccionado, sin inventar datos.
+                val dateName = if (previewDay == null || previewDay.date == today)
+                    stringResource(R.string.cal_today_cd)
+                    else previewDay.date.format(DateTimeFormatter.ofPattern("d MMM", locale))
+                val phase = when (previewDay?.phase) {
+                    CyclePhase.MENSTRUAL -> stringResource(R.string.pm_phase_menstrual)
+                    CyclePhase.FOLLICULAR -> stringResource(R.string.pm_phase_follicular)
+                    CyclePhase.OVULATION -> stringResource(R.string.pm_phase_ovulation)
+                    CyclePhase.LUTEAL -> stringResource(R.string.pm_phase_luteal)
                     else -> stringResource(R.string.lumi_cal_week_no_cycle)
                 }
-                Text(text, fontSize = 11.sp, color = tokens.muted)
+                val qualifier = if (previewDay?.isPrediction == true)
+                    stringResource(R.string.lumi_cal_estimate_phase, phase)
+                    else phase
+                val logLabel = if (previewDay?.hasLog == true)
+                    " · " + stringResource(R.string.cal_accessibility_with_log)
+                    else ""
+                Text(
+                    text = "$dateName · $qualifier$logLabel",
+                    fontSize = 11.sp, color = tokens.muted, lineHeight = 16.sp,
+                    maxLines = 2
+                )
             }
             if (selectedDate != null && selectedDate != today) {
                 Text(
