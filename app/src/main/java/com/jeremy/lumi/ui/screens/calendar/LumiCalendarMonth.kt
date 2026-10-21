@@ -209,9 +209,9 @@ fun LumiCalendarMonth(
             horizontalArrangement = Arrangement.spacedBy(15.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            LumiLegendMark(tokens.rose, "Periodo")
-            LumiLegendMark(tokens.mint, "Fértil")
-            LumiLegendMark(tokens.accent, "Registro")
+            LumiLegendMark(tokens.rose, stringResource(R.string.lumi_cal_legend_period))
+            LumiLegendMark(tokens.mint, stringResource(R.string.lumi_cal_legend_fertile))
+            LumiLegendMark(tokens.accent, stringResource(R.string.lumi_cal_legend_record))
         }
         Spacer(Modifier.height(4.dp))
     }
@@ -262,11 +262,11 @@ private fun LumiMonthDay(
         label = "calendar_day_outline"
     )
     val shape = RoundedCornerShape(15.dp)
-    val description = day.dayOfMonth.toString() + ", " + when {
-        day.isToday -> "hoy"
-        day.isPrediction -> "estimación futura"
-        day.hasLog -> "con registro"
-        else -> "sin registro"
+    val description = when {
+        day.isToday -> stringResource(R.string.lumi_cal_a11y_today, day.dayOfMonth)
+        day.isPrediction -> stringResource(R.string.lumi_cal_a11y_prediction, day.dayOfMonth)
+        day.hasLog -> stringResource(R.string.lumi_cal_a11y_logged, day.dayOfMonth)
+        else -> stringResource(R.string.lumi_cal_a11y_empty, day.dayOfMonth)
     }
     Box(
         modifier = modifier
@@ -331,8 +331,10 @@ fun LumiCalendarDayDetail(
     val date = remember(uiState.displayYear, uiState.displayMonth, selectedDay) {
         runCatching { LocalDate.of(uiState.displayYear, uiState.displayMonth, selectedDay) }.getOrNull()
     }
-    val title = date?.format(DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", Locale("es")))
-        ?.replaceFirstChar { it.uppercase() } ?: "Selecciona un día"
+    val locale = Locale.getDefault()
+    val datePattern = if (locale.language == "es") "EEEE d 'de' MMMM" else "EEEE d MMMM"
+    val title = date?.format(DateTimeFormatter.ofPattern(datePattern, locale))
+        ?.replaceFirstChar { it.titlecase(locale) } ?: stringResource(R.string.lumi_cal_choose_day)
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
         AnimatedContent(
             targetState = title,
@@ -351,8 +353,8 @@ fun LumiCalendarDayDetail(
         if (day != null) {
             val phase = if (day.phase == CyclePhase.UNKNOWN) null else phaseLabel(day.phase)
             val context = when {
-                phase == null -> "Sin información del ciclo para este día"
-                day.isPrediction -> "Estimación · " + phase
+                phase == null -> stringResource(R.string.lumi_cal_no_cycle)
+                day.isPrediction -> stringResource(R.string.lumi_cal_estimate_phase, phase)
                 else -> phase
             }
             Text(context, fontSize = 12.sp, color = tokens.muted)
@@ -369,14 +371,14 @@ fun LumiCalendarDayDetail(
                     .background(if (day.hasLog) tokens.accent else tokens.dim))
                 Column {
                     Text(
-                        if (day.hasLog) "Tienes un registro este día" else "Este día aún no tiene registros",
+                        if (day.hasLog) stringResource(R.string.lumi_cal_day_logged) else stringResource(R.string.lumi_cal_day_empty),
                         fontSize = 13.sp,
                         color = tokens.text,
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        if (day.hasLog) "Puedes consultar o actualizar lo que anotaste."
-                        else "Selecciona registrar para añadir cómo te sentiste.",
+                        if (day.hasLog) stringResource(R.string.lumi_cal_day_logged_hint)
+                        else stringResource(R.string.lumi_cal_day_empty_hint),
                         fontSize = 11.sp, color = tokens.muted,
                         lineHeight = 16.sp
                     )
