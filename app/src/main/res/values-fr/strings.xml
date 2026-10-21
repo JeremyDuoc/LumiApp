@@ -1638,4 +1638,29 @@
         <item>Tes enregistrements montrent que %1$s est %.1fx plus susceptible de survenir pendant ta phase %2$s par rapport au reste du cycle. Tu peux désormais l\'anticiper et t\'y préparer. 💜</item>
         <item>J\'ai constaté que %1$s se manifeste bien plus souvent durant ta phase %2$s. Ce profil t\'est propre : tu as maintenant une longueur d\'avance. 🌸</item>
     </string-array>
+    <string name="lumi_cal_title_start">Ton</string>
+    <string name="lumi_cal_title_end">calendrier</string>
+    <string name="lumi_cal_subtitle">Ton cycle, jour après jour.</string>
+    <string name="lumi_cal_more_options">Plus d’options du calendrier</string>
+    <string name="lumi_cal_explain_colors">Signification des couleurs</string>
+    <string name="lumi_cal_record_day">Noter la journée</string>
+    <string name="lumi_cal_view_log">Voir la note</string>
+    <string name="lumi_cal_legend_period">Règles</string>
+    <string name="lumi_cal_legend_fertile">Fertile</string>
+    <string name="lumi_cal_legend_record">Noté</string>
+    <string name="lumi_cal_choose_day">Choisir un jour</string>
+    <string name="lumi_cal_no_cycle">Aucune information sur le cycle ce jour</string>
+    <string name="lumi_cal_estimate_phase">Estimation · %1$s</string>
+    <string name="lumi_cal_day_logged">Tu as une note pour ce jour</string>
+    <string name="lumi_cal_day_empty">Aucune note pour ce jour</string>
+    <string name="lumi_cal_day_logged_hint">Tu peux consulter ou modifier ta note.</string>
+    <string name="lumi_cal_day_empty_hint">Choisis Noter pour indiquer comment tu te sens.</string>
+    <string name="lumi_cal_week_title">Ta semaine</string>
+    <string name="lumi_cal_view_month">Voir le mois</string>
+    <string name="lumi_cal_today_phase">Aujourd’hui · %1$s</string>
+    <string name="lumi_cal_week_no_cycle">Aucune donnée du cycle</string>
+    <string name="lumi_cal_a11y_today">%1$d, aujourd’hui</string>
+    <string name="lumi_cal_a11y_prediction">%1$d, estimation future</string>
+    <string name="lumi_cal_a11y_logged">%1$d, avec note</string>
+    <string name="lumi_cal_a11y_empty">%1$d, sans note</string>
 </resources>
