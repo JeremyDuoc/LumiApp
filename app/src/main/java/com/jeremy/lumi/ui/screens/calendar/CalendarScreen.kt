@@ -108,31 +108,6 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
     Scaffold(
         containerColor = tokens.bg,
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        floatingActionButton = {
-            if (mode == CalendarMode.MONTH && focusedModel != null) {
-                androidx.compose.material3.ExtendedFloatingActionButton(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        openFocusedLog()
-                    },
-                    text = {
-                        Text(
-                            if (focusedModel.hasLog) stringResource(R.string.lumi_cal_view_log) else stringResource(R.string.lumi_cal_record_day),
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    },
-                    icon = {
-                        Icon(
-                            androidx.compose.material.icons.Icons.Rounded.Add,
-                            contentDescription = null
-                        )
-                    },
-                    containerColor = tokens.accent,
-                    contentColor = tokens.bg,
-                    shape = RoundedCornerShape(20.dp)
-                )
-            }
-        }
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -254,7 +229,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                             modifier = Modifier
                                 .fillMaxSize()
                                 .verticalScroll(rememberScrollState())
-                                .padding(top = 12.dp, bottom = 105.dp)
+                                .padding(top = 8.dp, bottom = 42.dp)
                         ) {
                             LumiCalendarMonth(
                                 uiState = uiState,
@@ -267,7 +242,14 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                                 onNextMonth = viewModel::navigateToNextMonth
                             )
                             Spacer(Modifier.height(25.dp))
-                            LumiCalendarDayDetail(uiState = uiState, selectedDay = focusedDay)
+                            LumiCalendarDayDetail(
+                                uiState = uiState,
+                                selectedDay = focusedDay,
+                                onRegisterClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    openFocusedLog()
+                                }
+                            )
                             Spacer(Modifier.height(26.dp))
                             uiState.prediction?.let { prediction ->
                                 val message = when {
