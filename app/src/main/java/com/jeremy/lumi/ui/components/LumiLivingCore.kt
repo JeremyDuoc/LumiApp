@@ -180,6 +180,7 @@ fun LumiLivingCore(
     phaseName: String,
     estimatedDaysText: String,
     confidenceLabel: String,
+    dayContextLabel: String = dayContextLabel,
     onConfidenceClick: (() -> Unit)? = null
 ) {
     val tokens = LumiThemeTokens.current
