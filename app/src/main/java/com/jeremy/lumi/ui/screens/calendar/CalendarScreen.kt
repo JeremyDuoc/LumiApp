@@ -81,173 +81,220 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
     
     val haptic = LocalHapticFeedback.current
 
+    val tokens = com.jeremy.lumi.ui.theme.LumiThemeTokens.current
+    val today = com.jeremy.lumi.utils.LumiClock.today()
+    var focusedDay by remember(uiState.displayYear, uiState.displayMonth) {
+        mutableIntStateOf(
+            if (today.year == uiState.displayYear && today.monthValue == uiState.displayMonth)
+                today.dayOfMonth else 1
+        )
+    }
+    val focusedModel = uiState.days.firstOrNull {
+        !it.isEmptyOffset && it.dayOfMonth == focusedDay
+    }
+    var showMoreMenu by remember { mutableStateOf(false) }
+    val openFocusedLog = {
+        focusedModel?.let { day ->
+            if (day.isFuture) pendingFutureDay = day.dayOfMonth
+            else {
+                viewModel.fetchLogForDay(day.dayOfMonth)
+                selectedDayForLog = day.dayOfMonth
+            }
+        }
+    }
+
     Scaffold(
+        containerColor = tokens.bg,
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            Column {
-                CenterAlignedTopAppBar(
-                    title = {
-                        ModeToggleSwitch(mode = mode, onModeChange = { 
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            mode = it 
-                        })
+        floatingActionButton = {
+            if (mode == CalendarMode.MONTH && focusedModel != null) {
+                androidx.compose.material3.ExtendedFloatingActionButton(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        openFocusedLog()
                     },
-                    navigationIcon = {
-                        IconButton(onClick = { showLegendDialog = true }) {
-                            Icon(
-                                imageVector = Icons.Rounded.Info,
-                                contentDescription = stringResource(R.string.cal_legend_title_cd),
-                                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                            )
-                        }
+                    text = {
+                        Text(
+                            if (focusedModel.hasLog) "Ver registro" else "Registrar día",
+                            fontWeight = FontWeight.SemiBold
+                        )
                     },
-                    actions = {
-                        IconButton(onClick = { 
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            viewModel.goToToday()
-                            mode = CalendarMode.MONTH
-                        }) {
-                            Icon(
-                                imageVector = Icons.Rounded.Today,
-                                contentDescription = stringResource(R.string.cal_today_cd),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        IconButton(onClick = { showHistory = true }) {
-                            Icon(
-                                imageVector = Icons.Rounded.History,
-                                contentDescription = stringResource(id = R.string.history_title),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        IconButton(onClick = { showCycleHistory = true }) {
-                            Icon(
-                                imageVector = Icons.Rounded.DateRange,
-                                contentDescription = stringResource(R.string.cycle_history_title),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                    icon = {
+                        Icon(
+                            androidx.compose.material.icons.Icons.Rounded.Add,
+                            contentDescription = null
+                        )
                     },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background
-                    )
+                    containerColor = tokens.accent,
+                    contentColor = tokens.bg,
+                    shape = RoundedCornerShape(20.dp)
                 )
-                
-                // Sleek Current Phase Pill (Only in Month view or always, let's keep it minimal)
-                AnimatedVisibility(
-                    visible = mode == CalendarMode.MONTH,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
+            }
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .background(tokens.bg)
+        ) {
+            // Se respeta el ambiente elegido por la usuaria; sin estrellas forzadas.
+            com.jeremy.lumi.ui.components.AmbientBackgroundLayer(
+                screenType = com.jeremy.lumi.ui.theme.AmbientScreen.CONTENT
+            )
+            Column(modifier = Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 24.dp, end = 14.dp, top = 19.dp, bottom = 13.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CurrentPhasePill(
-                                currentPhase = uiState.currentPhase,
-                                currentDayOfCycle = uiState.currentDayOfCycle
+                    com.jeremy.lumi.ui.components.LumiEditorialHeading(
+                        modifier = Modifier.weight(1f),
+                        titleNormal = "Tu",
+                        titleSerifItalic = "calendario",
+                        titleSize = 27.sp,
+                        serifSize = 31.sp,
+                        subtitle = "Tu ciclo, día a día."
+                    )
+                    Box {
+                        IconButton(onClick = { showMoreMenu = true }) {
+                            Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Rounded.MoreHoriz,
+                                contentDescription = "Más opciones del calendario",
+                                tint = tokens.muted
                             )
-                            // FIX P2-2: Mostrar el banner de predicción del próximo período.
-                            // uiState.prediction existe pero antes nunca se renderizaba.
-                            uiState.prediction?.let { pred ->
-                                val bannerText = when {
-                                    pred.isLate -> stringResource(R.string.calendar_period_late, pred.delayDays)
-                                    pred.daysUntilNextPeriod == 0 -> stringResource(R.string.calendar_period_today)
-                                    pred.daysUntilNextPeriod == 1 -> stringResource(R.string.calendar_period_tomorrow)
-                                    pred.daysUntilNextPeriod > 0 -> stringResource(R.string.calendar_next_period_in, pred.daysUntilNextPeriod)
+                        }
+                        DropdownMenu(
+                            expanded = showMoreMenu,
+                            onDismissRequest = { showMoreMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Qué significan los colores") },
+                                leadingIcon = { Icon(Icons.Rounded.Info, contentDescription = null) },
+                                onClick = { showMoreMenu = false; showLegendDialog = true }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Historial de registros") },
+                                leadingIcon = { Icon(Icons.Rounded.History, contentDescription = null) },
+                                onClick = { showMoreMenu = false; showHistory = true }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Historial de ciclos") },
+                                leadingIcon = { Icon(Icons.Rounded.DateRange, contentDescription = null) },
+                                onClick = { showMoreMenu = false; showCycleHistory = true }
+                            )
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    listOf(CalendarMode.MONTH to "Mes", CalendarMode.YEAR to "Año")
+                        .forEach { (itemMode, label) ->
+                            val active = mode == itemMode
+                            Column(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable {
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        mode = itemMode
+                                    }
+                                    .padding(horizontal = 13.dp, vertical = 10.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontSize = 13.sp,
+                                    fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
+                                    color = if (active) tokens.text else tokens.muted
+                                )
+                                Spacer(Modifier.height(7.dp))
+                                Box(
+                                    Modifier
+                                        .width(23.dp)
+                                        .height(2.dp)
+                                        .clip(CircleShape)
+                                        .background(if (active) tokens.accent else Color.Transparent)
+                                )
+                            }
+                        }
+                    Spacer(Modifier.weight(1f))
+                    TextButton(onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        viewModel.goToToday()
+                        mode = CalendarMode.MONTH
+                        // Si el mes ya era el actual, la clave remember no cambia.
+                        focusedDay = today.dayOfMonth
+                    }) {
+                        Icon(Icons.Rounded.Today, contentDescription = null,
+                            tint = tokens.accent, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Hoy", color = tokens.accent, fontSize = 12.sp)
+                    }
+                }
+
+                AnimatedContent(
+                    targetState = mode,
+                    transitionSpec = {
+                        fadeIn(tween(230, easing = com.jeremy.lumi.ui.theme.LumiMotion.EaseOutExpo)) togetherWith
+                            fadeOut(tween(150))
+                    },
+                    modifier = Modifier.weight(1f),
+                    label = "lumi_calendar_mode"
+                ) { activeMode ->
+                    if (activeMode == CalendarMode.MONTH) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                .padding(top = 12.dp, bottom = 105.dp)
+                        ) {
+                            LumiCalendarMonth(
+                                uiState = uiState,
+                                selectedDay = focusedDay,
+                                onSelectDay = { calendarDay ->
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    focusedDay = calendarDay.dayOfMonth
+                                },
+                                onPreviousMonth = viewModel::navigateToPreviousMonth,
+                                onNextMonth = viewModel::navigateToNextMonth
+                            )
+                            Spacer(Modifier.height(25.dp))
+                            LumiCalendarDayDetail(uiState = uiState, selectedDay = focusedDay)
+                            Spacer(Modifier.height(26.dp))
+                            uiState.prediction?.let { prediction ->
+                                val message = when {
+                                    prediction.isLate -> stringResource(R.string.calendar_period_late, prediction.delayDays)
+                                    prediction.daysUntilNextPeriod == 0 -> stringResource(R.string.calendar_period_today)
+                                    prediction.daysUntilNextPeriod == 1 -> stringResource(R.string.calendar_period_tomorrow)
+                                    prediction.daysUntilNextPeriod > 1 -> stringResource(R.string.calendar_next_period_in, prediction.daysUntilNextPeriod)
                                     else -> null
                                 }
-                                val bannerColor = when {
-                                    pred.isLate -> MaterialTheme.colorScheme.error
-                                    pred.daysUntilNextPeriod <= 2 -> MaterialTheme.colorScheme.primary
-                                    else -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-                                }
-                                if (bannerText != null) {
+                                if (message != null) {
                                     Text(
-                                        text = bannerText,
+                                        text = message,
+                                        modifier = Modifier.padding(horizontal = 24.dp),
                                         fontSize = 12.sp,
-                                        color = bannerColor,
-                                        modifier = Modifier.padding(bottom = 8.dp)
+                                        color = tokens.muted
                                     )
                                 }
                             }
                         }
-                    }
-                }
-            }
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            AnimatedContent(
-                targetState = mode,
-                transitionSpec = {
-                    if (targetState == CalendarMode.MONTH) {
-                        // Zooming INTO month from year (Month starts small, Year grows huge)
-                        (scaleIn(tween(450, easing = FastOutSlowInEasing), 0.8f) + fadeIn(tween(300))) togetherWith 
-                        (scaleOut(tween(450, easing = FastOutSlowInEasing), 1.2f) + fadeOut(tween(300)))
                     } else {
-                        // Zooming OUT TO year from month (Year starts huge, Month shrinks small)
-                        (scaleIn(tween(450, easing = FastOutSlowInEasing), 1.2f) + fadeIn(tween(300))) togetherWith 
-                        (scaleOut(tween(450, easing = FastOutSlowInEasing), 0.8f) + fadeOut(tween(300)))
-                    }
-                },
-                label = "calendar_zoom_anim"
-            ) { currentMode ->
-                if (currentMode == CalendarMode.MONTH) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        MonthView(
-                            uiState = uiState,
+                        YearView(
+                            initialYear = uiState.displayYear,
                             viewModel = viewModel,
-                            onDayClick = { calendarDay ->
-                                if (calendarDay.isFuture) {
-                                    pendingFutureDay = calendarDay.dayOfMonth
-                                } else {
-                                    viewModel.fetchLogForDay(calendarDay.dayOfMonth)
-                                    selectedDayForLog = calendarDay.dayOfMonth
-                                }
+                            onMonthClick = { year, month ->
+                                viewModel.navigateToMonth(year, month)
+                                mode = CalendarMode.MONTH
                             }
                         )
-
-                        // Estado vacío del día: si hoy no tiene registro (y el mes
-                        // visible contiene el día de hoy), invita a registrarlo.
-                        val todayCell = uiState.days.firstOrNull { it.isToday }
-                        AnimatedVisibility(
-                            visible = todayCell != null && !todayCell.hasLog,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically(),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp)
-                                .padding(bottom = 20.dp)
-                        ) {
-                            com.jeremy.lumi.ui.components.LumiEmptyStateCard(
-                                icon = Icons.Rounded.Today,
-                                title = stringResource(R.string.empty_cal_today_title),
-                                description = stringResource(R.string.empty_cal_today_desc),
-                                ctaText = stringResource(R.string.empty_cal_today_cta),
-                                onCtaClick = {
-                                    todayCell?.let {
-                                        viewModel.fetchLogForDay(it.dayOfMonth)
-                                        selectedDayForLog = it.dayOfMonth
-                                    }
-                                }
-                            )
-                        }
-
-                        Spacer(Modifier.height(80.dp))
                     }
-                } else {
-                    YearView(
-                        initialYear = uiState.displayYear,
-                        viewModel = viewModel,
-                        onMonthClick = { year, month ->
-                            viewModel.navigateToMonth(year, month)
-                            mode = CalendarMode.MONTH
-                        }
-                    )
                 }
             }
         }
