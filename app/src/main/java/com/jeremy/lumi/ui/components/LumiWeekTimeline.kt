@@ -65,6 +65,8 @@ fun LumiWeekTimeline(
     onSelectDate: (LocalDate) -> Unit,
     onViewCalendarClick: () -> Unit,
     onResetToToday: () -> Unit,
+    activityCounts: Map<LocalDate, Int> = emptyMap(),
+    onOpenDate: ((LocalDate) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val tokens = LumiThemeTokens.current
@@ -159,6 +161,7 @@ fun LumiWeekTimeline(
                         val loggedDescription = if (day.hasLog)
                             stringResource(R.string.cal_accessibility_with_log)
                             else stringResource(R.string.cal_accessibility_no_log)
+                        val activityCount = activityCounts[day.date] ?: 0
                         val bg = when {
                             menstrual && !day.isPrediction -> colors.menstrual.copy(alpha = .85f)
                             menstrual -> colors.menstrual.copy(alpha = .17f)
@@ -170,11 +173,12 @@ fun LumiWeekTimeline(
                                 .clip(RoundedCornerShape(10.dp))
                                 .clickable(role = Role.Button) {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    onSelectDate(day.date)
+                                    onOpenDate?.invoke(day.date) ?: onSelectDate(day.date)
                                 }
                                 .semantics {
                                     contentDescription = day.date.toString() + ", " +
-                                        phaseDescription + ", " + loggedDescription
+                                        phaseDescription + ", " + loggedDescription +
+                                        if (activityCount > 0) ", $activityCount actividades" else ""
                                 },
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.SpaceBetween
@@ -198,12 +202,25 @@ fun LumiWeekTimeline(
                                     color = if (menstrual && !day.isPrediction) (if (tokens.isDark) tokens.bg else tokens.text) else tokens.text,
                                     textAlign = TextAlign.Center)
                             }
-                            Box(Modifier.height(11.dp), contentAlignment = Alignment.Center) {
+                            Row(
+                                Modifier.height(11.dp),
+                                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 if (day.hasLog) Icon(
                                     Icons.Rounded.Check,
                                     contentDescription = stringResource(R.string.cal_accessibility_with_log),
-                                    tint = tokens.accent, modifier = Modifier.size(11.dp)
+                                    tint = tokens.accent, modifier = Modifier.size(10.dp)
                                 )
+                                if (activityCount > 0) {
+                                    Box(
+                                        Modifier
+                                            .width(if (activityCount > 2) 10.dp else 6.dp)
+                                            .height(3.dp)
+                                            .clip(CircleShape)
+                                            .background(tokens.gold)
+                                    )
+                                }
                             }
                         }
                     }
