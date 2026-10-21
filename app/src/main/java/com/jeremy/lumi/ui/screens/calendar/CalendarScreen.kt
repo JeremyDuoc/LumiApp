@@ -66,39 +66,59 @@ enum class CalendarMode { MONTH, YEAR }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
+fun CalendarScreen(
+    initialDate: java.time.LocalDate? = null,
+    onInitialDateConsumed: () -> Unit = {},
+    viewModel: CalendarViewModel = hiltViewModel(),
+    plannerViewModel: PlannerViewModel = hiltViewModel()
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedLog by viewModel.selectedLog.collectAsStateWithLifecycle()
-    
-    var mode by remember { mutableStateOf(CalendarMode.MONTH) }
+    val plannerState by plannerViewModel.uiState.collectAsStateWithLifecycle()
+
+    val today = com.jeremy.lumi.utils.LumiClock.today()
+    val tokens = com.jeremy.lumi.ui.theme.LumiThemeTokens.current
+    val haptic = LocalHapticFeedback.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val savedMsg = stringResource(R.string.log_saved_confirmation)
+
+    var selectedDate by remember { mutableStateOf(initialDate ?: today) }
+    var scale by remember { mutableStateOf(PlannerCalendarScale.DAY) }
+    var showYear by remember { mutableStateOf(false) }
+    var showMoreSheet by remember { mutableStateOf(false) }
     var showLegendDialog by remember { mutableStateOf(false) }
     var showHistory by remember { mutableStateOf(false) }
     var showCycleHistory by remember { mutableStateOf(false) }
     var selectedDayForLog by remember { mutableStateOf<Int?>(null) }
     var pendingFutureDay by remember { mutableStateOf<Int?>(null) }
-    
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val savedMsg = stringResource(R.string.log_saved_confirmation)
-    
-    val haptic = LocalHapticFeedback.current
 
-    val tokens = com.jeremy.lumi.ui.theme.LumiThemeTokens.current
-    val today = com.jeremy.lumi.utils.LumiClock.today()
-    var focusedDay by remember(uiState.displayYear, uiState.displayMonth) {
-        mutableIntStateOf(
-            if (today.year == uiState.displayYear && today.monthValue == uiState.displayMonth)
-                today.dayOfMonth else 1
-        )
+    fun selectDate(date: java.time.LocalDate) {
+        selectedDate = date
+        if (date.year != uiState.displayYear || date.monthValue != uiState.displayMonth) {
+            viewModel.navigateToMonth(date.year, date.monthValue)
+        }
     }
+
+    LaunchedEffect(initialDate) {
+        initialDate?.let { date ->
+            selectDate(date)
+            scale = PlannerCalendarScale.DAY
+            showYear = false
+            onInitialDateConsumed()
+        }
+    }
+
     val focusedModel = uiState.days.firstOrNull {
-        !it.isEmptyOffset && it.dayOfMonth == focusedDay
+        !it.isEmptyOffset && it.dayOfMonth == selectedDate.dayOfMonth &&
+            selectedDate.year == uiState.displayYear &&
+            selectedDate.monthValue == uiState.displayMonth
     }
-    var showMoreMenu by remember { mutableStateOf(false) }
-    val openFocusedLog = {
+    val openSelectedLog = {
         focusedModel?.let { day ->
-            if (day.isFuture) pendingFutureDay = day.dayOfMonth
-            else {
+            if (day.isFuture) {
+                pendingFutureDay = day.dayOfMonth
+            } else {
                 viewModel.fetchLogForDay(day.dayOfMonth)
                 selectedDayForLog = day.dayOfMonth
             }
@@ -107,187 +127,159 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
 
     Scaffold(
         containerColor = tokens.bg,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(tokens.bg)
+            Modifier.fillMaxSize().padding(paddingValues).background(tokens.bg)
         ) {
-            // Se respeta el ambiente elegido por la usuaria; sin estrellas forzadas.
-            com.jeremy.lumi.ui.components.AmbientBackgroundLayer(
-                screenType = com.jeremy.lumi.ui.theme.AmbientScreen.CONTENT
-            )
-            Column(modifier = Modifier.fillMaxSize()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 24.dp, end = 14.dp, top = 12.dp, bottom = 7.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    com.jeremy.lumi.ui.components.LumiEditorialHeading(
-                        modifier = Modifier.weight(1f),
-                        titleNormal = stringResource(R.string.lumi_cal_title_start),
-                        titleSerifItalic = stringResource(R.string.lumi_cal_title_end),
-                        titleSize = 27.sp,
-                        serifSize = 31.sp,
-                        subtitle = stringResource(R.string.lumi_cal_subtitle)
-                    )
-                    Box {
-                        IconButton(onClick = { showMoreMenu = true }) {
-                            Icon(
-                                imageVector = androidx.compose.material.icons.Icons.Rounded.MoreHoriz,
-                                contentDescription = stringResource(R.string.lumi_cal_more_options),
-                                tint = tokens.muted
-                            )
+            if (showYear) {
+                com.jeremy.lumi.ui.components.AmbientBackgroundLayer(
+                    screenType = com.jeremy.lumi.ui.theme.AmbientScreen.CONTENT
+                )
+                Column(Modifier.fillMaxSize()) {
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .padding(start = 18.dp, end = 10.dp, top = 10.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = { showYear = false }) {
+                            Icon(Icons.Rounded.ChevronLeft, contentDescription = "Volver", tint = tokens.muted)
                         }
-                        DropdownMenu(
-                            expanded = showMoreMenu,
-                            onDismissRequest = { showMoreMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.lumi_cal_explain_colors)) },
-                                leadingIcon = { Icon(Icons.Rounded.Info, contentDescription = null) },
-                                onClick = { showMoreMenu = false; showLegendDialog = true }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.history_title)) },
-                                leadingIcon = { Icon(Icons.Rounded.History, contentDescription = null) },
-                                onClick = { showMoreMenu = false; showHistory = true }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.cycle_history_title)) },
-                                leadingIcon = { Icon(Icons.Rounded.DateRange, contentDescription = null) },
-                                onClick = { showMoreMenu = false; showCycleHistory = true }
-                            )
-                        }
-                    }
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 1.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    listOf(CalendarMode.MONTH to stringResource(R.string.cal_mode_month), CalendarMode.YEAR to stringResource(R.string.cal_mode_year))
-                        .forEach { (itemMode, label) ->
-                            val active = mode == itemMode
-                            Column(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .clickable {
-                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                        mode = itemMode
-                                    }
-                                    .padding(horizontal = 13.dp, vertical = 10.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = label,
-                                    fontSize = 13.sp,
-                                    fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
-                                    color = if (active) tokens.text else tokens.muted
-                                )
-                                Spacer(Modifier.height(7.dp))
-                                Box(
-                                    Modifier
-                                        .width(23.dp)
-                                        .height(2.dp)
-                                        .clip(CircleShape)
-                                        .background(if (active) tokens.accent else Color.Transparent)
-                                )
-                            }
-                        }
-                    Spacer(Modifier.weight(1f))
-                    TextButton(onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        viewModel.goToToday()
-                        mode = CalendarMode.MONTH
-                        // Si el mes ya era el actual, la clave remember no cambia.
-                        focusedDay = today.dayOfMonth
-                    }) {
-                        Icon(Icons.Rounded.Today, contentDescription = null,
-                            tint = tokens.accent, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text(stringResource(R.string.cal_today_cd), color = tokens.accent, fontSize = 12.sp)
-                    }
-                }
-
-                AnimatedContent(
-                    targetState = mode,
-                    transitionSpec = {
-                        fadeIn(tween(durationMillis = 190, delayMillis = 105,
-                            easing = com.jeremy.lumi.ui.theme.LumiMotion.EaseOutExpo)) togetherWith
-                            fadeOut(tween(90))
-                    },
-                    modifier = Modifier.weight(1f),
-                    label = "lumi_calendar_mode"
-                ) { activeMode ->
-                    if (activeMode == CalendarMode.MONTH) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .verticalScroll(rememberScrollState())
-                                .padding(top = 3.dp, bottom = 36.dp)
-                        ) {
-                            LumiCalendarMonth(
-                                uiState = uiState,
-                                selectedDay = focusedDay,
-                                onSelectDay = { calendarDay ->
-                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    focusedDay = calendarDay.dayOfMonth
-                                },
-                                onPreviousMonth = viewModel::navigateToPreviousMonth,
-                                onNextMonth = viewModel::navigateToNextMonth
-                            )
-                            Spacer(Modifier.height(16.dp))
-                            LumiCalendarDayDetail(
-                                uiState = uiState,
-                                selectedDay = focusedDay,
-                                onRegisterClick = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    openFocusedLog()
-                                }
-                            )
-                            Spacer(Modifier.height(17.dp))
-                            uiState.prediction?.let { prediction ->
-                                val message = when {
-                                    prediction.isLate -> stringResource(R.string.calendar_period_late, prediction.delayDays)
-                                    prediction.daysUntilNextPeriod == 0 -> stringResource(R.string.calendar_period_today)
-                                    prediction.daysUntilNextPeriod == 1 -> stringResource(R.string.calendar_period_tomorrow)
-                                    prediction.daysUntilNextPeriod > 1 -> stringResource(R.string.calendar_next_period_in, prediction.daysUntilNextPeriod)
-                                    else -> null
-                                }
-                                if (message != null) {
-                                    Text(
-                                        text = message,
-                                        modifier = Modifier.padding(horizontal = 24.dp),
-                                        fontSize = 12.sp,
-                                        color = tokens.muted
-                                    )
-                                }
-                            }
-                        }
-                    } else {
-                        YearView(
-                            initialYear = uiState.displayYear,
-                            viewModel = viewModel,
-                            onMonthClick = { year, month ->
-                                viewModel.navigateToMonth(year, month)
-                                mode = CalendarMode.MONTH
-                            }
+                        Text(
+                            "Vista anual",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = tokens.text,
+                            modifier = Modifier.weight(1f)
                         )
                     }
+                    YearView(
+                        initialYear = uiState.displayYear,
+                        viewModel = viewModel,
+                        onMonthClick = { year, month ->
+                            val date = java.time.LocalDate.of(year, month, 1)
+                            viewModel.navigateToMonth(year, month)
+                            selectedDate = date
+                            scale = PlannerCalendarScale.MONTH
+                            showYear = false
+                        }
+                    )
+                }
+            } else {
+                LumiPlannerCalendar(
+                    calendarState = uiState,
+                    plannerState = plannerState,
+                    selectedDate = selectedDate,
+                    scale = scale,
+                    onScaleChange = { scale = it },
+                    onSelectDate = { date ->
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        selectDate(date)
+                    },
+                    onPrevious = {
+                        val date = when (scale) {
+                            PlannerCalendarScale.DAY -> selectedDate.minusDays(1)
+                            PlannerCalendarScale.WEEK -> selectedDate.minusWeeks(1)
+                            PlannerCalendarScale.MONTH -> selectedDate.minusMonths(1)
+                        }
+                        selectDate(date)
+                    },
+                    onNext = {
+                        val date = when (scale) {
+                            PlannerCalendarScale.DAY -> selectedDate.plusDays(1)
+                            PlannerCalendarScale.WEEK -> selectedDate.plusWeeks(1)
+                            PlannerCalendarScale.MONTH -> selectedDate.plusMonths(1)
+                        }
+                        selectDate(date)
+                    },
+                    onToday = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        selectDate(today)
+                    },
+                    onOpenMore = { showMoreSheet = true },
+                    onOpenWellbeingLog = openSelectedLog,
+                    onCreateScheduled = { title, startMinutes, durationMinutes, kind ->
+                        plannerViewModel.createScheduled(
+                            selectedDate, title, startMinutes, durationMinutes, kind
+                        )
+                    },
+                    onCreateInbox = { title, durationMinutes, kind ->
+                        plannerViewModel.addInbox(title, durationMinutes, kind)
+                    },
+                    onToggleCompleted = plannerViewModel::toggleCompleted,
+                    onScheduleInbox = plannerViewModel::scheduleInbox
+                )
+            }
+        }
+    }
+
+    if (showMoreSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showMoreSheet = false },
+            containerColor = tokens.panel,
+            contentColor = tokens.text,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            dragHandle = {
+                Box(
+                    Modifier.padding(vertical = 11.dp).width(44.dp).height(4.dp)
+                        .clip(CircleShape).background(tokens.line)
+                )
+            }
+        ) {
+            Column(
+                Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 28.dp)
+            ) {
+                Text(
+                    "Más del calendario",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(bottom = 10.dp)
+                )
+                listOf(
+                    Triple("Vista anual", Icons.Rounded.DateRange) {
+                        showMoreSheet = false
+                        showYear = true
+                    },
+                    Triple("Qué significan los colores", Icons.Rounded.Info) {
+                        showMoreSheet = false
+                        showLegendDialog = true
+                    },
+                    Triple("Historial de registros", Icons.Rounded.History) {
+                        showMoreSheet = false
+                        showHistory = true
+                    }
+                ).forEach { (label, icon, action) ->
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+                            .clickable(onClick = action)
+                            .padding(horizontal = 10.dp, vertical = 13.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(icon, contentDescription = null, tint = tokens.accent, modifier = Modifier.size(19.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Text(label, color = tokens.text, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                        Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = tokens.dim, modifier = Modifier.size(18.dp))
+                    }
+                }
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+                        .clickable {
+                            showMoreSheet = false
+                            showCycleHistory = true
+                        }
+                        .padding(horizontal = 10.dp, vertical = 13.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Rounded.FavoriteBorder, contentDescription = null, tint = tokens.rose, modifier = Modifier.size(19.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Text("Historial de ciclos", color = tokens.text, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                    Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = tokens.dim, modifier = Modifier.size(18.dp))
                 }
             }
         }
     }
 
-    // Bottom Sheets & Dialogs
     val activeCategories by viewModel.activeCategories.collectAsStateWithLifecycle()
-
     selectedDayForLog?.let { day ->
         DailyLogSheet(
             day = day,
@@ -300,7 +292,9 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                 selectedDayForLog = null
                 viewModel.clearSelectedLog()
             },
-            onSave = { flow, pain, mood, symptoms, mucus, notes, hadIntercourse, protectionUsed, method, intercourseNotes, showOnCalendar, sleepHours, energyLevel, stressLevel, waterIntake, bbt, spotting ->
+            onSave = { flow, pain, mood, symptoms, mucus, notes, hadIntercourse, protectionUsed,
+                       method, intercourseNotes, showOnCalendar, sleepHours, energyLevel,
+                       stressLevel, waterIntake, bbt, spotting ->
                 viewModel.saveDailyLog(
                     day, flow, pain, mood, symptoms, mucus, notes,
                     hadIntercourse, protectionUsed, method, intercourseNotes, showOnCalendar,
@@ -312,32 +306,28 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
         )
     }
 
-    if (showHistory) {
-        LogHistorySheet(onDismiss = { showHistory = false })
-    }
-
-    if (showCycleHistory) {
-        CycleHistorySheet(onDismiss = { showCycleHistory = false })
-    }
-
-    if (showLegendDialog) {
-        LegendDialog(onDismiss = { showLegendDialog = false })
-    }
+    if (showHistory) LogHistorySheet(onDismiss = { showHistory = false })
+    if (showCycleHistory) CycleHistorySheet(onDismiss = { showCycleHistory = false })
+    if (showLegendDialog) LegendDialog(onDismiss = { showLegendDialog = false })
 
     pendingFutureDay?.let { day ->
         AlertDialog(
             onDismissRequest = { pendingFutureDay = null },
-            title = { Text(text = stringResource(R.string.log_future_day_title), fontWeight = FontWeight.Bold) },
-            text = { Text(text = stringResource(R.string.log_future_day_desc), fontSize = 14.sp) },
+            title = { Text(stringResource(R.string.log_future_day_title), fontWeight = FontWeight.Bold) },
+            text = { Text(stringResource(R.string.log_future_day_desc), fontSize = 14.sp) },
             confirmButton = {
                 TextButton(onClick = {
                     pendingFutureDay = null
                     viewModel.fetchLogForDay(day)
                     selectedDayForLog = day
-                }) { Text(text = stringResource(R.string.log_future_day_continue), color = MaterialTheme.colorScheme.primary) }
+                }) {
+                    Text(stringResource(R.string.log_future_day_continue), color = MaterialTheme.colorScheme.primary)
+                }
             },
             dismissButton = {
-                TextButton(onClick = { pendingFutureDay = null }) { Text(stringResource(R.string.dialog_reset_cancel)) }
+                TextButton(onClick = { pendingFutureDay = null }) {
+                    Text(stringResource(R.string.dialog_reset_cancel))
+                }
             }
         )
     }
