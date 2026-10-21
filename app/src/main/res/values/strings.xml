@@ -328,12 +328,12 @@
     <string name="home_insight_badge">Insight del Día</string>
     <string name="home_insight_cd">IA Insight</string>
     <string name="home_insight_discreet">Modo oculto activado. Tus datos están protegidos.</string>
-    <string name="home_insight_follicular">Tus niveles de estrógeno están subiendo. Notarás más energía, mejor humor y mayor creatividad. ¡Aprovecha el impulso!</string>
-    <string name="home_insight_luteal_1">Tu energía se vuelve más tranquila. Es un buen momento para tareas enfocadas y organización personal.</string>
-    <string name="home_insight_luteal_2">Tu cuerpo se prepara para el siguiente ciclo. Puedes notar cambios de humor o menor energía. Tómate las cosas con más calma.</string>
+    <string name="home_insight_follicular">El calendario sitúa este día en la fase folicular estimada. ¿Cómo está tu energía hoy? Registrar tus sensaciones puede ayudarte a descubrir tus propios patrones.</string>
+    <string name="home_insight_luteal_1">Tu calendario estima la fase lútea. No todas las personas sienten lo mismo: registra tu ánimo y energía para conocer tus patrones.</string>
+    <string name="home_insight_luteal_2">Tu periodo estimado se acerca. Si notas cambios, puedes registrarlos y compararlos con otros ciclos, sin asumir que deban ocurrir.</string>
     <string name="home_insight_luteal_window">Tu periodo suele presentarse en una ventana estimada. Es fisiológicamente normal que oscile unos días. Mantén tus suministros a mano y prioriza el descanso.</string>
-    <string name="home_insight_menstrual_1">Hoy es un buen día para ir con calma y descansar lo que necesites.</string>
-    <string name="home_insight_menstrual_2">El flujo empezará a disminuir pronto. Recuerda mantenerte hidratada y ser amable contigo misma.</string>
+    <string name="home_insight_menstrual_1">Si estás menstruando, recuerda que tu experiencia es personal. Anota tus síntomas y descansa si lo necesitas.</string>
+    <string name="home_insight_menstrual_2">La duración y la intensidad del sangrado pueden variar. Registra lo que observas, sin dar por hecho que el flujo disminuirá hoy.</string>
     <string name="home_insight_ovulation">Tu calendario estima una ventana fértil en estos días. La ovulación real puede ocurrir en otras fechas; escucha cómo te sientes tú.</string>
     <string name="home_insight_title">Lumi Insight</string>
     <string name="home_insight_unknown">Comienza a registrar tu periodo para conocer qué está pasando en tu cuerpo.</string>
