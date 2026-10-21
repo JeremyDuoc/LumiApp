@@ -123,7 +123,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 24.dp, end = 14.dp, top = 19.dp, bottom = 13.dp),
+                        .padding(start = 24.dp, end = 14.dp, top = 12.dp, bottom = 7.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     com.jeremy.lumi.ui.components.LumiEditorialHeading(
@@ -168,7 +168,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 4.dp),
+                        .padding(horizontal = 24.dp, vertical = 1.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     listOf(CalendarMode.MONTH to stringResource(R.string.cal_mode_month), CalendarMode.YEAR to stringResource(R.string.cal_mode_year))
@@ -229,7 +229,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                             modifier = Modifier
                                 .fillMaxSize()
                                 .verticalScroll(rememberScrollState())
-                                .padding(top = 8.dp, bottom = 42.dp)
+                                .padding(top = 3.dp, bottom = 36.dp)
                         ) {
                             LumiCalendarMonth(
                                 uiState = uiState,
@@ -241,7 +241,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                                 onPreviousMonth = viewModel::navigateToPreviousMonth,
                                 onNextMonth = viewModel::navigateToNextMonth
                             )
-                            Spacer(Modifier.height(25.dp))
+                            Spacer(Modifier.height(16.dp))
                             LumiCalendarDayDetail(
                                 uiState = uiState,
                                 selectedDay = focusedDay,
@@ -250,7 +250,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                                     openFocusedLog()
                                 }
                             )
-                            Spacer(Modifier.height(26.dp))
+                            Spacer(Modifier.height(17.dp))
                             uiState.prediction?.let { prediction ->
                                 val message = when {
                                     prediction.isLate -> stringResource(R.string.calendar_period_late, prediction.delayDays)
