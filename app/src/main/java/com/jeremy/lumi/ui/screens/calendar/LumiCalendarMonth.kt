@@ -28,6 +28,7 @@ import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.ArrowForwardIos
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material3.HorizontalDivider
@@ -53,6 +54,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontStyle
+import com.jeremy.lumi.ui.theme.LumiSans
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -108,15 +111,18 @@ fun LumiCalendarMonth(
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
                         text = title,
-                        fontFamily = LumiEditorialSerif,
-                        fontSize = 30.sp,
+                        fontFamily = LumiSans,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 25.sp,
                         color = tokens.text,
-                        letterSpacing = (-0.5).sp
+                        letterSpacing = (-0.7).sp
                     )
                     Text(
                         text = "  " + uiState.displayYear,
-                        fontSize = 13.sp,
-                        color = tokens.muted
+                        fontFamily = LumiEditorialSerif,
+                        fontStyle = FontStyle.Italic,
+                        fontSize = 22.sp,
+                        color = tokens.accent
                     )
                 }
             }
@@ -222,9 +228,9 @@ fun LumiCalendarMonth(
             horizontalArrangement = Arrangement.spacedBy(15.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            LumiLegendMark(tokens.rose, stringResource(R.string.lumi_cal_legend_period))
-            LumiLegendMark(tokens.mint, stringResource(R.string.lumi_cal_legend_fertile))
-            LumiLegendMark(tokens.accent, stringResource(R.string.lumi_cal_legend_record))
+            LumiLegendMark(phaseColor(CyclePhase.MENSTRUAL), stringResource(R.string.lumi_cal_legend_period))
+            LumiLegendMark(phaseColor(CyclePhase.OVULATION), stringResource(R.string.lumi_cal_legend_fertile))
+            LumiLegendLog(stringResource(R.string.lumi_cal_legend_record))
         }
         Spacer(Modifier.height(4.dp))
     }
@@ -235,6 +241,16 @@ private fun LumiLegendMark(color: Color, text: String) {
     val tokens = LumiThemeTokens.current
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
         Box(Modifier.size(5.dp).clip(CircleShape).background(color))
+        Text(text, fontSize = 10.sp, color = tokens.muted)
+    }
+}
+
+@Composable
+private fun LumiLegendLog(text: String) {
+    val tokens = LumiThemeTokens.current
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Icon(Icons.Rounded.Check, contentDescription = null,
+            tint = tokens.accent, modifier = Modifier.size(11.dp))
         Text(text, fontSize = 10.sp, color = tokens.muted)
     }
 }
@@ -305,11 +321,10 @@ private fun LumiMonthDay(
             modifier = Modifier.offset(y = if (day.hasLog) (-2).dp else 0.dp)
         )
         if (day.hasLog) {
-            Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 5.dp).size(4.dp)
-                .clip(CircleShape).background(tokens.accent))
-        } else if (day.phase == CyclePhase.MENSTRUAL || day.phase == CyclePhase.OVULATION) {
-            Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 5.dp).size(if (day.phase == CyclePhase.MENSTRUAL) 4.dp else 3.5.dp)
-                .clip(CircleShape).background(color.copy(alpha = if (day.isPrediction) .72f else .95f)))
+            Icon(Icons.Rounded.Check,
+                contentDescription = stringResource(R.string.cal_accessibility_with_log),
+                tint = tokens.accent,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 2.dp).size(11.dp))
         }
         if (day.showIntercourseHeart) {
             Icon(
@@ -353,10 +368,11 @@ fun LumiCalendarDayDetail(
             ) { label ->
                 Text(
                     text = label,
-                    fontFamily = LumiEditorialSerif,
-                    fontSize = 23.sp,
+                    fontFamily = LumiSans,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 21.sp,
                     color = tokens.text,
-                    lineHeight = 28.sp
+                    lineHeight = 27.sp
                 )
             }
             if (day != null) {
@@ -379,7 +395,10 @@ fun LumiCalendarDayDetail(
         }
         Spacer(Modifier.height(7.dp))
         if (day != null) {
-            val phase = if (day.phase == CyclePhase.UNKNOWN) null else phaseLabel(day.phase)
+            val phase = if (day.phase == CyclePhase.UNKNOWN) null else
+                if (day.phase == CyclePhase.OVULATION)
+                    stringResource(R.string.phase_name_ovulation)
+                else phaseLabel(day.phase)
             val context = when {
                 phase == null -> stringResource(R.string.lumi_cal_no_cycle)
                 day.isPrediction -> stringResource(R.string.lumi_cal_estimate_phase, phase)
