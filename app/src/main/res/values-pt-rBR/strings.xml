@@ -309,12 +309,12 @@
     <string name="home_insight_badge">Dica do Dia</string>
     <string name="home_insight_cd">Insight de IA</string>
     <string name="home_insight_discreet">Modo discreto ativado. Seus dados estão protegidos.</string>
-    <string name="home_insight_follicular">Seus níveis de estrogênio estão subindo. Você notará mais energia, melhor humor e maior criatividade. Aproveite o impulso!</string>
-    <string name="home_insight_luteal_1">Sua energia fica mais tranquila. É um ótimo momento para tarefas focadas e organização pessoal.</string>
-    <string name="home_insight_luteal_2">Seu corpo está se preparando para o próximo ciclo. Você pode notar oscilações de humor ou menor energia. Vá com mais calma.</string>
+    <string name="home_insight_follicular">O calendário estima a fase folicular para hoje. Como está sua energia? Registrar suas sensações pode ajudar a conhecer seus próprios padrões.</string>
+    <string name="home_insight_luteal_1">Seu calendário estima a fase lútea. Cada pessoa sente de um jeito: registre seu humor e energia para conhecer seus padrões.</string>
+    <string name="home_insight_luteal_2">Sua menstruação estimada está próxima. Se notar mudanças, registre e compare entre ciclos, sem presumir que elas vão acontecer.</string>
     <string name="home_insight_luteal_window">Sua menstruação costuma chegar em uma janela estimada. É fisiologicamente normal oscilar alguns dias. Deixe seus itens de higiene à mão e priorize o descanso.</string>
-    <string name="home_insight_menstrual_1">Hoje é um bom dia para desacelerar e descansar o quanto precisar.</string>
-    <string name="home_insight_menstrual_2">O fluxo começará a diminuir em breve. Lembre-se de manter a hidratação e ser gentil consigo mesma.</string>
+    <string name="home_insight_menstrual_1">Se você está menstruando, sua experiência é individual. Registre sintomas e descanse se precisar.</string>
+    <string name="home_insight_menstrual_2">A duração e intensidade do sangramento podem variar. Registre o que observa, sem supor que o fluxo vai diminuir hoje.</string>
     <string name="home_insight_ovulation">Seu calendário estima uma janela fértil nestes dias. A ovulação real pode ocorrer em outras datas; observe como você se sente.</string>
     <string name="home_insight_title">Lumi Insight</string>
     <string name="home_insight_unknown">Comece a registrar sua menstruação para entender o que está acontecendo no seu corpo.</string>
