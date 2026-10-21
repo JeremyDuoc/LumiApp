@@ -328,12 +328,12 @@
     <string name="home_insight_badge">Insight of the Day</string>
     <string name="home_insight_cd">AI Insight</string>
     <string name="home_insight_discreet">Discreet mode active. Your data is protected.</string>
-    <string name="home_insight_follicular">Your estrogen levels are rising. You will notice more energy, better mood, and boosted creativity. Ride the wave!</string>
-    <string name="home_insight_luteal_1">Your energy is settling into a calmer rhythm. A great time for focused tasks and personal organizing.</string>
-    <string name="home_insight_luteal_2">Your body is preparing for the next cycle. You might notice mood shifts or lower stamina. Take things gently.</string>
+    <string name="home_insight_follicular">The calendar estimates this day as follicular. How is your energy today? Logging how you feel can help you recognize your own patterns.</string>
+    <string name="home_insight_luteal_1">Your calendar estimates the luteal phase. Experiences vary; you can log your mood and energy to learn your own patterns.</string>
+    <string name="home_insight_luteal_2">Your estimated period is approaching. If you notice changes, you can log and compare them across cycles; they are not inevitable.</string>
     <string name="home_insight_luteal_window">Your period usually arrives within an estimated window. A few days of variation is biologically normal. Keep your supplies handy and prioritize rest.</string>
-    <string name="home_insight_menstrual_1">Your body is working hard. It is completely normal to feel low on energy and need more rest today.</string>
-    <string name="home_insight_menstrual_2">Flow will begin to decrease soon. Remember to stay hydrated and be gentle with yourself.</string>
+    <string name="home_insight_menstrual_1">If you are menstruating, your experience is personal. Log symptoms and rest if you need to.</string>
+    <string name="home_insight_menstrual_2">Bleeding duration and intensity can vary. Log what you observe rather than assuming flow will decrease today.</string>
     <string name="home_insight_ovulation">Your calendar estimates a fertile window around these days. Actual ovulation may happen at different times; notice how you personally feel.</string>
     <string name="home_insight_title">Lumi Insight</string>
     <string name="home_insight_unknown">Start logging your period to discover what is happening inside your body.</string>
