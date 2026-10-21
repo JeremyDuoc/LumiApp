@@ -9,11 +9,19 @@ import com.jeremy.lumi.domain.model.CyclePhase
  * significa que el color de fase es una estimación, no un dato real registrado.
  * La UI lo renderiza con opacidad reducida para diferenciarlo visualmente.
  */
+data class CalendarLogPreview(
+    val mood: String? = null,
+    val flow: String? = null,
+    val symptoms: List<String> = emptyList(),
+    val notes: String? = null
+)
+
 data class CalendarDay(
     val dayOfMonth: Int,
     val phase: CyclePhase = CyclePhase.UNKNOWN,
     val isToday: Boolean = false,
     val hasLog: Boolean = false,
+    val logPreview: CalendarLogPreview? = null,
     val isEmptyOffset: Boolean = false,
     val isPrediction: Boolean = false,
     /** true cuando el día es estrictamente futuro (después de hoy). */
