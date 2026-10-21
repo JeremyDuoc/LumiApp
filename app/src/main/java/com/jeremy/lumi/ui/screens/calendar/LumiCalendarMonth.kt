@@ -1,6 +1,9 @@
 package com.jeremy.lumi.ui.screens.calendar
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -22,12 +25,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.ArrowForwardIos
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,10 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -147,9 +150,18 @@ fun LumiCalendarMonth(
             targetState = uiState,
             contentKey = { it.displayYear to it.displayMonth },
             transitionSpec = {
-                (fadeIn(tween(250, easing = LumiMotion.EaseOutExpo)) +
-                    scaleIn(initialScale = 0.98f, animationSpec = tween(300, easing = LumiMotion.EaseOutExpo))) togetherWith
-                    fadeOut(tween(130))
+                run {
+                    val forward = targetState.displayYear * 12 + targetState.displayMonth >
+                        initialState.displayYear * 12 + initialState.displayMonth
+                    (slideInHorizontally(
+                        animationSpec = tween(335, easing = LumiMotion.EaseOutExpo)
+                    ) { width -> if (forward) width / 4 else -width / 4 } +
+                        fadeIn(tween(260))) togetherWith
+                        (slideOutHorizontally(
+                            animationSpec = tween(210, easing = LumiMotion.EaseOutExpo)
+                        ) { width -> if (forward) -width / 5 else width / 5 } +
+                            fadeOut(tween(175)))
+                }
             },
             label = "lumi_month_pages",
             modifier = Modifier.fillMaxWidth()
@@ -245,8 +257,8 @@ private fun LumiMonthDay(
     val fill by animateColorAsState(
         targetValue = when {
             selected -> tokens.accentSoft
-            day.phase == CyclePhase.MENSTRUAL -> color.copy(alpha = if (day.isPrediction) .08f else .18f)
-            day.phase == CyclePhase.OVULATION -> color.copy(alpha = if (day.isPrediction) .05f else .12f)
+            day.phase == CyclePhase.MENSTRUAL -> color.copy(alpha = if (day.isPrediction) .10f else .24f)
+            day.phase == CyclePhase.OVULATION -> color.copy(alpha = if (day.isPrediction) .045f else .085f)
             else -> Color.Transparent
         },
         animationSpec = tween(240),
@@ -275,16 +287,6 @@ private fun LumiMonthDay(
             .clip(shape)
             .background(fill)
             .border(1.dp, border, shape)
-            .then(if (day.isPrediction && day.phase != CyclePhase.UNKNOWN && !selected) {
-                Modifier.drawBehind {
-                    drawRoundRect(
-                        color = color.copy(alpha = .45f),
-                        cornerRadius = CornerRadius(15.dp.toPx()),
-                        style = Stroke(width = 1.dp.toPx(),
-                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 4.dp.toPx())))
-                    )
-                }
-            } else Modifier)
             .clickable(
                 interactionSource = interaction,
                 indication = null,
@@ -298,7 +300,7 @@ private fun LumiMonthDay(
             text = day.dayOfMonth.toString(),
             fontSize = 14.sp,
             fontWeight = if (selected || day.isToday) FontWeight.SemiBold else FontWeight.Normal,
-            color = if (selected) tokens.text else if (day.isPrediction) tokens.muted else tokens.text,
+            color = if (selected) tokens.text else if (day.isPrediction) tokens.text.copy(alpha = .77f) else tokens.text,
             modifier = Modifier.offset(y = if (day.hasLog) (-2).dp else 0.dp)
         )
         if (day.hasLog) {
@@ -324,6 +326,7 @@ private fun LumiMonthDay(
 fun LumiCalendarDayDetail(
     uiState: CalendarUiState,
     selectedDay: Int,
+    onRegisterClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val tokens = LumiThemeTokens.current
@@ -335,7 +338,8 @@ fun LumiCalendarDayDetail(
     val datePattern = if (locale.language == "es") "EEEE d 'de' MMMM" else "EEEE d MMMM"
     val title = date?.format(DateTimeFormatter.ofPattern(datePattern, locale))
         ?.replaceFirstChar { it.titlecase(locale) } ?: stringResource(R.string.lumi_cal_choose_day)
-    Column(modifier = modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
+    Column(modifier = modifier.fillMaxWidth().padding(horizontal = 24.dp)
+        .animateContentSize(animationSpec = tween(300, easing = LumiMotion.EaseOutExpo))) {
         AnimatedContent(
             targetState = title,
             transitionSpec = { fadeIn(tween(260)) togetherWith fadeOut(tween(130)) },
@@ -381,6 +385,20 @@ fun LumiCalendarDayDetail(
                         else stringResource(R.string.lumi_cal_day_empty_hint),
                         fontSize = 11.sp, color = tokens.muted,
                         lineHeight = 16.sp
+                    )
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = onRegisterClick) {
+                    Icon(Icons.Rounded.Add, contentDescription = null, tint = tokens.accent, modifier = Modifier.size(17.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        if (day.hasLog) stringResource(R.string.lumi_cal_view_log)
+                        else stringResource(R.string.lumi_cal_record_day),
+                        color = tokens.accent,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }
