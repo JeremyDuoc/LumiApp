@@ -1109,7 +1109,7 @@ fun phaseColor(phase: CyclePhase): Color {
 fun phaseLabel(phase: CyclePhase): String = stringResource(
     id = when (phase) {
         CyclePhase.MENSTRUAL  -> R.string.phase_menstrual
-        CyclePhase.OVULATION  -> R.string.phase_ovulation
+        CyclePhase.OVULATION  -> R.string.phase_name_ovulation
         CyclePhase.LUTEAL     -> R.string.phase_luteal
         CyclePhase.FOLLICULAR -> R.string.phase_follicular
         CyclePhase.PREGNANCY  -> R.string.phase_pregnancy
