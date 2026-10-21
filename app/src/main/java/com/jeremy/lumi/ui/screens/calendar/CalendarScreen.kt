@@ -117,7 +117,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                     },
                     text = {
                         Text(
-                            if (focusedModel.hasLog) "Ver registro" else "Registrar día",
+                            if (focusedModel.hasLog) stringResource(R.string.lumi_cal_view_log) else stringResource(R.string.lumi_cal_record_day),
                             fontWeight = FontWeight.SemiBold
                         )
                     },
@@ -153,17 +153,17 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                 ) {
                     com.jeremy.lumi.ui.components.LumiEditorialHeading(
                         modifier = Modifier.weight(1f),
-                        titleNormal = "Tu",
-                        titleSerifItalic = "calendario",
+                        titleNormal = stringResource(R.string.lumi_cal_title_start),
+                        titleSerifItalic = stringResource(R.string.lumi_cal_title_end),
                         titleSize = 27.sp,
                         serifSize = 31.sp,
-                        subtitle = "Tu ciclo, día a día."
+                        subtitle = stringResource(R.string.lumi_cal_subtitle)
                     )
                     Box {
                         IconButton(onClick = { showMoreMenu = true }) {
                             Icon(
                                 imageVector = androidx.compose.material.icons.Icons.Rounded.MoreHoriz,
-                                contentDescription = "Más opciones del calendario",
+                                contentDescription = stringResource(R.string.lumi_cal_more_options),
                                 tint = tokens.muted
                             )
                         }
@@ -172,17 +172,17 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                             onDismissRequest = { showMoreMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Qué significan los colores") },
+                                text = { Text(stringResource(R.string.lumi_cal_explain_colors)) },
                                 leadingIcon = { Icon(Icons.Rounded.Info, contentDescription = null) },
                                 onClick = { showMoreMenu = false; showLegendDialog = true }
                             )
                             DropdownMenuItem(
-                                text = { Text("Historial de registros") },
+                                text = { Text(stringResource(R.string.history_title)) },
                                 leadingIcon = { Icon(Icons.Rounded.History, contentDescription = null) },
                                 onClick = { showMoreMenu = false; showHistory = true }
                             )
                             DropdownMenuItem(
-                                text = { Text("Historial de ciclos") },
+                                text = { Text(stringResource(R.string.cycle_history_title)) },
                                 leadingIcon = { Icon(Icons.Rounded.DateRange, contentDescription = null) },
                                 onClick = { showMoreMenu = false; showCycleHistory = true }
                             )
@@ -196,7 +196,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                         .padding(horizontal = 24.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    listOf(CalendarMode.MONTH to "Mes", CalendarMode.YEAR to "Año")
+                    listOf(CalendarMode.MONTH to stringResource(R.string.cal_mode_month), CalendarMode.YEAR to stringResource(R.string.cal_mode_year))
                         .forEach { (itemMode, label) ->
                             val active = mode == itemMode
                             Column(
@@ -236,7 +236,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                         Icon(Icons.Rounded.Today, contentDescription = null,
                             tint = tokens.accent, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Hoy", color = tokens.accent, fontSize = 12.sp)
+                        Text(stringResource(R.string.cal_today_cd), color = tokens.accent, fontSize = 12.sp)
                     }
                 }
 
