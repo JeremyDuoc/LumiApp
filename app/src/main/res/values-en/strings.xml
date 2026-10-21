@@ -1733,5 +1733,5 @@
     <string name="lumi_cal_a11y_empty">%1$d, not logged</string>
     <string name="lumi_cal_week_intro">Your</string>
     <string name="lumi_cal_week_focus">week</string>
-    <string name="lumi_selected_day_phase">Selected day's phase</string>
+    <string name="lumi_selected_day_phase">Selected day\'s phase</string>
 </resources>
