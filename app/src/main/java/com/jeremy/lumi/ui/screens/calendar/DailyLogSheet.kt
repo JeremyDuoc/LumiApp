@@ -49,6 +49,9 @@ import com.jeremy.lumi.R
 import com.jeremy.lumi.data.local.entity.DailyLogWithSymptoms
 import com.jeremy.lumi.data.local.entity.SymptomEntity
 import com.jeremy.lumi.domain.util.ClinicalLabels
+import com.jeremy.lumi.ui.theme.LumiSans
+import com.jeremy.lumi.ui.theme.LumiEditorialSerif
+import androidx.compose.ui.text.font.FontStyle
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
 import com.popovanton0.heartswitch.HeartSwitch
 import kotlinx.coroutines.launch
