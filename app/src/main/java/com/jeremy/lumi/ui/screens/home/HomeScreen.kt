@@ -428,7 +428,7 @@ fun HomeScreen(
             onReminderClick = { showAddReminderSheet = true },
             diaryAlreadyLogged = hasEntry,
             modifier = Modifier.align(Alignment.BottomEnd),
-            bottomMargin = 170.dp
+            bottomMargin = 16.dp
         )
 
         if (showConfirmPeriod) {
