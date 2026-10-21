@@ -336,6 +336,10 @@ fun HomeScreen(
                             phaseName = phaseName,
                             estimatedDaysText = estimatedDaysText,
                             confidenceLabel = confidenceLabel,
+                            dayContextLabel = uiState.selectedDate?.format(
+                                DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
+                            )?.uppercase(Locale.getDefault())
+                                ?: stringResource(R.string.cal_today_cd).uppercase(Locale.getDefault()),
                             onConfidenceClick = { showPredictionInfoSheet = true }
                         )
                     }
@@ -423,7 +427,8 @@ fun HomeScreen(
             onPeriodClick = { showConfirmPeriod = true },
             onReminderClick = { showAddReminderSheet = true },
             diaryAlreadyLogged = hasEntry,
-            modifier = Modifier.align(Alignment.BottomEnd)
+            modifier = Modifier.align(Alignment.BottomEnd),
+            bottomMargin = 170.dp
         )
 
         if (showConfirmPeriod) {
