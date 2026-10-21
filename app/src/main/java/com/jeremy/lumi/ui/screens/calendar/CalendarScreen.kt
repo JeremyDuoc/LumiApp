@@ -605,6 +605,7 @@ fun YearItem(year: Int, viewModel: CalendarViewModel, onMonthClick: (Int) -> Uni
         }
     }
 
+    val tokens = com.jeremy.lumi.ui.theme.LumiThemeTokens.current
     val currentYear = com.jeremy.lumi.utils.LumiClock.today().year
     val isCurrentYear = year == currentYear
 
@@ -626,11 +627,9 @@ fun YearItem(year: Int, viewModel: CalendarViewModel, onMonthClick: (Int) -> Uni
             Text(
                 text       = year.toString(),
                 fontSize   = if (isCurrentYear) 28.sp else 22.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color      = if (isCurrentYear)
-                    MaterialTheme.colorScheme.primary
-                else
-                    MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f)
+                fontFamily = com.jeremy.lumi.ui.theme.LumiEditorialSerif,
+                fontWeight = FontWeight.Normal,
+                color = if (isCurrentYear) tokens.text else tokens.muted
             )
         }
 
@@ -682,9 +681,10 @@ fun SmallMonthBox(
 ) {
     val textMeasurer  = androidx.compose.ui.text.rememberTextMeasurer()
     val phaseColors   = LocalPhaseColors.current
-    val primaryColor  = MaterialTheme.colorScheme.primary
-    val surfaceColor  = MaterialTheme.colorScheme.surface
-    val onBgColor     = MaterialTheme.colorScheme.onBackground
+    val tokens = com.jeremy.lumi.ui.theme.LumiThemeTokens.current
+    val primaryColor  = tokens.accent
+    val surfaceColor  = tokens.panel
+    val onBgColor     = tokens.text
     val haptic        = LocalHapticFeedback.current
 
     // Detect if this month contains today
@@ -709,12 +709,12 @@ fun SmallMonthBox(
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onClick()
             },
-        shape    = RoundedCornerShape(16.dp),
+        shape    = RoundedCornerShape(14.dp),
         colors   = CardDefaults.cardColors(
             containerColor = if (isCurrentMonth)
                 primaryColor.copy(alpha = 0.07f)
             else
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                tokens.panel.copy(alpha = 0.65f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -738,7 +738,8 @@ fun SmallMonthBox(
                 Text(
                     text       = monthName,
                     fontSize   = 11.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontFamily = com.jeremy.lumi.ui.theme.LumiEditorialSerif,
+                    fontWeight = FontWeight.Medium,
                     color      = if (isCurrentMonth) primaryColor
                                  else onBgColor.copy(alpha = 0.75f),
                     letterSpacing = 0.3.sp
