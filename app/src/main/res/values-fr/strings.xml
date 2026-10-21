@@ -309,12 +309,12 @@
     <string name="home_insight_badge">Aperçu du jour</string>
     <string name="home_insight_cd">Aperçu IA</string>
     <string name="home_insight_discreet">Mode discret activé. Tes données sont protégées.</string>
-    <string name="home_insight_follicular">Tes niveaux d\'œstrogène augmentent. Tu ressentiras plus d\'énergie, une meilleure humeur et une créativité décuplée. Profite de cet élan !</string>
-    <string name="home_insight_luteal_1">Ton énergie s\'apaise doucement. C\'est le moment idéal pour les tâches ciblées et l\'organisation personnelle.</string>
-    <string name="home_insight_luteal_2">Ton corps se prépare pour le prochain cycle. Tu pourrais remarquer des sautes d\'humeur ou une baisse d\'énergie. Prends les choses avec douceur.</string>
+    <string name="home_insight_follicular">Le calendrier situe ce jour dans la phase folliculaire estimée. Comment est ton énergie aujourd\'hui ? Noter ton ressenti peut aider à reconnaître tes propres tendances.</string>
+    <string name="home_insight_luteal_1">Ton calendrier estime la phase lutéale. Les ressentis varient : note ton humeur et ton énergie pour découvrir tes tendances.</string>
+    <string name="home_insight_luteal_2">Tes règles estimées approchent. Si tu remarques des changements, tu peux les noter et les comparer entre cycles.</string>
     <string name="home_insight_luteal_window">Tes règles arrivent généralement dans une période estimée. Une variation de quelques jours est biologiquement normale. Garde tes protections à portée de main et privilégie le repos.</string>
-    <string name="home_insight_menstrual_1">Ton corps fournit beaucoup d\'efforts. Il est tout à fait normal de manquer d\'énergie et d\'avoir besoin de plus de repos aujourd\'hui.</string>
-    <string name="home_insight_menstrual_2">Le flux commencera bientôt à diminuer. N\'oublie pas de bien t\'hydrater et d\'être bienveillante envers toi-même.</string>
+    <string name="home_insight_menstrual_1">Si tu as tes règles, ton expérience est personnelle. Note tes symptômes et repose-toi si tu en as besoin.</string>
+    <string name="home_insight_menstrual_2">La durée et l\'intensité des saignements peuvent varier. Note ce que tu observes sans présumer que le flux diminuera aujourd\'hui.</string>
     <string name="home_insight_ovulation">Ton calendrier estime une période fertile autour de ces jours. L\'ovulation réelle peut survenir à une autre date ; écoute ton ressenti.</string>
     <string name="home_insight_title">Aperçu Lumi</string>
     <string name="home_insight_unknown">Commence à enregistrer tes règles pour découvrir ce qui se passe dans ton corps.</string>
