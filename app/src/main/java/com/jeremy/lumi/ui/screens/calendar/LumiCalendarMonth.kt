@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jeremy.lumi.R
 import com.jeremy.lumi.domain.model.CyclePhase
+import com.jeremy.lumi.domain.util.ClinicalLabels
 import com.jeremy.lumi.ui.theme.IntercourseHeartColor
 import com.jeremy.lumi.ui.theme.LumiEditorialSerif
 import com.jeremy.lumi.ui.theme.LumiMotion
@@ -456,6 +457,52 @@ fun LumiCalendarDayDetail(
                     )
                 }
             }
+
+            // Read-only details from the saved record; never synthesize symptoms from a phase.
+            day.logPreview?.let { log ->
+                val mood = log.mood?.let { raw ->
+                    ClinicalLabels.findMoodResId(raw)?.let { stringResource(it) } ?: raw
+                }
+                val flow = log.flow?.let { raw ->
+                    ClinicalLabels.findFlowResId(raw)?.let { stringResource(it) } ?: raw
+                }
+                val symptoms = log.symptoms.map { raw ->
+                    ClinicalLabels.findSymptomResId(raw)?.let { stringResource(it) } ?: raw
+                }.joinToString(" · ")
+                val notes = log.notes
+                if (mood != null || flow != null || symptoms.isNotEmpty() || !notes.isNullOrBlank()) {
+                    Spacer(Modifier.height(8.dp))
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                            .clip(RoundedCornerShape(17.dp))
+                            .background(tokens.panel.copy(alpha = if (tokens.isDark) .80f else .94f))
+                            .padding(horizontal = 15.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        if (mood != null) LumiSavedDayRow(
+                            stringResource(R.string.log_how_feeling_question), mood
+                        )
+                        if (flow != null) LumiSavedDayRow(
+                            stringResource(R.string.log_period_status_question), flow
+                        )
+                        if (symptoms.isNotEmpty()) LumiSavedDayRow(
+                            stringResource(R.string.log_tab_symptoms), symptoms
+                        )
+                        if (!notes.isNullOrBlank()) LumiSavedDayRow(
+                            stringResource(R.string.log_tab_notes), notes
+                        )
+                    }
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun LumiSavedDayRow(label: String, content: String) {
+    val tokens = LumiThemeTokens.current
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Text(label, fontSize = 10.sp, color = tokens.muted, fontWeight = FontWeight.SemiBold)
+        Text(content, fontSize = 12.5.sp, color = tokens.text, lineHeight = 17.sp, maxLines = 3)
     }
 }
