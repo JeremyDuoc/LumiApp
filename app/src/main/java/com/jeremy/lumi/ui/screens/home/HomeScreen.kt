@@ -70,9 +70,10 @@ fun HomeScreen(
     onNavigateToChat: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
     onNavigateToPartner: () -> Unit = {},
-    onNavigateToCalendar: () -> Unit = {},
+    onNavigateToCalendar: (LocalDate?) -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
+    plannerViewModel: com.jeremy.lumi.ui.screens.calendar.PlannerViewModel = hiltViewModel(),
     remindersViewModel: RemindersViewModel = hiltViewModel(),
     quickLogViewModel: QuickLogViewModel = hiltViewModel(),
     partnerViewModel: PartnerViewModel = hiltViewModel(),
@@ -82,6 +83,7 @@ fun HomeScreen(
     suppressBrandDuringHandoff: Boolean = false
 ) {
     val uiState           by viewModel.uiState.collectAsStateWithLifecycle()
+    val plannerState       by plannerViewModel.uiState.collectAsStateWithLifecycle()
     val tokens            = LumiThemeTokens.current
     val currentTheme      by settingsViewModel.currentTheme.collectAsStateWithLifecycle()
     var showThemeSheet    by remember { mutableStateOf(false) }
@@ -359,10 +361,16 @@ fun HomeScreen(
                         FadeSlideIn(screenReady, STAGGER_MS * 2) {
                             LumiWeekTimeline(
                                 weekDays = uiState.weekDays,
-                                selectedDate = uiState.selectedDate,
-                                onSelectDate = { viewModel.selectDate(it) },
-                                onViewCalendarClick = onNavigateToCalendar,
-                                onResetToToday = { viewModel.resetToToday() }
+                                selectedDate = null,
+                                onSelectDate = {},
+                                onViewCalendarClick = { onNavigateToCalendar(null) },
+                                onResetToToday = {},
+                                activityCounts = remember(plannerState.items) {
+                                    plannerState.items.groupingBy { it.date }.eachCount()
+                                },
+                                onOpenDate = { date ->
+                                    onNavigateToCalendar(date)
+                                }
                             )
                         }
                     }
