@@ -340,18 +340,41 @@ fun LumiCalendarDayDetail(
         ?.replaceFirstChar { it.titlecase(locale) } ?: stringResource(R.string.lumi_cal_choose_day)
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = 24.dp)
         .animateContentSize(animationSpec = tween(300, easing = LumiMotion.EaseOutExpo))) {
-        AnimatedContent(
-            targetState = title,
-            transitionSpec = { fadeIn(tween(260)) togetherWith fadeOut(tween(130)) },
-            label = "lumi_selected_date"
-        ) { label ->
-            Text(
-                text = label,
-                fontFamily = LumiEditorialSerif,
-                fontSize = 25.sp,
-                color = tokens.text,
-                lineHeight = 30.sp
-            )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AnimatedContent(
+                targetState = title,
+                transitionSpec = { fadeIn(tween(260)) togetherWith fadeOut(tween(130)) },
+                label = "lumi_selected_date",
+                modifier = Modifier.weight(1f)
+            ) { label ->
+                Text(
+                    text = label,
+                    fontFamily = LumiEditorialSerif,
+                    fontSize = 23.sp,
+                    color = tokens.text,
+                    lineHeight = 28.sp
+                )
+            }
+            if (day != null) {
+                androidx.compose.material3.IconButton(
+                    onClick = onRegisterClick,
+                    modifier = Modifier
+                        .size(46.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(tokens.accentSoft)
+                ) {
+                    Icon(
+                        if (day.hasLog) androidx.compose.material.icons.Icons.Rounded.Edit else Icons.Rounded.Add,
+                        contentDescription = if (day.hasLog) stringResource(R.string.lumi_cal_view_log)
+                            else stringResource(R.string.lumi_cal_record_day),
+                        tint = tokens.accent,
+                        modifier = Modifier.size(21.dp)
+                    )
+                }
+            }
         }
         Spacer(Modifier.height(7.dp))
         if (day != null) {
@@ -388,20 +411,7 @@ fun LumiCalendarDayDetail(
                     )
                 }
             }
-            Spacer(Modifier.height(10.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = onRegisterClick) {
-                    Icon(Icons.Rounded.Add, contentDescription = null, tint = tokens.accent, modifier = Modifier.size(17.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        if (day.hasLog) stringResource(R.string.lumi_cal_view_log)
-                        else stringResource(R.string.lumi_cal_record_day),
-                        color = tokens.accent,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
+
         }
     }
 }
