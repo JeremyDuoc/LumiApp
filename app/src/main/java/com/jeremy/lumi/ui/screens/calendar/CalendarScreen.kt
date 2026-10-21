@@ -114,7 +114,7 @@ fun CalendarScreen(
             selectedDate.year == uiState.displayYear &&
             selectedDate.monthValue == uiState.displayMonth
     }
-    val openSelectedLog = {
+    val openSelectedLog: () -> Unit = {
         focusedModel?.let { day ->
             if (day.isFuture) {
                 pendingFutureDay = day.dayOfMonth
@@ -123,6 +123,7 @@ fun CalendarScreen(
                 selectedDayForLog = day.dayOfMonth
             }
         }
+        Unit
     }
 
     Scaffold(
