@@ -218,8 +218,9 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                 AnimatedContent(
                     targetState = mode,
                     transitionSpec = {
-                        fadeIn(tween(230, easing = com.jeremy.lumi.ui.theme.LumiMotion.EaseOutExpo)) togetherWith
-                            fadeOut(tween(150))
+                        fadeIn(tween(durationMillis = 190, delayMillis = 105,
+                            easing = com.jeremy.lumi.ui.theme.LumiMotion.EaseOutExpo)) togetherWith
+                            fadeOut(tween(90))
                     },
                     modifier = Modifier.weight(1f),
                     label = "lumi_calendar_mode"
@@ -614,16 +615,37 @@ fun YearItem(year: Int, viewModel: CalendarViewModel, onMonthClick: (Int) -> Uni
     val tokens = com.jeremy.lumi.ui.theme.LumiThemeTokens.current
     Column(modifier = Modifier.fillMaxWidth()) {
         if (yearData.value.isEmpty()) {
-            Column(
-                modifier = Modifier.fillMaxWidth().height(170.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                CircularProgressIndicator(
-                    color = tokens.accent,
-                    strokeWidth = 2.dp,
-                    modifier = Modifier.size(23.dp)
-                )
+            // Keep the 12-month hierarchy visible while the yearly data is generated.
+            // A neutral placeholder avoids a blank annual page and jumping content.
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                repeat(4) { rowIndex ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        repeat(3) { columnIndex ->
+                            val index = rowIndex * 3 + columnIndex + 1
+                            val month = java.time.Month.of(index).getDisplayName(
+                                java.time.format.TextStyle.FULL, java.util.Locale.getDefault()
+                            ).replaceFirstChar { it.uppercase() }
+                            Column(
+                                modifier = Modifier.weight(1f).height(114.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(tokens.panel.copy(alpha = .64f))
+                                    .padding(10.dp),
+                                verticalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(month, fontSize = 11.sp, color = tokens.muted, maxLines = 1)
+                                repeat(3) { line ->
+                                    Box(
+                                        Modifier
+                                            .fillMaxWidth(if (line == 2) .65f else 1f)
+                                            .height(4.dp)
+                                            .clip(RoundedCornerShape(5.dp))
+                                            .background(tokens.line.copy(alpha = .50f))
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
         } else {
             val rows = yearData.value.chunked(3)
