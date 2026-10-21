@@ -1731,4 +1731,6 @@
     <string name="lumi_cal_a11y_prediction">%1$d, estimación futura</string>
     <string name="lumi_cal_a11y_logged">%1$d, con registro</string>
     <string name="lumi_cal_a11y_empty">%1$d, sin registro</string>
+    <string name="lumi_cal_week_intro">Tu</string>
+    <string name="lumi_cal_week_focus">semana</string>
 </resources>
