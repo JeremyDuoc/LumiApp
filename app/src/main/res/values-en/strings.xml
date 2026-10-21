@@ -127,7 +127,7 @@
     <string name="cal_current_phase_label">Phase: %1$s</string>
     <string name="cal_cycle_day">Day %1$d of %2$d</string>
     <string name="cal_fri">F</string>
-    <string name="cal_legend_explanation">Ovulation is calculated as 14 days prior to your estimated cycle end.</string>
+    <string name="cal_legend_explanation">Fertile dates and phases are calendar estimates. They do not confirm ovulation or identify safe days to avoid pregnancy.</string>
     <string name="cal_legend_intercourse">Sexual intercourse</string>
     <string name="cal_legend_prediction">Estimated prediction</string>
     <string name="cal_legend_title">Calendar Legend</string>
@@ -167,7 +167,7 @@
     <string name="chat_label_supply">Reminder</string>
     <string name="chat_messages_title">Messages</string>
     <string name="chat_pattern_message">I noticed a pattern: over recent months you reported \'%1$s\' exactly %2$d days before your period. Would you like me to remind you next cycle so you can be prepared?</string>
-    <string name="chat_proactive_ovulation">You are very close to your fertile window and ovulation. It is common to feel surges of energy or temperature changes. How have you felt today?</string>
+    <string name="chat_proactive_ovulation">Your calendar suggests an upcoming fertile window, but it cannot confirm ovulation. How have you been feeling lately?</string>
     <string name="chat_proactive_period">Hello, I noticed your period might arrive in the next %1$d days. Have you felt any mood shifts or cramps?</string>
     <string name="chat_send_cd">Send</string>
     <string name="chat_status_history">History</string>
@@ -233,7 +233,7 @@
     <string name="desc_follicular">High energy and elevated mood. Physical symptoms diminish.</string>
     <string name="desc_luteal">Hormones dip. Possible mood shifts, cravings, and PMS symptoms.</string>
     <string name="desc_menstrual">Low energy, mood swings. Physical symptoms are normal.</string>
-    <string name="desc_ovulation">High energy and confidence. Peak hormonal surge.</string>
+    <string name="desc_ovulation">Fertile window estimated from cycle records; ovulation has not been confirmed.</string>
     <string name="desc_pregnancy">Gestation</string>
     <string name="desc_unknown">Log your next period to synchronize your cycle.</string>
     <string name="dialog_pregnancy_birth">Birth</string>
@@ -334,7 +334,7 @@
     <string name="home_insight_luteal_window">Your period usually arrives within an estimated window. A few days of variation is biologically normal. Keep your supplies handy and prioritize rest.</string>
     <string name="home_insight_menstrual_1">Your body is working hard. It is completely normal to feel low on energy and need more rest today.</string>
     <string name="home_insight_menstrual_2">Flow will begin to decrease soon. Remember to stay hydrated and be gentle with yourself.</string>
-    <string name="home_insight_ovulation">You are at your peak energy and magnetism. A great time to connect with others and tackle big challenges.</string>
+    <string name="home_insight_ovulation">Your calendar estimates a fertile window around these days. Actual ovulation may happen at different times; notice how you personally feel.</string>
     <string name="home_insight_title">Lumi Insight</string>
     <string name="home_insight_unknown">Start logging your period to discover what is happening inside your body.</string>
     <string name="home_link_chip">Link</string>
@@ -1231,7 +1231,7 @@
     <string name="phase_advice_follicular">Energy and creativity are rising. Excellent time for shared adventures and new projects!</string>
     <string name="phase_advice_luteal">Might feel tired or sensitive (PMS). Be patient, understanding, and offer plenty of care.</string>
     <string name="phase_advice_menstrual">Usually needs more rest and gentle support. Prepare something warm or watch a movie together.</string>
-    <string name="phase_advice_ovulation">Peak energy, charisma, and confidence. Make the most of this vibrant phase together.</string>
+    <string name="phase_advice_ovulation">The fertile window is an estimate, not contraception. Record your experiences without assuming changes in energy from cycle phase.</string>
     <string name="phase_advice_pregnancy">A wonderful chapter. Be present, attentive, and supportive with whatever she needs.</string>
     <string name="phase_advice_unknown">Not enough cycle data yet.</string>
     <string name="phase_follicular">Follicular</string>
@@ -1714,7 +1714,7 @@
     <string name="lumi_cal_record_day">Log day</string>
     <string name="lumi_cal_view_log">View log</string>
     <string name="lumi_cal_legend_period">Period</string>
-    <string name="lumi_cal_legend_fertile">Fertile</string>
+    <string name="lumi_cal_legend_fertile">Fertile est.</string>
     <string name="lumi_cal_legend_record">Logged</string>
     <string name="lumi_cal_choose_day">Choose a day</string>
     <string name="lumi_cal_no_cycle">No cycle information for this day</string>
