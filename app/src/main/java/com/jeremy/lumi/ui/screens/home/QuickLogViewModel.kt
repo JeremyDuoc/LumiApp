@@ -11,11 +11,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.util.Calendar
+import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 import com.jeremy.lumi.data.preferences.OnboardingPreferenceManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -41,25 +41,59 @@ class QuickLogViewModel @Inject constructor(
 
     private val _todayLog = MutableStateFlow<DailyLogWithSymptoms?>(null)
     val todayLog: StateFlow<DailyLogWithSymptoms?> = _todayLog.asStateFlow()
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading = _isLoading.asStateFlow()
+    private val _isSaving = MutableStateFlow(false)
+    val isSaving = _isSaving.asStateFlow()
+    private val _loadFailed = MutableStateFlow(false)
+    val loadFailed = _loadFailed.asStateFlow()
+    private val _saveFailed = MutableStateFlow(false)
+    val saveFailed = _saveFailed.asStateFlow()
 
     sealed class UiEvent {
         object LogSaved : UiEvent()
         data class ShowSnackbar(val message: String) : UiEvent()
     }
 
-    private val _uiEvent = MutableSharedFlow<UiEvent>()
-    val uiEvent = _uiEvent.asSharedFlow()
+    private val _uiEvent = Channel<UiEvent>(Channel.BUFFERED)
+    val uiEvent = _uiEvent.receiveAsFlow()
 
     val activeCategories: StateFlow<Set<String>> = prefsManager.activeLogCategoriesFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), setOf("physical", "digestive", "mucus", "intercourse"))
+
+    val customSymptoms = prefsManager.customLogSymptomsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+    val favoriteSymptoms = prefsManager.favoriteLogSymptomsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.jeremy.lumi.data.preferences.DefaultLogFavorites)
+    fun setCustomSymptoms(names: Set<String>) { viewModelScope.launch { prefsManager.setCustomLogSymptoms(names) } }
+    fun setFavoriteSymptoms(names: Set<String>) { viewModelScope.launch { prefsManager.setFavoriteLogSymptoms(names) } }
 
     fun setActiveCategories(categories: Set<String>) {
         viewModelScope.launch { prefsManager.setActiveLogCategories(categories) }
     }
 
-    init {
-        viewModelScope.launch {
-            _todayLog.value = repository.getDailyLog(todayMidnightMillis)
+    private var loadJob: kotlinx.coroutines.Job? = null
+    private var loadVersion = 0
+
+    init { loadToday() }
+
+    fun loadToday() {
+        val version = ++loadVersion
+        loadJob?.cancel()
+        _isLoading.value = true
+        _loadFailed.value = false
+        _saveFailed.value = false
+        loadJob = viewModelScope.launch {
+            try {
+                val log = repository.getDailyLog(todayMidnightMillis)
+                if (version == loadVersion) _todayLog.value = log
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (version == loadVersion) _loadFailed.value = true
+            } finally {
+                if (version == loadVersion) _isLoading.value = false
+            }
         }
     }
 
@@ -80,18 +114,24 @@ class QuickLogViewModel @Inject constructor(
         stressLevel: Int?,
         waterIntake: Float?,
         basalBodyTemp: Float?,
-        spotting: Boolean
+        spotting: Boolean,
+        symptomIntensities: Map<String, Int> = emptyMap()
     ) {
+        if (_isSaving.value || _isLoading.value || _loadFailed.value) return
+        val date = todayMidnightMillis
+        _isSaving.value = true
+        _saveFailed.value = false
         viewModelScope.launch {
             try {
-                val activeCycle = repository.getCurrentActiveCycle()
-                val cycleId = activeCycle?.id ?: 0
-                val existingId = _todayLog.value?.dailyLog?.id ?: 0
+                val existing = repository.getDailyLog(date)
+                val cycleId = existing?.dailyLog?.cycleId?.takeIf { it != 0 }
+                    ?: repository.getCycleForDate(date)?.id ?: 0
+                val existingId = existing?.dailyLog?.id ?: 0
 
                 val dailyLog = DailyLogEntity(
                     id = existingId,
                     cycleId = cycleId,
-                    date = todayMidnightMillis,
+                    date = date,
                     flowIntensity = flow,
                     painLevel = painLevel,
                     mood = mood,
@@ -111,14 +151,20 @@ class QuickLogViewModel @Inject constructor(
                 )
 
                 val symptoms = selectedSymptoms.map { symptomName ->
-                    SymptomEntity(dailyLogId = 0, name = symptomName, intensity = painLevel)
+                    SymptomEntity(dailyLogId = 0, name = symptomName,
+                        intensity = symptomIntensities[symptomName]
+                            ?: existing?.symptoms?.find { it.name == symptomName }?.intensity ?: 0)
                 }
 
                 repository.saveDailyLogWithSymptoms(dailyLog, symptoms)
-                _todayLog.value = repository.getDailyLog(todayMidnightMillis)
-                _uiEvent.emit(UiEvent.LogSaved)
+                _todayLog.value = repository.getDailyLog(date)
+                _uiEvent.send(UiEvent.LogSaved)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                _uiEvent.emit(UiEvent.ShowSnackbar("Error al guardar: ${e.message}"))
+                _saveFailed.value = true
+            } finally {
+                _isSaving.value = false
             }
         }
     }

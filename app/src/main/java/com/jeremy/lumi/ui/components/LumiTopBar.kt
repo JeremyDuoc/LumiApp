@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
@@ -32,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.State
 import androidx.compose.ui.res.stringResource
 import com.jeremy.lumi.R
 import androidx.compose.ui.Alignment
@@ -79,11 +81,12 @@ fun LumiBrandFlower(
     modifier: Modifier = Modifier,
     size: Int = 20,
     animated: Boolean = true,
-    ceremonial: Boolean = false
+    ceremonial: Boolean = false,
+    motionProgress: Float? = null
 ) {
     // HTML: flowerLive 7.8s; handoff: lumiFlowerV7 2.9s alternate.
-    val transition = if (animated) rememberInfiniteTransition(label = "svg_flower_motion") else null
-    val phase = transition?.animateFloat(
+    val transition = if (animated && motionProgress == null && ValueAnimator.areAnimatorsEnabled()) rememberInfiniteTransition(label = "svg_flower_motion") else null
+    val phase = motionProgress ?: (transition?.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
@@ -95,7 +98,7 @@ fun LumiBrandFlower(
             repeatMode = RepeatMode.Reverse
         ),
         label = "svg_flower_transform"
-    )?.value ?: .5f
+    )?.value ?: .5f)
 
     val rotation = if (!animated) 0f else if (ceremonial) -7f + 15f * phase else -6f + 11f * phase
     val zoom = if (!animated) 1f else if (ceremonial) {
@@ -156,7 +159,8 @@ fun LumiBrandLockup(
     starColor: Color = LumiThemeTokens.current.accent,
     animated: Boolean = true,
     ceremonial: Boolean = false,
-    flowerVisibility: Float = 1f
+    flowerVisibility: Float = 1f,
+    motionProgress: Float? = null
 ) {
     Row(
         modifier = modifier,
@@ -164,11 +168,20 @@ fun LumiBrandLockup(
     ) {
         val flowerAmount = flowerVisibility.coerceIn(0f, 1f)
         if (flowerAmount > 0f) {
-            Box(Modifier.width(((flowerSize + 8) * flowerAmount).dp)) {
+            Box(
+                Modifier.width(((flowerSize + 8) * flowerAmount).dp)
+                    .height((flowerSize * flowerAmount).dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
                 LumiBrandFlower(
                     modifier = Modifier.requiredSize(flowerSize.dp)
-                        .graphicsLayer { alpha = flowerAmount },
-                    size = flowerSize, animated = animated, ceremonial = ceremonial
+                        .graphicsLayer {
+                            alpha = flowerAmount
+                            scaleX = .65f + .35f * flowerAmount
+                            scaleY = scaleX
+                        },
+                    size = flowerSize, animated = animated, ceremonial = ceremonial,
+                    motionProgress = motionProgress
                 )
             }
         }
@@ -181,15 +194,15 @@ fun LumiBrandLockup(
                 color = textColor
             )
             Spacer(modifier = Modifier.width(3.dp))
-            LumiBrandStar(starSize, starColor, animated)
+            LumiBrandStar(starSize, starColor, animated, motionProgress)
         }
     }
 }
 
 /** A brief luminous turn followed by rest; quarter-turn symmetry makes the loop seamless. */
 @Composable
-private fun LumiBrandStar(starSize: TextUnit, color: Color, animated: Boolean) {
-    val transition = if (animated && ValueAnimator.areAnimatorsEnabled()) {
+private fun LumiBrandStar(starSize: TextUnit, color: Color, animated: Boolean, motionProgress: Float? = null) {
+    val transition = if (animated && motionProgress == null && ValueAnimator.areAnimatorsEnabled()) {
         rememberInfiniteTransition(label = "brand_star_light")
     } else null
     val turn = transition?.animateFloat(
@@ -215,7 +228,7 @@ private fun LumiBrandStar(starSize: TextUnit, color: Color, animated: Boolean) {
     }
     val diameter = with(LocalDensity.current) { starSize.toDp() }
     Canvas(Modifier.size(diameter)) {
-        val progress = turn?.value ?: 0f
+        val progress = motionProgress ?: turn?.value ?: 0f
         val glint = sin(progress * PI.toFloat()).coerceIn(0f, 1f)
         val radius = size.minDimension * (.48f + .08f * glint)
         if (glint > .001f) {
@@ -253,7 +266,8 @@ fun LumiTopBar(
     onSettingsClick: (() -> Unit)? = null,
     // Se mide la marca real; sirve como destino del vuelo desde el onboarding.
     onBrandBounds: ((Rect) -> Unit)? = null,
-    hideBrand: Boolean = false
+    hideBrand: Boolean = false,
+    arrivalProgress: State<Float>? = null
 ) {
     val tokens = LumiThemeTokens.current
 
@@ -282,9 +296,14 @@ fun LumiTopBar(
             starSize = 11.sp,
             letterSpacing = (-1.5).sp,
             flowerVisibility = 0f,
-            animated = true
+            animated = !hideBrand
         )
 
+        Box(Modifier.graphicsLayer {
+            val p = ((arrivalProgress?.value ?: 1f) / .7f).coerceIn(0f, 1f)
+            alpha = p * p * (3f - 2f * p)
+            translationY = (1f - alpha) * 8.dp.toPx()
+        }) {
         LumiCollapsibleActions(
             hasNotificationAlert = hasNotificationAlert,
             onChatClick = onChatClick,
@@ -292,5 +311,6 @@ fun LumiTopBar(
             onNotificationsClick = onNotificationsClick,
             onSettingsClick = onSettingsClick
         )
+        }
     }
 }

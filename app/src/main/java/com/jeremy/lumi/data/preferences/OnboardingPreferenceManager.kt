@@ -22,6 +22,8 @@ import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
+val DefaultLogFavorites = setOf("Cólicos", "Hinchazón", "Dolor de cabeza", "Fatiga", "Sensibilidad Senos", "Acné")
+
 /**
  * Gestiona el estado del onboarding y los datos de perfil de usuario en DataStore.
  *
@@ -162,6 +164,20 @@ class OnboardingPreferenceManager @Inject constructor(
         .map { prefs -> 
             prefs[LOG_CATEGORIES_KEY] ?: setOf("physical", "digestive", "mucus", "intercourse") // Por defecto todo activo o personalizar
         }
+
+    private val customLogSymptomsKey = stringSetPreferencesKey("daily_custom_symptoms")
+    private val favoriteLogSymptomsKey = stringSetPreferencesKey("daily_favorite_symptoms")
+
+    val customLogSymptomsFlow: Flow<Set<String>> = safeData.map { it[customLogSymptomsKey] ?: emptySet() }
+    val favoriteLogSymptomsFlow: Flow<Set<String>> = safeData.map { it[favoriteLogSymptomsKey] ?: DefaultLogFavorites }
+
+    suspend fun setCustomLogSymptoms(symptoms: Set<String>) {
+        dataStore.edit { it[customLogSymptomsKey] = symptoms }
+    }
+
+    suspend fun setFavoriteLogSymptoms(symptoms: Set<String>) {
+        dataStore.edit { it[favoriteLogSymptomsKey] = symptoms }
+    }
 
     suspend fun setUserGoal(goal: UserGoal) {
         dataStore.edit { prefs -> prefs[USER_GOAL_KEY] = goal.name }

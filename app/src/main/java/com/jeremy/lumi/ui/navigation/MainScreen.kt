@@ -22,6 +22,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.geometry.Offset
 import com.jeremy.lumi.ui.components.captureThemeRevealSnapshot
@@ -101,6 +102,9 @@ fun AppNavGraph() {
     var mainNavigationStarted by remember { mutableStateOf(false) }
     var homeBrandBounds by remember { mutableStateOf<Rect?>(null) }
     var handoffFinishing by remember { mutableStateOf(false) }
+    var homeReady by remember { mutableStateOf(false) }
+    var skipHandoff by remember { mutableStateOf(false) }
+    val homeArrivalProgress = remember { mutableFloatStateOf(0f) }
     val handoffScope = rememberCoroutineScope()
 
     // La animación reside FUERA del NavHost, y sobrevive al cambio de ruta.
@@ -127,6 +131,7 @@ fun AppNavGraph() {
     Box(modifier = Modifier.fillMaxSize()) {
     NavHost(
         navController = rootNavController,
+        modifier = if (handoff != null) Modifier.clearAndSetSemantics {} else Modifier,
         startDestination = AppRoutes.SPLASH,
         enterTransition = {
             if (initialState.destination.route == AppRoutes.ONBOARDING && targetState.destination.route == AppRoutes.MAIN) {
@@ -167,6 +172,9 @@ fun AppNavGraph() {
                         homeBrandBounds = null
                         mainNavigationStarted = false
                         handoffFinishing = false
+                        homeReady = false
+                        skipHandoff = false
+                        homeArrivalProgress.floatValue = 0f
                         handoff = LumiHandoff(bounds, selectedTokens)
                     }
                 }
@@ -178,6 +186,8 @@ fun AppNavGraph() {
             MainScreen(
                 onHomeBrandBounds = { rect -> homeBrandBounds = rect },
                 suppressHomeBrandDuringHandoff = handoff != null,
+                homeArrivalProgress = if (handoff != null) homeArrivalProgress else null,
+                onHomeReady = { homeReady = true },
                 onNavigateToPartner = {
                     if (com.jeremy.lumi.BuildConfig.ENABLE_BONDS) {
                         rootNavController.navigate(AppRoutes.BONDS_HOME)
@@ -441,14 +451,16 @@ fun AppNavGraph() {
 
     val activeHandoff = handoff
     if (activeHandoff != null) {
-        BackHandler { finishHandoff() }
+        BackHandler { skipHandoff = true }
         CompositionLocalProvider(LocalLumiOnboardingTokens provides activeHandoff.theme) {
             LumiAtmosphericTransition(
                 sourceBrandBounds = activeHandoff.sourceBounds,
                 targetBrandBounds = homeBrandBounds,
                 revealUnderlyingHome = true,
-                // 1350 ms: el velo es completamente opaco. Cambiamos de ruta
-                // para que Home se componga UNA SOLA VEZ y prepare sus datos.
+                homeReady = homeReady,
+                skipRequested = skipHandoff,
+                onRevealProgress = { homeArrivalProgress.floatValue = it },
+                // Compose Home once, after the curtain has become fully opaque.
                 onCurtainOpaque = { navigateToRealHome() },
                 onFinished = { finishHandoff() } // Incluye el botón de omitir.
             )
@@ -470,6 +482,8 @@ fun AppNavGraph() {
 fun MainScreen(
     onHomeBrandBounds: ((Rect) -> Unit)? = null,
     suppressHomeBrandDuringHandoff: Boolean = false,
+    homeArrivalProgress: State<Float>? = null,
+    onHomeReady: () -> Unit = {},
     onNavigateToPartner: () -> Unit = {},
     onNavigateToBackup: () -> Unit = {},
     onOpenBondsPairing: () -> Unit = {},
@@ -558,6 +572,11 @@ fun MainScreen(
         bottomBar = {
             AnimatedVisibility(
                 visible = showBottomBar,
+                modifier = Modifier.graphicsLayer {
+                    val p = (((homeArrivalProgress?.value ?: 1f) - .32f) / .68f).coerceIn(0f, 1f)
+                    alpha = p * p * (3f - 2f * p)
+                    translationY = (1f - alpha) * 14.dp.toPx()
+                },
                 enter = slideInVertically(initialOffsetY = { it }, animationSpec = tween(300)) + fadeIn(animationSpec = tween(300)),
                 exit = slideOutVertically(targetOffsetY = { it }, animationSpec = tween(300)) + fadeOut(animationSpec = tween(300))
             ) {
@@ -585,6 +604,9 @@ fun MainScreen(
             popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(300)) }
         ) {
             composable("tabs") {
+                var calendarRequestEpoch by androidx.compose.runtime.saveable.rememberSaveable {
+                    mutableStateOf<Long?>(null)
+                }
                 HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
                     Box(Modifier.fillMaxSize().graphicsLayer {
                         val distance = abs((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction).coerceIn(0f, 1f)
@@ -596,6 +618,8 @@ fun MainScreen(
                         BottomNavItem.Home -> HomeScreen(
                             onBrandBounds = onHomeBrandBounds,
                             suppressBrandDuringHandoff = suppressHomeBrandDuringHandoff,
+                            arrivalProgress = homeArrivalProgress,
+                            onReadyForArrival = onHomeReady,
                             onNavigateToInsights = {
                                 val insightsIndex = tabs.indexOf(BottomNavItem.Insights)
                                 if (insightsIndex >= 0) {
@@ -607,6 +631,11 @@ fun MainScreen(
                                 if (calIndex >= 0) {
                                     coroutineScope.launch { pagerState.animateScrollToPage(calIndex) }
                                 }
+                            },
+                            onNavigateToCalendarDate = { date ->
+                                calendarRequestEpoch = date.toEpochDay()
+                                val calIndex = tabs.indexOf(BottomNavItem.Calendar)
+                                if (calIndex >= 0) coroutineScope.launch { pagerState.animateScrollToPage(calIndex) }
                             },
                             onNavigateToPartner = {
                                 val bondsIndex = tabs.indexOf(BottomNavItem.Bonds)
@@ -623,7 +652,10 @@ fun MainScreen(
                                 navController.navigate("conversations")
                             }
                         )
-                        BottomNavItem.Calendar -> CalendarScreen()
+                        BottomNavItem.Calendar -> CalendarScreen(
+                            requestedDate = calendarRequestEpoch?.let(java.time.LocalDate::ofEpochDay),
+                            onDateOpened = { calendarRequestEpoch = null }
+                        )
                         BottomNavItem.Insights -> InsightsScreen(
                             onNavigateBack = {
                                 coroutineScope.launch { pagerState.animateScrollToPage(0) }

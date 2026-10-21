@@ -1,1083 +1,626 @@
 package com.jeremy.lumi.ui.screens.calendar
 
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ChevronLeft
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.FavoriteBorder
-import androidx.compose.material.icons.rounded.History
-import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.Today
-import androidx.compose.material.icons.rounded.DateRange
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jeremy.lumi.R
 import com.jeremy.lumi.domain.model.CyclePhase
-import com.jeremy.lumi.domain.usecase.CyclePrediction
+import com.jeremy.lumi.domain.util.ClinicalLabels
 import com.jeremy.lumi.ui.theme.IntercourseHeartColor
 import com.jeremy.lumi.ui.theme.LocalPhaseColors
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import com.jeremy.lumi.ui.theme.LumiEditorialSerif
+import com.jeremy.lumi.ui.theme.LumiThemeTokens
+import java.time.LocalDate
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 enum class CalendarMode { MONTH, YEAR }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val selectedLog by viewModel.selectedLog.collectAsStateWithLifecycle()
-    
-    var mode by remember { mutableStateOf(CalendarMode.MONTH) }
-    var showLegendDialog by remember { mutableStateOf(false) }
-    var showHistory by remember { mutableStateOf(false) }
-    var showCycleHistory by remember { mutableStateOf(false) }
-    var selectedDayForLog by remember { mutableStateOf<Int?>(null) }
-    var pendingFutureDay by remember { mutableStateOf<Int?>(null) }
-    
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val savedMsg = stringResource(R.string.log_saved_confirmation)
-    
-    val haptic = LocalHapticFeedback.current
+fun CalendarScreen(
+    viewModel: CalendarViewModel = hiltViewModel(),
+    requestedDate: LocalDate? = null,
+    onDateOpened: () -> Unit = {}
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var mode by rememberSaveable { mutableStateOf(CalendarMode.MONTH) }
+    var showLegend by rememberSaveable { mutableStateOf(false) }
+    var showHistory by rememberSaveable { mutableStateOf(false) }
+    var showCycles by rememberSaveable { mutableStateOf(false) }
+    var showDatePicker by rememberSaveable { mutableStateOf(false) }
+    var editorDate by rememberSaveable { mutableStateOf<String?>(null) }
+    var overviewYear by rememberSaveable { mutableIntStateOf(state.displayYear) }
+    LaunchedEffect(requestedDate) {
+        requestedDate?.let { viewModel.selectDate(it); mode = CalendarMode.MONTH; onDateOpened() }
+    }
+    val snackbar = remember { SnackbarHostState() }
+    val savedMessage = stringResource(R.string.log_saved_confirmation)
+    LaunchedEffect(viewModel) {
+        viewModel.logEvents.collect { event ->
+            if (event == CalendarViewModel.LogEvent.SAVED) {
+                editorDate = null
+                snackbar.showSnackbar(savedMessage)
+            }
+        }
+    }
+    val yearData by produceState<List<Pair<String, List<CalendarDay>>>?>(null, mode, overviewYear, state.dataVersion) {
+        if (mode == CalendarMode.YEAR) { value = null; value = viewModel.getYearData(overviewYear) }
+    }
+    Scaffold(containerColor = LumiThemeTokens.current.bg, contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        snackbarHost = { SnackbarHost(snackbar) }) { padding ->
+        CalendarContent(
+            state, mode, overviewYear, yearData,
+            onModeChange = { overviewYear = state.displayYear; mode = it },
+            onToday = { viewModel.goToToday(); mode = CalendarMode.MONTH },
+            onPrevious = { if (mode == CalendarMode.MONTH) viewModel.navigateToPreviousMonth() else overviewYear-- },
+            onNext = { if (mode == CalendarMode.MONTH) viewModel.navigateToNextMonth() else overviewYear++ },
+            onPickDate = { showDatePicker = true }, onSelectDate = viewModel::selectDate,
+            onSelectMonth = { viewModel.navigateToMonth(overviewYear, it); mode = CalendarMode.MONTH },
+            onEdit = { viewModel.fetchLogForDate(it); editorDate = it.toString() },
+            onLegend = { showLegend = true }, onHistory = { showHistory = true }, onCycles = { showCycles = true },
+            modifier = Modifier.padding(padding)
+        )
+    }
+    editorDate?.let { rawDate ->
+        CalendarLogEditor(LocalDate.parse(rawDate), viewModel) { editorDate = null; viewModel.clearSelectedLog() }
+    }
+    if (showHistory) LogHistorySheet(onDismiss = { showHistory = false })
+    if (showCycles) CycleHistorySheet(onDismiss = { showCycles = false })
+    if (showLegend) CalendarLegendDialog { showLegend = false }
+    if (showDatePicker) {
+        val picker = rememberDatePickerState(
+            initialSelectedDateMillis = state.selectedDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
+        DatePickerDialog(onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(enabled = picker.selectedDateMillis != null, onClick = {
+                    picker.selectedDateMillis?.let {
+                        viewModel.selectDate(java.time.Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate())
+                    }
+                    mode = CalendarMode.MONTH; showDatePicker = false
+                }) { Text(stringResource(R.string.calendar_open_date)) }
+            },
+            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.dialog_reset_cancel)) } }
+        ) { DatePicker(state = picker) }
+    }
+}
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            Column {
-                CenterAlignedTopAppBar(
-                    title = {
-                        ModeToggleSwitch(mode = mode, onModeChange = { 
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            mode = it 
-                        })
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { showLegendDialog = true }) {
-                            Icon(
-                                imageVector = Icons.Rounded.Info,
-                                contentDescription = stringResource(R.string.cal_legend_title_cd),
-                                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                            )
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = { 
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            viewModel.goToToday()
-                            mode = CalendarMode.MONTH
-                        }) {
-                            Icon(
-                                imageVector = Icons.Rounded.Today,
-                                contentDescription = stringResource(R.string.cal_today_cd),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        IconButton(onClick = { showHistory = true }) {
-                            Icon(
-                                imageVector = Icons.Rounded.History,
-                                contentDescription = stringResource(id = R.string.history_title),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        IconButton(onClick = { showCycleHistory = true }) {
-                            Icon(
-                                imageVector = Icons.Rounded.DateRange,
-                                contentDescription = stringResource(R.string.cycle_history_title),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background
-                    )
-                )
-                
-                // Sleek Current Phase Pill (Only in Month view or always, let's keep it minimal)
-                AnimatedVisibility(
-                    visible = mode == CalendarMode.MONTH,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
-                ) {
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CurrentPhasePill(
-                                currentPhase = uiState.currentPhase,
-                                currentDayOfCycle = uiState.currentDayOfCycle
-                            )
-                            // FIX P2-2: Mostrar el banner de predicción del próximo período.
-                            // uiState.prediction existe pero antes nunca se renderizaba.
-                            uiState.prediction?.let { pred ->
-                                val bannerText = when {
-                                    pred.isLate -> stringResource(R.string.calendar_period_late, pred.delayDays)
-                                    pred.daysUntilNextPeriod == 0 -> stringResource(R.string.calendar_period_today)
-                                    pred.daysUntilNextPeriod == 1 -> stringResource(R.string.calendar_period_tomorrow)
-                                    pred.daysUntilNextPeriod > 0 -> stringResource(R.string.calendar_next_period_in, pred.daysUntilNextPeriod)
-                                    else -> null
-                                }
-                                val bannerColor = when {
-                                    pred.isLate -> MaterialTheme.colorScheme.error
-                                    pred.daysUntilNextPeriod <= 2 -> MaterialTheme.colorScheme.primary
-                                    else -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-                                }
-                                if (bannerText != null) {
-                                    Text(
-                                        text = bannerText,
-                                        fontSize = 12.sp,
-                                        color = bannerColor,
-                                        modifier = Modifier.padding(bottom = 8.dp)
-                                    )
-                                }
-                            }
+/** Stateless presentation lets UI tests exercise navigation without touching health records. */
+@Composable
+internal fun CalendarContent(
+    state: CalendarUiState, mode: CalendarMode, overviewYear: Int,
+    yearData: List<Pair<String, List<CalendarDay>>>?,
+    onModeChange: (CalendarMode) -> Unit, onToday: () -> Unit,
+    onPrevious: () -> Unit, onNext: () -> Unit, onPickDate: () -> Unit,
+    onSelectDate: (LocalDate) -> Unit, onSelectMonth: (Int) -> Unit, onEdit: (LocalDate) -> Unit,
+    onLegend: () -> Unit, onHistory: () -> Unit, onCycles: () -> Unit, modifier: Modifier = Modifier
+) {
+    val tokens = LumiThemeTokens.current
+    val monthScroll = rememberLazyListState()
+    val yearScroll = rememberLazyListState()
+    LaunchedEffect(overviewYear) { yearScroll.scrollToItem(0) }
+    val selectedDay = state.days.firstOrNull { it.date == state.selectedDate }
+    Column(modifier.fillMaxSize()) {
+    LazyColumn(Modifier.fillMaxWidth().weight(1f).testTag("calendar_scroll"),
+        state = if (mode == CalendarMode.MONTH) monthScroll else yearScroll,
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item("heading") {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.calendar_title), fontFamily = LumiEditorialSerif,
+                        fontSize = 30.sp, lineHeight = 36.sp, color = tokens.text)
+                    Text(stringResource(R.string.calendar_subtitle), fontSize = 13.sp, color = tokens.muted)
+                }
+                IconButton(onClick = onLegend) {
+                    Icon(Icons.Rounded.Info, stringResource(R.string.cal_legend_title_cd),
+                        tint = tokens.muted, modifier = Modifier.size(22.dp))
+                }
+            }
+        }
+        item("controls") {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween) {
+                ModeToggleSwitch(mode, onModeChange)
+                TextButton(onClick = onToday, modifier = Modifier.testTag("calendar_today")) {
+                    Icon(Icons.Rounded.Today, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(7.dp))
+                    Text(stringResource(R.string.calendar_today), fontSize = 14.sp)
+                }
+            }
+        }
+        if (mode == CalendarMode.MONTH) {
+            item("month") { MonthView(state, onPrevious, onNext, onPickDate, onSelectDate, onLegend) }
+            item("day") {
+                if (selectedDay != null) SelectedDayCard(selectedDay)
+                else Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                }
+            }
+            item("today_context") { TodayCycleContext(state) }
+        } else {
+            item("year_header") {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(overviewYear.toString(), fontFamily = LumiEditorialSerif, fontSize = 30.sp, color = tokens.text)
+                        Text(stringResource(R.string.calendar_year_hint), fontSize = 13.sp, color = tokens.muted)
+                    }
+                    CalendarArrow(false, onPrevious, R.string.calendar_previous_year)
+                    CalendarArrow(true, onNext, R.string.calendar_next_year)
+                }
+            }
+            if (yearData == null) {
+                item { Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                } }
+            } else {
+                items(yearData.chunked(2).size) { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        yearData.chunked(2)[row].forEachIndexed { col, (_, days) ->
+                            val month = row * 2 + col
+                            SmallMonthBox(overviewYear, month, days, { onSelectMonth(month) }, Modifier.weight(1f))
                         }
                     }
                 }
             }
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            AnimatedContent(
-                targetState = mode,
-                transitionSpec = {
-                    if (targetState == CalendarMode.MONTH) {
-                        // Zooming INTO month from year (Month starts small, Year grows huge)
-                        (scaleIn(tween(450, easing = FastOutSlowInEasing), 0.8f) + fadeIn(tween(300))) togetherWith 
-                        (scaleOut(tween(450, easing = FastOutSlowInEasing), 1.2f) + fadeOut(tween(300)))
-                    } else {
-                        // Zooming OUT TO year from month (Year starts huge, Month shrinks small)
-                        (scaleIn(tween(450, easing = FastOutSlowInEasing), 1.2f) + fadeIn(tween(300))) togetherWith 
-                        (scaleOut(tween(450, easing = FastOutSlowInEasing), 0.8f) + fadeOut(tween(300)))
-                    }
-                },
-                label = "calendar_zoom_anim"
-            ) { currentMode ->
-                if (currentMode == CalendarMode.MONTH) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        MonthView(
-                            uiState = uiState,
-                            viewModel = viewModel,
-                            onDayClick = { calendarDay ->
-                                if (calendarDay.isFuture) {
-                                    pendingFutureDay = calendarDay.dayOfMonth
-                                } else {
-                                    viewModel.fetchLogForDay(calendarDay.dayOfMonth)
-                                    selectedDayForLog = calendarDay.dayOfMonth
-                                }
-                            }
-                        )
-
-                        // Estado vacío del día: si hoy no tiene registro (y el mes
-                        // visible contiene el día de hoy), invita a registrarlo.
-                        val todayCell = uiState.days.firstOrNull { it.isToday }
-                        AnimatedVisibility(
-                            visible = todayCell != null && !todayCell.hasLog,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically(),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp)
-                                .padding(bottom = 20.dp)
-                        ) {
-                            com.jeremy.lumi.ui.components.LumiEmptyStateCard(
-                                icon = Icons.Rounded.Today,
-                                title = stringResource(R.string.empty_cal_today_title),
-                                description = stringResource(R.string.empty_cal_today_desc),
-                                ctaText = stringResource(R.string.empty_cal_today_cta),
-                                onCtaClick = {
-                                    todayCell?.let {
-                                        viewModel.fetchLogForDay(it.dayOfMonth)
-                                        selectedDayForLog = it.dayOfMonth
-                                    }
-                                }
-                            )
-                        }
-
-                        Spacer(Modifier.height(80.dp))
-                    }
-                } else {
-                    YearView(
-                        initialYear = uiState.displayYear,
-                        viewModel = viewModel,
-                        onMonthClick = { year, month ->
-                            viewModel.navigateToMonth(year, month)
-                            mode = CalendarMode.MONTH
-                        }
-                    )
+        }
+        item("history") {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(onClick = onHistory, modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                    border = BorderStroke(1.dp, tokens.line)) {
+                    Icon(Icons.Rounded.History, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.calendar_records))
+                }
+                OutlinedButton(onClick = onCycles, modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                    border = BorderStroke(1.dp, tokens.line)) {
+                    Icon(Icons.Rounded.DateRange, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.calendar_cycles))
                 }
             }
         }
     }
-
-    // Bottom Sheets & Dialogs
-    val activeCategories by viewModel.activeCategories.collectAsStateWithLifecycle()
-
-    selectedDayForLog?.let { day ->
-        DailyLogSheet(
-            day = day,
-            month = uiState.displayMonth,
-            year = uiState.displayYear,
-            savedLog = selectedLog,
-            activeCategories = activeCategories,
-            onActiveCategoriesChange = { viewModel.setActiveCategories(it) },
-            onDismiss = {
-                selectedDayForLog = null
-                viewModel.clearSelectedLog()
-            },
-            onSave = { flow, pain, mood, symptoms, mucus, notes, hadIntercourse, protectionUsed, method, intercourseNotes, showOnCalendar, sleepHours, energyLevel, stressLevel, waterIntake, bbt, spotting ->
-                viewModel.saveDailyLog(
-                    day, flow, pain, mood, symptoms, mucus, notes,
-                    hadIntercourse, protectionUsed, method, intercourseNotes, showOnCalendar,
-                    sleepHours, energyLevel, stressLevel, waterIntake, bbt, spotting
-                )
-                selectedDayForLog = null
-                scope.launch { snackbarHostState.showSnackbar(savedMsg) }
+    if (mode == CalendarMode.MONTH && selectedDay != null && !selectedDay.isFuture) {
+        val locale = LocalConfiguration.current.locales[0]
+        val date = state.selectedDate
+        Surface(color = tokens.bg) {
+            Column {
+                HorizontalDivider(color = tokens.line)
+                Button(onClick = { onEdit(date) },
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
+                        .fillMaxWidth().heightIn(min = 50.dp).testTag("calendar_edit"),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = tokens.accent, contentColor = calendarOnAccent())) {
+                    Icon(if (selectedDay.hasLog) Icons.Rounded.Edit else Icons.Rounded.Add, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(if (selectedDay.hasLog) R.string.calendar_edit_date else R.string.calendar_add_date,
+                        date.format(DateTimeFormatter.ofPattern("d MMM", locale))),
+                        fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                }
             }
-        )
+        }
     }
-
-    if (showHistory) {
-        LogHistorySheet(onDismiss = { showHistory = false })
-    }
-
-    if (showCycleHistory) {
-        CycleHistorySheet(onDismiss = { showCycleHistory = false })
-    }
-
-    if (showLegendDialog) {
-        LegendDialog(onDismiss = { showLegendDialog = false })
-    }
-
-    pendingFutureDay?.let { day ->
-        AlertDialog(
-            onDismissRequest = { pendingFutureDay = null },
-            title = { Text(text = stringResource(R.string.log_future_day_title), fontWeight = FontWeight.Bold) },
-            text = { Text(text = stringResource(R.string.log_future_day_desc), fontSize = 14.sp) },
-            confirmButton = {
-                TextButton(onClick = {
-                    pendingFutureDay = null
-                    viewModel.fetchLogForDay(day)
-                    selectedDayForLog = day
-                }) { Text(text = stringResource(R.string.log_future_day_continue), color = MaterialTheme.colorScheme.primary) }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingFutureDay = null }) { Text(stringResource(R.string.dialog_reset_cancel)) }
-            }
-        )
     }
 }
 
 @Composable
 fun ModeToggleSwitch(mode: CalendarMode, onModeChange: (CalendarMode) -> Unit) {
-    val bgAnim by animateColorAsState(MaterialTheme.colorScheme.surfaceVariant, label = "bg")
-    
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(bgAnim)
-            .padding(4.dp)
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            ToggleOption(
-                text = stringResource(R.string.cal_mode_month),
-                isSelected = mode == CalendarMode.MONTH,
-                onClick = { onModeChange(CalendarMode.MONTH) }
-            )
-            ToggleOption(
-                text = stringResource(R.string.cal_mode_year),
-                isSelected = mode == CalendarMode.YEAR,
-                onClick = { onModeChange(CalendarMode.YEAR) }
-            )
+    val tokens = LumiThemeTokens.current
+    Row(Modifier.clip(RoundedCornerShape(18.dp)).background(tokens.panel).padding(4.dp).selectableGroup()) {
+        CalendarMode.entries.forEach { option ->
+            val active = mode == option
+            Box(Modifier.clip(RoundedCornerShape(14.dp))
+                .background(if (active) tokens.accentSoft else Color.Transparent)
+                .selectable(active, role = Role.Tab, onClick = { onModeChange(option) })
+                .heightIn(min = 44.dp).padding(horizontal = 22.dp, vertical = 10.dp), contentAlignment = Alignment.Center) {
+                Text(stringResource(if (option == CalendarMode.MONTH) R.string.cal_mode_month else R.string.cal_mode_year),
+                    color = if (active) calendarAccent() else tokens.muted, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            }
         }
     }
 }
 
 @Composable
-fun ToggleOption(text: String, isSelected: Boolean, onClick: () -> Unit) {
-    val bgColor by animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent,
-        animationSpec = tween(250), label = "toggle_bg"
-    )
-    val textColor by animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-        animationSpec = tween(250), label = "toggle_text"
-    )
-    
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(bgColor)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 6.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            color = textColor,
-            fontWeight = FontWeight.Bold,
-            fontSize = 14.sp
-        )
-    }
-}
-
-@Composable
-fun CurrentPhasePill(currentPhase: CyclePhase, currentDayOfCycle: Int) {
-    val phaseColor = phaseColor(currentPhase)
-    val label = phaseLabel(currentPhase)
-    
-    Row(
-        modifier = Modifier
-            .padding(bottom = 12.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(phaseColor.copy(alpha = 0.1f))
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(phaseColor))
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = stringResource(R.string.cal_current_phase_label, label),
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 13.sp
-        )
-        if (currentDayOfCycle > 0) {
-            val rawDay = stringResource(R.string.cal_current_day_pill, currentDayOfCycle).trimStart(' ', '•', '·')
-            Text(
-                text = " · $rawDay",
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                fontSize = 13.sp
-            )
-        }
-    }
-}
-
-@Composable
-fun MonthView(
-    uiState: CalendarUiState,
-    viewModel: CalendarViewModel,
-    onDayClick: (CalendarDay) -> Unit,
-    modifier: Modifier = Modifier
+internal fun MonthView(
+    state: CalendarUiState, onPrevious: () -> Unit, onNext: () -> Unit,
+    onPickDate: () -> Unit, onSelectDate: (LocalDate) -> Unit, onLegend: () -> Unit
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .padding(bottom = 12.dp)
-    ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(18.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    IconButton(
-                        onClick = { viewModel.navigateToPreviousMonth() },
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.ChevronLeft,
-                            contentDescription = stringResource(R.string.cal_prev_month_desc),
-                            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                        )
-                    }
-
-                    AnimatedContent(
-                        targetState = uiState.monthYearTitle,
-                        transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
-                        label = "month_title"
-                    ) { title ->
-                        Text(
-                            text = title,
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-
-                    IconButton(
-                        onClick = { viewModel.navigateToNextMonth() },
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.ChevronRight,
-                            contentDescription = stringResource(R.string.cal_next_month_desc),
-                            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                        )
-                    }
+    val tokens = LumiThemeTokens.current
+    val locale = LocalConfiguration.current.locales[0]
+    val title = LocalDate.of(state.displayYear, state.displayMonth, 1)
+        .format(DateTimeFormatter.ofPattern("LLLL yyyy", locale)).replaceFirstChar { it.titlecase(locale) }
+    Surface(shape = RoundedCornerShape(28.dp), color = tokens.panel, border = BorderStroke(1.dp, tokens.line)) {
+        Column(Modifier.padding(horizontal = 10.dp).padding(top = 10.dp, bottom = 6.dp)) {
+            Row(Modifier.padding(start = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable(onClick = onPickDate)
+                    .heightIn(min = 48.dp).padding(horizontal = 8.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Text(title, Modifier.weight(1f, fill = false), fontSize = 20.sp,
+                        fontFamily = LumiEditorialSerif, color = tokens.text)
+                    Icon(Icons.Rounded.ExpandMore, stringResource(R.string.calendar_jump_date),
+                        Modifier.padding(start = 4.dp).size(18.dp), tint = tokens.muted)
                 }
-
-                Spacer(Modifier.height(14.dp))
-
-                val daysOfWeek = listOf(
-                    R.string.cal_mon, R.string.cal_tue, R.string.cal_wed,
-                    R.string.cal_thu, R.string.cal_fri, R.string.cal_sat, R.string.cal_sun
-                )
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    daysOfWeek.forEach { dayRes ->
-                        Text(
-                            text = stringResource(id = dayRes),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.40f),
-                            modifier = Modifier.weight(1f),
-                            textAlign = TextAlign.Center
-                        )
-                    }
+                CalendarArrow(false, onPrevious, R.string.cal_prev_month_desc)
+                CalendarArrow(true, onNext, R.string.cal_next_month_desc)
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth()) {
+                (1..7).forEach { day ->
+                    Text(java.time.DayOfWeek.of(day).getDisplayName(java.time.format.TextStyle.SHORT, locale)
+                        .replaceFirstChar { it.titlecase(locale) }.take(3),
+                        Modifier.weight(1f), textAlign = TextAlign.Center, fontSize = 11.sp, color = tokens.muted)
                 }
-
-                Spacer(Modifier.height(8.dp))
-
-                BoxWithConstraints(Modifier.fillMaxWidth()) {
-                    // The parent scrolls vertically, so the non-scrolling grid needs a finite height.
-                    val rowCount = (uiState.days.size + 6) / 7
-                    val cellHeight = maxOf(48.dp, (maxWidth - 12.dp) / 7)
-                    val gridHeight = cellHeight * rowCount + 8.dp
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(7),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        verticalArrangement = Arrangement.SpaceEvenly,
-                        modifier = Modifier.fillMaxWidth().height(gridHeight).padding(bottom = 8.dp),
-                        userScrollEnabled = false
-                    ) {
-                        itemsIndexed(uiState.days) { index, calendarDay ->
-                            if (calendarDay.isEmptyOffset) {
-                                Box(modifier = Modifier.size(48.dp))
-                            } else {
-                                DayCell(
-                                    day = calendarDay,
-                                    index = index,
-                                    onClick = { onDayClick(calendarDay) }
-                                )
+            }
+            Spacer(Modifier.height(8.dp))
+            var drag by remember { mutableFloatStateOf(0f) }
+            Column(Modifier.fillMaxWidth().testTag("calendar_grid")
+                .pointerInput(state.displayYear, state.displayMonth) {
+                    detectHorizontalDragGestures(onDragStart = { drag = 0f },
+                        onDragEnd = {
+                            if (drag < -64.dp.toPx()) onNext()
+                            if (drag > 64.dp.toPx()) onPrevious()
+                        }, onHorizontalDrag = { change, amount -> change.consume(); drag += amount })
+                }, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (state.days.isEmpty()) Box(Modifier.fillMaxWidth().height(260.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                }
+                state.days.chunked(7).forEach { week ->
+                    Row(Modifier.fillMaxWidth()) {
+                        week.forEach { day ->
+                            Box(Modifier.weight(1f)) {
+                                if (day.isEmptyOffset) Spacer(Modifier.height(48.dp))
+                                else DayCell(day, day.date == state.selectedDate, { day.date?.let(onSelectDate) })
                             }
                         }
+                        repeat(7 - week.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }
+            Spacer(Modifier.height(10.dp))
+            HorizontalDivider(color = tokens.line, modifier = Modifier.padding(horizontal = 8.dp))
+            CalendarInlineLegend(onLegend)
         }
     }
 }
 
 @Composable
-fun YearView(
-    initialYear: Int,
-    viewModel: CalendarViewModel,
-    onMonthClick: (year: Int, month: Int) -> Unit
-) {
-    val yearsRange = (initialYear - 5)..(initialYear + 5)
-    val listState = rememberLazyListState(initialFirstVisibleItemIndex = 5)
+private fun CalendarArrow(forward: Boolean, onClick: () -> Unit, description: Int) {
+    IconButton(onClick = onClick) {
+        Icon(if (forward) Icons.Rounded.ChevronRight else Icons.Rounded.ChevronLeft,
+            stringResource(description), tint = LumiThemeTokens.current.text)
+    }
+}
 
-    LazyColumn(
-        state = listState,
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(40.dp)
-    ) {
-        items(yearsRange.toList().size) { index ->
-            val year = yearsRange.toList()[index]
-            YearItem(
-                year       = year,
-                viewModel  = viewModel,
-                onMonthClick = { month -> onMonthClick(year, month) }
-            )
+/** The same marks in Home and the month: selection, today, saved check, estimated outline. */
+@Composable
+fun CalendarDateMark(day: CalendarDay, selected: Boolean, onClick: () -> Unit,
+    modifier: Modifier = Modifier, weekday: String? = null) {
+    val tokens = LumiThemeTokens.current
+    val accent = calendarAccent()
+    val phase = phaseColor(day.phase)
+    val emphasizedPhase = day.phase == CyclePhase.MENSTRUAL || day.phase == CyclePhase.OVULATION
+    val bg by animateColorAsState(when {
+        selected -> tokens.accent
+        emphasizedPhase -> phase.copy(alpha = if (day.isPrediction) .07f else .19f)
+        else -> Color.Transparent
+    }, tween(180), label = "calendar_selection")
+    val foreground = if (selected) calendarOnAccent() else tokens.text
+    val locale = LocalConfiguration.current.locales[0]
+    val fullDate = day.date?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale)) ?: day.dayOfMonth.toString()
+    val phaseText = if (day.phase == CyclePhase.UNKNOWN) stringResource(R.string.calendar_no_phase)
+        else stringResource(R.string.calendar_estimated_phase, phaseLabel(day.phase))
+    val semanticsLabel = listOfNotNull(fullDate,
+        if (day.isToday) stringResource(R.string.calendar_today) else null, phaseText,
+        stringResource(if (day.hasLog) R.string.calendar_recorded else R.string.calendar_no_record),
+        if (day.showIntercourseHeart) stringResource(R.string.cal_legend_intercourse) else null).joinToString(", ")
+    val haptic = LocalHapticFeedback.current
+    Column(modifier.fillMaxWidth().heightIn(min = if (weekday == null) 48.dp else 78.dp)
+        .padding(horizontal = 2.dp).clip(RoundedCornerShape(16.dp)).background(bg)
+        .then(if (day.isToday && !selected) Modifier.border(1.5.dp, accent, RoundedCornerShape(16.dp)) else Modifier)
+        .then(if (day.isPrediction && emphasizedPhase && !selected) Modifier.drawBehind {
+            drawRoundRect(phase.copy(alpha = .7f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx()),
+                style = Stroke(1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx()))))
+        } else Modifier)
+        .selectable(selected, role = Role.Button, onClick = {
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); onClick()
+        }).clearAndSetSemantics {
+            contentDescription = semanticsLabel; this.selected = selected; role = Role.Button
+            testTag = "calendar_day_" + (day.date?.toString() ?: day.dayOfMonth.toString())
+            onClick { onClick(); true }
+        }
+        .padding(vertical = 5.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        if (weekday != null) {
+            Text(weekday, fontSize = 10.sp, color = if (selected) foreground else tokens.muted)
+            Spacer(Modifier.height(3.dp))
+        }
+        Text(day.dayOfMonth.toString(), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = foreground)
+        Row(Modifier.height(12.dp), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            if (day.hasLog) Icon(Icons.Rounded.Check, null, Modifier.size(11.dp),
+                tint = if (selected) foreground else accent)
+            else if (emphasizedPhase) Box(Modifier.size(4.dp).clip(CircleShape)
+                .background(if (selected) foreground.copy(alpha = .65f) else phase))
+            if (day.showIntercourseHeart) Icon(
+                if (day.intercourseProtected == true) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                null, Modifier.size(9.dp), tint = if (selected) foreground else IntercourseHeartColor)
         }
     }
 }
 
 @Composable
-fun YearItem(year: Int, viewModel: CalendarViewModel, onMonthClick: (Int) -> Unit) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+fun DayCell(day: CalendarDay, selected: Boolean, onClick: () -> Unit) = CalendarDateMark(day, selected, onClick)
 
-    val yearData = produceState<List<Pair<String, List<CalendarDay>>>>(
-        initialValue = if (year == uiState.displayYear) uiState.yearMonthsData else emptyList(),
-        year,
-        uiState.displayMonth
-    ) {
-        value = if (year != uiState.displayYear || value.isEmpty()) {
-            viewModel.getYearData(year)
-        } else {
-            uiState.yearMonthsData
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CalendarInlineLegend(onClick: () -> Unit) {
+    val tokens = LumiThemeTokens.current
+    FlowRow(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick)
+        .padding(horizontal = 8.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        LegendLabel(phaseColor(CyclePhase.MENSTRUAL), stringResource(R.string.calendar_period))
+        LegendLabel(phaseColor(CyclePhase.OVULATION), stringResource(R.string.calendar_ovulation))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.Check, null, Modifier.size(13.dp), tint = calendarAccent())
+            Spacer(Modifier.width(4.dp))
+            Text(stringResource(R.string.calendar_record), fontSize = 11.sp, color = tokens.muted)
         }
+        Text(stringResource(R.string.calendar_outline_hint), fontSize = 11.sp, color = tokens.muted)
     }
+}
 
-    val currentYear = com.jeremy.lumi.utils.LumiClock.today().year
-    val isCurrentYear = year == currentYear
+@Composable
+private fun LegendLabel(color: Color, label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(7.dp).clip(CircleShape).background(color)); Spacer(Modifier.width(5.dp))
+        Text(label, color = LumiThemeTokens.current.muted, fontSize = 11.sp)
+    }
+}
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        // ── Year label ────────────────────────────────────────────────────────
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(bottom = 14.dp, start = 4.dp)
-        ) {
-            if (isCurrentYear) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
-                )
-                Spacer(Modifier.width(8.dp))
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun SelectedDayCard(day: CalendarDay) {
+    val date = day.date ?: return
+    val tokens = LumiThemeTokens.current
+    val locale = LocalConfiguration.current.locales[0]
+    val record = day.record
+    val log = record?.dailyLog
+    val dateText = date.format(DateTimeFormatter.ofPattern("EEEE d '·' MMMM", locale)).replaceFirstChar { it.titlecase(locale) }
+    Column(Modifier.fillMaxWidth().testTag("calendar_day_detail"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.width(3.dp).height(38.dp).clip(CircleShape).background(tokens.accent))
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(if (day.isToday) stringResource(R.string.calendar_today_date, dateText) else dateText,
+                    fontFamily = LumiEditorialSerif, fontSize = 23.sp, lineHeight = 29.sp, color = tokens.text)
+                Text(if (day.phase == CyclePhase.UNKNOWN) stringResource(R.string.calendar_no_phase)
+                    else stringResource(R.string.calendar_estimated_phase, phaseLabel(day.phase)),
+                    fontSize = 12.sp, color = tokens.muted)
             }
-            Text(
-                text       = year.toString(),
-                fontSize   = if (isCurrentYear) 28.sp else 22.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color      = if (isCurrentYear)
-                    MaterialTheme.colorScheme.primary
-                else
-                    MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f)
-            )
         }
-
-        if (yearData.value.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxWidth().height(160.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(24.dp))
-            }
-        } else {
-            val rows = yearData.value.chunked(3)
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                rows.forEachIndexed { rowIndex, rowMonths ->
-                    Row(
-                        modifier              = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        rowMonths.forEachIndexed { colIndex, monthPair ->
-                            val globalMonthIndex = rowIndex * 3 + colIndex
-                            SmallMonthBox(
-                                modifier  = Modifier.weight(1f),
-                                monthName = monthPair.first.split(" ")[0],
-                                days      = monthPair.second,
-                                monthIndex = globalMonthIndex + 1, // 1-based
-                                displayYear = year,
-                                onClick   = { onMonthClick(globalMonthIndex) }
-                            )
-                        }
-                        // If the last row has < 3 months, pad with empty weights
-                        repeat(3 - rowMonths.size) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
+        if (day.isFuture) {
+            Surface(color = tokens.panel, shape = RoundedCornerShape(20.dp), border = BorderStroke(1.dp, tokens.line)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(stringResource(R.string.calendar_future_title), color = tokens.text, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.calendar_future_body), fontSize = 13.sp, lineHeight = 20.sp, color = tokens.muted)
                 }
             }
+        } else {
+            if (log == null) {
+                Text(stringResource(if (day.isToday) R.string.calendar_empty_today else R.string.calendar_empty_day),
+                    color = tokens.muted, fontSize = 14.sp, lineHeight = 21.sp)
+            } else {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    log.mood?.let { SummaryChip(ClinicalLabels.findMoodResId(it)?.let { id -> stringResource(id) } ?: it) }
+                    log.flowIntensity?.let { SummaryChip(stringResource(R.string.calendar_flow_summary,
+                        ClinicalLabels.findFlowResId(it)?.let { id -> stringResource(id) } ?: it)) }
+                    if (log.painLevel > 0) SummaryChip(stringResource(R.string.calendar_pain_summary, log.painLevel))
+                    if (log.spotting) SummaryChip(stringResource(R.string.calendar_spotting))
+                    record.symptoms.take(3).forEach {
+                        SummaryChip(ClinicalLabels.findSymptomResId(it.name)?.let { id -> stringResource(id) } ?: it.name)
+                    }
+                    if (record.symptoms.size > 3) SummaryChip(stringResource(R.string.calendar_more_symptoms, record.symptoms.size - 3))
+                    if (log.mood == null && log.flowIntensity == null && log.painLevel == 0 && !log.spotting && record.symptoms.isEmpty())
+                        SummaryChip(stringResource(R.string.calendar_recorded))
+                }
+                if (!log.notes.isNullOrBlank()) Text(log.notes, maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    fontSize = 13.sp, lineHeight = 20.sp, color = tokens.muted)
+            }
         }
     }
 }
 
 @Composable
-fun SmallMonthBox(
-    modifier     : Modifier = Modifier,
-    monthName    : String,
-    days         : List<CalendarDay>,
-    monthIndex   : Int,
-    displayYear  : Int,
-    onClick      : () -> Unit
-) {
-    val textMeasurer  = androidx.compose.ui.text.rememberTextMeasurer()
-    val phaseColors   = LocalPhaseColors.current
-    val primaryColor  = MaterialTheme.colorScheme.primary
-    val surfaceColor  = MaterialTheme.colorScheme.surface
-    val onBgColor     = MaterialTheme.colorScheme.onBackground
-    val haptic        = LocalHapticFeedback.current
-
-    // Detect if this month contains today
-    val today         = com.jeremy.lumi.utils.LumiClock.today()
-    val isCurrentMonth = displayYear == today.year && monthIndex == today.monthValue
-
-    // Determine accent color: use menstrual color if any menstrual day, else primary
-    val hasMenstrual = days.any { it.phase == CyclePhase.MENSTRUAL && !it.isEmptyOffset }
-    val hasOvulation = days.any { it.phase == CyclePhase.OVULATION && !it.isEmptyOffset }
-    val accentColor  = when {
-        hasMenstrual -> phaseColors.menstrual
-        hasOvulation -> phaseColors.ovulation
-        else         -> primaryColor.copy(alpha = 0.5f)
+private fun SummaryChip(text: String) {
+    Surface(color = LumiThemeTokens.current.panel, shape = RoundedCornerShape(10.dp)) {
+        Text(text, Modifier.padding(horizontal = 10.dp, vertical = 7.dp), color = LumiThemeTokens.current.text, fontSize = 12.sp)
     }
+}
 
-    Card(
-        modifier = modifier
-            .clickable(
-                indication        = null,
-                interactionSource = remember { MutableInteractionSource() }
-            ) {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onClick()
-            },
-        shape    = RoundedCornerShape(16.dp),
-        colors   = CardDefaults.cardColors(
-            containerColor = if (isCurrentMonth)
-                primaryColor.copy(alpha = 0.07f)
-            else
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Column {
-            // ── Month name header bar ─────────────────────────────────────
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        if (isCurrentMonth)
-                            Brush.horizontalGradient(
-                                listOf(primaryColor.copy(alpha = 0.18f), primaryColor.copy(alpha = 0.06f))
-                            )
-                        else
-                            Brush.horizontalGradient(
-                                listOf(accentColor.copy(alpha = 0.12f), Color.Transparent)
-                            )
-                    )
-                    .padding(horizontal = 8.dp, vertical = 6.dp)
-            ) {
-                Text(
-                    text       = monthName,
-                    fontSize   = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color      = if (isCurrentMonth) primaryColor
-                                 else onBgColor.copy(alpha = 0.75f),
-                    letterSpacing = 0.3.sp
-                )
-            }
+@Composable
+private fun TodayCycleContext(state: CalendarUiState) {
+    val tokens = LumiThemeTokens.current
+    val prediction = state.prediction
+    if (prediction == null || state.currentPhase == CyclePhase.UNKNOWN) return
+    val locale = LocalConfiguration.current.locales[0]
+    val periodText = when {
+        state.currentPhase == CyclePhase.PREGNANCY || prediction.nextPeriodDate == LocalDate.MAX -> null
+        prediction.isLate -> stringResource(R.string.calendar_period_late, prediction.delayDays)
+        else -> stringResource(R.string.calendar_next_estimate,
+            prediction.nextPeriodDate.format(DateTimeFormatter.ofPattern("d MMM", locale)))
+    }
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(tokens.accentSoft).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Text(stringResource(R.string.calendar_today_cycle, state.currentDayOfCycle),
+            color = calendarAccent(), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+        Text(phaseLabel(state.currentPhase), color = tokens.text, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+        if (periodText != null) Text(periodText, color = tokens.muted, fontSize = 12.sp, lineHeight = 18.sp)
+    }
+}
 
-            // ── Day grid rendered on Canvas ───────────────────────────────
-            Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(90.dp)
-                    .padding(horizontal = 4.dp, vertical = 4.dp)
-            ) {
-                val colWidth  = size.width / 7f
-                val rowHeight = size.height / 6f
-
+@Composable
+private fun SmallMonthBox(year: Int, month: Int, days: List<CalendarDay>, onClick: () -> Unit, modifier: Modifier) {
+    val tokens = LumiThemeTokens.current
+    val primary = calendarAccent()
+    val locale = LocalConfiguration.current.locales[0]
+    val textMeasurer = rememberTextMeasurer()
+    val monthName = java.time.Month.of(month + 1).getDisplayName(java.time.format.TextStyle.FULL_STANDALONE, locale)
+        .replaceFirstChar { it.titlecase(locale) }
+    val countText = stringResource(R.string.calendar_month_records, days.count { it.hasLog })
+    val isCurrent = days.any { it.isToday }
+    val periodColor = phaseColor(CyclePhase.MENSTRUAL)
+    val ovulationColor = phaseColor(CyclePhase.OVULATION)
+    Surface(onClick = onClick, modifier = modifier.testTag("calendar_month_${month + 1}")
+        .semantics(mergeDescendants = true) { contentDescription = "$monthName $year, $countText" },
+        color = tokens.panel, shape = RoundedCornerShape(22.dp),
+        border = BorderStroke(1.dp, if (isCurrent) primary else tokens.line)) {
+        Column(Modifier.padding(12.dp)) {
+            Text(monthName, fontSize = 16.sp, fontFamily = LumiEditorialSerif, color = tokens.text)
+            Spacer(Modifier.height(10.dp))
+            Canvas(Modifier.fillMaxWidth().height(112.dp).clearAndSetSemantics { }) {
+                val w = size.width / 7; val h = size.height / 6
                 days.forEachIndexed { index, day ->
                     if (!day.isEmptyOffset) {
-                        val row = index / 7
-                        val col = index % 7
-                        val cx  = col * colWidth + colWidth / 2f
-                        val cy  = row * rowHeight + rowHeight / 2f
-
-                        val phaseColor = when (day.phase) {
-                            CyclePhase.MENSTRUAL  -> phaseColors.menstrual
-                            CyclePhase.FOLLICULAR -> phaseColors.follicular
-                            CyclePhase.OVULATION  -> phaseColors.ovulation
-                            CyclePhase.LUTEAL     -> phaseColors.luteal
-                            CyclePhase.PREGNANCY  -> primaryColor
-                            else                  -> null
+                        val center = Offset((index % 7 + .5f) * w, (index / 7 + .5f) * h)
+                        val color = when (day.phase) {
+                            CyclePhase.MENSTRUAL -> periodColor
+                            CyclePhase.OVULATION -> ovulationColor
+                            else -> null
                         }
-
-                        val dotAlpha = if (day.isPrediction) 0.45f else 0.75f
-
-                        // Background circle for phase days
-                        if (phaseColor != null) {
-                            drawCircle(
-                                color  = phaseColor.copy(alpha = dotAlpha * 0.22f),
-                                radius = rowHeight * 0.38f,
-                                center = androidx.compose.ui.geometry.Offset(cx, cy)
-                            )
-                        }
-
-                        // Today: solid primary circle
-                        if (day.isToday) {
-                            drawCircle(
-                                color  = primaryColor,
-                                radius = rowHeight * 0.36f,
-                                center = androidx.compose.ui.geometry.Offset(cx, cy)
-                            )
-                        }
-
-                        val textColor = when {
-                            day.isToday      -> surfaceColor
-                            phaseColor != null -> phaseColor.copy(alpha = dotAlpha)
-                            else             -> onBgColor.copy(alpha = 0.55f)
-                        }
-
-                        val textLayout = textMeasurer.measure(
-                            text  = day.dayOfMonth.toString(),
-                            style = androidx.compose.ui.text.TextStyle(
-                                fontSize   = 8.sp,
-                                fontWeight = if (day.isToday || phaseColor != null) FontWeight.Bold else FontWeight.Normal,
-                                color      = textColor
-                            )
-                        )
-                        drawText(
-                            textLayoutResult = textLayout,
-                            topLeft = androidx.compose.ui.geometry.Offset(
-                                x = cx - textLayout.size.width / 2f,
-                                y = cy - textLayout.size.height / 2f
-                            )
-                        )
-
-                        // Small phase dot below number for logged days
-                        if (day.hasLog && phaseColor != null) {
-                            drawCircle(
-                                color  = phaseColor.copy(alpha = 0.85f),
-                                radius = 1.8f,
-                                center = androidx.compose.ui.geometry.Offset(cx, cy + rowHeight * 0.28f)
-                            )
-                        }
+                        if (color != null) drawCircle(color.copy(alpha = if (day.isPrediction) .09f else .23f), h * .44f, center)
+                        if (day.isToday) drawCircle(primary, h * .44f, center, style = Stroke(1.dp.toPx()))
+                        val text = textMeasurer.measure(day.dayOfMonth.toString(),
+                            androidx.compose.ui.text.TextStyle(fontSize = 9.sp, color = tokens.text))
+                        drawText(text, topLeft = Offset(center.x - text.size.width / 2, center.y - text.size.height / 2))
+                        if (day.hasLog) drawCircle(primary, 1.2.dp.toPx(), Offset(center.x, center.y + h * .38f))
                     }
                 }
             }
+            Spacer(Modifier.height(8.dp))
+            Text(countText, fontSize = 11.sp, color = tokens.muted)
         }
     }
 }
 
 @Composable
-private fun LegendDialog(onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(text = stringResource(R.string.cal_legend_title), fontWeight = FontWeight.Bold)
-        },
+private fun CalendarLegendDialog(onDismiss: () -> Unit) {
+    AlertDialog(onDismissRequest = onDismiss, title = { Text(stringResource(R.string.cal_legend_title)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                LegendItem(phaseColor(CyclePhase.MENSTRUAL), phaseLabel(CyclePhase.MENSTRUAL))
-                LegendItem(phaseColor(CyclePhase.OVULATION), phaseLabel(CyclePhase.OVULATION))
-                
-                HorizontalDivider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f))
-                
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text(stringResource(R.string.calendar_legend_body), fontSize = 14.sp, lineHeight = 21.sp)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Rounded.Favorite,
-                        contentDescription = null,
-                        tint = IntercourseHeartColor,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(id = R.string.cal_legend_intercourse),
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
-                    )
+                    Icon(Icons.Rounded.Check, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.calendar_recorded))
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    val predColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.40f)
-                    Box(
-                        modifier = Modifier
-                            .size(14.dp)
-                            .drawBehind {
-                                drawCircle(
-                                    color = predColor,
-                                    radius = size.minDimension / 2f - 1f,
-                                    style = Stroke(
-                                        width = 1.5f,
-                                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(3f, 2f))
-                                    )
-                                )
-                            }
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(id = R.string.cal_legend_prediction),
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = stringResource(id = R.string.cal_legend_explanation),
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                    textAlign = TextAlign.Center
-                )
+                Text(stringResource(R.string.calendar_legend_selection), fontSize = 13.sp)
+                Text(stringResource(R.string.calendar_legend_privacy), fontSize = 13.sp)
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.btn_understood), color = MaterialTheme.colorScheme.primary)
-            }
-        }
-    )
+        }, confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_understood)) } })
 }
 
 @Composable
-private fun LegendItem(color: Color, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(color))
-        Spacer(Modifier.width(8.dp))
-        Text(
-            text = label,
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
-        )
-    }
+private fun CalendarLogEditor(date: LocalDate, viewModel: CalendarViewModel, onDismiss: () -> Unit) {
+    val log by viewModel.selectedLog.collectAsStateWithLifecycle()
+    val loadedDate by viewModel.selectedLogDate.collectAsStateWithLifecycle()
+    val saving by viewModel.isSaving.collectAsStateWithLifecycle()
+    val loading by viewModel.isLoadingLog.collectAsStateWithLifecycle()
+    val loadFailed by viewModel.loadFailed.collectAsStateWithLifecycle()
+    val saveFailed by viewModel.saveFailed.collectAsStateWithLifecycle()
+    val categories by viewModel.activeCategories.collectAsStateWithLifecycle()
+    val custom by viewModel.customSymptoms.collectAsStateWithLifecycle()
+    val favorites by viewModel.favoriteSymptoms.collectAsStateWithLifecycle()
+    LaunchedEffect(date) { if (loadedDate != date) viewModel.fetchLogForDate(date) }
+    DailyLogSheet(day = date.dayOfMonth, month = date.monthValue, year = date.year, savedLog = log,
+        isSaving = saving, isLoading = loading || loadedDate != date, loadFailed = loadFailed, saveFailed = saveFailed,
+        onRetryLoad = { viewModel.fetchLogForDate(date) },
+        customSymptoms = custom, onCustomSymptomsChange = viewModel::setCustomSymptoms,
+        favoriteSymptoms = favorites, onFavoriteSymptomsChange = viewModel::setFavoriteSymptoms,
+        activeCategories = categories, onActiveCategoriesChange = viewModel::setActiveCategories, onDismiss = onDismiss,
+        onSave = { flow, pain, mood, symptoms, mucus, notes, intercourse, protection, method, intimacyNotes,
+                   showIntimacy, sleep, energy, stress, water, temperature, spotting, intensities ->
+            viewModel.saveDailyLog(date.dayOfMonth, flow, pain, mood, symptoms, mucus, notes, intercourse,
+                protection, method, intimacyNotes, showIntimacy, sleep, energy, stress, water, temperature, spotting, intensities)
+        })
 }
 
-// DayCell remains unchanged visually from the user's setup
 @Composable
-fun DayCell(day: CalendarDay, index: Int, onClick: () -> Unit) {
-    val enter = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        delay((index % 7) * 18L + (index / 7) * 30L)
-        enter.animateTo(1f, animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow))
-    }
+fun calendarAccent(): Color {
+    val tokens = LumiThemeTokens.current
+    return if (tokens.isDark) tokens.accent else lerp(tokens.accent, tokens.text, .48f)
+}
 
-    val baseColor = phaseColor(day.phase)
-    val isUnknown = day.phase == CyclePhase.UNKNOWN
-
-    val predictionAlphaFactor = if (day.isPrediction) 0.45f else 1f
-
-    val bgAlpha = when (day.phase) {
-        CyclePhase.MENSTRUAL  -> 0.26f
-        CyclePhase.OVULATION  -> 0.28f
-        CyclePhase.FOLLICULAR -> 0f
-        CyclePhase.LUTEAL     -> 0f
-        else                  -> 0f
-    } * predictionAlphaFactor
-
-    val animBg by animateColorAsState(
-        targetValue   = if (isUnknown) Color.Transparent else baseColor.copy(alpha = bgAlpha),
-        animationSpec = tween(350),
-        label         = "cell_bg_${day.dayOfMonth}"
-    )
-
-    val textColor = when {
-        isUnknown         -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.70f)
-        day.isPrediction  -> baseColor.copy(alpha = 0.55f)
-        else              -> baseColor
-    }
-
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val pressScale by animateFloatAsState(
-        targetValue   = if (isPressed) 0.78f else 1f,
-        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow),
-        label         = "press_${day.dayOfMonth}"
-    )
-
-    val pulse = rememberInfiniteTransition(label = "pulse_${day.dayOfMonth}")
-    val pulseAlpha by pulse.animateFloat(
-        initialValue  = 0.45f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(1100), RepeatMode.Reverse),
-        label         = "pulse_a_${day.dayOfMonth}"
-    )
-
-    val primary      = MaterialTheme.colorScheme.primary
-    val fertileBrush = Brush.radialGradient(
-        colors = listOf(
-            baseColor.copy(alpha = 0.32f * predictionAlphaFactor),
-            baseColor.copy(alpha = 0.08f * predictionAlphaFactor)
-        )
-    )
-
-    val phaseName = phaseLabel(day.phase)
-    val statusDesc = when {
-        day.isToday && day.hasLog -> stringResource(R.string.cal_accessibility_today_with_log)
-        day.isToday -> stringResource(R.string.cal_accessibility_today_no_log)
-        day.isPrediction -> stringResource(R.string.cal_accessibility_prediction)
-        day.hasLog -> stringResource(R.string.cal_accessibility_with_log)
-        else -> stringResource(R.string.cal_accessibility_no_log)
-    }
-    val cellSemantics = stringResource(R.string.cal_accessibility_day_semantics, day.dayOfMonth, phaseName, statusDesc)
-
-    Box(
-        modifier = Modifier
-            .aspectRatio(1f)
-            .semantics { contentDescription = cellSemantics }
-            .graphicsLayer {
-                alpha  = enter.value
-                scaleX = (0.5f + 0.5f * enter.value) * pressScale
-                scaleY = (0.5f + 0.5f * enter.value) * pressScale
-            },
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize(0.9f)
-                .clip(CircleShape)
-                .then(
-                    if (day.phase == CyclePhase.OVULATION) Modifier.background(fertileBrush)
-                    else Modifier.background(animBg)
-                )
-                .then(
-                    if (day.isPrediction && !isUnknown) {
-                        val dotColor = baseColor.copy(alpha = 0.45f)
-                        Modifier.drawBehind {
-                            drawCircle(
-                                color      = dotColor,
-                                radius     = size.minDimension / 2f - 1f,
-                                style      = Stroke(
-                                    width      = 1.5f,
-                                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 3f))
-                                )
-                            )
-                        }
-                    } else Modifier
-                )
-                .clickable(interactionSource = interactionSource, indication = null, onClick = onClick),
-            contentAlignment = Alignment.Center
-        ) {
-            if (day.isToday) {
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    drawCircle(
-                        color = primary.copy(alpha = pulseAlpha),
-                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 4f)
-                    )
-                }
-            }
-
-            if (!isUnknown) {
-                // Doble codificación geométrica de la fase
-                val shapeColor = if (day.isPrediction) baseColor.copy(alpha = 0.5f) else baseColor
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = 4.dp)
-                ) {
-                    when (day.phase) {
-                        CyclePhase.MENSTRUAL -> {
-                            Box(
-                                modifier = Modifier
-                                    .size(3.5.dp)
-                                    .clip(CircleShape)
-                                    .background(shapeColor)
-                            )
-                        }
-                        CyclePhase.FOLLICULAR -> {
-                            Box(
-                                modifier = Modifier
-                                    .size(3.5.dp)
-                                    .rotate(45f)
-                                    .background(shapeColor)
-                            )
-                        }
-                        CyclePhase.OVULATION -> {
-                            Box(
-                                modifier = Modifier
-                                    .size(4.dp)
-                                    .border(1.dp, shapeColor, CircleShape)
-                            )
-                        }
-                        CyclePhase.LUTEAL -> {
-                            Box(
-                                modifier = Modifier
-                                    .size(width = 5.dp, height = 2.5.dp)
-                                    .clip(RoundedCornerShape(1.dp))
-                                    .background(shapeColor)
-                            )
-                        }
-                        else -> Unit
-                    }
-                }
-            }
-
-            Text(
-                text       = day.dayOfMonth.toString(),
-                fontSize   = 13.sp,
-                fontWeight = if (day.isToday || (!isUnknown && !day.isPrediction)) FontWeight.Bold
-                else FontWeight.Normal,
-                color      = if (day.isToday) primary else textColor,
-                modifier   = Modifier.offset(y = if (day.hasLog) (-2).dp else 0.dp)
-            )
-
-            if (day.hasLog) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 5.dp)
-                        .size(4.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (day.isToday) primary
-                            else baseColor.copy(alpha = if (isUnknown) 0.5f else 0.85f)
-                        )
-                )
-            }
-        }
-
-        if (day.showIntercourseHeart) {
-            Icon(
-                imageVector        = if (day.intercourseProtected == true)
-                    Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                contentDescription = null,
-                tint               = IntercourseHeartColor,
-                modifier           = Modifier
-                    .size(14.dp)
-                    .align(Alignment.TopEnd)
-            )
-        }
-    }
+@Composable
+private fun calendarOnAccent(): Color {
+    val background = LumiThemeTokens.current.accent.luminance()
+    val dark = Color(0xFF21182C)
+    val darkContrast = (background + .05f) / (dark.luminance() + .05f)
+    val lightContrast = 1.05f / (background + .05f)
+    return if (lightContrast > darkContrast) Color.White else dark
 }
 
 @Composable
 fun phaseColor(phase: CyclePhase): Color {
-    val phaseColors = LocalPhaseColors.current
+    val colors = LocalPhaseColors.current
     return when (phase) {
-        CyclePhase.MENSTRUAL  -> phaseColors.menstrual
-        CyclePhase.FOLLICULAR -> phaseColors.follicular
-        CyclePhase.OVULATION  -> phaseColors.ovulation
-        CyclePhase.LUTEAL     -> phaseColors.luteal
-        CyclePhase.PREGNANCY  -> MaterialTheme.colorScheme.primary
-        else                  -> MaterialTheme.colorScheme.onBackground.copy(alpha = 0.30f)
+        CyclePhase.MENSTRUAL -> colors.menstrual
+        CyclePhase.FOLLICULAR -> colors.follicular
+        CyclePhase.OVULATION -> colors.ovulation
+        CyclePhase.LUTEAL -> colors.luteal
+        CyclePhase.PREGNANCY -> LumiThemeTokens.current.accent
+        else -> LumiThemeTokens.current.muted
     }
 }
 
 @Composable
-fun phaseLabel(phase: CyclePhase): String = stringResource(
-    id = when (phase) {
-        CyclePhase.MENSTRUAL  -> R.string.phase_menstrual
-        CyclePhase.OVULATION  -> R.string.phase_ovulation
-        CyclePhase.LUTEAL     -> R.string.phase_luteal
-        CyclePhase.FOLLICULAR -> R.string.phase_follicular
-        CyclePhase.PREGNANCY  -> R.string.phase_pregnancy
-        else                  -> R.string.phase_unknown
-    }
-)
+fun phaseLabel(phase: CyclePhase): String = stringResource(when (phase) {
+    CyclePhase.MENSTRUAL -> R.string.phase_menstrual
+    CyclePhase.OVULATION -> R.string.calendar_ovulation
+    CyclePhase.LUTEAL -> R.string.phase_luteal
+    CyclePhase.FOLLICULAR -> R.string.phase_follicular
+    CyclePhase.PREGNANCY -> R.string.phase_pregnancy
+    else -> R.string.phase_unknown
+})

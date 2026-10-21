@@ -71,6 +71,7 @@ fun HomeScreen(
     onNavigateToInsights: () -> Unit = {},
     onNavigateToPartner: () -> Unit = {},
     onNavigateToCalendar: () -> Unit = {},
+    onNavigateToCalendarDate: (LocalDate) -> Unit = { onNavigateToCalendar() },
     onNavigateToSettings: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
     remindersViewModel: RemindersViewModel = hiltViewModel(),
@@ -79,14 +80,16 @@ fun HomeScreen(
     settingsViewModel: SettingsViewModel = hiltViewModel(),
     // Hooks optativos para el logo compartido con la transición del onboarding.
     onBrandBounds: ((Rect) -> Unit)? = null,
-    suppressBrandDuringHandoff: Boolean = false
+    suppressBrandDuringHandoff: Boolean = false,
+    arrivalProgress: State<Float>? = null,
+    onReadyForArrival: () -> Unit = {}
 ) {
     val uiState           by viewModel.uiState.collectAsStateWithLifecycle()
     val tokens            = LumiThemeTokens.current
     val currentTheme      by settingsViewModel.currentTheme.collectAsStateWithLifecycle()
     var showThemeSheet    by remember { mutableStateOf(false) }
     var showBalloonGame   by remember { mutableStateOf(false) }
-    var showQuickLogSheet by remember { mutableStateOf(false) }
+    var showQuickLogSheet by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     var showPredictionInfoSheet by remember { mutableStateOf(false) }
     var showNotificationsSheet by remember { mutableStateOf(false) }
     var showAddReminderSheet by remember { mutableStateOf(false) }
@@ -97,6 +100,15 @@ fun HomeScreen(
     var screenReady by remember { mutableStateOf(false) }
     LaunchedEffect(uiState.isLoading) {
         if (!uiState.isLoading) { screenReady = true }
+    }
+    val latestReadyForArrival by rememberUpdatedState(onReadyForArrival)
+    LaunchedEffect(screenReady, uiState.homeMode) {
+        if (screenReady) {
+            // Include the layout pass that measures the final TopBar destination.
+            withFrameNanos { }
+            withFrameNanos { }
+            latestReadyForArrival()
+        }
     }
 
     val activeReminders by remindersViewModel.activeReminders.collectAsStateWithLifecycle()
@@ -232,7 +244,8 @@ fun HomeScreen(
                     onChatClick = onNavigateToChat,
                     onSettingsClick = onNavigateToSettings,
                     onBrandBounds = onBrandBounds,
-                    hideBrand = suppressBrandDuringHandoff
+                    hideBrand = suppressBrandDuringHandoff,
+                    arrivalProgress = arrivalProgress
                 )
             },
             snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -251,7 +264,7 @@ fun HomeScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // 1. SALUDO EDITORIAL LIBRE (sin tarjetas ni fondos)
-                    FadeSlideIn(screenReady, 0) {
+                    FadeSlideIn(screenReady, 0, arrivalProgress) {
                         val todayDate = com.jeremy.lumi.utils.LumiClock.today()
                         val dateFmt = remember {
                             val pattern = if (Locale.getDefault().language == "en") "EEEE, MMMM d" else "EEEE, d 'de' MMMM"
@@ -299,7 +312,7 @@ fun HomeScreen(
                     if (uiState.linkedCycles.isNotEmpty()) {
                         Column {
                             Spacer(Modifier.height(14.dp))
-                            FadeSlideIn(screenReady, STAGGER_MS / 2) {
+                            FadeSlideIn(screenReady, STAGGER_MS / 2, arrivalProgress) {
                                 CycleStoriesRow(
                                     links = uiState.linkedCycles,
                                     onLinkClick = { linkedSheetLink = it }
@@ -311,7 +324,7 @@ fun HomeScreen(
                     Spacer(Modifier.height(8.dp))
 
                     // 2. NÚCLEO VIVO DE LUMI + STATUS DE PREDICCIÓN (Hero central)
-                    FadeSlideIn(screenReady, STAGGER_MS) {
+                    FadeSlideIn(screenReady, STAGGER_MS, arrivalProgress) {
                         val phaseName = when (uiState.currentPhase) {
                             CyclePhase.MENSTRUAL -> stringResource(R.string.pm_phase_menstrual)
                             CyclePhase.FOLLICULAR -> stringResource(R.string.pm_phase_follicular)
@@ -340,20 +353,24 @@ fun HomeScreen(
                         )
                     }
 
-                    // 3. Separador fino y semana, como en el prototipo.
+                    // Weekly preview uses the same day marks as the full calendar.
                     if (uiState.weekDays.isNotEmpty()) {
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
-                            color = tokens.line.copy(alpha = .8f),
-                            thickness = .5.dp
-                        )
-                        FadeSlideIn(screenReady, STAGGER_MS * 2) {
+                        Spacer(Modifier.height(20.dp))
+                        FadeSlideIn(screenReady, STAGGER_MS * 2, arrivalProgress) {
                             LumiWeekTimeline(
                                 weekDays = uiState.weekDays,
                                 selectedDate = uiState.selectedDate,
                                 onSelectDate = { viewModel.selectDate(it) },
-                                onViewCalendarClick = onNavigateToCalendar,
-                                onResetToToday = { viewModel.resetToToday() }
+                                onViewCalendarClick = {
+                                    onNavigateToCalendarDate(uiState.selectedDate ?: com.jeremy.lumi.utils.LumiClock.today())
+                                },
+                                onResetToToday = { viewModel.resetToToday() },
+                                onOpenDay = { date ->
+                                    if (date == com.jeremy.lumi.utils.LumiClock.today()) {
+                                        quickLogViewModel.loadToday()
+                                        showQuickLogSheet = true
+                                    } else onNavigateToCalendarDate(date)
+                                }
                             )
                         }
                     }
@@ -365,7 +382,7 @@ fun HomeScreen(
                     Spacer(Modifier.height(12.dp))
 
                     // 5. INSIGHT / CONTENIDO CONTEXTUAL (Secundario)
-                    FadeSlideIn(screenReady, STAGGER_MS * 4) {
+                    FadeSlideIn(screenReady, STAGGER_MS * 4, arrivalProgress) {
                         LumiEditorialInsightCard(
                             phase = uiState.currentPhase,
                             currentDay = uiState.currentDayOfCycle,
@@ -379,7 +396,7 @@ fun HomeScreen(
                     // 6. Si hay recordatorios activos se siguen mostrando aquí.
                     //    Crear uno nuevo se hace desde el menú radial, sin duplicar CTA.
                     if (activeReminders.isNotEmpty()) {
-                        FadeSlideIn(screenReady, STAGGER_MS * 5) {
+                        FadeSlideIn(screenReady, STAGGER_MS * 5, arrivalProgress) {
                             RemindersSection(viewModel = remindersViewModel)
                         }
                     }
@@ -419,11 +436,15 @@ fun HomeScreen(
         LumiRadialQuickMenu(
             expanded = radialOpen,
             onExpandedChange = { radialOpen = it },
-            onLogClick = { showQuickLogSheet = true },
+            onLogClick = { quickLogViewModel.loadToday(); showQuickLogSheet = true },
             onPeriodClick = { showConfirmPeriod = true },
             onReminderClick = { showAddReminderSheet = true },
             diaryAlreadyLogged = hasEntry,
-            modifier = Modifier.align(Alignment.BottomEnd)
+            modifier = Modifier.align(Alignment.BottomEnd).graphicsLayer {
+                val p = (((arrivalProgress?.value ?: 1f) - .38f) / .62f).coerceIn(0f, 1f)
+                alpha = p * p * (3f - 2f * p)
+                translationY = (1f - alpha) * 18.dp.toPx()
+            }
         )
 
         if (showConfirmPeriod) {
@@ -515,7 +536,7 @@ fun HomeScreen(
                 currentPhase = uiState.currentPhase ?: CyclePhase.UNKNOWN,
                 hasEntryToday = hasEntry,
                 activeReminders = activeReminders,
-                onQuickLogClick = { showQuickLogSheet = true },
+                onQuickLogClick = { quickLogViewModel.loadToday(); showQuickLogSheet = true },
                 onConfigureReminders = { 
                     showNotificationsSheet = false
                     showAddReminderSheet = true 
@@ -534,21 +555,36 @@ fun HomeScreen(
         if (showBalloonGame) BalloonGameSheet { showBalloonGame = false }
         if (showQuickLogSheet) {
             val activeCategories by quickLogViewModel.activeCategories.collectAsStateWithLifecycle()
+            val customLogSymptoms by quickLogViewModel.customSymptoms.collectAsStateWithLifecycle()
+            val favoriteLogSymptoms by quickLogViewModel.favoriteSymptoms.collectAsStateWithLifecycle()
+            val logSaving by quickLogViewModel.isSaving.collectAsStateWithLifecycle()
+            val logLoading by quickLogViewModel.isLoading.collectAsStateWithLifecycle()
+            val logLoadFailed by quickLogViewModel.loadFailed.collectAsStateWithLifecycle()
+            val logSaveFailed by quickLogViewModel.saveFailed.collectAsStateWithLifecycle()
 
             DailyLogSheet(
                 day      = quickLogViewModel.todayDayOfMonth,
                 month    = quickLogViewModel.todayMonth,
                 year     = quickLogViewModel.todayYear,
                 savedLog = todayLog,
+                isSaving = logSaving,
+                isLoading = logLoading,
+                loadFailed = logLoadFailed,
+                saveFailed = logSaveFailed,
+                onRetryLoad = quickLogViewModel::loadToday,
+                customSymptoms = customLogSymptoms,
+                onCustomSymptomsChange = quickLogViewModel::setCustomSymptoms,
+                favoriteSymptoms = favoriteLogSymptoms,
+                onFavoriteSymptomsChange = quickLogViewModel::setFavoriteSymptoms,
                 activeCategories = activeCategories,
                 onActiveCategoriesChange = { quickLogViewModel.setActiveCategories(it) },
                 onDismiss = { showQuickLogSheet = false },
                 onSave    = { flow, pain, mood, symptoms, mucus, notes, hadIntercourse,
                               protectionUsed, method, intercourseNotes, showOnCalendar,
-                              sleepHours, energyLevel, stressLevel, waterIntake, bbt, spotting ->
+                              sleepHours, energyLevel, stressLevel, waterIntake, bbt, spotting, intensities ->
                     quickLogViewModel.saveToday(flow, pain, mood, symptoms, mucus, notes,
                         hadIntercourse, protectionUsed, method, intercourseNotes, showOnCalendar,
-                        sleepHours, energyLevel, stressLevel, waterIntake, bbt, spotting)
+                        sleepHours, energyLevel, stressLevel, waterIntake, bbt, spotting, intensities)
                 }
             )
         }
@@ -1077,17 +1113,28 @@ private fun DelayBanner(
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
-private fun FadeSlideIn(visible: Boolean, delayMs: Int, content: @Composable () -> Unit) {
+private fun FadeSlideIn(
+    visible: Boolean,
+    delayMs: Int,
+    arrivalProgress: State<Float>? = null,
+    content: @Composable () -> Unit
+) {
     val progress = remember { Animatable(0f) }
     val spec = remember(delayMs) { LumiMotion.homeEntrance(delayMs) }
-    LaunchedEffect(visible, spec) {
-        if (visible) progress.animateTo(1f, spec) else progress.snapTo(0f)
+    LaunchedEffect(visible, spec, arrivalProgress) {
+        if (arrivalProgress != null && visible) progress.snapTo(1f)
+        else if (visible) progress.animateTo(1f, spec)
+        else progress.snapTo(0f)
     }
     Box(Modifier.graphicsLayer {
-        val p = progress.value
+        val p = arrivalProgress?.let {
+            val stagger = (delayMs / 240f).coerceAtMost(.42f)
+            val fraction = ((it.value - stagger) / (1f - stagger)).coerceIn(0f, 1f)
+            LumiMotion.EaseOutExpo.transform(fraction)
+        } ?: progress.value
         alpha = p
-        translationY = (1f - p) * 18.dp.toPx()
-        scaleX = 0.98f + 0.02f * p
+        translationY = (1f - p) * (if (arrivalProgress != null) 26.dp else 18.dp).toPx()
+        scaleX = if (arrivalProgress != null) 1f else 0.98f + 0.02f * p
         scaleY = scaleX
     }) { content() }
 }

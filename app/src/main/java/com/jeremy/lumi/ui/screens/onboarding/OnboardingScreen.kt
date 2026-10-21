@@ -1,10 +1,13 @@
 package com.jeremy.lumi.ui.screens.onboarding
 
+import android.animation.ValueAnimator
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -82,6 +85,7 @@ fun OnboardingScreen(
         mutableStateOf(LumiOnboardingTheme.fromAppTheme(currentTheme))
     }
     val tokens = getThemeTokensV7(onboardingTheme)
+    val reducedMotion = !ValueAnimator.areAnimatorsEnabled()
     val localDensity = LocalDensity.current
     val enterPx = with(localDensity) { 20.dp.roundToPx() }
     val lowerPx = with(localDensity) { 7.dp.roundToPx() }
@@ -99,9 +103,20 @@ fun OnboardingScreen(
     var sourceBrandBounds by remember { mutableStateOf<Rect?>(null) }
 
     val stepNumber = uiState.currentStepNumber
+    val stepTransition = updateTransition(stepNumber, label = "onboarding_step")
+    val stepSettled = stepTransition.currentState == stepTransition.targetState
+    val acceptsInput = stepSettled && !uiState.isCompleting && !showAtmosphericTransition
+    val farewellAlpha by animateFloatAsState(
+        targetValue = if (showAtmosphericTransition) 0f else 1f,
+        animationSpec = tween(if (reducedMotion) 0 else 620, easing = CubicBezierEasing(.4f, 0f, .6f, 1f)),
+        label = "summary_farewell"
+    )
     val isFirstStep = uiState.currentStepIndex == 0
     val isFinalStep = stepNumber == 7
     val showHeaderBrand = stepNumber != 0 && stepNumber != 7
+    BackHandler(enabled = !isFirstStep && !showAtmosphericTransition) {
+        if (acceptsInput) viewModel.prevStep()
+    }
 
     val selectThemeWithReveal: (LumiOnboardingTheme, Offset?) -> Unit = { next, origin ->
         if (next != onboardingTheme) {
@@ -124,10 +139,10 @@ fun OnboardingScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .graphicsLayer { alpha = if (hideOnboardingAtReveal) 0f else 1f }
+                    .graphicsLayer { alpha = if (hideOnboardingAtReveal) 0f else farewellAlpha }
             ) {
             // Cielo estrellado en 3 capas ascendentes en paralaje (solo temas oscuros)
-            LumiSkyBackground(stepNumber = stepNumber)
+            LumiSkyBackground(stepNumber = stepNumber, reducedMotion = reducedMotion)
 
             // El HTML v6/v7 eliminó deliberadamente la neblina superior.
             // No añadir aquí otra capa radial que altere el Noir de referencia.
@@ -136,6 +151,8 @@ fun OnboardingScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .imePadding()
             ) {
                 // ── TOP BAR: Header Brand + Theme Chip ───────────────────────────
                 Row(
@@ -157,7 +174,7 @@ fun OnboardingScreen(
                             fontSize = 22.sp,
                             starSize = 11.sp,
                             letterSpacing = (-1.2).sp,
-                            animated = true
+                            animated = !reducedMotion
                         )
                     }
 
@@ -170,7 +187,7 @@ fun OnboardingScreen(
                             .clip(RoundedCornerShape(21.dp))
                             .background(tokens.panel)
                             .border(1.dp, tokens.line, RoundedCornerShape(21.dp))
-                            .clickable { showThemeSheet = true }
+                            .clickable(enabled = acceptsInput) { showThemeSheet = true }
                             .padding(horizontal = 13.dp, vertical = 7.dp)
                     ) {
                         Text(
@@ -236,27 +253,25 @@ fun OnboardingScreen(
             }
 
             // ── CONTENIDO PRINCIPAL: AnimatedContent por paso ─────────────────
-            AnimatedContent(
-                targetState = stepNumber,
+            stepTransition.AnimatedContent(
                 transitionSpec = {
-                    // HTML v11: entrada 20px/7px + fade (460ms con delay 70),
-                    // salida -20px/-4px + fade (290ms); no pantalla entera.
+                    // Let the outgoing text clear before the next page becomes legible.
                     val forward = targetState > initialState
                     val x = if (forward) enterPx else -enterPx
                     val enter = slideIn(
-                        animationSpec = tween(460, delayMillis = 70, easing = CubicBezierEasing(.16f, 1f, .3f, 1f)),
+                        animationSpec = tween(if (reducedMotion) 0 else 520, delayMillis = if (reducedMotion) 0 else 150, easing = CubicBezierEasing(.22f, .8f, .25f, 1f)),
                         initialOffset = { IntOffset(x, lowerPx) }
-                    ) + fadeIn(tween(460, delayMillis = 70, easing = CubicBezierEasing(.16f, 1f, .3f, 1f)))
+                    ) + fadeIn(tween(if (reducedMotion) 0 else 420, delayMillis = if (reducedMotion) 0 else 150))
                     val exit = slideOut(
-                        animationSpec = tween(290, easing = CubicBezierEasing(.35f, 0f, .45f, 1f)),
+                        animationSpec = tween(if (reducedMotion) 0 else 220, easing = CubicBezierEasing(.35f, 0f, .45f, 1f)),
                         targetOffset = { IntOffset(-x, -exitUpPx) }
-                    ) + fadeOut(tween(290, easing = CubicBezierEasing(.35f, 0f, .45f, 1f)))
+                    ) + fadeOut(tween(if (reducedMotion) 0 else 160))
                     (enter togetherWith exit).using(SizeTransform(clip = false))
                 },
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                label = "step_content_anim"
+                contentAlignment = Alignment.TopCenter
             ) { step ->
                 // Cada página posee su propio estado de scroll. El ScrollState
                 // único anterior era compartido por dos páginas al animarse.
@@ -322,7 +337,7 @@ fun OnboardingScreen(
                             data = uiState.data,
                             onJumpToStep = { viewModel.jumpToStep(it) },
                             saveError = uiState.saveError,
-                            onBrandBounds = { sourceBrandBounds = it },
+                            onBrandBounds = { if (!showAtmosphericTransition) sourceBrandBounds = it },
                             brandVisible = !showAtmosphericTransition
                         )
                     }
@@ -352,6 +367,9 @@ fun OnboardingScreen(
                 LumiPrimaryButton(
                     text = primaryLabel,
                     onClick = {
+                        // Ignore repeated taps without resetting the button's living
+                        // gradient between two otherwise valid steps.
+                        if (!acceptsInput) return@LumiPrimaryButton
                         if (isFinalStep) {
                             viewModel.completeOnboarding(onDone = {
                                 showAtmosphericTransition = true
@@ -361,7 +379,8 @@ fun OnboardingScreen(
                             viewModel.nextStep()
                         }
                     },
-                    enabled = uiState.isNextEnabled
+                    enabled = uiState.isNextEnabled && !uiState.isCompleting && !showAtmosphericTransition,
+                    reducedMotion = reducedMotion
                 )
 
                 // Navegación secundaria (Volver y nota al pie)
@@ -378,7 +397,10 @@ fun OnboardingScreen(
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Medium,
                             color = tokens.muted,
-                            modifier = Modifier.clickable { viewModel.prevStep() }
+                            modifier = Modifier
+                                .defaultMinSize(minHeight = 48.dp)
+                                .wrapContentHeight()
+                                .clickable(enabled = acceptsInput) { viewModel.prevStep() }
                         )
                     } else {
                         Spacer(modifier = Modifier.width(1.dp))

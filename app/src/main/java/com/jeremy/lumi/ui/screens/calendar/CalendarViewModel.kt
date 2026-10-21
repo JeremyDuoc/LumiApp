@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.CancellationException
@@ -35,6 +36,8 @@ import java.util.Locale
 import javax.inject.Inject
 
 data class CalendarUiState(
+    val selectedDate      : LocalDate = com.jeremy.lumi.utils.LumiClock.today(),
+    val dataVersion       : Long = 0,
     val monthYearTitle   : String       = "",
     val days             : List<CalendarDay> = emptyList(),
     val prediction       : CyclePrediction? = null,
@@ -58,10 +61,16 @@ class CalendarViewModel @Inject constructor(
 
     private val _selectedLog = MutableStateFlow<DailyLogWithSymptoms?>(null)
     val selectedLog: StateFlow<DailyLogWithSymptoms?> = _selectedLog.asStateFlow()
+    private val _selectedLogDate = MutableStateFlow<LocalDate?>(null)
+    val selectedLogDate = _selectedLogDate.asStateFlow()
     private val _isLoadingLog = MutableStateFlow(false)
     val isLoadingLog = _isLoadingLog.asStateFlow()
     private val _isSaving = MutableStateFlow(false)
     val isSaving = _isSaving.asStateFlow()
+    private val _loadFailed = MutableStateFlow(false)
+    val loadFailed = _loadFailed.asStateFlow()
+    private val _saveFailed = MutableStateFlow(false)
+    val saveFailed = _saveFailed.asStateFlow()
     enum class LogEvent { SAVED, SAVE_FAILED, LOAD_FAILED }
     private val events = Channel<LogEvent>(Channel.BUFFERED)
     val logEvents = events.receiveAsFlow()
@@ -70,6 +79,13 @@ class CalendarViewModel @Inject constructor(
 
     val activeCategories: StateFlow<Set<String>> = prefsManager.activeLogCategoriesFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), setOf("physical", "digestive", "mucus", "intercourse"))
+
+    val customSymptoms = prefsManager.customLogSymptomsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+    val favoriteSymptoms = prefsManager.favoriteLogSymptomsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.jeremy.lumi.data.preferences.DefaultLogFavorites)
+    fun setCustomSymptoms(names: Set<String>) { viewModelScope.launch { prefsManager.setCustomLogSymptoms(names) } }
+    fun setFavoriteSymptoms(names: Set<String>) { viewModelScope.launch { prefsManager.setFavoriteLogSymptoms(names) } }
 
     private val allLogsMap = MutableStateFlow<Map<Long, DailyLogWithSymptoms>>(emptyMap())
 
@@ -87,7 +103,8 @@ class CalendarViewModel @Inject constructor(
                 _uiState.update { state -> 
                     state.copy(
                         displayMonth = com.jeremy.lumi.utils.LumiClock.today().monthValue,
-                        displayYear  = com.jeremy.lumi.utils.LumiClock.today().year
+                        displayYear  = com.jeremy.lumi.utils.LumiClock.today().year,
+                        selectedDate = com.jeremy.lumi.utils.LumiClock.today()
                     )
                 }
                 displayYearMonth.value = Pair(
@@ -114,7 +131,7 @@ class CalendarViewModel @Inject constructor(
                 val closedCycles = cycles.filter { it.endDate != null }.sortedByDescending { it.startDate }
                 
                 Triple(yearMonth, activeCycle, Pair(logsMap, closedCycles))
-            }.collect { (yearMonth, activeCycle, maps) ->
+            }.collectLatest { (yearMonth, activeCycle, maps) ->
                 val (logsMap, closedCycles) = maps
                 updateGridSafely(yearMonth.first, yearMonth.second, activeCycle, closedCycles, logsMap)
             }
@@ -126,24 +143,35 @@ class CalendarViewModel @Inject constructor(
     }
 
     fun navigateToPreviousMonth() {
-        displayYearMonth.update { (year, month) ->
-            if (month == 0) Pair(year - 1, 11) else Pair(year, month - 1)
-        }
+        val (year, month) = displayYearMonth.value
+        val target = java.time.YearMonth.of(year, month + 1).minusMonths(1)
+        navigateToMonth(target.year, target.monthValue - 1)
     }
 
     fun navigateToNextMonth() {
-        displayYearMonth.update { (year, month) ->
-            if (month == 11) Pair(year + 1, 0) else Pair(year, month + 1)
-        }
+        val (year, month) = displayYearMonth.value
+        val target = java.time.YearMonth.of(year, month + 1).plusMonths(1)
+        navigateToMonth(target.year, target.monthValue - 1)
     }
 
     fun navigateToMonth(year: Int, month: Int) {
-        displayYearMonth.value = Pair(year, month)
+        selectDate(dateInMonth(_uiState.value.selectedDate, year, month + 1))
+    }
+
+    fun selectDate(date: LocalDate) {
+        val changedMonth = displayYearMonth.value != Pair(date.year, date.monthValue - 1)
+        _uiState.update { it.copy(
+            selectedDate = date,
+            displayYear = date.year,
+            displayMonth = date.monthValue,
+            days = if (changedMonth) emptyList() else it.days
+        ) }
+        displayYearMonth.value = Pair(date.year, date.monthValue - 1)
     }
 
     fun goToToday() {
         val today = com.jeremy.lumi.utils.LumiClock.today()
-        displayYearMonth.value = Pair(today.year, today.monthValue - 1)
+        selectDate(today)
     }
 
     fun generateYearGrid(year: Int) {
@@ -194,7 +222,8 @@ class CalendarViewModel @Inject constructor(
                 displayMonth      = displayMonth + 1,
                 displayYear       = displayYear,
                 currentPhase      = currentPhase,
-                currentDayOfCycle = currentDayOfCycle
+                currentDayOfCycle = currentDayOfCycle,
+                dataVersion       = it.dataVersion + 1
             ) }
             // generateYearGrid(displayYear) is removed from here to avoid excessive calls.
             // It will be called explicitly when navigating to the year view.
@@ -250,7 +279,8 @@ class CalendarViewModel @Inject constructor(
 
         val cycleLength = effectiveResult.effectiveCycleLength
         val periodLength = effectiveResult.periodLength
-        val prediction: CyclePrediction? = if (isCurrentMonth) effectiveResult.prediction else null
+        // Today's context must not disappear when browsing another month.
+        val prediction: CyclePrediction? = effectiveResult.prediction
 
         val daysList = mutableListOf<CalendarDay>()
         repeat(firstDow) { daysList.add(CalendarDay(0, isEmptyOffset = true)) }
@@ -319,7 +349,9 @@ class CalendarViewModel @Inject constructor(
                     isPrediction         = isPrediction,
                     isFuture             = isFuture,
                     showIntercourseHeart = showHeart,
-                    intercourseProtected = heartProtected
+                    intercourseProtected = heartProtected,
+                    date                 = dayLocal,
+                    record               = logForDay
                 )
             )
         }
@@ -332,13 +364,17 @@ class CalendarViewModel @Inject constructor(
         protectionUsed: Boolean?, contraceptionMethod: String?,
         intercourseNotes: String?, showOnCalendar: Boolean,
         sleepHours: Float?, energyLevel: Int?, stressLevel: Int?, waterIntake: Float?,
-        basalBodyTemp: Float?, spotting: Boolean
+        basalBodyTemp: Float?, spotting: Boolean,
+        symptomIntensities: Map<String, Int> = emptyMap()
     ) {
         if (_isSaving.value || _isLoadingLog.value) return
-        val (year, month) = displayYearMonth.value
-        val dateMs = LocalDate.of(year, month + 1, dayOfMonth)
+        // The editor owns a full date; month navigation must never retarget a save.
+        val date = _selectedLogDate.value ?: return
+        if (date.dayOfMonth != dayOfMonth || date.isAfter(com.jeremy.lumi.utils.LumiClock.today())) return
+        val dateMs = date
             .atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
         _isSaving.value = true
+        _saveFailed.value = false
         viewModelScope.launch {
             try {
               withContext(Dispatchers.IO) {
@@ -378,7 +414,8 @@ class CalendarViewModel @Inject constructor(
                     spotting                  = spotting
                 ),
                 selectedSymptoms.map {
-                    SymptomEntity(dailyLogId = 0, name = it, intensity = painLevel)
+                    SymptomEntity(dailyLogId = 0, name = it,
+                        intensity = symptomIntensities[it] ?: existingLog?.symptoms?.find { symptom -> symptom.name == it }?.intensity ?: 0)
                 }
             )
             }
@@ -388,6 +425,7 @@ class CalendarViewModel @Inject constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                _saveFailed.value = true
                 events.send(LogEvent.SAVE_FAILED)
             } finally {
                 _isSaving.value = false
@@ -396,12 +434,19 @@ class CalendarViewModel @Inject constructor(
     }
 
     fun fetchLogForDay(dayOfMonth: Int) {
+        val (year, month) = displayYearMonth.value
+        fetchLogForDate(LocalDate.of(year, month + 1, dayOfMonth))
+    }
+
+    fun fetchLogForDate(date: LocalDate) {
         val version = ++logLoadVersion
         logLoadJob?.cancel()
-        val (year, month) = displayYearMonth.value
-        val dateMs = LocalDate.of(year, month + 1, dayOfMonth)
+        _selectedLogDate.value = date
+        val dateMs = date
             .atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
         _selectedLog.value = null
+        _loadFailed.value = false
+        _saveFailed.value = false
         _isLoadingLog.value = true
         logLoadJob = viewModelScope.launch {
             try {
@@ -410,7 +455,10 @@ class CalendarViewModel @Inject constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                if (version == logLoadVersion) events.send(LogEvent.LOAD_FAILED)
+                if (version == logLoadVersion) {
+                    _loadFailed.value = true
+                    events.send(LogEvent.LOAD_FAILED)
+                }
             } finally {
                 if (version == logLoadVersion) _isLoadingLog.value = false
             }
@@ -422,5 +470,6 @@ class CalendarViewModel @Inject constructor(
         logLoadJob?.cancel()
         _isLoadingLog.value = false
         _selectedLog.value = null
+        _selectedLogDate.value = null
     }
 }
