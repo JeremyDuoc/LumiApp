@@ -1,74 +1,68 @@
 package com.jeremy.lumi.ui.screens.onboarding
 
-import androidx.compose.animation.AnimatedVisibility
+import android.animation.ValueAnimator
 import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
-import androidx.compose.ui.res.stringResource
-import com.jeremy.lumi.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.BlurredEdgeTreatment
-import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp as lerpColor
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
+import com.jeremy.lumi.R
 import com.jeremy.lumi.ui.components.LumiBrandLockup
+import com.jeremy.lumi.ui.theme.LumiEditorialSerif
+import com.jeremy.lumi.ui.theme.LumiThemeTokens
 import kotlinx.coroutines.isActive
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import kotlin.math.PI
 import kotlin.math.cos
-import kotlin.math.hypot
-import kotlin.math.roundToInt
 import kotlin.math.sin
 
-/**
- * Traducción del HTML Lumi v11/v12, secuencia ATMOSFÉRICA.
- *
- * Diferencias relevantes respecto al código anterior:
- *  - La pantalla previa permanece bajo un velo que aparece progresivamente.
- *  - Se usan CUATRO luces independientes, NO un halo circular único.
- *  - La marca parte de sus coordenadas reales (Step7Summary), no de 80.dp.
- *  - La marca se transforma desde TopStart, como CSS transform-origin: top left.
- *  - Las frases permanecen debajo del logo, con indicador de tres puntos.
- *  - El tiempo está sincronizado con los fotogramas de Compose, no con un
- *    bucle de System.currentTimeMillis() + delay(16).
- *
- * Para un handoff visual 100% continuo al Home real, suministrar homeRevealContent
- * desde un contenedor que pueda mantener el Home compuesto debajo del logo.
- * Sin ese contenedor la transición termina limpiamente en el fondo de Lumi,
- * pero la navegación final sigue siendo responsabilidad de onFinished.
- */
+/** One clock owns the farewell, travelling brand and reveal of the real Home. */
+internal object LumiCeremonyTiming {
+    const val INTRO_END = 1200f
+    const val OPAQUE_AT = 900f
+    const val MESSAGE_EXIT = 11700f
+    const val FLIGHT_START = 12000f
+    const val FLIGHT_DURATION = 1250f
+    const val REVEAL_DURATION = 950f
+    const val DURATION = 13800f
+    val messageStarts = listOf(1400f, 3550f, 5700f, 7850f, 10000f)
+}
+
 private val ceremonyTexts = listOf(
     R.string.atmospheric_title_1 to R.string.atmospheric_sub_1,
     R.string.atmospheric_title_2 to R.string.atmospheric_sub_2,
@@ -76,451 +70,350 @@ private val ceremonyTexts = listOf(
     R.string.atmospheric_title_4 to R.string.atmospheric_sub_4,
     R.string.atmospheric_title_5 to R.string.atmospheric_sub_5
 )
-private val messageStarts = listOf(1300f, 3450f, 5550f, 7780f, 9770f)
-private val enterCurve = CubicBezierEasing(.18f, 1f, .3f, 1f)
-private val firstFlightCurve = CubicBezierEasing(.16f, .89f, .24f, 1f)
-private val lastFlightCurve = CubicBezierEasing(.17f, .79f, .21f, 1f)
+private val gatherCurve = CubicBezierEasing(.22f, .72f, .18f, 1f)
+private val flightCurve = CubicBezierEasing(.42f, 0f, .18f, 1f)
+private val revealCurve = CubicBezierEasing(.25f, 0f, .25f, 1f)
 
-private fun curve(t: Float, duration: Float, easing: androidx.compose.animation.core.Easing): Float =
-    easing.transform((t / duration).coerceIn(0f, 1f))
+private fun fraction(time: Float, start: Float, duration: Float) =
+    ((time - start) / duration).coerceIn(0f, 1f)
 
-private fun keyframes(f: Float, vararg stops: Pair<Float, Float>): Float {
-    if (f <= stops.first().first) return stops.first().second
-    for (i in 0 until stops.lastIndex) {
-        val a = stops[i]
-        val b = stops[i + 1]
-        if (f <= b.first) {
-            val t = ((f - a.first) / (b.first - a.first)).coerceIn(0f, 1f)
-            return lerp(a.second, b.second, t)
-        }
-    }
-    return stops.last().second
-}
-
-// Fidelity contract: CSS cubic-bezier(.42, 0, .58, 1), infinite alternate.
-// Unlike the old cosine approximation, this uses Compose's cubic solver.
-private val cssEaseInOut = CubicBezierEasing(.42f, 0f, .58f, 1f)
-private fun cssAlternateEased(elapsedMs: Float, oneWayDurationMs: Float): Float {
-    val phase = ((elapsedMs / oneWayDurationMs) % 2f).coerceAtLeast(0f)
-    val normalized = if (phase <= 1f) phase else 2f - phase
-    return cssEaseInOut.transform(normalized)
-}
-
-/**
- * CSS source of truth: `.aura-pink`, `.aura-violet`, `.aura-sage`,
- * `.aura-peach` and their `lumi*Orbit` keyframes from the v12 HTML.
- *
- * left/top refer to the element's pre-transform TOP-LEFT anchor; x/y
- * translate values are fractions of THE ORB'S dimensions (not screen dp).
- * Each CSS radial-gradient(circle) ends at the farthest corner.
- */
-private data class CssAura(
-    val id: String,
-    val left: Float,
-    val top: Float,
-    val widthDp: Float,
-    val heightDp: Float,
-    val startTranslateX: Float,
-    val startTranslateY: Float,
-    val endTranslateX: Float,
-    val endTranslateY: Float,
-    val endScale: Float,
-    val durationMs: Float,
-    val inner: Color,
-    val middle: Color,
-    val middleStop: Float,
-    val transparentStop: Float
-)
-
-private val cssAuras = listOf(
-    CssAura("pink", .33f, .42f, 190f, 200f, -.50f, -.70f, -.24f, -.85f,
-        1.14f, 6400f, Color(0x7AF563AC), Color(0x42E262AC), .37f, .73f),
-    CssAura("violet", .69f, .42f, 198f, 210f, -.50f, -.65f, -.76f, -.54f,
-        1.20f, 7300f, Color(0x789567F7), Color(0x3D9166EE), .40f, .74f),
-    CssAura("sage", .64f, .53f, 167f, 160f, -.50f, -.45f, -.70f, -.78f,
-        1.10f, 6900f, Color(0x6659DCBC), Color(0x2E5CD6B7), .40f, .76f),
-    CssAura("peach", .37f, .55f, 170f, 165f, -.50f, -.40f, -.20f, -.20f,
-        1.17f, 7800f, Color(0x6BFFA368), Color(0x2BFAA371), .42f, .76f)
-)
-
-@Composable
-private fun CssAuraLayer(
-    aura: CssAura,
-    elapsedMs: Float,
-    screenWidthPx: Float,
-    screenHeightPx: Float,
-    density: Float
-) {
-    val t = cssAlternateEased(elapsedMs, aura.durationMs)
-    val orbWidthPx = aura.widthDp * density
-    val orbHeightPx = aura.heightDp * density
-    // CSS transform: translate(percentage of own size) scale(...)
-    // Do NOT translate relative to the parent viewport or scale the offsets.
-    val xPx = screenWidthPx * aura.left +
-        orbWidthPx * lerp(aura.startTranslateX, aura.endTranslateX, t)
-    val yPx = screenHeightPx * aura.top +
-        orbHeightPx * lerp(aura.startTranslateY, aura.endTranslateY, t)
-    val scale = lerp(1f, aura.endScale, t)
-    Canvas(
-        modifier = Modifier
-            .offset { IntOffset(xPx.roundToInt(), yPx.roundToInt()) }
-            .size(aura.widthDp.dp, aura.heightDp.dp)
-            .graphicsLayer { scaleX = scale; scaleY = scale }
-            // CSS filter belongs to EACH orb. Do not blur the full canvas:
-            // doing so creates the false downward-moving color cloud.
-            .blur(30.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
-    ) {
-        val cssRadius = hypot(size.width / 2f, size.height / 2f)
-        drawRect(
-            brush = Brush.radialGradient(
-                0f to aura.inner,
-                aura.middleStop to aura.middle,
-                aura.transparentStop to Color.Transparent,
-                1f to Color.Transparent,
-                center = center,
-                radius = cssRadius
-            )
-        )
-    }
+private fun soft(time: Float, start: Float, duration: Float): Float {
+    val t = fraction(time, start, duration)
+    return t * t * (3f - 2f * t)
 }
 
 @Composable
 fun LumiAtmosphericTransition(
     onFinished: () -> Unit,
     modifier: Modifier = Modifier,
-    reducedMotion: Boolean = false,
+    reducedMotion: Boolean = !ValueAnimator.areAnimatorsEnabled(),
     sourceBrandBounds: Rect? = null,
     targetBrandBounds: Rect? = null,
     onRevealStart: () -> Unit = {},
     homeRevealContent: (@Composable () -> Unit)? = null,
     revealUnderlyingHome: Boolean = false,
-    onCurtainOpaque: () -> Unit = {}
+    onCurtainOpaque: () -> Unit = {},
+    homeReady: Boolean = true,
+    skipRequested: Boolean = false,
+    onRevealProgress: (Float) -> Unit = {}
 ) {
     val tokens = LumiOnboardingThemeTokens.current
+    val homeTokens = LumiThemeTokens.current
     val density = LocalDensity.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val latestFinished by rememberUpdatedState(onFinished)
     val latestRevealStart by rememberUpdatedState(onRevealStart)
     val latestCurtainOpaque by rememberUpdatedState(onCurtainOpaque)
-    var curtainNotified by remember { mutableStateOf(false) }
+    val latestProgress by rememberUpdatedState(onRevealProgress)
+    val latestHomeReady by rememberUpdatedState(homeReady)
     var elapsedMs by remember { mutableFloatStateOf(0f) }
-    var completeRequested by remember { mutableStateOf(false) }
-    var revealNotified by remember { mutableStateOf(false) }
+    var skipAt by remember { mutableStateOf<Float?>(null) }
+    var finished by remember { mutableStateOf(false) }
     var layerOrigin by remember { mutableStateOf(Offset.Zero) }
-    val duration = 11520f
-    val centerEnd = 900f
-    val flightStart = 10760f
-    val flightEnd = 11350f
-    val revealStart = 10400f
-    val opaqueAt = 1350f // El velo ya alcanzó el 100%; cargar Home detrás.
 
-    fun finishOnce() {
-        if (!completeRequested) {
-            completeRequested = true
-            latestFinished()
+    fun requestArrival() {
+        // Skipping takes the same short landing path, without tearing away the curtain.
+        if (skipAt == null && elapsedMs < LumiCeremonyTiming.MESSAGE_EXIT) {
+            skipAt = maxOf(elapsedMs, LumiCeremonyTiming.INTRO_END)
+        }
+    }
+    LaunchedEffect(skipRequested) { if (skipRequested) requestArrival() }
+
+    val messageExit = skipAt ?: LumiCeremonyTiming.MESSAGE_EXIT
+    val flightStart = skipAt?.plus(300f) ?: LumiCeremonyTiming.FLIGHT_START
+    // Let the wordmark clear the greeting's vertical band before revealing it.
+    val revealStart = flightStart + 700f
+    val duration = skipAt?.plus(2100f) ?: LumiCeremonyTiming.DURATION
+    val latestRevealAt by rememberUpdatedState(revealStart)
+    val latestDuration by rememberUpdatedState(duration)
+
+    LaunchedEffect(reducedMotion, lifecycleOwner) {
+        var curtainNotified = false
+        var revealNotified = false
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            var previousNs = withFrameNanos { it }
+            while (isActive && !finished) {
+                val nowNs = withFrameNanos { it }
+                // Follow real frame time; a lifecycle restart resets only the frame origin.
+                val delta = (nowNs - previousNs) / 1_000_000f
+                previousNs = nowNs
+                val next = if (reducedMotion) latestDuration else elapsedMs + delta
+                if (!curtainNotified && next >= LumiCeremonyTiming.OPAQUE_AT) {
+                    curtainNotified = true
+                    latestCurtainOpaque()
+                }
+                // Data and destination geometry must be ready before exposing Home.
+                elapsedMs = if (!latestHomeReady) minOf(next, latestRevealAt) else next
+                if (elapsedMs >= latestRevealAt && latestHomeReady) {
+                    if (!revealNotified) {
+                        revealNotified = true
+                        latestRevealStart()
+                    }
+                    latestProgress(
+                        if (reducedMotion) 1f
+                        else fraction(elapsedMs, latestRevealAt, LumiCeremonyTiming.REVEAL_DURATION)
+                    )
+                }
+                if (elapsedMs >= latestDuration && latestHomeReady) {
+                    latestProgress(1f)
+                    finished = true
+                    latestFinished()
+                }
+            }
         }
     }
 
-    LaunchedEffect(reducedMotion) {
-        if (reducedMotion) {
-            finishOnce()
-            return@LaunchedEffect
-        }
-        // Ticker sincronizado al VSYNC: el timeline CSS (11520ms) es la única fuente.
-        val initialNs = withFrameNanos { it }
-        while (isActive && !completeRequested) {
-            val nowNs = withFrameNanos { it }
-            val t = ((nowNs - initialNs) / 1_000_000f).coerceAtMost(duration + 36f)
-            elapsedMs = t
-            if (t >= opaqueAt && !curtainNotified) {
-                curtainNotified = true
-                latestCurtainOpaque()
-            }
-            if (t >= revealStart && !revealNotified) {
-                revealNotified = true
-                latestRevealStart()
-            }
-            if (t >= duration + 35f) finishOnce()
-        }
-    }
-    if (reducedMotion) return
-
-    val progress = (elapsedMs / duration).coerceIn(0f, 1f)
-    val veilAlpha = keyframes(progress, 0f to 0f, .11f to 1f, .84f to 1f, .93f to .98f, 1f to 0f)
-    val fieldAlpha = keyframes(progress, 0f to 0f, .13f to .78f, .37f to 1f, .66f to .97f, .84f to .85f, 1f to 0f)
-    val fieldScale = keyframes(progress, 0f to .80f, .13f to .95f, .37f to 1.07f, .66f to 1.02f, .84f to 1.12f, 1f to 1.24f)
-    val messageIndex = messageStarts.indexOfLast { elapsedMs >= it }
-    val exitMessageAlpha = (1f - (elapsedMs - revealStart).coerceIn(0f, 440f) / 440f)
-    val homeAlpha = if (elapsedMs < revealStart) 0f else
-        curve(elapsedMs - revealStart, 850f, enterCurve)
-    // Bajo el overlay ya existe MainScreen; descubrirlo sin volver a crearlo.
-    val curtainAlpha = if (revealUnderlyingHome) {
-        veilAlpha * (1f - homeAlpha)
-    } else veilAlpha
+    val intro = gatherCurve.transform(fraction(elapsedMs, 0f, LumiCeremonyTiming.INTRO_END))
+    val flight = flightCurve.transform(fraction(elapsedMs, flightStart, LumiCeremonyTiming.FLIGHT_DURATION))
+    val reveal = revealCurve.transform(fraction(elapsedMs, revealStart, LumiCeremonyTiming.REVEAL_DURATION))
+    val farewell = 1f - soft(elapsedMs, messageExit, 300f)
+    val bloom = soft(elapsedMs, 150f, 1450f) * (1f - soft(elapsedMs, flightStart + 180f, 1400f))
 
     BoxWithConstraints(
-        modifier = modifier
-            .fillMaxSize()
-            .onGloballyPositioned { layerOrigin = it.positionInRoot() }
+        modifier.fillMaxSize().onGloballyPositioned { layerOrigin = it.positionInRoot() }
     ) {
         val widthPx = constraints.maxWidth.toFloat()
         val heightPx = constraints.maxHeight.toFloat()
         val dp = density.density
+        val center = Offset(widthPx * .5f, heightPx * .39f)
 
-        // El fondo previo NO debe desaparecer al instante: HTML .handoff-veil.
+        // Own touch input even while the curtain is transparent.
         Box(
             Modifier.fillMaxSize()
-                .graphicsLayer { alpha = curtainAlpha }
-                .background(Brush.verticalGradient(listOf(
-                    tokens.bg,
-                    lerpColor(tokens.bg, tokens.panel, .64f),
-                    tokens.bg
-                )))
-                // Mientras transcurre la ceremonia, no permitir pulsar el
-                // botón de Guardar que permanece montado detrás del velo.
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = {}
                 )
+                .clearAndSetSemantics {}
         )
-
-        // Destapar el Home real desde 10.400 ms, detrás del logo viajero.
-        // El compositor padre debe proporcionar la pantalla REAL y ocultar su marca
-        // durante el vuelo para que no aparezcan dos logos.
-        if (!revealUnderlyingHome && homeRevealContent != null && elapsedMs >= revealStart) {
-            Box(
-                Modifier.fillMaxSize().graphicsLayer {
-                    alpha = homeAlpha
-                    translationY = 10f * dp * (1f - homeAlpha)
-                }.blur(((1f - homeAlpha) * 3f).dp)
-            ) { homeRevealContent() }
-        }
-
-        // ONE transformed parent matches `.handoff-glow`:
-        // opacity/scale apply to STATIC gradient washes, moving orbs and ring.
-        // V16 scaled/blended separate canvases inconsistently, generating a
-        // visually exaggerated drop of one colored cloud in the emulator.
-        if (fieldAlpha > 0f) {
-            Box(
-                Modifier.fillMaxSize()
-                    .graphicsLayer {
-                        alpha = fieldAlpha
-                        scaleX = fieldScale
-                        scaleY = fieldScale
-                    }
-                    .clipToBounds()
-            ) {
-                // CSS .handoff-glow::before uses ellipse radii IN PERCENT OF
-                // THE WHOLE VIEWPORT. The old code incorrectly halved them.
-                Canvas(Modifier.fillMaxSize().graphicsLayer {
-                    alpha = if (tokens.isDark) 1f else .28f
-                }) {
-                    fun wash(
-                        centerPoint: Offset,
-                        radiusX: Float,
-                        radiusY: Float,
-                        tint: Color,
-                        transparentAt: Float
-                    ) {
-                        withTransform({ scale(radiusX / radiusY, 1f, centerPoint) }) {
-                            drawCircle(
-                                brush = Brush.radialGradient(
-                                    0f to tint,
-                                    transparentAt to Color.Transparent,
-                                    1f to Color.Transparent,
-                                    center = centerPoint,
-                                    radius = radiusY
-                                ),
-                                center = centerPoint,
-                                radius = radiusY
-                            )
-                        }
-                    }
-                    wash(Offset(widthPx * .32f, heightPx * .37f),
-                        widthPx * .50f, heightPx * .34f, Color(0x2EE865AC), .83f)
-                    wash(Offset(widthPx * .71f, heightPx * .38f),
-                        widthPx * .49f, heightPx * .42f, Color(0x30855CE5), .83f)
-                    wash(Offset(widthPx * .66f, heightPx * .53f),
-                        widthPx * .34f, heightPx * .25f, Color(0x215FC8B0), .88f)
-                    wash(Offset(widthPx * .36f, heightPx * .54f),
-                        widthPx * .36f, heightPx * .31f, Color(0x1FF5A369), .87f)
-                }
-
-                // Separate CSS filter(blur(30px)) on each of four positioned
-                // elements; own-element percentage translation and scale.
-                Box(Modifier.fillMaxSize().graphicsLayer {
-                    alpha = if (tokens.isDark) 1f else .46f
-                }) {
-                    cssAuras.forEach { aura ->
-                        key(aura.id) {
-                            CssAuraLayer(aura, elapsedMs, widthPx, heightPx, dp)
-                        }
-                    }
-                }
-
-                val ringPhase = .5f - .5f * cos(2f * PI.toFloat() * elapsedMs / 5400f)
-                Canvas(Modifier.fillMaxSize().graphicsLayer {
-                    alpha = if (tokens.isDark) 1f else .2f
-                }) {
-                    drawCircle(
-                        color = Color(0xFFD7A4DD).copy(alpha = .014f + .042f * ringPhase),
-                        center = Offset(widthPx * .5f, heightPx * .40f),
-                        radius = 130.dp.toPx() * lerp(.85f, 1.22f, ringPhase),
-                        style = Stroke(width = 1.dp.toPx())
-                    )
-                }
-            }
-        }
-
-        // Compartir la misma marca de Step7Summary: tamaño y posición REALES.
-        // HTML usa `source.getBoundingClientRect()` y `target.getBoundingClientRect()`.
-        val measuredSource = sourceBrandBounds?.let {
-            Rect(it.left - layerOrigin.x, it.top - layerOrigin.y,
-                it.right - layerOrigin.x, it.bottom - layerOrigin.y)
-        }
-        val initialWidth = measuredSource?.width?.takeIf { it > 0f } ?: (181f * dp)
-        val initialHeight = measuredSource?.height?.takeIf { it > 0f } ?: (48f * dp)
-        val sourceLeft = measuredSource?.left ?: (widthPx - initialWidth) / 2f
-        val sourceTop = measuredSource?.top ?: (100f * dp)
-        val centeredLeft = (widthPx - initialWidth) / 2f
-        val centeredTop = heightPx * .397f - initialHeight / 2f
-        val target = targetBrandBounds?.let {
-            Rect(it.left - layerOrigin.x, it.top - layerOrigin.y,
-                it.right - layerOrigin.x, it.bottom - layerOrigin.y)
-        }
-        val destinationX = target?.left ?: 24f * dp
-        val destinationY = target?.top ?: 50f * dp
-        val destinationScale = target?.height?.let { it / initialHeight } ?: 0.48f
-        val introEased = curve(elapsedMs, centerEnd, firstFlightCurve)
-        val outroEased = curve(elapsedMs - flightStart, flightEnd - flightStart, lastFlightCurve)
-        val brandX: Float
-        val brandY: Float
-        val brandScale: Float
-        when {
-            elapsedMs < centerEnd -> {
-                brandX = lerp(sourceLeft, centeredLeft, introEased)
-                brandY = lerp(sourceTop, centeredTop, introEased)
-                brandScale = lerp(1f, 1.17f, introEased)
-            }
-            elapsedMs < flightStart -> {
-                brandX = centeredLeft
-                brandY = centeredTop
-                brandScale = 1.17f
-            }
-            else -> {
-                brandX = lerp(centeredLeft, destinationX, outroEased)
-                brandY = lerp(centeredTop, destinationY, outroEased)
-                brandScale = lerp(1.17f, destinationScale, outroEased)
-            }
-        }
-
         Box(
-            modifier = Modifier
+            Modifier.fillMaxSize()
                 .graphicsLayer {
-                    transformOrigin = TransformOrigin(0f, 0f)
-                    translationX = brandX
-                    translationY = brandY
-                    scaleX = brandScale
-                    scaleY = brandScale
-                },
-            contentAlignment = Alignment.TopStart
-        ) {
-            LumiBrandLockup(
-                flowerSize = 46,
-                fontSize = 42.sp,
-                starSize = 16.sp,
-                letterSpacing = (-2.8).sp,
-                ceremonial = true,
-                flowerVisibility = 1f - outroEased,
-                textColor = tokens.text,
-                starColor = tokens.accent,
-                animated = true
-            )
+                    alpha = if (reducedMotion) 1f
+                    else soft(elapsedMs, 0f, LumiCeremonyTiming.OPAQUE_AT) * (1f - reveal)
+                }
+                .background(tokens.bg)
+        )
+        if (!revealUnderlyingHome && homeRevealContent != null && elapsedMs >= revealStart) {
+            Box(Modifier.fillMaxSize().graphicsLayer { alpha = reveal }) { homeRevealContent() }
         }
 
-        // HTML showMessage(ix): los 400ms de salida TERMINAN antes de
-        // sustituir el texto. AnimatedContent simultáneo causaba solapamiento.
-        if (messageIndex >= 0 && elapsedMs < revealStart + 440f) {
-            val since = (elapsedMs - messageStarts[messageIndex]).coerceAtLeast(0f)
-            val isOutgoing = messageIndex > 0 && since < 400f
-            val displayedIndex = if (isOutgoing) messageIndex - 1 else messageIndex
-            val textAlpha: Float
-            val textOffsetY: Float
-            if (isOutgoing) {
-                val f = (since / 400f).coerceIn(0f, 1f)
-                textAlpha = 1f - f
-                textOffsetY = -13f * f
-            } else {
-                val enterElapsed = if (messageIndex == 0) since else since - 400f
-                val ease = curve(enterElapsed,
-                    if (messageIndex == 0) 750f else 680f, enterCurve)
-                textAlpha = ease
-                textOffsetY = (if (messageIndex == 0) 13f else 15f) * (1f - ease)
-            }
-            Column(
-                Modifier.fillMaxWidth()
-                    .offset { IntOffset(0, (heightPx * .55f).roundToInt()) }
-                    .graphicsLayer {
-                        alpha = exitMessageAlpha * textAlpha
-                        translationY = textOffsetY * dp
+        if (!reducedMotion) {
+            CeremonyLight(
+                elapsedMs = elapsedMs,
+                opacity = bloom,
+                flight = flight,
+                center = center,
+                dark = tokens.isDark,
+                accent = tokens.accent,
+                modifier = Modifier.fillMaxSize()
+            )
+
+            val source = sourceBrandBounds?.translate(-layerOrigin)
+            val target = targetBrandBounds?.translate(-layerOrigin)
+            val sourceCenter = source?.center ?: Offset(widthPx * .5f, 126f * dp)
+            val gatheredCenter = Offset(
+                lerp(sourceCenter.x, center.x, intro),
+                lerp(sourceCenter.y, center.y, intro)
+            )
+            val destination = target?.center ?: Offset(52f * dp, 54f * dp)
+            // A restrained bow keeps the flight away from the greeting's left edge.
+            val bow = sin(PI.toFloat() * flight) * widthPx * .055f
+            val brandCenter = Offset(
+                lerp(gatheredCenter.x, destination.x, flight) + bow,
+                lerp(gatheredCenter.y, destination.y, flight)
+            )
+            val breath = sin((elapsedMs - LumiCeremonyTiming.INTRO_END).coerceAtLeast(0f) / 4200f * PI.toFloat())
+            val brandScale = lerp(1f + .12f * intro + .008f * breath * intro, 1f, flight)
+            // Measure and place in the SAME layout pass: no frame-late size feedback,
+            // no top-left scaling drift, exactly the TopBar metrics at touchdown.
+            Layout(
+                content = {
+                    LumiBrandLockup(
+                        flowerSize = 46,
+                        fontSize = lerp(42f, 24f, flight).sp,
+                        starSize = lerp(16f, 11f, flight).sp,
+                        letterSpacing = lerp(-2.8f, -1.5f, flight).sp,
+                        flowerVisibility = 1f - soft(flight, .08f, .64f),
+                        textColor = lerpColor(tokens.text, homeTokens.text, flight),
+                        starColor = lerpColor(tokens.accent, homeTokens.accent, flight),
+                        ceremonial = true,
+                        motionProgress = (.5f - .5f * cos(elapsedMs / 3200f * PI.toFloat())) * (1f - flight),
+                        animated = true
+                    )
+                },
+                modifier = Modifier.fillMaxSize().clearAndSetSemantics {}
+            ) { measurables, limits ->
+                val brand = measurables.single().measure(limits.copy(minWidth = 0, minHeight = 0))
+                layout(limits.maxWidth, limits.maxHeight) {
+                    brand.placeWithLayer(0, 0) {
+                        translationX = brandCenter.x - brand.width / 2f
+                        translationY = brandCenter.y - brand.height / 2f
+                        scaleX = brandScale
+                        scaleY = brandScale
+                        // Observer Home has no TopBar brand to receive the lockup.
+                        alpha = if (target == null) 1f - reveal else 1f
                     }
-                    .padding(horizontal = 34.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    stringResource(ceremonyTexts[displayedIndex].first),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-.16).sp,
-                    lineHeight = 20.sp,
-                    color = tokens.text,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(Modifier.height(7.dp))
-                Text(
-                    stringResource(ceremonyTexts[displayedIndex].second),
-                    fontSize = 11.5.sp,
-                    color = tokens.muted.copy(alpha = .85f),
-                    lineHeight = 17.sp,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(Modifier.height(20.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                    repeat(3) { dot ->
-                        val wave = sin((elapsedMs / 1650f - dot * .22f / 1.65f) * 2f * PI.toFloat())
-                        val pulse = (.5f + .5f * wave)
-                        Box(
-                            Modifier.size(4.dp)
-                                .graphicsLayer {
-                                    alpha = lerp(.25f, .94f, pulse)
-                                    scaleX = lerp(.85f, 1.24f, pulse)
-                                    scaleY = lerp(.85f, 1.24f, pulse)
-                                }
-                                .background(tokens.accent, CircleShape)
+                }
+            }
+
+            val messageIndex = LumiCeremonyTiming.messageStarts.indexOfLast { elapsedMs >= it }
+            if (messageIndex >= 0 && farewell > 0f) {
+                val start = LumiCeremonyTiming.messageStarts[messageIndex]
+                val next = LumiCeremonyTiming.messageStarts.getOrNull(messageIndex + 1) ?: messageExit
+                val appearing = soft(elapsedMs, start, 520f)
+                val disappearing = soft(elapsedMs, next - 280f, 280f)
+                Column(
+                    Modifier.fillMaxWidth()
+                        .offset(y = maxHeight * .54f)
+                        .padding(horizontal = 28.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Reserve breathing room, but allow wrapped accessibility text to
+                    // expand this area and carry the lights down instead of overlapping.
+                    Column(
+                        Modifier.heightIn(min = 84.dp * density.fontScale)
+                            .graphicsLayer {
+                                alpha = appearing * (1f - disappearing) * farewell
+                                translationY = (10f * (1f - appearing) - 5f * disappearing) * dp
+                            }
+                            .semantics { liveRegion = LiveRegionMode.Polite },
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            stringResource(ceremonyTexts[messageIndex].first),
+                            fontFamily = LumiEditorialSerif,
+                            fontStyle = FontStyle.Italic,
+                            fontSize = 23.sp,
+                            lineHeight = 29.sp,
+                            color = tokens.text,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            stringResource(ceremonyTexts[messageIndex].second),
+                            fontSize = 13.sp,
+                            lineHeight = 20.sp,
+                            color = tokens.muted,
+                            textAlign = TextAlign.Center
                         )
                     }
+                    Spacer(Modifier.height(18.dp))
+                    // Five quiet lights mark the phrases without suggesting network loading.
+                    Canvas(
+                        Modifier.size(92.dp, 16.dp)
+                            .testTag("ceremony_progress")
+                            .graphicsLayer { alpha = soft(elapsedMs, 1600f, 500f) * farewell }
+                    ) {
+                        val spacing = size.width / 5f
+                        repeat(5) { i ->
+                            val lit = soft(elapsedMs, LumiCeremonyTiming.messageStarts[i], 600f)
+                            val point = Offset(spacing * (i + .5f), size.height / 2f)
+                            drawCircle(tokens.accent.copy(alpha = .18f + .62f * lit), (1.6f + .5f * lit).dp.toPx(), point)
+                            if (lit > 0f) {
+                                drawCircle(
+                                    Brush.radialGradient(
+                                        listOf(tokens.accent.copy(alpha = .16f * lit), Color.Transparent),
+                                        point, 7.dp.toPx()
+                                    ), 7.dp.toPx(), point
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        AnimatedVisibility(
-            visible = elapsedMs >= 850f && elapsedMs < revealStart,
-            enter = fadeIn(tween(350)),
-            exit = fadeOut(tween(200)),
-            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 25.dp, bottom = 53.dp)
-        ) {
-            Box(
-                Modifier.clip(RoundedCornerShape(999.dp))
-                    .background(tokens.panel.copy(alpha = .82f))
-                    .border(1.dp, tokens.line, RoundedCornerShape(999.dp))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = { finishOnce() }
-                    )
-                    .padding(horizontal = 13.dp, vertical = 10.dp)
+        if (elapsedMs >= LumiCeremonyTiming.INTRO_END && elapsedMs < messageExit && !reducedMotion) {
+            TextButton(
+                onClick = { requestArrival() },
+                shape = RoundedCornerShape(50),
+                modifier = Modifier.align(Alignment.BottomEnd)
+                    .navigationBarsPadding()
+                    .padding(end = 20.dp, bottom = 20.dp)
+                    .graphicsLayer { alpha = soft(elapsedMs, LumiCeremonyTiming.INTRO_END, 400f) }
+                    .defaultMinSize(minHeight = 48.dp)
             ) {
-                Text(stringResource(R.string.atmospheric_enter_now), fontSize = 11.sp, color = tokens.text)
+                Text(stringResource(R.string.atmospheric_enter_now), fontSize = 12.sp, color = tokens.muted)
+            }
+        }
+    }
+}
+
+/**
+ * Four pigment lights in a slow elliptical orbit. Gradients provide softness
+ * without full-screen blur or clipped glow rectangles.
+ */
+@Composable
+private fun CeremonyLight(
+    elapsedMs: Float,
+    opacity: Float,
+    flight: Float,
+    center: Offset,
+    dark: Boolean,
+    accent: Color,
+    modifier: Modifier
+) {
+    val colors = remember { listOf(Color(0xFFE58DBB), Color(0xFF9B80E8), Color(0xFF88CDBB), Color(0xFFE8B18D)) }
+    val orbitPath = remember { Path() }
+    Canvas(modifier.graphicsLayer { alpha = opacity }) {
+        val unit = minOf(size.width, size.height * .62f)
+        val breathing = .5f - .5f * cos(elapsedMs / 4800f * PI.toFloat())
+        val orbit = elapsedMs / 19000f * 2f * PI.toFloat()
+        val lightCenter = Offset(center.x, center.y + unit * .03f + flight * unit * .12f)
+        colors.forEachIndexed { i, color ->
+            val angle = orbit + i * PI.toFloat() / 2f - 2.3f
+            val point = lightCenter + Offset(
+                cos(angle) * unit * (.15f + .025f * breathing),
+                sin(angle) * unit * (.18f + .025f * breathing)
+            )
+            val radius = unit * (.44f + .035f * sin(angle + orbit))
+            withTransform({ scale(1f, 1.14f, point) }) {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        0f to color.copy(alpha = if (dark) .30f else .20f),
+                        .30f to color.copy(alpha = if (dark) .18f else .11f),
+                        .65f to color.copy(alpha = if (dark) .045f else .025f),
+                        1f to color.copy(alpha = 0f),
+                        center = point, radius = radius
+                    ),
+                    radius = radius, center = point
+                )
+            }
+        }
+        // Asymmetric contours echo Lumi's living cell.
+        repeat(2) { ring ->
+            orbitPath.reset()
+            val radius = unit * (.335f + ring * .045f + .012f * breathing)
+            for (point in 0..96) {
+                val angle = point / 96f * 2f * PI.toFloat()
+                val ripple = 1f + .045f * sin(angle * 3f + orbit) + .025f * cos(angle * 2f - orbit)
+                val x = lightCenter.x + cos(angle) * radius * ripple
+                val y = lightCenter.y + sin(angle) * radius * ripple * 1.08f
+                if (point == 0) orbitPath.moveTo(x, y) else orbitPath.lineTo(x, y)
+            }
+            orbitPath.close()
+            rotate(12f * sin(orbit) + ring * 28f, lightCenter) {
+                drawPath(
+                    orbitPath,
+                    accent.copy(alpha = (if (dark) .085f else .10f) * (1f - flight) * (.65f + .35f * breathing)),
+                    style = Stroke(.65.dp.toPx())
+                )
+            }
+        }
+        // Fixed constellation: no reseeding or glitter bursts between frames.
+        repeat(14) { i ->
+            val angle = i * 2.39996f + orbit * .07f
+            val radius = unit * (.31f + (i % 4) * .075f)
+            val point = lightCenter + Offset(cos(angle) * radius, sin(angle) * radius * 1.28f)
+            val twinkle = .5f + .5f * sin(elapsedMs / 1800f + i * 1.7f)
+            val alpha = (if (dark) .20f else .14f) * (.35f + .65f * twinkle) * (1f - flight)
+            drawCircle(accent.copy(alpha = alpha), (.7f + .25f * (i % 3)).dp.toPx(), point)
+            if (i % 5 == 0) {
+                val arm = (2f + twinkle).dp.toPx()
+                drawLine(accent.copy(alpha = alpha), point - Offset(arm, 0f), point + Offset(arm, 0f), .6.dp.toPx())
+                drawLine(accent.copy(alpha = alpha), point - Offset(0f, arm), point + Offset(0f, arm), .6.dp.toPx())
             }
         }
     }

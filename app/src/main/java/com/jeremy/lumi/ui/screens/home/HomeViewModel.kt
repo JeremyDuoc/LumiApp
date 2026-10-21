@@ -94,14 +94,6 @@ class HomeViewModel @Inject constructor(
     private var hugAnimationJob: Job? = null
     private var loadCycleJob: Job? = null
 
-    // ── Cache para recálculo dinámico al tocar días del timeline ───────────
-    private var cachedStartDate: LocalDate? = null
-    private var cachedCycleLen: Int = 28
-    private var cachedPeriodLen: Int = 5
-    private var cachedClosedCycles: List<com.jeremy.lumi.data.local.entity.CycleEntity> = emptyList()
-    private var cachedIsPregnant: Boolean = false
-    private var cachedIsOnContraceptive: Boolean = false
-    private var baseTodayPrediction: CyclePrediction? = null
 
     /** Observa los vínculos activos del usuario y actualiza homeMode */
     private fun observeLinkedCycles() {
@@ -242,7 +234,10 @@ class HomeViewModel @Inject constructor(
                         break
                     }
                 }
-                _uiState.update { it.copy(logStreakDays = streak) }
+                val loggedDates = logs.map { java.time.Instant.ofEpochMilli(it.dailyLog.date)
+                    .atZone(java.time.ZoneOffset.UTC).toLocalDate() }.toSet()
+                _uiState.update { state -> state.copy(logStreakDays = streak,
+                    weekDays = state.weekDays.map { it.copy(hasLog = it.date in loggedDates) }) }
             }
         }
 
@@ -366,29 +361,32 @@ class HomeViewModel @Inject constructor(
                     effectiveCycleLength = cycleLen
                 )
 
-                // Cache para recálculo dinámico al tocar días del timeline
-                cachedStartDate = startDate
-                cachedCycleLen = cycleLen
-                cachedPeriodLen = periodLen
-                cachedClosedCycles = closedCycles
-                cachedIsPregnant = isPregnant
-                cachedIsOnContraceptive = isOnContraceptive
-                baseTodayPrediction = prediction
-
                 val today = LumiClock.today()
                 val currentSelected = _uiState.value.selectedDate
                 val allLogs = repository.getAllLogs(descending = true).firstOrNull() ?: emptyList()
 
                 val (weekDays, activePrediction, factors) = withContext(Dispatchers.Default) {
                     // Timeline continuo alineado por semanas completas (Lunes a Domingo):
-                    // 4 semanas atrás (~28 días) + 12 semanas adelante (~84 días), total 16 semanas completas (112 días)
+                    // Four weeks before today, this week, and twelve weeks ahead.
                     val startMonday = today.minusWeeks(4).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
                     val endSunday = today.plusWeeks(12).with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
                     val totalDays = ChronoUnit.DAYS.between(startMonday, endSunday) + 1
 
                     val computedWeekDays = (0 until totalDays).map { offset ->
                         val date = startMonday.plusDays(offset)
-                        val (phase, isPrediction) = CyclePredictor.phaseForDateInActiveCycle(
+                        val dateMs = date.atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+                        val historicalCycle = closedCycles.firstOrNull {
+                            dateMs in it.startDate..(it.endDate ?: Long.MAX_VALUE)
+                        }?.takeIf { date.isBefore(startDate) }
+                        val (phase, isPrediction) = if (historicalCycle != null) {
+                            val historicalStart = Instant.ofEpochMilli(historicalCycle.startDate)
+                                .atZone(ZoneId.of("UTC")).toLocalDate()
+                            CyclePredictor.phaseForDay(
+                                CyclePredictor.dayInCycle(historicalStart, historicalCycle.cycleLength, date),
+                                historicalCycle.cycleLength, historicalCycle.periodLength,
+                                isPregnant = isPregnant, isOnContraceptive = isOnContraceptive
+                            ) to false
+                        } else CyclePredictor.phaseForDateInActiveCycle(
                             startDate = startDate,
                             cycleLength = cycleLen,
                             periodLength = periodLen,
@@ -408,25 +406,12 @@ class HomeViewModel @Inject constructor(
                             phase = phase,
                             isToday = isToday,
                             isPrediction = isPrediction,
-                            isSelected = isSelected
+                            isSelected = isSelected,
+                            hasLog = allLogs.any { it.dailyLog.date == dateMs }
                         )
                     }
 
-                    val computedActivePrediction = if (currentSelected != null && currentSelected != today) {
-                        CyclePredictor.predict(
-                            startDate = startDate,
-                            cycleLength = cycleLen,
-                            periodLength = periodLen,
-                            today = currentSelected,
-                            closedCycles = closedCycles,
-                            isPregnant = isPregnant,
-                            isOnContraceptive = isOnContraceptive,
-                            effectiveCycleLength = cycleLen,
-                            predictionConfidence = effectiveResult.aiConfidence
-                        )
-                    } else {
-                        prediction
-                    }
+                    val computedActivePrediction = prediction
 
                     // Indicadores de disponibilidad y consistencia de datos, NO probabilidades
                     // de acierto ni contribuciones aprendidas de síntomas al predictor.
@@ -535,12 +520,23 @@ class HomeViewModel @Inject constructor(
 
             } else {
                 com.jeremy.lumi.ui.widget.WidgetRefreshScheduler.requestNow(context)
+                val today = LumiClock.today()
+                val startMonday = today.minusWeeks(4).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                val loggedDates = repository.getAllLogs(descending = true).first().map {
+                    Instant.ofEpochMilli(it.dailyLog.date).atZone(ZoneId.of("UTC")).toLocalDate()
+                }.toSet()
+                val daysWithoutCycle = (0L until 119L).map { offset ->
+                    val date = startMonday.plusDays(offset)
+                    CycleDayUi(date, date.dayOfMonth,
+                        date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
+                        CyclePhase.UNKNOWN, date == today, hasLog = date in loggedDates)
+                }
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         currentPhase = CyclePhase.UNKNOWN,
                         prediction = null,
-                        weekDays = emptyList(),
+                        weekDays = daysWithoutCycle,
                         delayState = DelayState.ON_TIME,
                         delayDays = 0,
                         isLate = false
@@ -673,7 +669,7 @@ class HomeViewModel @Inject constructor(
                 }
             )
         }
-        updateDisplayForDate(targetDate ?: today)
+        // Selection previews a date in the week card. The Home hero always describes today.
     }
 
     /**
@@ -681,45 +677,5 @@ class HomeViewModel @Inject constructor(
      */
     fun resetToToday() {
         selectDate(LumiClock.today())
-    }
-
-    private fun updateDisplayForDate(targetDate: LocalDate) {
-        val startDate = cachedStartDate ?: return
-        val today = LumiClock.today()
-
-        val pred = if (targetDate == today) {
-            baseTodayPrediction ?: CyclePredictor.predict(
-                startDate = startDate,
-                cycleLength = cachedCycleLen,
-                periodLength = cachedPeriodLen,
-                today = today,
-                closedCycles = cachedClosedCycles,
-                isPregnant = cachedIsPregnant,
-                isOnContraceptive = cachedIsOnContraceptive,
-                effectiveCycleLength = cachedCycleLen
-            )
-        } else {
-            CyclePredictor.predict(
-                startDate = startDate,
-                cycleLength = cachedCycleLen,
-                periodLength = cachedPeriodLen,
-                today = targetDate,
-                closedCycles = cachedClosedCycles,
-                isPregnant = cachedIsPregnant,
-                isOnContraceptive = cachedIsOnContraceptive,
-                effectiveCycleLength = cachedCycleLen
-            )
-        }
-
-        _uiState.update {
-            it.copy(
-                currentPhase = pred.currentPhase,
-                currentDayOfCycle = pred.currentDayOfCycle,
-                prediction = pred,
-                delayState = pred.delayState,
-                delayDays = pred.delayDays,
-                isLate = pred.isLate
-            )
-        }
     }
 }
