@@ -181,6 +181,7 @@ fun LumiLivingCore(
     estimatedDaysText: String,
     confidenceLabel: String,
     dayContextLabel: String = "HOY",
+    phaseContextLabel: String = "FASE ACTUAL",
     onConfidenceClick: (() -> Unit)? = null
 ) {
     val tokens = LumiThemeTokens.current
@@ -434,7 +435,7 @@ fun LumiLivingCore(
 
         Spacer(Modifier.height(1.dp))
         Text(
-            "FASE ACTUAL",
+            phaseContextLabel,
             color = tokens.muted,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
