@@ -101,7 +101,7 @@ fun LumiCalendarMonth(
                 label = "lumi_month_title",
                 modifier = Modifier.weight(1f)
             ) { title ->
-                Row(verticalAlignment = Alignment.FirstBaseline) {
+                Row(verticalAlignment = Alignment.Bottom) {
                     Text(
                         text = title,
                         fontFamily = LumiEditorialSerif,
