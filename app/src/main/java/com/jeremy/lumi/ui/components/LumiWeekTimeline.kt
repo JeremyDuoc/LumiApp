@@ -209,7 +209,7 @@ fun LumiWeekTimeline(
                     val outline by animateColorAsState(
                         when {
                             active -> Color.Transparent
-                            day.isToday -> tokens.accent.copy(alpha = .45f)
+                            day.isToday -> Color.Transparent // 'Hoy' se distingue con el micropunto; no simular una segunda selección
                             else -> Color.Transparent
                         }, label = "mini_day_outline"
                     )
