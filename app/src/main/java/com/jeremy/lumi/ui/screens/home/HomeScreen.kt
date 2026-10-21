@@ -315,7 +315,7 @@ fun HomeScreen(
                         val phaseName = when (uiState.currentPhase) {
                             CyclePhase.MENSTRUAL -> stringResource(R.string.pm_phase_menstrual)
                             CyclePhase.FOLLICULAR -> stringResource(R.string.pm_phase_follicular)
-                            CyclePhase.OVULATION -> stringResource(R.string.pm_phase_ovulation)
+                            CyclePhase.OVULATION -> stringResource(R.string.phase_name_ovulation)
                             CyclePhase.LUTEAL -> stringResource(R.string.pm_phase_luteal)
                             else -> stringResource(R.string.phase_unknown)
                         }
