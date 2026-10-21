@@ -85,21 +85,28 @@ fun LumiPlannerCalendar(
     val titleMonth = selectedDate.month.getDisplayName(TextStyle.FULL, locale)
         .replaceFirstChar { it.titlecase(locale) }
 
+    val sidePadding = if (androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp <= 390) 16.dp else 20.dp
+
     Box(modifier.fillMaxSize().background(tokens.bg)) {
         com.jeremy.lumi.ui.components.AmbientBackgroundLayer(
             screenType = com.jeremy.lumi.ui.theme.AmbientScreen.CONTENT
         )
 
-        Column(
-            Modifier.fillMaxSize().verticalScroll(scroll)
-                .padding(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 104.dp)
-        ) {
-            PlannerTopBar(
-                inboxCount = plannerState.inbox.size,
-                onInbox = { showInbox = true },
-                onMore = onOpenMore
-            )
-            Spacer(Modifier.height(10.dp))
+        Column(Modifier.fillMaxSize()) {
+            Box(
+                Modifier.fillMaxWidth().height(68.dp).padding(horizontal = sidePadding),
+                contentAlignment = Alignment.Center
+            ) {
+                PlannerTopBar(
+                    inboxCount = plannerState.inbox.size,
+                    onInbox = { showInbox = true },
+                    onMore = onOpenMore
+                )
+            }
+            Column(
+                Modifier.weight(1f).fillMaxWidth().verticalScroll(scroll)
+                    .padding(start = sidePadding, end = sidePadding, top = 4.dp, bottom = 104.dp)
+            ) {
             PlannerDateHeader(
                 month = titleMonth,
                 year = selectedDate.year,
@@ -164,6 +171,7 @@ fun LumiPlannerCalendar(
                         onSelectDate = onSelectDate
                     )
                 }
+            }
             }
         }
 
@@ -653,8 +661,9 @@ private fun PlannerTimeline(
             )
         }
 
-        gaps.filter { it.duration >= 45 }.forEach { gap ->
-            val top = timelineOffset(gap.start, startHour, hourHeight) + 12.dp
+        gaps.filter { it.duration >= 75 }.forEach { gap ->
+            val midpoint = gap.start + gap.duration / 2
+            val top = timelineOffset(midpoint, startHour, hourHeight)
             Row(
                 Modifier.offset(x = 82.dp, y = top),
                 verticalAlignment = Alignment.CenterVertically
@@ -669,21 +678,21 @@ private fun PlannerTimeline(
             }
         }
 
-        items.forEachIndexed { index, item ->
-            val top = timelineOffset(item.startMinutes, startHour, hourHeight)
-            val rawHeight = hourHeight * (item.durationMinutes / 60f)
+        items.forEach { item ->
+            val baseTop = timelineOffset(item.startMinutes, startHour, hourHeight)
+            val top = baseTop + 6.dp
+            val rawHeight = hourHeight * (item.durationMinutes / 60f) - 4.dp
             val blockHeight = rawHeight.coerceAtLeast(42.dp)
             val eventColor = itemColor(item.kind)
             Text(
                 minutesToTime(item.startMinutes),
-                modifier = Modifier.offset(x = 1.dp, y = top - 5.dp),
+                modifier = Modifier.offset(x = 1.dp, y = baseTop + 8.dp),
                 color = eventColor,
                 fontSize = 8.5.sp,
                 fontWeight = FontWeight.Medium
             )
             Row(
-                Modifier.offset(x = 62.dp, y = top).fillMaxWidth().height(blockHeight)
-                    .graphicsLayer { alpha = if (index >= 0) 1f else 1f }
+                Modifier.offset(x = 63.dp, y = top).fillMaxWidth().height(blockHeight)
                     .clip(RoundedCornerShape(if (blockHeight < 50.dp) 13.dp else 16.dp))
                     .background(
                         Brush.horizontalGradient(
@@ -744,7 +753,7 @@ private fun PlannerTimeline(
         if (date == today && now.hour in startHour..endHour) {
             val top = timelineOffset(nowMinutes, startHour, hourHeight)
             Row(
-                Modifier.offset(x = 43.dp, y = top - 5.dp),
+                Modifier.offset(x = 43.dp, y = top + 7.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(Modifier.size(9.dp).clip(CircleShape).background(tokens.rose))
@@ -752,7 +761,7 @@ private fun PlannerTimeline(
             }
             Text(
                 minutesToTime(nowMinutes),
-                modifier = Modifier.offset(x = 0.dp, y = top - 9.dp),
+                modifier = Modifier.offset(x = 0.dp, y = top - 1.dp),
                 fontSize = 8.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = tokens.rose
@@ -1006,6 +1015,17 @@ private fun PlannerMonthDay(
                 borderColor,
                 RoundedCornerShape(14.dp)
             )
+            .drawBehind {
+                if (fertile && !menstrual) {
+                    val stroke = 2.5.dp.toPx()
+                    drawLine(
+                        phaseColors.ovulation.copy(alpha = .52f),
+                        start = androidx.compose.ui.geometry.Offset(size.width * .23f, size.height - stroke),
+                        end = androidx.compose.ui.geometry.Offset(size.width * .77f, size.height - stroke),
+                        strokeWidth = stroke
+                    )
+                }
+            }
             .clickable(enabled = inMonth, onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -1023,9 +1043,6 @@ private fun PlannerMonthDay(
             }
             if (activityCount > 0) {
                 Box(Modifier.size(4.dp).clip(CircleShape).background(tokens.gold))
-            }
-            if (fertile) {
-                Box(Modifier.size(4.dp).clip(CircleShape).background(phaseColors.ovulation))
             }
         }
     }
@@ -1393,9 +1410,9 @@ private fun phaseShort(phase: CyclePhase?): String = when (phase) {
 private fun itemColor(kind: PlannerItemKind): Color {
     val tokens = LumiThemeTokens.current
     return when (kind) {
-        PlannerItemKind.TASK -> tokens.accent
+        PlannerItemKind.TASK -> tokens.gold
         PlannerItemKind.EVENT -> tokens.mint
-        PlannerItemKind.REMINDER -> tokens.rose
+        PlannerItemKind.REMINDER -> tokens.gold
     }
 }
 
