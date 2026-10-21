@@ -195,7 +195,7 @@ fun LumiWeekTimeline(
                                 Text(day.dayOfMonth.toString(), fontSize = 15.sp,
                                     fontWeight = if (selectedHere || day.isToday || menstrual)
                                         FontWeight.Bold else FontWeight.Medium,
-                                    color = if (menstrual && !day.isPrediction) tokens.bg else tokens.text,
+                                    color = if (menstrual && !day.isPrediction) (if (tokens.isDark) tokens.bg else tokens.text) else tokens.text,
                                     textAlign = TextAlign.Center)
                             }
                             Box(Modifier.height(11.dp), contentAlignment = Alignment.Center) {
