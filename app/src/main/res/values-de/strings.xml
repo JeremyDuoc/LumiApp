@@ -1665,4 +1665,5 @@
     <string name="lumi_cal_a11y_empty">%1$d, ohne Eintrag</string>
     <string name="lumi_cal_week_intro">Deine</string>
     <string name="lumi_cal_week_focus">Woche</string>
+    <string name="lumi_selected_day_phase">Phase des gewählten Tages</string>
 </resources>
