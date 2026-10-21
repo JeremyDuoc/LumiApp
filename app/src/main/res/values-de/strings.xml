@@ -1638,4 +1638,29 @@
         <item>Deine Einträge zeigen, dass %1$s während deiner Phase „%2$s“ %.1fx wahrscheinlicher ist als im restlichen Zyklus. So kannst du dich darauf einstellen und vorsorgen. 💜</item>
         <item>Ich habe festgestellt, dass %1$s in deiner Phase „%2$s“ deutlich häufiger auftritt. Dieses Muster ist ganz individuell – jetzt kannst du dich darauf vorbereiten. 🌸</item>
     </string-array>
+    <string name="lumi_cal_title_start">Dein</string>
+    <string name="lumi_cal_title_end">Kalender</string>
+    <string name="lumi_cal_subtitle">Dein Zyklus, Tag für Tag.</string>
+    <string name="lumi_cal_more_options">Weitere Kalenderoptionen</string>
+    <string name="lumi_cal_explain_colors">Bedeutung der Farben</string>
+    <string name="lumi_cal_record_day">Tag erfassen</string>
+    <string name="lumi_cal_view_log">Eintrag ansehen</string>
+    <string name="lumi_cal_legend_period">Periode</string>
+    <string name="lumi_cal_legend_fertile">Fruchtbar</string>
+    <string name="lumi_cal_legend_record">Eintrag</string>
+    <string name="lumi_cal_choose_day">Tag auswählen</string>
+    <string name="lumi_cal_no_cycle">Keine Zyklusdaten für diesen Tag</string>
+    <string name="lumi_cal_estimate_phase">Schätzung · %1$s</string>
+    <string name="lumi_cal_day_logged">Für diesen Tag gibt es einen Eintrag</string>
+    <string name="lumi_cal_day_empty">Für diesen Tag gibt es noch keinen Eintrag</string>
+    <string name="lumi_cal_day_logged_hint">Du kannst deinen Eintrag ansehen oder ändern.</string>
+    <string name="lumi_cal_day_empty_hint">Wähle Erfassen, um dein Befinden einzutragen.</string>
+    <string name="lumi_cal_week_title">Deine Woche</string>
+    <string name="lumi_cal_view_month">Monat ansehen</string>
+    <string name="lumi_cal_today_phase">Heute · %1$s</string>
+    <string name="lumi_cal_week_no_cycle">Keine Zyklusdaten</string>
+    <string name="lumi_cal_a11y_today">%1$d, heute</string>
+    <string name="lumi_cal_a11y_prediction">%1$d, zukünftige Schätzung</string>
+    <string name="lumi_cal_a11y_logged">%1$d, mit Eintrag</string>
+    <string name="lumi_cal_a11y_empty">%1$d, ohne Eintrag</string>
 </resources>
