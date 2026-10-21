@@ -99,7 +99,9 @@ object CyclePredictor {
         val ovulationDay = c - lutealLength
         return when {
             dayInCycle <= periodLength                            -> CyclePhase.MENSTRUAL
-            // Ventana fértil biológica: 5 días previos a ovulación + día de ovulación + 1 día posterior (OMS/ACOG)
+            // Banda estimada de calendario: 5 días antes del día calculado y 1 día después.
+            // ASRM define el núcleo fértil de 6 días hasta la ovulación; este día extra es
+            // una visualización conservadora, NO confirma ovulación ni días seguros.
             dayInCycle in (ovulationDay - 5)..(ovulationDay + 1)   -> CyclePhase.OVULATION
             dayInCycle < (ovulationDay - 5)                       -> CyclePhase.FOLLICULAR
             else                                                 -> CyclePhase.LUTEAL
@@ -462,7 +464,7 @@ object CyclePredictor {
         val dayOfPhase = when (currentPhase) {
             CyclePhase.MENSTRUAL -> realDay
             CyclePhase.FOLLICULAR -> realDay - periodLength
-            CyclePhase.OVULATION -> realDay - (ovulationDay - 5) + 1 // Ventana OMS/ACOG de 7 días: (ovDay - 5)..(ovDay + 1)
+            CyclePhase.OVULATION -> realDay - (ovulationDay - 5) + 1 // Banda CALCULADA de 7 días; no ovulación verificada
             CyclePhase.LUTEAL -> realDay - (ovulationDay + 1)
             else -> 1
         }.coerceAtLeast(1)
