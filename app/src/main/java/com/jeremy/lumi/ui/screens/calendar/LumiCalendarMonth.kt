@@ -450,10 +450,17 @@ fun LumiCalendarDayDetail(
                 else phaseLabel(day.phase)
             val context = when {
                 phase == null -> stringResource(R.string.lumi_cal_no_cycle)
+                // The phase label already says "estimated" in every supported language.
+                day.phase == CyclePhase.OVULATION -> phase
                 day.isPrediction -> stringResource(R.string.lumi_cal_estimate_phase, phase)
                 else -> phase
             }
             Text(context, fontSize = 12.sp, color = tokens.muted)
+            val previewHasContent = day.logPreview?.let { preview ->
+                !preview.mood.isNullOrBlank() || !preview.flow.isNullOrBlank() ||
+                    preview.symptoms.isNotEmpty() || !preview.notes.isNullOrBlank()
+            } == true
+            if (!previewHasContent) {
             Spacer(Modifier.height(17.dp))
             Row(
                 modifier = Modifier
@@ -485,6 +492,8 @@ fun LumiCalendarDayDetail(
                         lineHeight = 15.sp
                     )
                 }
+            }
+
             }
 
             // Read-only details from the saved record; never synthesize symptoms from a phase.
