@@ -551,22 +551,46 @@ fun YearView(
     viewModel: CalendarViewModel,
     onMonthClick: (year: Int, month: Int) -> Unit
 ) {
-    val yearsRange = (initialYear - 5)..(initialYear + 5)
-    val listState = rememberLazyListState(initialFirstVisibleItemIndex = 5)
-
-    LazyColumn(
-        state = listState,
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(40.dp)
-    ) {
-        items(yearsRange.toList().size) { index ->
-            val year = yearsRange.toList()[index]
-            YearItem(
-                year       = year,
-                viewModel  = viewModel,
-                onMonthClick = { month -> onMonthClick(year, month) }
-            )
+    // Solo se carga el año visible: el listado anterior disparaba 11×12
+    // generaciones de calendario y mostraba una cascada de spinners.
+    val tokens = com.jeremy.lumi.ui.theme.LumiThemeTokens.current
+    var year by remember(initialYear) { mutableIntStateOf(initialYear) }
+    Column(Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 23.dp, vertical = 13.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = { year-- }) {
+                Icon(Icons.Rounded.ChevronLeft, contentDescription = stringResource(R.string.cal_prev_month_desc), tint = tokens.muted)
+            }
+            AnimatedContent(
+                targetState = year,
+                transitionSpec = { fadeIn(tween(240)) togetherWith fadeOut(tween(130)) },
+                label = "lumi_annual_title"
+            ) {
+                Text(
+                    it.toString(),
+                    fontFamily = com.jeremy.lumi.ui.theme.LumiEditorialSerif,
+                    fontSize = 31.sp,
+                    color = tokens.text
+                )
+            }
+            IconButton(onClick = { year++ }) {
+                Icon(Icons.Rounded.ChevronRight, contentDescription = stringResource(R.string.cal_next_month_desc), tint = tokens.muted)
+            }
+        }
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 21.dp, vertical = 8.dp)
+        ) {
+            item(key = year) {
+                YearItem(
+                    year = year,
+                    viewModel = viewModel,
+                    onMonthClick = { month -> onMonthClick(year, month) }
+                )
+            }
         }
     }
 }
@@ -588,39 +612,18 @@ fun YearItem(year: Int, viewModel: CalendarViewModel, onMonthClick: (Int) -> Uni
     }
 
     val tokens = com.jeremy.lumi.ui.theme.LumiThemeTokens.current
-    val currentYear = com.jeremy.lumi.utils.LumiClock.today().year
-    val isCurrentYear = year == currentYear
-
     Column(modifier = Modifier.fillMaxWidth()) {
-        // ── Year label ────────────────────────────────────────────────────────
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(bottom = 14.dp, start = 4.dp)
-        ) {
-            if (isCurrentYear) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
-                )
-                Spacer(Modifier.width(8.dp))
-            }
-            Text(
-                text       = year.toString(),
-                fontSize   = if (isCurrentYear) 28.sp else 22.sp,
-                fontFamily = com.jeremy.lumi.ui.theme.LumiEditorialSerif,
-                fontWeight = FontWeight.Normal,
-                color = if (isCurrentYear) tokens.text else tokens.muted
-            )
-        }
-
         if (yearData.value.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxWidth().height(160.dp),
-                contentAlignment = Alignment.Center
+            Column(
+                modifier = Modifier.fillMaxWidth().height(170.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(24.dp))
+                CircularProgressIndicator(
+                    color = tokens.accent,
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(23.dp)
+                )
             }
         } else {
             val rows = yearData.value.chunked(3)
