@@ -131,7 +131,7 @@ fun LumiCalendarMonth(
 
         Spacer(Modifier.height(10.dp))
         HorizontalDivider(color = tokens.line.copy(alpha = 0.8f), thickness = 0.6.dp)
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(12.dp))
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(1.dp)) {
             weekdayNames.forEach { weekday ->
@@ -191,7 +191,7 @@ fun LumiCalendarMonth(
             ) {
                 monthState.days.chunked(7).forEach { week ->
                     Row(
-                        Modifier.fillMaxWidth().height(51.dp),
+                        Modifier.fillMaxWidth().height(47.dp),
                         horizontalArrangement = Arrangement.spacedBy(1.dp)
                     ) {
                         week.forEach { day ->
@@ -214,9 +214,9 @@ fun LumiCalendarMonth(
             }
         }
 
-        Spacer(Modifier.height(15.dp))
+        Spacer(Modifier.height(11.dp))
         HorizontalDivider(color = tokens.line.copy(alpha = .75f), thickness = .6.dp)
-        Spacer(Modifier.height(13.dp))
+        Spacer(Modifier.height(11.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(15.dp),
@@ -258,8 +258,8 @@ private fun LumiMonthDay(
     val fill by animateColorAsState(
         targetValue = when {
             selected -> tokens.accentSoft
-            day.phase == CyclePhase.MENSTRUAL -> color.copy(alpha = if (day.isPrediction) .10f else .24f)
-            day.phase == CyclePhase.OVULATION -> color.copy(alpha = if (day.isPrediction) .045f else .085f)
+            day.phase == CyclePhase.MENSTRUAL -> color.copy(alpha = if (day.isPrediction) .14f else .24f)
+            day.phase == CyclePhase.OVULATION -> color.copy(alpha = if (day.isPrediction) .10f else .15f)
             else -> Color.Transparent
         },
         animationSpec = tween(240),
@@ -299,17 +299,17 @@ private fun LumiMonthDay(
     ) {
         Text(
             text = day.dayOfMonth.toString(),
-            fontSize = 14.sp,
+            fontSize = 14.5.sp,
             fontWeight = if (selected || day.isToday) FontWeight.SemiBold else FontWeight.Normal,
-            color = if (selected) tokens.text else if (day.isPrediction) tokens.text.copy(alpha = .77f) else tokens.text,
+            color = if (selected) tokens.text else if (day.isPrediction) tokens.text.copy(alpha = .87f) else tokens.text,
             modifier = Modifier.offset(y = if (day.hasLog) (-2).dp else 0.dp)
         )
         if (day.hasLog) {
             Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 5.dp).size(4.dp)
                 .clip(CircleShape).background(tokens.accent))
-        } else if (day.phase != CyclePhase.UNKNOWN) {
-            Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 5.dp).size(3.dp)
-                .clip(CircleShape).background(color.copy(alpha = if (day.isPrediction) .45f else .85f)))
+        } else if (day.phase == CyclePhase.MENSTRUAL || day.phase == CyclePhase.OVULATION) {
+            Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 5.dp).size(if (day.phase == CyclePhase.MENSTRUAL) 4.dp else 3.5.dp)
+                .clip(CircleShape).background(color.copy(alpha = if (day.isPrediction) .72f else .95f)))
         }
         if (day.showIntercourseHeart) {
             Icon(
@@ -388,18 +388,23 @@ fun LumiCalendarDayDetail(
             Text(context, fontSize = 12.sp, color = tokens.muted)
             Spacer(Modifier.height(17.dp))
             Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(tokens.panel.copy(alpha = if (tokens.isDark) .64f else .75f))
-                    .padding(horizontal = 15.dp, vertical = 17.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Box(Modifier.size(7.dp).clip(CircleShape)
-                    .background(if (day.hasLog) tokens.accent else tokens.dim))
-                Column {
+                Box(
+                    Modifier
+                        .width(2.dp)
+                        .height(38.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(if (day.hasLog) tokens.accent else tokens.line)
+                )
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
-                        if (day.hasLog) stringResource(R.string.lumi_cal_day_logged) else stringResource(R.string.lumi_cal_day_empty),
+                        if (day.hasLog) stringResource(R.string.lumi_cal_day_logged)
+                        else stringResource(R.string.lumi_cal_day_empty),
                         fontSize = 13.sp,
                         color = tokens.text,
                         fontWeight = FontWeight.Medium
@@ -407,12 +412,12 @@ fun LumiCalendarDayDetail(
                     Text(
                         if (day.hasLog) stringResource(R.string.lumi_cal_day_logged_hint)
                         else stringResource(R.string.lumi_cal_day_empty_hint),
-                        fontSize = 11.sp, color = tokens.muted,
-                        lineHeight = 16.sp
+                        fontSize = 11.sp,
+                        color = tokens.muted,
+                        lineHeight = 15.sp
                     )
                 }
             }
-
         }
     }
 }
