@@ -197,25 +197,54 @@ fun LumiCalendarMonth(
                     }
             ) {
                 monthState.days.chunked(7).forEach { week ->
-                    Row(
-                        Modifier.fillMaxWidth().height(50.dp),
-                        horizontalArrangement = Arrangement.spacedBy(1.dp)
-                    ) {
-                        week.forEach { day ->
-                            if (day.isEmptyOffset) {
-                                Spacer(Modifier.weight(1f).fillMaxHeight())
-                            } else {
-                                LumiMonthDay(
-                                    day = day,
-                                    selected = monthState.displayYear == uiState.displayYear &&
-                                        monthState.displayMonth == uiState.displayMonth &&
-                                        selectedDay == day.dayOfMonth,
-                                    onClick = { onSelectDay(day) },
-                                    modifier = Modifier.weight(1f).fillMaxHeight()
+                    BoxWithConstraints(Modifier.fillMaxWidth().height(50.dp)) {
+                        val slotWidth = (maxWidth - 6.dp) / 7
+                        val slotStep = slotWidth + 1.dp
+                        val menstrualTint = phaseColor(CyclePhase.MENSTRUAL)
+                        // A whisper-light continuous band groups consecutive menstrual dates.
+                        // Actual circular dates remain visually dominant above this background.
+                        var start = 0
+                        while (start < week.size) {
+                            val item = week[start]
+                            if (!item.isEmptyOffset && item.phase == CyclePhase.MENSTRUAL) {
+                                val prediction = item.isPrediction
+                                var end = start + 1
+                                while (end < week.size &&
+                                    !week[end].isEmptyOffset &&
+                                    week[end].phase == CyclePhase.MENSTRUAL &&
+                                    week[end].isPrediction == prediction
+                                ) end++
+                                Box(
+                                    Modifier
+                                        .offset(x = slotStep * start, y = 9.dp)
+                                        .width(slotStep * (end - start) - 1.dp)
+                                        .height(29.dp)
+                                        .clip(RoundedCornerShape(19.dp))
+                                        .background(menstrualTint.copy(alpha = if (prediction) .055f else .085f))
                                 )
-                            }
+                                start = end
+                            } else start++
                         }
-                        repeat(7 - week.size) { Spacer(Modifier.weight(1f)) }
+                        Row(
+                            Modifier.fillMaxWidth().height(50.dp),
+                            horizontalArrangement = Arrangement.spacedBy(1.dp)
+                        ) {
+                            week.forEach { day ->
+                                if (day.isEmptyOffset) {
+                                    Spacer(Modifier.weight(1f).fillMaxHeight())
+                                } else {
+                                    LumiMonthDay(
+                                        day = day,
+                                        selected = monthState.displayYear == uiState.displayYear &&
+                                            monthState.displayMonth == uiState.displayMonth &&
+                                            selectedDay == day.dayOfMonth,
+                                        onClick = { onSelectDay(day) },
+                                        modifier = Modifier.weight(1f).fillMaxHeight()
+                                    )
+                                }
+                            }
+                            repeat(7 - week.size) { Spacer(Modifier.weight(1f)) }
+                        }
                     }
                 }
             }
