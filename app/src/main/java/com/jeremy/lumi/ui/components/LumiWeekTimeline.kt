@@ -40,6 +40,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jeremy.lumi.R
+import androidx.compose.ui.res.stringResource
 import com.jeremy.lumi.domain.model.CyclePhase
 import com.jeremy.lumi.ui.screens.home.CycleDayUi
 import com.jeremy.lumi.ui.theme.LocalPhaseColors
@@ -97,10 +99,10 @@ fun LumiWeekTimeline(
     val selected = selectedDate ?: today
     val selectedModel = weekDays.firstOrNull { it.date == selected }
     val selectedPhaseName = when (selectedModel?.phase) {
-        CyclePhase.MENSTRUAL -> "Periodo"
-        CyclePhase.FOLLICULAR -> "Fase folicular"
-        CyclePhase.OVULATION -> "Ovulación"
-        CyclePhase.LUTEAL -> "Fase lútea"
+        CyclePhase.MENSTRUAL -> stringResource(R.string.pm_phase_menstrual)
+        CyclePhase.FOLLICULAR -> stringResource(R.string.pm_phase_follicular)
+        CyclePhase.OVULATION -> stringResource(R.string.pm_phase_ovulation)
+        CyclePhase.LUTEAL -> stringResource(R.string.pm_phase_luteal)
         else -> ""
     }
 
@@ -111,7 +113,7 @@ fun LumiWeekTimeline(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "Tu semana",
+                    stringResource(R.string.lumi_cal_week_title),
                     fontFamily = LumiEditorialSerif,
                     fontSize = 24.sp,
                     color = tokens.text,
@@ -132,7 +134,7 @@ fun LumiWeekTimeline(
                     .padding(horizontal = 10.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Ver mes", fontSize = 12.sp, color = tokens.accent,
+                Text(stringResource(R.string.lumi_cal_view_month), fontSize = 12.sp, color = tokens.accent,
                     fontWeight = FontWeight.Medium)
                 Spacer(Modifier.width(6.dp))
                 Icon(
@@ -261,16 +263,16 @@ fun LumiWeekTimeline(
                 label = "mini_selected_context"
             ) { (_, phase, prediction) ->
                 val text = when {
-                    selected == today && phase.isNotEmpty() -> "Hoy · " + phase
-                    phase.isNotEmpty() && prediction -> "Estimación · " + phase
+                    selected == today && phase.isNotEmpty() -> stringResource(R.string.lumi_cal_today_phase, phase)
+                    phase.isNotEmpty() && prediction -> stringResource(R.string.lumi_cal_estimate_phase, phase)
                     phase.isNotEmpty() -> phase
-                    else -> "Sin datos del ciclo"
+                    else -> stringResource(R.string.lumi_cal_week_no_cycle)
                 }
                 Text(text, fontSize = 11.sp, color = tokens.muted)
             }
             if (selectedDate != null && selectedDate != today) {
                 Text(
-                    text = "Volver a hoy",
+                    text = stringResource(R.string.home_timeline_back_to_today),
                     color = tokens.accent,
                     fontSize = 11.sp,
                     modifier = Modifier
