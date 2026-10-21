@@ -309,12 +309,12 @@
     <string name="home_insight_badge">Einblick des Tages</string>
     <string name="home_insight_cd">KI-Einblick</string>
     <string name="home_insight_discreet">Diskreter Modus aktiv. Deine Daten sind geschützt.</string>
-    <string name="home_insight_follicular">Dein Östrogenspiegel steigt. Du wirst mehr Energie, bessere Laune und mehr Kreativität spüren. Nutze den Schwung!</string>
-    <string name="home_insight_luteal_1">Deine Energie wird ruhiger. Ein guter Moment für konzentrierte Aufgaben und persönliche Organisation.</string>
-    <string name="home_insight_luteal_2">Dein Körper bereitet sich auf den nächsten Zyklus vor. Du bemerkst vielleicht Stimmungsschwankungen oder weniger Energie. Lass es ruhig angehen.</string>
+    <string name="home_insight_follicular">Dein Kalender schätzt für heute die Follikelphase. Wie fühlst du dich? Notiere deine Energie, um deine eigenen Muster zu erkennen.</string>
+    <string name="home_insight_luteal_1">Dein Kalender schätzt die Lutealphase. Jede Person erlebt sie anders. Notiere Stimmung und Energie, um deine Muster kennenzulernen.</string>
+    <string name="home_insight_luteal_2">Deine geschätzte Periode rückt näher. Falls du Veränderungen bemerkst, kannst du sie über mehrere Zyklen vergleichen.</string>
     <string name="home_insight_luteal_window">Deine Periode setzt meist innerhalb eines geschätzten Zeitfensters ein. Eine Schwankung von ein paar Tagen ist biologisch völlig normal. Halte deine Menstruationsartikel griffbereit und gönne dir Ruhe.</string>
-    <string name="home_insight_menstrual_1">Dein Körper leistet gerade viel. Es ist völlig normal, sich kraftlos zu fühlen und heute mehr Ruhe zu brauchen.</string>
-    <string name="home_insight_menstrual_2">Die Blutung wird bald nachlassen. Denk daran, genug zu trinken und achtsam mit dir umzugehen.</string>
+    <string name="home_insight_menstrual_1">Falls du gerade menstruierst, ist deine Erfahrung individuell. Notiere Symptome und ruhe dich bei Bedarf aus.</string>
+    <string name="home_insight_menstrual_2">Dauer und Stärke der Blutung können variieren. Halte fest, was du beobachtest, ohne eine Abnahme für heute anzunehmen.</string>
     <string name="home_insight_ovulation">Dein Kalender schätzt für diese Tage ein fruchtbares Fenster. Der Eisprung kann anders liegen. Achte darauf, wie du dich persönlich fühlst.</string>
     <string name="home_insight_title">Lumi Insight</string>
     <string name="home_insight_unknown">Beginne damit, deine Periode einzutragen, um zu entdecken, was in deinem Körper passiert.</string>
