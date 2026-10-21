@@ -153,11 +153,34 @@ fun LumiWeekTimeline(
             pageSpacing = 8.dp
         ) { index ->
             val week = weeks[index]
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                week.forEach { day ->
+            val selectedIndex = week.indexOfFirst { it.date == selected }
+            val markerIndex by animateFloatAsState(
+                targetValue = selectedIndex.coerceAtLeast(0).toFloat(),
+                animationSpec = LumiMotion.SpatialSpring,
+                label = "lumi_week_selection_travel"
+            )
+            BoxWithConstraints(Modifier.fillMaxWidth().height(79.dp)) {
+                val dayWidth = (maxWidth - 24.dp) / 7
+                if (selectedIndex >= 0) {
+                    Box(
+                        Modifier
+                            .offset(x = (dayWidth + 4.dp) * markerIndex)
+                            .width(dayWidth)
+                            .height(79.dp)
+                            .clip(RoundedCornerShape(15.dp))
+                            .background(tokens.accentSoft)
+                            .border(
+                                width = 1.dp,
+                                color = tokens.accent.copy(alpha = .82f),
+                                shape = RoundedCornerShape(15.dp)
+                            )
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    week.forEach { day ->
                     val active = day.date == selected
                     val periodDay = day.phase == CyclePhase.MENSTRUAL
                     val phaseColor = when (day.phase) {
@@ -176,7 +199,7 @@ fun LumiWeekTimeline(
                     )
                     val fill by animateColorAsState(
                         when {
-                            active -> tokens.accentSoft
+                            active -> Color.Transparent
                             periodDay -> phaseColor.copy(alpha = if (day.isPrediction) .07f else .16f)
                             else -> Color.Transparent
                         },
@@ -185,7 +208,7 @@ fun LumiWeekTimeline(
                     )
                     val outline by animateColorAsState(
                         when {
-                            active -> tokens.accent
+                            active -> Color.Transparent
                             day.isToday -> tokens.accent.copy(alpha = .45f)
                             else -> Color.Transparent
                         }, label = "mini_day_outline"
@@ -217,13 +240,13 @@ fun LumiWeekTimeline(
                     ) {
                         Text(
                             day.weekdayLabel.take(3).replaceFirstChar { it.uppercase() },
-                            fontSize = 10.sp,
+                            fontSize = 11.sp,
                             color = if (active) tokens.text else tokens.muted,
                             maxLines = 1
                         )
                         Text(
                             day.dayOfMonth.toString(),
-                            fontSize = 16.sp,
+                            fontSize = 17.sp,
                             fontWeight = if (active || day.isToday) FontWeight.SemiBold else FontWeight.Normal,
                             color = if (active) tokens.text
                                 else if (day.isPrediction) tokens.muted else tokens.text,
@@ -245,6 +268,7 @@ fun LumiWeekTimeline(
                         }
                     }
                 }
+            }
             }
         }
 
