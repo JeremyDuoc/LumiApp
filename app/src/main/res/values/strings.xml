@@ -127,7 +127,7 @@
     <string name="cal_current_phase_label">Fase: %1$s</string>
     <string name="cal_cycle_day">Día %1$d de %2$d</string>
     <string name="cal_fri">V</string>
-    <string name="cal_legend_explanation">La ovulación se calcula como 14 días antes del fin estimado de tu ciclo.</string>
+    <string name="cal_legend_explanation">Las fases y fechas fértiles se estiman a partir del calendario. No confirman la ovulación ni identifican días seguros para evitar un embarazo.</string>
     <string name="cal_legend_intercourse">Relación sexual</string>
     <string name="cal_legend_prediction">Predicción estimada</string>
     <string name="cal_legend_title">Leyenda del Calendario</string>
@@ -167,7 +167,7 @@
     <string name="chat_label_supply">Recordatorio</string>
     <string name="chat_messages_title">Mensajes</string>
     <string name="chat_pattern_message">He notado un patrón: los últimos meses reportaste \'%1$s\' justo %2$d días antes de tu periodo. ¿Quieres que te lo recuerde en tu próximo ciclo para que estés preparada?</string>
-    <string name="chat_proactive_ovulation">Estás muy cerca de tu ventana fértil y ovulación. Es normal sentir picos de energía o cambios en tu temperatura. ¿Cómo te has sentido hoy?</string>
+    <string name="chat_proactive_ovulation">Tu calendario sugiere una ventana fértil cercana, pero no puede confirmar la ovulación. ¿Cómo te has sentido estos días?</string>
     <string name="chat_proactive_period">Hola, he notado que tu periodo podría llegar en los próximos %1$d días. ¿Has sentido algún cambio de humor o cólicos?</string>
     <string name="chat_send_cd">Enviar</string>
     <string name="chat_status_history">Historial</string>
@@ -233,7 +233,7 @@
     <string name="desc_follicular">Energía elevada y mayor felicidad. Los síntomas físicos disminuyen.</string>
     <string name="desc_luteal">Las hormonas bajan. Posibles cambios de ánimo, antojos y síntomas físicos.</string>
     <string name="desc_menstrual">Poca energía, cambios de ánimo. Es normal sentir síntomas físicos.</string>
-    <string name="desc_ovulation">Energía y confianza elevadas. Pico hormonal máximo.</string>
+    <string name="desc_ovulation">Ventana fértil estimada según los registros del ciclo; la ovulación no está confirmada.</string>
     <string name="desc_pregnancy">Gestación</string>
     <string name="desc_unknown">Registra tu próximo periodo para sincronizar tu ciclo.</string>
     <string name="dialog_pregnancy_birth">Nacimiento</string>
@@ -334,7 +334,7 @@
     <string name="home_insight_luteal_window">Tu periodo suele presentarse en una ventana estimada. Es fisiológicamente normal que oscile unos días. Mantén tus suministros a mano y prioriza el descanso.</string>
     <string name="home_insight_menstrual_1">Hoy es un buen día para ir con calma y descansar lo que necesites.</string>
     <string name="home_insight_menstrual_2">El flujo empezará a disminuir pronto. Recuerda mantenerte hidratada y ser amable contigo misma.</string>
-    <string name="home_insight_ovulation">Estás en tu pico de energía y magnetismo. Excelente momento para conectar con otros y abordar retos importantes.</string>
+    <string name="home_insight_ovulation">Tu calendario estima una ventana fértil en estos días. La ovulación real puede ocurrir en otras fechas; escucha cómo te sientes tú.</string>
     <string name="home_insight_title">Lumi Insight</string>
     <string name="home_insight_unknown">Comienza a registrar tu periodo para conocer qué está pasando en tu cuerpo.</string>
     <string name="home_link_chip">Vincular</string>
@@ -1231,7 +1231,7 @@
     <string name="phase_advice_follicular">Su energía y creatividad están subiendo. ¡Excelente momento para aventuras juntos!</string>
     <string name="phase_advice_luteal">Puede sentirse un poco cansada o sensible (SPM). Sé muy paciente, comprensivo y dale mimos.</string>
     <string name="phase_advice_menstrual">Suele necesitar más descanso y apoyo. Prepárale algo calentito o vean una peli.</string>
-    <string name="phase_advice_ovulation">Días de máxima energía, carisma y confianza. Disfruten mucho esta etapa.</string>
+    <string name="phase_advice_ovulation">La ventana fértil es una estimación, no un método anticonceptivo. Registra tus sensaciones sin asumir cambios de energía por la fase.</string>
     <string name="phase_advice_pregnancy">Un momento mágico. Asegúrate de acompañarla, cuidarla mucho y ayudar en todo.</string>
     <string name="phase_advice_unknown">Aún no tenemos datos suficientes del ciclo.</string>
     <string name="phase_follicular">Folicular</string>
@@ -1714,7 +1714,7 @@
     <string name="lumi_cal_record_day">Registrar día</string>
     <string name="lumi_cal_view_log">Ver registro</string>
     <string name="lumi_cal_legend_period">Periodo</string>
-    <string name="lumi_cal_legend_fertile">Fértil</string>
+    <string name="lumi_cal_legend_fertile">Fértil est.</string>
     <string name="lumi_cal_legend_record">Registro</string>
     <string name="lumi_cal_choose_day">Selecciona un día</string>
     <string name="lumi_cal_no_cycle">Sin información del ciclo para este día</string>
