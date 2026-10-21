@@ -332,7 +332,7 @@ private fun LumiMonthDay(
                     fontSize = 14.5.sp,
                     fontWeight = if (selected || day.isToday || menstrual)
                         FontWeight.SemiBold else FontWeight.Medium,
-                    color = if (menstrual && !day.isPrediction) tokens.bg else tokens.text,
+                    color = if (menstrual && !day.isPrediction) (if (tokens.isDark) tokens.bg else tokens.text) else tokens.text,
                     textAlign = TextAlign.Center
                 )
             }
