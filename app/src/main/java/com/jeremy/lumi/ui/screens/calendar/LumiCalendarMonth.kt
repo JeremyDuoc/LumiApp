@@ -135,9 +135,9 @@ fun LumiCalendarMonth(
             }
         }
 
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(5.dp))
         HorizontalDivider(color = tokens.line.copy(alpha = 0.8f), thickness = 0.6.dp)
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(9.dp))
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(1.dp)) {
             weekdayNames.forEach { weekday ->
@@ -150,7 +150,7 @@ fun LumiCalendarMonth(
                 )
             }
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(6.dp))
 
         // Swipe responde al gesto horizontal, no roba los taps ni el scroll vertical.
         AnimatedContent(
@@ -197,7 +197,7 @@ fun LumiCalendarMonth(
             ) {
                 monthState.days.chunked(7).forEach { week ->
                     Row(
-                        Modifier.fillMaxWidth().height(47.dp),
+                        Modifier.fillMaxWidth().height(50.dp),
                         horizontalArrangement = Arrangement.spacedBy(1.dp)
                     ) {
                         week.forEach { day ->
@@ -220,7 +220,7 @@ fun LumiCalendarMonth(
             }
         }
 
-        Spacer(Modifier.height(11.dp))
+        Spacer(Modifier.height(6.dp))
         HorizontalDivider(color = tokens.line.copy(alpha = .75f), thickness = .6.dp)
         Spacer(Modifier.height(11.dp))
         Row(
@@ -263,76 +263,95 @@ private fun LumiMonthDay(
     modifier: Modifier = Modifier
 ) {
     val tokens = LumiThemeTokens.current
-    val color = phaseColor(day.phase)
+    val phaseTint = phaseColor(day.phase)
+    val menstrual = day.phase == CyclePhase.MENSTRUAL
+    val fertile = day.phase == CyclePhase.OVULATION
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (pressed) .91f else if (selected) 1.035f else 1f,
+        targetValue = if (pressed) .92f else if (selected) 1.045f else 1f,
         animationSpec = LumiMotion.SpatialSpring,
-        label = "calendar_day_scale"
+        label = "lumi_month_circle_scale"
     )
+    // Phase colors are estimates, never proof of actual ovulation.
     val fill by animateColorAsState(
         targetValue = when {
-            selected -> tokens.accentSoft
-            day.phase == CyclePhase.MENSTRUAL -> color.copy(alpha = if (day.isPrediction) .14f else .24f)
-            day.phase == CyclePhase.OVULATION -> color.copy(alpha = if (day.isPrediction) .10f else .15f)
+            menstrual && day.isPrediction -> phaseTint.copy(alpha = .22f)
+            menstrual -> phaseTint.copy(alpha = .85f)
+            fertile && day.isPrediction -> phaseTint.copy(alpha = .20f)
+            fertile -> phaseTint.copy(alpha = .34f)
             else -> Color.Transparent
         },
-        animationSpec = tween(240),
-        label = "calendar_day_fill"
+        animationSpec = tween(260),
+        label = "lumi_month_phase_fill"
     )
-    val border by animateColorAsState(
+    val ring by animateColorAsState(
         targetValue = when {
-            selected -> tokens.accent.copy(alpha = .85f)
-            day.isToday -> tokens.accent.copy(alpha = .5f)
+            selected -> tokens.accent
+            day.isToday -> tokens.accent.copy(alpha = .58f)
             else -> Color.Transparent
         },
-        animationSpec = tween(250),
-        label = "calendar_day_outline"
+        animationSpec = tween(230),
+        label = "lumi_month_selection_ring"
     )
-    val shape = RoundedCornerShape(15.dp)
-    val description = when {
-        day.isToday -> stringResource(R.string.lumi_cal_a11y_today, day.dayOfMonth)
-        day.isPrediction -> stringResource(R.string.lumi_cal_a11y_prediction, day.dayOfMonth)
-        day.hasLog -> stringResource(R.string.lumi_cal_a11y_logged, day.dayOfMonth)
-        else -> stringResource(R.string.lumi_cal_a11y_empty, day.dayOfMonth)
+    val phaseName = when(day.phase) {
+        CyclePhase.OVULATION -> stringResource(R.string.phase_name_ovulation)
+        CyclePhase.UNKNOWN -> stringResource(R.string.phase_unknown)
+        else -> phaseLabel(day.phase)
     }
-    Box(
+    val predicted = if (day.isPrediction) stringResource(R.string.cal_accessibility_prediction) else ""
+    val logged = if (day.hasLog) stringResource(R.string.cal_accessibility_with_log)
+        else stringResource(R.string.cal_accessibility_no_log)
+    val description = day.dayOfMonth.toString() + ", " + phaseName + ", " + predicted + ", " + logged
+
+    Column(
         modifier = modifier
-            .padding(horizontal = 1.dp, vertical = 2.dp)
             .graphicsLayer { scaleX = scale; scaleY = scale }
-            .clip(shape)
-            .background(fill)
-            .border(1.dp, border, shape)
+            .clip(RoundedCornerShape(12.dp))
             .clickable(
-                interactionSource = interaction,
-                indication = null,
-                role = Role.Button,
-                onClick = onClick
+                interactionSource = interaction, indication = null,
+                role = Role.Button, onClick = onClick
             )
             .semantics { contentDescription = description },
-        contentAlignment = Alignment.Center
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = day.dayOfMonth.toString(),
-            fontSize = 14.5.sp,
-            fontWeight = if (selected || day.isToday) FontWeight.SemiBold else FontWeight.Normal,
-            color = if (selected) tokens.text else if (day.isPrediction) tokens.text.copy(alpha = .87f) else tokens.text,
-            modifier = Modifier.offset(y = if (day.hasLog) (-2).dp else 0.dp)
-        )
+        Box(
+            modifier = Modifier.size(39.dp)
+                .clip(CircleShape)
+                .border(1.4.dp, ring, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier.size(33.dp).clip(CircleShape).background(fill),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = day.dayOfMonth.toString(),
+                    fontSize = 14.5.sp,
+                    fontWeight = if (selected || day.isToday || menstrual)
+                        FontWeight.SemiBold else FontWeight.Medium,
+                    color = if (menstrual && !day.isPrediction) tokens.bg else tokens.text,
+                    textAlign = TextAlign.Center
+                )
+            }
+            if (day.showIntercourseHeart) {
+                Icon(
+                    if (day.intercourseProtected == true) Icons.Rounded.Favorite
+                    else Icons.Rounded.FavoriteBorder,
+                    contentDescription = null,
+                    tint = IntercourseHeartColor,
+                    modifier = Modifier.align(Alignment.TopEnd).size(10.dp)
+                )
+            }
+        }
         if (day.hasLog) {
             Icon(Icons.Rounded.Check,
-                contentDescription = stringResource(R.string.cal_accessibility_with_log),
-                tint = tokens.accent,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 2.dp).size(11.dp))
-        }
-        if (day.showIntercourseHeart) {
-            Icon(
-                if (day.intercourseProtected == true) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
                 contentDescription = null,
-                tint = IntercourseHeartColor,
-                modifier = Modifier.align(Alignment.TopEnd).padding(end = 1.dp, top = 2.dp).size(10.dp)
-            )
+                tint = tokens.accent,
+                modifier = Modifier.size(9.dp))
+        } else {
+            Spacer(Modifier.height(9.dp))
         }
     }
 }
