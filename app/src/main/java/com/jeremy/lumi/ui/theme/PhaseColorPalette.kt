@@ -166,10 +166,10 @@ enum class PhaseColorPalette {
 // La identidad del tema cambia; el significado no:
 // periodo = rosa, folicular = arena/dorado, fértil = verde/menta, lútea = violeta.
 val PhaseSemanticLight = PhaseColors(
-    menstrual  = Color(0xFFB65C7A),
-    follicular = Color(0xFF9B763F),
-    ovulation  = Color(0xFF4F8B76),
-    luteal     = Color(0xFF775AA0)
+    menstrual  = Color(0xFFA94F70),
+    follicular = Color(0xFF86642F),
+    ovulation  = Color(0xFF3F7763),
+    luteal     = Color(0xFF72529B)
 )
 
 val PhaseSemanticDark = PhaseColors(
@@ -208,31 +208,31 @@ val PhaseLumiIndigoDark = PhaseColors(
 )
 
 val PhaseLumiPetaloLight = PhaseColors(
-    menstrual  = Color(0xFFB85F82),
-    follicular = Color(0xFFA77D42),
-    ovulation  = Color(0xFF5A907C),
-    luteal     = Color(0xFF805FA4)
+    menstrual  = Color(0xFFA94F70),
+    follicular = Color(0xFF8C662F),
+    ovulation  = Color(0xFF447864),
+    luteal     = Color(0xFF76549B)
 )
 
 val PhaseLumiMarfilLight = PhaseColors(
-    menstrual  = Color(0xFFA75F67),
-    follicular = Color(0xFF9A743F),
-    ovulation  = Color(0xFF638674),
-    luteal     = Color(0xFF7B628C)
+    menstrual  = Color(0xFF9E555F),
+    follicular = Color(0xFF846330),
+    ovulation  = Color(0xFF4F7766),
+    luteal     = Color(0xFF715A82)
 )
 
 val PhaseLumiSalviaLight = PhaseColors(
-    menstrual  = Color(0xFFA45F74),
-    follicular = Color(0xFF8D7443),
-    ovulation  = Color(0xFF4F8069),
-    luteal     = Color(0xFF70688E)
+    menstrual  = Color(0xFF9D536A),
+    follicular = Color(0xFF7E6534),
+    ovulation  = Color(0xFF3E725C),
+    luteal     = Color(0xFF665E86)
 )
 
 val PhaseLumiLavandaLight = PhaseColors(
-    menstrual  = Color(0xFFA46086),
-    follicular = Color(0xFF997441),
-    ovulation  = Color(0xFF5B897C),
-    luteal     = Color(0xFF7557A2)
+    menstrual  = Color(0xFF9B557C),
+    follicular = Color(0xFF83622F),
+    ovulation  = Color(0xFF477668),
+    luteal     = Color(0xFF684B96)
 )
 
 // ── DEFAULT · la paleta original de Lumi ──────────────────────────────────────
