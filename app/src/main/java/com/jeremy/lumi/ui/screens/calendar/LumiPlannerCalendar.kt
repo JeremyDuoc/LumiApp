@@ -89,6 +89,15 @@ fun LumiPlannerCalendar(
     val titleMonth = selectedDate.month.getDisplayName(TextStyle.FULL, locale)
         .replaceFirstChar { it.titlecase(locale) }
 
+    LaunchedEffect(scale, selectedDate) {
+        if (scroll.value > 0) {
+            scroll.animateScrollTo(
+                value = 0,
+                animationSpec = tween(260, easing = LumiMotion.EaseOutExpo)
+            )
+        }
+    }
+
     val sidePadding = if (androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp <= 390) 16.dp else 20.dp
 
     Box(modifier.fillMaxSize().background(tokens.bg)) {
@@ -595,20 +604,60 @@ private fun PlannerDayView(
                     color = tokens.muted
                 )
             }
+            if (date == today) {
+                Row(
+                    Modifier.clip(RoundedCornerShape(12.dp)).background(tokens.panel)
+                        .border(.8.dp, tokens.line, RoundedCornerShape(12.dp))
+                        .padding(horizontal = 10.dp, vertical = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Rounded.Schedule,
+                        contentDescription = null,
+                        tint = tokens.muted,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text("Ahora", fontSize = 10.5.sp, color = tokens.muted)
+                }
+            }
+        }
+
+        AnimatedVisibility(visible = items.isEmpty()) {
             Row(
-                Modifier.clip(RoundedCornerShape(12.dp)).background(tokens.panel)
-                    .border(.8.dp, tokens.line, RoundedCornerShape(12.dp))
-                    .padding(horizontal = 10.dp, vertical = 9.dp),
+                Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                    .clip(RoundedCornerShape(15.dp))
+                    .background(tokens.panel.copy(alpha = .58f))
+                    .border(.8.dp, tokens.line, RoundedCornerShape(15.dp))
+                    .padding(horizontal = 13.dp, vertical = 11.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    Icons.Rounded.Schedule,
-                    contentDescription = null,
-                    tint = tokens.muted,
-                    modifier = Modifier.size(14.dp)
-                )
-                Spacer(Modifier.width(6.dp))
-                Text("Ahora", fontSize = 10.5.sp, color = tokens.muted)
+                Box(
+                    Modifier.size(31.dp).clip(CircleShape)
+                        .background(tokens.accentSoft),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Rounded.EventAvailable,
+                        contentDescription = null,
+                        tint = tokens.accent,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                Spacer(Modifier.width(10.dp))
+                Column {
+                    Text(
+                        "Tu día está abierto",
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = tokens.text
+                    )
+                    Text(
+                        "Añade algo con + o déjalo libre.",
+                        fontSize = 9.5.sp,
+                        color = tokens.muted
+                    )
+                }
             }
         }
 
@@ -680,6 +729,7 @@ private fun PlannerTimeline(
     val now = LocalTime.now()
     val nowMinutes = now.hour * 60 + now.minute
     val gaps = remember(items) { freeGaps(items, startHour * 60, (endHour + 1) * 60) }
+    val gridLine = if (tokens.isDark) tokens.line.copy(alpha = .78f) else tokens.line.copy(alpha = .98f)
 
     BoxWithConstraints(
         Modifier.fillMaxWidth().height(totalHeight).drawBehind {
@@ -687,14 +737,14 @@ private fun PlannerTimeline(
             for (i in 0..(endHour - startHour)) {
                 val y = i * hourPx
                 drawLine(
-                    tokens.line.copy(alpha = .78f),
+                    gridLine,
                     start = androidx.compose.ui.geometry.Offset(50.dp.toPx(), y),
                     end = androidx.compose.ui.geometry.Offset(size.width, y),
                     strokeWidth = 1f
                 )
             }
             drawLine(
-                tokens.line,
+                gridLine,
                 start = androidx.compose.ui.geometry.Offset(49.dp.toPx(), 0f),
                 end = androidx.compose.ui.geometry.Offset(49.dp.toPx(), size.height),
                 strokeWidth = 1f
@@ -711,7 +761,7 @@ private fun PlannerTimeline(
             )
         }
 
-        gaps.filter { it.duration >= 75 }.forEach { gap ->
+        if (items.isNotEmpty()) gaps.filter { it.duration >= 75 }.forEach { gap ->
             val midpoint = gap.start + gap.duration / 2
             val top = timelineOffset(midpoint, startHour, hourHeight)
             Row(
@@ -892,17 +942,23 @@ private fun PlannerWeekView(
                         color = tokens.dim
                     )
                 }
-                Box(
-                    Modifier.size(32.dp).clip(CircleShape)
+                Row(
+                    Modifier.clip(CircleShape)
                         .background(phaseDot(day?.phase).copy(alpha = .08f))
-                        .border(.8.dp, phaseDot(day?.phase).copy(alpha = .55f), CircleShape),
-                    contentAlignment = Alignment.Center
+                        .border(.8.dp, phaseDot(day?.phase).copy(alpha = .45f), CircleShape)
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Box(
+                        Modifier.size(5.dp).clip(CircleShape)
+                            .background(phaseDot(day?.phase))
+                    )
+                    Spacer(Modifier.width(5.dp))
                     Text(
-                        phaseShort(day?.phase),
-                        fontSize = 8.sp,
+                        phaseCompactName(day?.phase),
+                        fontSize = 8.2.sp,
                         color = tokens.muted,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }
@@ -1190,46 +1246,42 @@ private fun PlannerCreateSheet(
                     shape = RoundedCornerShape(13.dp)
                 )
                 Spacer(Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = time,
+                    onValueChange = { time = it.take(5) },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Hora") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(13.dp)
+                )
+                Spacer(Modifier.height(10.dp))
+                Text("Duración", fontSize = 9.5.sp, color = tokens.muted)
+                Spacer(Modifier.height(6.dp))
                 Row(
                     Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(9.dp)
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
-                    OutlinedTextField(
-                        value = time,
-                        onValueChange = { time = it.take(5) },
-                        modifier = Modifier.weight(1f),
-                        label = { Text("Hora") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(13.dp)
-                    )
-                    Column(Modifier.weight(1f)) {
-                        Text("Duración", fontSize = 9.5.sp, color = tokens.muted)
-                        Spacer(Modifier.height(5.dp))
-                        Row(
-                            Modifier.horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    listOf(15, 30, 45, 60, 90).forEach { value ->
+                        val label = when (value) {
+                            60 -> "1 h"
+                            90 -> "1½ h"
+                            else -> "$value m"
+                        }
+                        Box(
+                            Modifier.weight(1f).clip(CircleShape)
+                                .background(
+                                    if (duration == value) tokens.accentSoft else tokens.panel2
+                                )
+                                .border(
+                                    .8.dp,
+                                    if (duration == value) tokens.accent else tokens.line,
+                                    CircleShape
+                                )
+                                .clickable { duration = value }
+                                .padding(vertical = 9.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            listOf(15, 30, 45, 60, 90).forEach { value ->
-                                Box(
-                                    Modifier.clip(CircleShape)
-                                        .background(
-                                            if (duration == value) tokens.accentSoft else tokens.panel2
-                                        )
-                                        .border(
-                                            .8.dp,
-                                            if (duration == value) tokens.accent else tokens.line,
-                                            CircleShape
-                                        )
-                                        .clickable { duration = value }
-                                        .padding(horizontal = 9.dp, vertical = 9.dp)
-                                ) {
-                                    Text(
-                                        if (value < 60) "$value m"
-                                        else if (value == 60) "1 h" else "1½ h",
-                                        fontSize = 9.sp
-                                    )
-                                }
-                            }
+                            Text(label, fontSize = 8.8.sp, maxLines = 1)
                         }
                     }
                 }
@@ -1448,12 +1500,12 @@ private fun phaseName(phase: CyclePhase?): String = when (phase) {
     else -> "Sin datos del ciclo"
 }
 
-private fun phaseShort(phase: CyclePhase?): String = when (phase) {
-    CyclePhase.MENSTRUAL -> "P"
-    CyclePhase.OVULATION -> "F"
-    CyclePhase.FOLLICULAR -> "Fo"
-    CyclePhase.LUTEAL -> "L"
-    else -> "·"
+private fun phaseCompactName(phase: CyclePhase?): String = when (phase) {
+    CyclePhase.MENSTRUAL -> "Periodo"
+    CyclePhase.OVULATION -> "Fértil"
+    CyclePhase.FOLLICULAR -> "Folicular"
+    CyclePhase.LUTEAL -> "Lútea"
+    else -> "Sin fase"
 }
 
 @Composable
