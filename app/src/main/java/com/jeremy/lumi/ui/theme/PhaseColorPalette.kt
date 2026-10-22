@@ -67,14 +67,14 @@ enum class PhaseColorPalette {
             AppThemePalette.LUMI_SPARK      -> PhaseMonocromoLight
             AppThemePalette.LUMI_SPARK_DARK -> PhaseMonocromoDark
             // Lavanda y sus variantes
-            AppThemePalette.LUMI_LAVENDER, AppThemePalette.LUMI_LAVENDER_DARK ->
-                if (isDark) PhaseMonocromoDark else PhaseMonocromoLight
+            AppThemePalette.LUMI_LAVENDER -> PhaseLumiLavandaLight
+            AppThemePalette.LUMI_LAVENDER_DARK -> PhaseMonocromoDark
             AppThemePalette.LAVANDA -> PhaseLumiLavandaLight
             // Oscuros violeta/rosa
             AppThemePalette.MEDIANOCHE -> PhaseMonocromoDark
             AppThemePalette.NOCHE_ROSA -> PhaseMonocromoDark
             AppThemePalette.CIRUELA -> PhaseLumiCiruelaDark
-            AppThemePalette.VINO -> PhaseMonocromoDark
+            AppThemePalette.VINO -> PhaseLumiCiruelaDark
             // Pastel rosa
             AppThemePalette.PETALO -> PhaseLumiPetaloLight
             AppThemePalette.SAL    -> PhasePastelLight
@@ -84,8 +84,8 @@ enum class PhaseColorPalette {
 
             // ── Familia Océano / Azul / Frío — OCEANO ─────────────────────────
             AppThemePalette.INDIGO -> PhaseLumiIndigoDark
-            AppThemePalette.LUMI_OCEAN, AppThemePalette.LUMI_OCEAN_DARK ->
-                if (isDark) PhaseOceanoGradientDark else PhaseOceanoGradientLight
+            AppThemePalette.LUMI_OCEAN_DARK -> PhaseLumiIndigoDark
+            AppThemePalette.LUMI_OCEAN -> PhaseOceanoGradientLight
             AppThemePalette.LUMI_SLATE, AppThemePalette.LUMI_SLATE_DARK ->
                 if (isDark) PhaseOceanoDark else PhaseOceanoLight
             AppThemePalette.COSMOS -> PhaseOceanoGradientDark
@@ -98,10 +98,10 @@ enum class PhaseColorPalette {
             // ── Familia Verde / Naturaleza — BOSQUE ───────────────────────────
             AppThemePalette.BOSQUE -> PhaseLumiBosqueDark
             AppThemePalette.SALVIA -> PhaseLumiSalviaLight
-            AppThemePalette.LUMI_FOREST, AppThemePalette.LUMI_FOREST_DARK ->
-                if (isDark) PhaseBosqueGradientDark else PhaseBosqueGradientLight
-            AppThemePalette.LUMI_SAGE, AppThemePalette.LUMI_SAGE_DARK ->
-                if (isDark) PhaseBosqueGradientDark else PhaseBosqueGradientLight
+            AppThemePalette.LUMI_FOREST_DARK -> PhaseLumiBosqueDark
+            AppThemePalette.LUMI_FOREST -> PhaseBosqueGradientLight
+            AppThemePalette.LUMI_SAGE -> PhaseLumiSalviaLight
+            AppThemePalette.LUMI_SAGE_DARK -> PhaseBosqueGradientDark
             AppThemePalette.CACTUS    -> PhaseBosqueGradientLight
             AppThemePalette.OBSIDIANA -> PhaseBosqueGradientDark  // Teal profundo
 
@@ -121,7 +121,7 @@ enum class PhaseColorPalette {
             AppThemePalette.LUXE   -> PhaseTierraLight  // Burdeos + beige cálido
             AppThemePalette.LIENZO -> PhaseTierraLight  // Beige artístico
             AppThemePalette.MARFIL -> PhaseLumiMarfilLight
-            AppThemePalette.ARENA  -> PhaseTierraLight  // Arena neutra cálida
+            AppThemePalette.ARENA  -> PhaseLumiMarfilLight  // Alias legado de Marfil
             AppThemePalette.AMBAR  -> PhaseTierraDark   // Ámbar oscuro
             AppThemePalette.HUMO   -> PhaseTierraLight  // Gris cálido
 
