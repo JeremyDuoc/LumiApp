@@ -69,20 +69,22 @@ enum class PhaseColorPalette {
             // Lavanda y sus variantes
             AppThemePalette.LUMI_LAVENDER, AppThemePalette.LUMI_LAVENDER_DARK ->
                 if (isDark) PhaseMonocromoDark else PhaseMonocromoLight
-            AppThemePalette.LAVANDA -> PhaseMonocromoLight
+            AppThemePalette.LAVANDA -> PhaseLumiLavandaLight
             // Oscuros violeta/rosa
             AppThemePalette.MEDIANOCHE -> PhaseMonocromoDark
             AppThemePalette.NOCHE_ROSA -> PhaseMonocromoDark
-            AppThemePalette.CIRUELA, AppThemePalette.VINO -> PhaseMonocromoDark
+            AppThemePalette.CIRUELA -> PhaseLumiCiruelaDark
+            AppThemePalette.VINO -> PhaseMonocromoDark
             // Pastel rosa
-            AppThemePalette.PETALO -> PhasePastelLight
+            AppThemePalette.PETALO -> PhaseLumiPetaloLight
             AppThemePalette.SAL    -> PhasePastelLight
             // Ciclo menstrual (rosa fuerte → colores de fase más cálidos)
             AppThemePalette.CYCLE_MENSTRUAL      -> PhaseDefaultLight
             AppThemePalette.CYCLE_MENSTRUAL_DARK -> PhaseDefaultDark
 
             // ── Familia Océano / Azul / Frío — OCEANO ─────────────────────────
-            AppThemePalette.INDIGO, AppThemePalette.LUMI_OCEAN, AppThemePalette.LUMI_OCEAN_DARK ->
+            AppThemePalette.INDIGO -> PhaseLumiIndigoDark
+            AppThemePalette.LUMI_OCEAN, AppThemePalette.LUMI_OCEAN_DARK ->
                 if (isDark) PhaseOceanoGradientDark else PhaseOceanoGradientLight
             AppThemePalette.LUMI_SLATE, AppThemePalette.LUMI_SLATE_DARK ->
                 if (isDark) PhaseOceanoDark else PhaseOceanoLight
@@ -94,9 +96,11 @@ enum class PhaseColorPalette {
             AppThemePalette.CYCLE_OVULATION_DARK -> PhaseOceanoGradientDark
 
             // ── Familia Verde / Naturaleza — BOSQUE ───────────────────────────
-            AppThemePalette.BOSQUE, AppThemePalette.LUMI_FOREST, AppThemePalette.LUMI_FOREST_DARK ->
+            AppThemePalette.BOSQUE -> PhaseLumiBosqueDark
+            AppThemePalette.SALVIA -> PhaseLumiSalviaLight
+            AppThemePalette.LUMI_FOREST, AppThemePalette.LUMI_FOREST_DARK ->
                 if (isDark) PhaseBosqueGradientDark else PhaseBosqueGradientLight
-            AppThemePalette.SALVIA, AppThemePalette.LUMI_SAGE, AppThemePalette.LUMI_SAGE_DARK ->
+            AppThemePalette.LUMI_SAGE, AppThemePalette.LUMI_SAGE_DARK ->
                 if (isDark) PhaseBosqueGradientDark else PhaseBosqueGradientLight
             AppThemePalette.CACTUS    -> PhaseBosqueGradientLight
             AppThemePalette.OBSIDIANA -> PhaseBosqueGradientDark  // Teal profundo
@@ -116,7 +120,8 @@ enum class PhaseColorPalette {
             AppThemePalette.TIERRA -> PhaseTierraLight
             AppThemePalette.LUXE   -> PhaseTierraLight  // Burdeos + beige cálido
             AppThemePalette.LIENZO -> PhaseTierraLight  // Beige artístico
-            AppThemePalette.MARFIL, AppThemePalette.ARENA  -> PhaseTierraLight  // Arena neutra cálida
+            AppThemePalette.MARFIL -> PhaseLumiMarfilLight
+            AppThemePalette.ARENA  -> PhaseTierraLight  // Arena neutra cálida
             AppThemePalette.AMBAR  -> PhaseTierraDark   // Ámbar oscuro
             AppThemePalette.HUMO   -> PhaseTierraLight  // Gris cálido
 
@@ -125,7 +130,7 @@ enum class PhaseColorPalette {
             AppThemePalette.PIZARRA -> PhaseMinimalistaLight
             AppThemePalette.PIEDRA  -> PhaseMinimalistaLight
             AppThemePalette.CENIZA  -> PhaseMinimalistaLight
-            AppThemePalette.NOIR    -> PhaseMinimalistaDark
+            AppThemePalette.NOIR    -> PhaseLumiNoirDark
 
             // Fallback: cualquier tema sin asignación explícita
             else -> if (isDark) PhaseDefaultDark else PhaseDefaultLight
@@ -154,8 +159,81 @@ enum class PhaseColorPalette {
      * armonizar con el tema).
      */
     fun toSemanticPhaseColors(isDark: Boolean): PhaseColors =
-        if (isDark) PhaseDefaultDark else PhaseDefaultLight
+        if (isDark) PhaseSemanticDark else PhaseSemanticLight
 }
+
+// ── LUMI 2026 · semántica coherente entre los 8 temas oficiales ──────────────
+// La identidad del tema cambia; el significado no:
+// periodo = rosa, folicular = arena/dorado, fértil = verde/menta, lútea = violeta.
+val PhaseSemanticLight = PhaseColors(
+    menstrual  = Color(0xFFB65C7A),
+    follicular = Color(0xFF9B763F),
+    ovulation  = Color(0xFF4F8B76),
+    luteal     = Color(0xFF775AA0)
+)
+
+val PhaseSemanticDark = PhaseColors(
+    menstrual  = Color(0xFFE49AB4),
+    follicular = Color(0xFFD9B778),
+    ovulation  = Color(0xFF8FC4AA),
+    luteal     = Color(0xFFB29BD5)
+)
+
+val PhaseLumiNoirDark = PhaseColors(
+    menstrual  = Color(0xFFDFA1BC),
+    follicular = Color(0xFFD8B879),
+    ovulation  = Color(0xFF8FC5AF),
+    luteal     = Color(0xFFB8A0D7)
+)
+
+val PhaseLumiCiruelaDark = PhaseColors(
+    menstrual  = Color(0xFFE28DAE),
+    follicular = Color(0xFFD9B77F),
+    ovulation  = Color(0xFF91BFA8),
+    luteal     = Color(0xFFBE9BC8)
+)
+
+val PhaseLumiBosqueDark = PhaseColors(
+    menstrual  = Color(0xFFD58B9E),
+    follicular = Color(0xFFCDB374),
+    ovulation  = Color(0xFF79B99A),
+    luteal     = Color(0xFFA698C5)
+)
+
+val PhaseLumiIndigoDark = PhaseColors(
+    menstrual  = Color(0xFFD095B8),
+    follicular = Color(0xFFCFB67B),
+    ovulation  = Color(0xFF84BDB7),
+    luteal     = Color(0xFFAABBF6)
+)
+
+val PhaseLumiPetaloLight = PhaseColors(
+    menstrual  = Color(0xFFB85F82),
+    follicular = Color(0xFFA77D42),
+    ovulation  = Color(0xFF5A907C),
+    luteal     = Color(0xFF805FA4)
+)
+
+val PhaseLumiMarfilLight = PhaseColors(
+    menstrual  = Color(0xFFA75F67),
+    follicular = Color(0xFF9A743F),
+    ovulation  = Color(0xFF638674),
+    luteal     = Color(0xFF7B628C)
+)
+
+val PhaseLumiSalviaLight = PhaseColors(
+    menstrual  = Color(0xFFA45F74),
+    follicular = Color(0xFF8D7443),
+    ovulation  = Color(0xFF4F8069),
+    luteal     = Color(0xFF70688E)
+)
+
+val PhaseLumiLavandaLight = PhaseColors(
+    menstrual  = Color(0xFFA46086),
+    follicular = Color(0xFF997441),
+    ovulation  = Color(0xFF5B897C),
+    luteal     = Color(0xFF7557A2)
+)
 
 // ── DEFAULT · la paleta original de Lumi ──────────────────────────────────────
 val PhaseDefaultLight = PhaseColors(
