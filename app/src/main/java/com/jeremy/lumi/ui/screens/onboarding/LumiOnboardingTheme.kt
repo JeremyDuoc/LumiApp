@@ -90,7 +90,17 @@ enum class LumiOnboardingTheme(
         }
 
         fun fromAppTheme(palette: AppThemePalette): LumiOnboardingTheme {
-            return entries.find { it.appThemePalette == palette } ?: NOIR
+            return when (palette) {
+                AppThemePalette.NOIR -> NOIR
+                AppThemePalette.CIRUELA, AppThemePalette.VINO -> CIRUELA
+                AppThemePalette.BOSQUE, AppThemePalette.LUMI_FOREST, AppThemePalette.LUMI_FOREST_DARK -> BOSQUE
+                AppThemePalette.INDIGO, AppThemePalette.LUMI_OCEAN, AppThemePalette.LUMI_OCEAN_DARK -> INDIGO
+                AppThemePalette.PETALO -> PETALO
+                AppThemePalette.MARFIL, AppThemePalette.ARENA -> MARFIL
+                AppThemePalette.SALVIA, AppThemePalette.LUMI_SAGE, AppThemePalette.LUMI_SAGE_DARK, AppThemePalette.CACTUS -> SALVIA
+                AppThemePalette.LAVANDA, AppThemePalette.LUMI_LAVENDER, AppThemePalette.LUMI_LAVENDER_DARK -> LAVANDA
+                else -> entries.find { it.appThemePalette == palette } ?: NOIR
+            }
         }
     }
 }
