@@ -129,7 +129,7 @@
     <string name="cal_current_phase_label">Phase : %1$s</string>
     <string name="cal_cycle_day">Jour %1$d sur %2$d</string>
     <string name="cal_fri">V</string>
-    <string name="cal_legend_explanation">L\'ovulation est calculée 14 jours avant la fin estimée de ton cycle.</string>
+    <string name="cal_legend_explanation">Les phases et dates fertiles sont estimées par calendrier. Elles ne confirment pas l\'ovulation et n\'indiquent pas de jours sûrs pour éviter une grossesse.</string>
     <string name="cal_legend_intercourse">Rapport sexuel</string>
     <string name="cal_legend_prediction">Prédiction estimée</string>
     <string name="cal_legend_title">Légende du calendrier</string>
@@ -169,7 +169,7 @@
     <string name="chat_label_supply">Rappel</string>
     <string name="chat_messages_title">Messages</string>
     <string name="chat_pattern_message">J\'ai remarqué une tendance : ces derniers mois, tu as signalé « %1$s » exactement %2$d jours avant tes règles. Souhaites-tu que je te le rappelle lors de ton prochain cycle pour t\'y préparer ?</string>
-    <string name="chat_proactive_ovulation">Tu es tout près de ta fenêtre de fertilité et de ton ovulation. Il est courant de ressentir un regain d\'énergie ou des variations de température. Comment te sens-tu aujourd\'hui ?</string>
+    <string name="chat_proactive_ovulation">Ton calendrier suggère une période fertile proche, mais ne peut pas confirmer l\'ovulation. Comment te sens-tu ces derniers jours ?</string>
     <string name="chat_proactive_period">Bonjour, j\'ai remarqué que tes règles pourraient arriver dans les %1$d prochains jours. As-tu ressenti des sautes d\'humeur ou des crampes ?</string>
     <string name="chat_send_cd">Envoyer</string>
     <string name="chat_status_history">Historique</string>
@@ -215,7 +215,7 @@
     <string name="desc_follicular">Énergie élevée et humeur au beau fixe. Les symptômes physiques diminuent.</string>
     <string name="desc_luteal">Baisse des hormones. Possibles sautes d\'humeur, fringales et symptômes physiques.</string>
     <string name="desc_menstrual">Baisse d\'énergie, humeur changeante. Les symptômes physiques sont normaux.</string>
-    <string name="desc_ovulation">Énergie et confiance au sommet. Pic hormonal maximal.</string>
+    <string name="desc_ovulation">Période fertile estimée à partir du cycle ; l\'ovulation n\'est pas confirmée.</string>
     <string name="desc_pregnancy">Grossesse</string>
     <string name="desc_unknown">Enregistre tes prochaines règles pour synchroniser ton cycle.</string>
     <string name="dialog_pregnancy_birth">Naissance</string>
@@ -309,13 +309,13 @@
     <string name="home_insight_badge">Aperçu du jour</string>
     <string name="home_insight_cd">Aperçu IA</string>
     <string name="home_insight_discreet">Mode discret activé. Tes données sont protégées.</string>
-    <string name="home_insight_follicular">Tes niveaux d\'œstrogène augmentent. Tu ressentiras plus d\'énergie, une meilleure humeur et une créativité décuplée. Profite de cet élan !</string>
-    <string name="home_insight_luteal_1">Ton énergie s\'apaise doucement. C\'est le moment idéal pour les tâches ciblées et l\'organisation personnelle.</string>
-    <string name="home_insight_luteal_2">Ton corps se prépare pour le prochain cycle. Tu pourrais remarquer des sautes d\'humeur ou une baisse d\'énergie. Prends les choses avec douceur.</string>
+    <string name="home_insight_follicular">Le calendrier situe ce jour dans la phase folliculaire estimée. Comment est ton énergie aujourd\'hui ? Noter ton ressenti peut aider à reconnaître tes propres tendances.</string>
+    <string name="home_insight_luteal_1">Ton calendrier estime la phase lutéale. Les ressentis varient : note ton humeur et ton énergie pour découvrir tes tendances.</string>
+    <string name="home_insight_luteal_2">Tes règles estimées approchent. Si tu remarques des changements, tu peux les noter et les comparer entre cycles.</string>
     <string name="home_insight_luteal_window">Tes règles arrivent généralement dans une période estimée. Une variation de quelques jours est biologiquement normale. Garde tes protections à portée de main et privilégie le repos.</string>
-    <string name="home_insight_menstrual_1">Ton corps fournit beaucoup d\'efforts. Il est tout à fait normal de manquer d\'énergie et d\'avoir besoin de plus de repos aujourd\'hui.</string>
-    <string name="home_insight_menstrual_2">Le flux commencera bientôt à diminuer. N\'oublie pas de bien t\'hydrater et d\'être bienveillante envers toi-même.</string>
-    <string name="home_insight_ovulation">Tu es à ton pic d\'énergie et de rayonnement. C\'est un excellent moment pour échanger avec les autres et relever de grands défis.</string>
+    <string name="home_insight_menstrual_1">Si tu as tes règles, ton expérience est personnelle. Note tes symptômes et repose-toi si tu en as besoin.</string>
+    <string name="home_insight_menstrual_2">La durée et l\'intensité des saignements peuvent varier. Note ce que tu observes sans présumer que le flux diminuera aujourd\'hui.</string>
+    <string name="home_insight_ovulation">Ton calendrier estime une période fertile autour de ces jours. L\'ovulation réelle peut survenir à une autre date ; écoute ton ressenti.</string>
     <string name="home_insight_title">Aperçu Lumi</string>
     <string name="home_insight_unknown">Commence à enregistrer tes règles pour découvrir ce qui se passe dans ton corps.</string>
     <string name="home_link_chip">Associer</string>
@@ -1020,7 +1020,7 @@
     <string name="phase_advice_follicular">Son énergie et sa créativité sont en hausse. Moment idéal pour partager des aventures à deux !</string>
     <string name="phase_advice_luteal">Elle peut se sentir fatiguée ou plus sensible (SPM). Fais preuve de patience, d\'écoute et d\'attention.</string>
     <string name="phase_advice_menstrual">Elle a souvent besoin de repos et de réconfort. Prépare-lui une boisson chaude ou regardez un film ensemble.</string>
-    <string name="phase_advice_ovulation">Jours de pleine énergie, d\'assurance et d\'éclat. Profitez pleinement de cette belle étape ensemble !</string>
+    <string name="phase_advice_ovulation">La période fertile est une estimation, pas un contraceptif. Note ton ressenti sans supposer que ton énergie dépend de la phase.</string>
     <string name="phase_advice_pregnancy">Un moment précieux. Sois présent(e), attentionné(e) et prêt(e) à l\'épauler au quotidien.</string>
     <string name="phase_advice_unknown">Nous n\'avons pas encore assez de données sur le cycle.</string>
     <string name="phase_follicular">Folliculaire</string>
@@ -1638,4 +1638,32 @@
         <item>Tes enregistrements montrent que %1$s est %.1fx plus susceptible de survenir pendant ta phase %2$s par rapport au reste du cycle. Tu peux désormais l\'anticiper et t\'y préparer. 💜</item>
         <item>J\'ai constaté que %1$s se manifeste bien plus souvent durant ta phase %2$s. Ce profil t\'est propre : tu as maintenant une longueur d\'avance. 🌸</item>
     </string-array>
+    <string name="lumi_cal_title_start">Ton</string>
+    <string name="lumi_cal_title_end">calendrier</string>
+    <string name="lumi_cal_subtitle">Ton cycle, jour après jour.</string>
+    <string name="lumi_cal_more_options">Plus d’options du calendrier</string>
+    <string name="lumi_cal_explain_colors">Signification des couleurs</string>
+    <string name="lumi_cal_record_day">Noter la journée</string>
+    <string name="lumi_cal_view_log">Voir la note</string>
+    <string name="lumi_cal_legend_period">Règles</string>
+    <string name="lumi_cal_legend_fertile">Fertile est.</string>
+    <string name="lumi_cal_legend_record">Noté</string>
+    <string name="lumi_cal_choose_day">Choisir un jour</string>
+    <string name="lumi_cal_no_cycle">Aucune information sur le cycle ce jour</string>
+    <string name="lumi_cal_estimate_phase">Estimation · %1$s</string>
+    <string name="lumi_cal_day_logged">Tu as une note pour ce jour</string>
+    <string name="lumi_cal_day_empty">Aucune note pour ce jour</string>
+    <string name="lumi_cal_day_logged_hint">Tu peux consulter ou modifier ta note.</string>
+    <string name="lumi_cal_day_empty_hint">Choisis Noter pour indiquer comment tu te sens.</string>
+    <string name="lumi_cal_week_title">Ta semaine</string>
+    <string name="lumi_cal_view_month">Voir le mois</string>
+    <string name="lumi_cal_today_phase">Aujourd’hui · %1$s</string>
+    <string name="lumi_cal_week_no_cycle">Aucune donnée du cycle</string>
+    <string name="lumi_cal_a11y_today">%1$d, aujourd’hui</string>
+    <string name="lumi_cal_a11y_prediction">%1$d, estimation future</string>
+    <string name="lumi_cal_a11y_logged">%1$d, avec note</string>
+    <string name="lumi_cal_a11y_empty">%1$d, sans note</string>
+    <string name="lumi_cal_week_intro">Ta</string>
+    <string name="lumi_cal_week_focus">semaine</string>
+    <string name="lumi_selected_day_phase">Phase du jour sélectionné</string>
 </resources>

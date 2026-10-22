@@ -58,14 +58,14 @@ data class ThemeAtmosphereOption(
 )
 
 val AllThemeAtmospheres = listOf(
-    ThemeAtmosphereOption(AppThemePalette.NOIR, "Noir", true, Color(0xFF0E0C13), Color(0xFFCBB4F1)),
-    ThemeAtmosphereOption(AppThemePalette.CIRUELA, "Ciruela", true, Color(0xFF241D29), Color(0xFFE8ADC8)),
-    ThemeAtmosphereOption(AppThemePalette.BOSQUE, "Bosque", true, Color(0xFF17231F), Color(0xFFA3D4BD)),
-    ThemeAtmosphereOption(AppThemePalette.INDIGO, "Índigo", true, Color(0xFF1A2037), Color(0xFFC0C9FF)),
-    ThemeAtmosphereOption(AppThemePalette.PETALO, "Pétalo", false, Color(0xFFFFF5F8), Color(0xFFCD9AC9)),
-    ThemeAtmosphereOption(AppThemePalette.MARFIL, "Marfil", false, Color(0xFFFFF9EF), Color(0xFFC99193)),
-    ThemeAtmosphereOption(AppThemePalette.SALVIA, "Salvia", false, Color(0xFFE4EEE7), Color(0xFF648F76)),
-    ThemeAtmosphereOption(AppThemePalette.LAVANDA, "Lavanda", false, Color(0xFFF8F1FF), Color(0xFF9B7CC5))
+    ThemeAtmosphereOption(AppThemePalette.NOIR, "Noir", true, Color(0xFF0B0A0F), Color(0xFFC9A7E8)),
+    ThemeAtmosphereOption(AppThemePalette.CIRUELA, "Ciruela", true, Color(0xFF120A10), Color(0xFFE29DBF)),
+    ThemeAtmosphereOption(AppThemePalette.BOSQUE, "Bosque", true, Color(0xFF09110F), Color(0xFF83C5A5)),
+    ThemeAtmosphereOption(AppThemePalette.INDIGO, "Índigo", true, Color(0xFF090E1C), Color(0xFFAABBF6)),
+    ThemeAtmosphereOption(AppThemePalette.PETALO, "Pétalo", false, Color(0xFFFBF5F7), Color(0xFF985A89)),
+    ThemeAtmosphereOption(AppThemePalette.MARFIL, "Marfil", false, Color(0xFFF8F2E8), Color(0xFF8F6063)),
+    ThemeAtmosphereOption(AppThemePalette.SALVIA, "Salvia", false, Color(0xFFEEF4F0), Color(0xFF49745F)),
+    ThemeAtmosphereOption(AppThemePalette.LAVANDA, "Lavanda", false, Color(0xFFF4F1FA), Color(0xFF7557A2))
 )
 
 // Alias para retrocompatibilidad

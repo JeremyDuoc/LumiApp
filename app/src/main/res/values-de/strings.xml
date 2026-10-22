@@ -129,7 +129,7 @@
     <string name="cal_current_phase_label">Phase: %1$s</string>
     <string name="cal_cycle_day">Tag %1$d von %2$d</string>
     <string name="cal_fri">F</string>
-    <string name="cal_legend_explanation">Der Eisprung wird als 14 Tage vor dem geschätzten Zyklusende berechnet.</string>
+    <string name="cal_legend_explanation">Fruchtbare Tage und Phasen sind Kalenderschätzungen. Sie bestätigen keinen Eisprung und zeigen keine sicheren Tage zur Schwangerschaftsvermeidung.</string>
     <string name="cal_legend_intercourse">Geschlechtsverkehr</string>
     <string name="cal_legend_prediction">Geschätzte Prognose</string>
     <string name="cal_legend_title">Kalenderlegende</string>
@@ -169,7 +169,7 @@
     <string name="chat_label_supply">Erinnerung</string>
     <string name="chat_messages_title">Nachrichten</string>
     <string name="chat_pattern_message">Ich habe ein Muster bemerkt: In den letzten Monaten hast du genau %2$d Tage vor deiner Periode \'%1$s\' eingetragen. Möchtest du im nächsten Zyklus daran erinnert werden, um vorbereitet zu sein?</string>
-    <string name="chat_proactive_ovulation">Du bist ganz nah an deinem fruchtbaren Fenster und Eisprung. Es ist ganz natürlich, Energiespitzen oder Temperaturveränderungen zu spüren. Wie hast du dich heute gefühlt?</string>
+    <string name="chat_proactive_ovulation">Dein Kalender schätzt ein nahendes fruchtbares Fenster, kann aber den Eisprung nicht bestätigen. Wie ging es dir in letzter Zeit?</string>
     <string name="chat_proactive_period">Hallo, ich habe bemerkt, dass deine Periode in den nächsten %1$d Tagen einsetzen könnte. Hast du Stimmungsschwankungen oder Regelschmerzen bemerkt?</string>
     <string name="chat_send_cd">Senden</string>
     <string name="chat_status_history">Verlauf</string>
@@ -215,7 +215,7 @@
     <string name="desc_follicular">Viel Energie und gehobene Stimmung. Körperliche Symptome lassen nach.</string>
     <string name="desc_luteal">Die Hormone sinken. Mögliche Stimmungsschwankungen, Heißhunger und PMS-Symptome.</string>
     <string name="desc_menstrual">Geringe Energie, Stimmungsschwankungen. Körperliche Symptome sind normal.</string>
-    <string name="desc_ovulation">Viel Energie und Selbstvertrauen. Maximaler Hormonanstieg.</string>
+    <string name="desc_ovulation">Aus Zyklusdaten geschätztes fruchtbares Fenster; der Eisprung ist nicht bestätigt.</string>
     <string name="desc_pregnancy">Schwangerschaft</string>
     <string name="desc_unknown">Erfasse deine nächste Periode, um deinen Zyklus zu synchronisieren.</string>
     <string name="dialog_pregnancy_birth">Geburt</string>
@@ -309,13 +309,13 @@
     <string name="home_insight_badge">Einblick des Tages</string>
     <string name="home_insight_cd">KI-Einblick</string>
     <string name="home_insight_discreet">Diskreter Modus aktiv. Deine Daten sind geschützt.</string>
-    <string name="home_insight_follicular">Dein Östrogenspiegel steigt. Du wirst mehr Energie, bessere Laune und mehr Kreativität spüren. Nutze den Schwung!</string>
-    <string name="home_insight_luteal_1">Deine Energie wird ruhiger. Ein guter Moment für konzentrierte Aufgaben und persönliche Organisation.</string>
-    <string name="home_insight_luteal_2">Dein Körper bereitet sich auf den nächsten Zyklus vor. Du bemerkst vielleicht Stimmungsschwankungen oder weniger Energie. Lass es ruhig angehen.</string>
+    <string name="home_insight_follicular">Dein Kalender schätzt für heute die Follikelphase. Wie fühlst du dich? Notiere deine Energie, um deine eigenen Muster zu erkennen.</string>
+    <string name="home_insight_luteal_1">Dein Kalender schätzt die Lutealphase. Jede Person erlebt sie anders. Notiere Stimmung und Energie, um deine Muster kennenzulernen.</string>
+    <string name="home_insight_luteal_2">Deine geschätzte Periode rückt näher. Falls du Veränderungen bemerkst, kannst du sie über mehrere Zyklen vergleichen.</string>
     <string name="home_insight_luteal_window">Deine Periode setzt meist innerhalb eines geschätzten Zeitfensters ein. Eine Schwankung von ein paar Tagen ist biologisch völlig normal. Halte deine Menstruationsartikel griffbereit und gönne dir Ruhe.</string>
-    <string name="home_insight_menstrual_1">Dein Körper leistet gerade viel. Es ist völlig normal, sich kraftlos zu fühlen und heute mehr Ruhe zu brauchen.</string>
-    <string name="home_insight_menstrual_2">Die Blutung wird bald nachlassen. Denk daran, genug zu trinken und achtsam mit dir umzugehen.</string>
-    <string name="home_insight_ovulation">Du bist auf dem Höhepunkt deiner Energie und Ausstrahlung. Eine wunderbare Zeit, um dich mit anderen zu verbinden und große Pläne anzugehen.</string>
+    <string name="home_insight_menstrual_1">Falls du gerade menstruierst, ist deine Erfahrung individuell. Notiere Symptome und ruhe dich bei Bedarf aus.</string>
+    <string name="home_insight_menstrual_2">Dauer und Stärke der Blutung können variieren. Halte fest, was du beobachtest, ohne eine Abnahme für heute anzunehmen.</string>
+    <string name="home_insight_ovulation">Dein Kalender schätzt für diese Tage ein fruchtbares Fenster. Der Eisprung kann anders liegen. Achte darauf, wie du dich persönlich fühlst.</string>
     <string name="home_insight_title">Lumi Insight</string>
     <string name="home_insight_unknown">Beginne damit, deine Periode einzutragen, um zu entdecken, was in deinem Körper passiert.</string>
     <string name="home_link_chip">Verbinden</string>
@@ -1020,7 +1020,7 @@
     <string name="phase_advice_follicular">Energie und Kreativität steigen. Eine wunderbare Zeit für gemeinsame Unternehmungen!</string>
     <string name="phase_advice_luteal">Sie fühlt sich möglicherweise müde oder sensibel (PMS). Sei geduldig, verständnisvoll und schenke ihr Zuwendung.</string>
     <string name="phase_advice_menstrual">Jetzt braucht sie meist mehr Ruhe und sanfte Unterstützung. Mach ihr etwas Warmes oder schaut einen Film zusammen.</string>
-    <string name="phase_advice_ovulation">Tage voller Energie, Ausstrahlung und Selbstvertrauen. Genießt diese Phase gemeinsam.</string>
+    <string name="phase_advice_ovulation">Das fruchtbare Fenster ist nur eine Schätzung und keine Verhütungsmethode. Notiere, wie du dich fühlst, ohne auf eine bestimmte Energie je Phase zu schließen.</string>
     <string name="phase_advice_pregnancy">Eine besondere Zeit. Sei für sie da, umsorge sie liebevoll und unterstütze sie, wo immer du kannst.</string>
     <string name="phase_advice_unknown">Bislang liegen noch nicht genügend Zyklusdaten vor.</string>
     <string name="phase_follicular">Follikelphase</string>
@@ -1638,4 +1638,32 @@
         <item>Deine Einträge zeigen, dass %1$s während deiner Phase „%2$s“ %.1fx wahrscheinlicher ist als im restlichen Zyklus. So kannst du dich darauf einstellen und vorsorgen. 💜</item>
         <item>Ich habe festgestellt, dass %1$s in deiner Phase „%2$s“ deutlich häufiger auftritt. Dieses Muster ist ganz individuell – jetzt kannst du dich darauf vorbereiten. 🌸</item>
     </string-array>
+    <string name="lumi_cal_title_start">Dein</string>
+    <string name="lumi_cal_title_end">Kalender</string>
+    <string name="lumi_cal_subtitle">Dein Zyklus, Tag für Tag.</string>
+    <string name="lumi_cal_more_options">Weitere Kalenderoptionen</string>
+    <string name="lumi_cal_explain_colors">Bedeutung der Farben</string>
+    <string name="lumi_cal_record_day">Tag erfassen</string>
+    <string name="lumi_cal_view_log">Eintrag ansehen</string>
+    <string name="lumi_cal_legend_period">Periode</string>
+    <string name="lumi_cal_legend_fertile">Fruchtb. est.</string>
+    <string name="lumi_cal_legend_record">Eintrag</string>
+    <string name="lumi_cal_choose_day">Tag auswählen</string>
+    <string name="lumi_cal_no_cycle">Keine Zyklusdaten für diesen Tag</string>
+    <string name="lumi_cal_estimate_phase">Schätzung · %1$s</string>
+    <string name="lumi_cal_day_logged">Für diesen Tag gibt es einen Eintrag</string>
+    <string name="lumi_cal_day_empty">Für diesen Tag gibt es noch keinen Eintrag</string>
+    <string name="lumi_cal_day_logged_hint">Du kannst deinen Eintrag ansehen oder ändern.</string>
+    <string name="lumi_cal_day_empty_hint">Wähle Erfassen, um dein Befinden einzutragen.</string>
+    <string name="lumi_cal_week_title">Deine Woche</string>
+    <string name="lumi_cal_view_month">Monat ansehen</string>
+    <string name="lumi_cal_today_phase">Heute · %1$s</string>
+    <string name="lumi_cal_week_no_cycle">Keine Zyklusdaten</string>
+    <string name="lumi_cal_a11y_today">%1$d, heute</string>
+    <string name="lumi_cal_a11y_prediction">%1$d, zukünftige Schätzung</string>
+    <string name="lumi_cal_a11y_logged">%1$d, mit Eintrag</string>
+    <string name="lumi_cal_a11y_empty">%1$d, ohne Eintrag</string>
+    <string name="lumi_cal_week_intro">Deine</string>
+    <string name="lumi_cal_week_focus">Woche</string>
+    <string name="lumi_selected_day_phase">Phase des gewählten Tages</string>
 </resources>

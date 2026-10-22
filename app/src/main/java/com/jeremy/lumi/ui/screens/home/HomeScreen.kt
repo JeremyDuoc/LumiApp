@@ -70,9 +70,10 @@ fun HomeScreen(
     onNavigateToChat: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
     onNavigateToPartner: () -> Unit = {},
-    onNavigateToCalendar: () -> Unit = {},
+    onNavigateToCalendar: (LocalDate?) -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
+    plannerViewModel: com.jeremy.lumi.ui.screens.calendar.PlannerViewModel = hiltViewModel(),
     remindersViewModel: RemindersViewModel = hiltViewModel(),
     quickLogViewModel: QuickLogViewModel = hiltViewModel(),
     partnerViewModel: PartnerViewModel = hiltViewModel(),
@@ -82,6 +83,7 @@ fun HomeScreen(
     suppressBrandDuringHandoff: Boolean = false
 ) {
     val uiState           by viewModel.uiState.collectAsStateWithLifecycle()
+    val plannerState       by plannerViewModel.uiState.collectAsStateWithLifecycle()
     val tokens            = LumiThemeTokens.current
     val currentTheme      by settingsViewModel.currentTheme.collectAsStateWithLifecycle()
     var showThemeSheet    by remember { mutableStateOf(false) }
@@ -315,7 +317,7 @@ fun HomeScreen(
                         val phaseName = when (uiState.currentPhase) {
                             CyclePhase.MENSTRUAL -> stringResource(R.string.pm_phase_menstrual)
                             CyclePhase.FOLLICULAR -> stringResource(R.string.pm_phase_follicular)
-                            CyclePhase.OVULATION -> stringResource(R.string.pm_phase_ovulation)
+                            CyclePhase.OVULATION -> stringResource(R.string.phase_name_ovulation)
                             CyclePhase.LUTEAL -> stringResource(R.string.pm_phase_luteal)
                             else -> stringResource(R.string.phase_unknown)
                         }
@@ -336,6 +338,15 @@ fun HomeScreen(
                             phaseName = phaseName,
                             estimatedDaysText = estimatedDaysText,
                             confidenceLabel = confidenceLabel,
+                            dayContextLabel = uiState.selectedDate?.format(
+                                DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
+                            )?.uppercase(Locale.getDefault())
+                                ?: stringResource(R.string.cal_today_cd).uppercase(Locale.getDefault()),
+                            phaseContextLabel = stringResource(
+                                if (uiState.selectedDate != null &&
+                                    uiState.selectedDate != com.jeremy.lumi.utils.LumiClock.today()
+                                ) R.string.lumi_selected_day_phase else R.string.cal_current_phase
+                            ).uppercase(Locale.getDefault()),
                             onConfidenceClick = { showPredictionInfoSheet = true }
                         )
                     }
@@ -350,10 +361,16 @@ fun HomeScreen(
                         FadeSlideIn(screenReady, STAGGER_MS * 2) {
                             LumiWeekTimeline(
                                 weekDays = uiState.weekDays,
-                                selectedDate = uiState.selectedDate,
-                                onSelectDate = { viewModel.selectDate(it) },
-                                onViewCalendarClick = onNavigateToCalendar,
-                                onResetToToday = { viewModel.resetToToday() }
+                                selectedDate = null,
+                                onSelectDate = {},
+                                onViewCalendarClick = { onNavigateToCalendar(null) },
+                                onResetToToday = {},
+                                activityCounts = remember(plannerState.items) {
+                                    plannerState.items.groupingBy { it.date }.eachCount()
+                                },
+                                onOpenDate = { date ->
+                                    onNavigateToCalendar(date)
+                                }
                             )
                         }
                     }
@@ -423,7 +440,8 @@ fun HomeScreen(
             onPeriodClick = { showConfirmPeriod = true },
             onReminderClick = { showAddReminderSheet = true },
             diaryAlreadyLogged = hasEntry,
-            modifier = Modifier.align(Alignment.BottomEnd)
+            modifier = Modifier.align(Alignment.BottomEnd),
+            bottomMargin = 16.dp
         )
 
         if (showConfirmPeriod) {

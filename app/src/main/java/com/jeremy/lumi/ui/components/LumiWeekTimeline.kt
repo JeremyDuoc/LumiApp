@@ -1,31 +1,43 @@
 package com.jeremy.lumi.ui.components
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowForwardIos
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jeremy.lumi.R
@@ -35,23 +47,19 @@ import com.jeremy.lumi.ui.theme.LocalPhaseColors
 import com.jeremy.lumi.ui.theme.LumiMotion
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
 import com.jeremy.lumi.utils.LumiClock
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
 import java.util.Locale
 
 /**
- * LumiWeekTimeline — Línea temporal semanal integrada al fondo (sin tarjeta pesada).
- *
- * Características:
- * - Header limpio: fecha de rango en mayúsculas ("12 — 18 OCTUBRE") y enlace discreto "Calendario ›".
- * - 7 días en fila distribuidos de borde a borde con touch targets accesibles de 48dp.
- * - Marcador móvil vertical compartido que viaja horizontalmente con SpatialSpring entre días.
- * - Estado "Hoy" vs "Seleccionado": si se selecciona otro día, Hoy mantiene un micro punto acento (2.5dp).
- * - Indicador contextual debajo ("Viendo 15 oct ... Volver a hoy") con animación fade+translationY
- *   que desaparece al volver a hoy.
- * - Sin resumen duplicado (el aro inmediatamente debajo muestra la fase y el día del ciclo).
+ * Mini calendario del Home: números redondos, como Flo/Structured.
+ * - Rosa sólido: periodo inicial calculado a partir del ciclo guardado.
+ * - Rosa tenue: proyección futura (NO confirmación).
+ * - Menta tenue: ventana fértil estimada, NUNCA ovulación detectada.
+ * - ✓: se guardó un registro ese día. Sin registro no hay punto decorativo.
+ * - HOY: fecha actual. Anillo animado: fecha seleccionada.
  */
 @Composable
 fun LumiWeekTimeline(
@@ -60,331 +68,225 @@ fun LumiWeekTimeline(
     onSelectDate: (LocalDate) -> Unit,
     onViewCalendarClick: () -> Unit,
     onResetToToday: () -> Unit,
+    activityCounts: Map<LocalDate, Int> = emptyMap(),
+    onOpenDate: ((LocalDate) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val tokens = LumiThemeTokens.current
-    val phaseColors = LocalPhaseColors.current
-    val coroutineScope = rememberCoroutineScope()
-    val today = remember { LumiClock.today() }
+    val colors = LocalPhaseColors.current
+    val today = remember(weekDays) { LumiClock.today() }
     val locale = Locale.getDefault()
-
-    // Agrupamos en semanas completas de 7 días exactos (Lunes a Domingo)
-    val weeks = remember(weekDays) {
-        if (weekDays.isEmpty()) emptyList()
-        else weekDays.chunked(7).filter { it.size == 7 }
-    }
-
+    val haptic = LocalHapticFeedback.current
+    val scope = rememberCoroutineScope()
+    val weeks = remember(weekDays) { weekDays.chunked(7).filter { it.size == 7 } }
     if (weeks.isEmpty()) return
 
     val todayWeekIndex = remember(weeks, today) {
-        val idx = weeks.indexOfFirst { week -> week.any { it.isToday || it.date == today } }
-        if (idx >= 0) idx else 0
+        weeks.indexOfFirst { week -> week.any { it.date == today } }.coerceAtLeast(0)
     }
-
-    val pagerState = rememberPagerState(
-        initialPage = todayWeekIndex,
-        pageCount = { weeks.size }
-    )
-
-    // Si la fecha seleccionada cambia hacia otra semana, animamos el pager
-    LaunchedEffect(selectedDate) {
-        if (selectedDate != null) {
-            val targetWeek = weeks.indexOfFirst { week -> week.any { it.date == selectedDate } }
-            if (targetWeek >= 0 && targetWeek != pagerState.currentPage) {
-                pagerState.animateScrollToPage(targetWeek)
-            }
+    val pager = rememberPagerState(initialPage = todayWeekIndex, pageCount = { weeks.size })
+    var transientSelected by remember { mutableStateOf<LocalDate?>(null) }
+    val selected = transientSelected ?: selectedDate ?: today
+    LaunchedEffect(selectedDate, weeks) {
+        val target = weeks.indexOfFirst { week -> week.any { it.date == selected } }
+        if (target >= 0 && target != pager.currentPage) pager.animateScrollToPage(target)
+    }
+    val visibleWeek = weeks.getOrNull(pager.currentPage).orEmpty()
+    val range = remember(visibleWeek, locale) {
+        if (visibleWeek.isEmpty()) "" else {
+            val dateFormat = DateTimeFormatter.ofPattern("d MMM", locale)
+            visibleWeek.first().date.format(dateFormat) + " – " +
+                visibleWeek.last().date.format(dateFormat)
         }
     }
+    val selectedModel = weekDays.firstOrNull { it.date == selected }
 
-    val currentWeek = weeks.getOrNull(pagerState.currentPage) ?: emptyList()
-
-    // Rango de fechas para el header: "12 — 18 OCTUBRE"
-    val headerDateRange = remember(currentWeek, locale) {
-        if (currentWeek.isEmpty()) ""
-        else {
-            val first = currentWeek.first().date
-            val last = currentWeek.last().date
-            formatTimelineRange(first, last, locale)
-        }
-    }
-
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp)
-    ) {
-        // ── 1. HEADER DEL TIMELINE ───────────────────────────────────────────
+    Column(modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Izquierda: "12 — 18 OCTUBRE"
-            Text(
-                text = headerDateRange,
-                fontSize = 11.5.sp,
-                fontWeight = FontWeight.Medium,
-                letterSpacing = 0.7.sp,
-                color = tokens.muted
+            LumiEditorialHeading(
+                titleNormal = stringResource(R.string.lumi_cal_week_intro),
+                titleSerifItalic = stringResource(R.string.lumi_cal_week_focus),
+                subtitle = range, titleSize = 20.sp, serifSize = 23.sp,
+                modifier = Modifier.weight(1f)
             )
-
-            // Derecha: "Calendario ›" (sin pill ni botón pesado, min 48dp touch target)
-            Box(
-                modifier = Modifier
-                    .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
-                    .clickable(
-                        role = Role.Button,
-                        onClickLabel = stringResource(R.string.home_calendar_action),
-                        onClick = onViewCalendarClick
-                    ),
-                contentAlignment = Alignment.CenterEnd
+            Row(
+                Modifier.clip(RoundedCornerShape(12.dp))
+                    .clickable(role = Role.Button, onClick = onViewCalendarClick)
+                    .padding(horizontal = 9.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = stringResource(R.string.home_calendar_action),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = tokens.accent
-                )
+                Text(stringResource(R.string.lumi_cal_view_month), fontSize = 12.sp,
+                    color = tokens.accent, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.width(5.dp))
+                Icon(Icons.Rounded.ArrowForwardIos, contentDescription = null,
+                    tint = tokens.accent, modifier = Modifier.size(10.dp))
             }
         }
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        // ── 2. SIETE DÍAS (Paginador swipeable con Marcador Móvil) ────────────
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(68.dp)
-        ) { pageIndex ->
-            val pageWeek = weeks.getOrNull(pageIndex) ?: emptyList()
-
-            // Identificar día seleccionado en la página actual
-            val effectiveSelectedDate = selectedDate ?: today
-            val selectedIndexInWeek = pageWeek.indexOfFirst { it.date == effectiveSelectedDate }
-            val hasSelectionInWeek = selectedIndexInWeek >= 0
-
-            val selectedPhase = if (hasSelectionInWeek) pageWeek[selectedIndexInWeek].phase else CyclePhase.UNKNOWN
-            val selectedPhaseColor = phaseColorFor(selectedPhase, tokens, phaseColors)
-
-            // Animación continua del marcador horizontal mediante SpatialSpring
-            val targetXIndex = if (hasSelectionInWeek) selectedIndexInWeek.toFloat() else 0f
+        Spacer(Modifier.height(9.dp))
+        HorizontalPager(state = pager, modifier = Modifier.fillMaxWidth(), pageSpacing = 7.dp) { index ->
+            val week = weeks[index]
+            val selectedIndex = week.indexOfFirst { it.date == selected }
             val animatedIndex by animateFloatAsState(
-                targetValue = targetXIndex,
+                targetValue = selectedIndex.coerceAtLeast(0).toFloat(),
                 animationSpec = LumiMotion.SpatialSpring,
-                label = "timeline_indicator_x"
+                label = "lumi_week_circle_travel"
             )
-            val indicatorAlpha by animateFloatAsState(
-                targetValue = if (hasSelectionInWeek) 1f else 0f,
-                animationSpec = LumiMotion.SpatialSpring,
-                label = "timeline_indicator_alpha"
-            )
-
-            val columnWidth = 40.dp
-            val markerHeight = 62.dp
-
-            BoxWithConstraints(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                val totalWidth = maxWidth
-                val density = LocalDensity.current
-                val spacing = if (pageWeek.size > 1) {
-                    (totalWidth - (columnWidth * pageWeek.size)) / (pageWeek.size - 1)
-                } else 0.dp
-
-                // MARCADOR VERTICAL MÓVIL (un solo objeto físico que se desliza)
-                if (hasSelectionInWeek || indicatorAlpha > 0.01f) {
-                    val indicatorOffset = (columnWidth + spacing) * animatedIndex
-
+            BoxWithConstraints(Modifier.fillMaxWidth().height(68.dp)) {
+                val spacing = 3.dp
+                val dayWidth = (maxWidth - spacing * 6) / 7
+                // One moving selection ring, behind the individual circular dates.
+                if (selectedIndex >= 0) {
                     Box(
-                        modifier = Modifier
-                            .offset(x = indicatorOffset)
-                            .width(columnWidth)
-                            .height(markerHeight)
-                            .graphicsLayer { alpha = indicatorAlpha }
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(selectedPhaseColor.copy(alpha = 0.11f))
-                            .border(1.dp, selectedPhaseColor.copy(alpha = 0.65f), RoundedCornerShape(18.dp))
-                            .drawBehind {
-                                // Inner highlight superior sutil (White alpha 0.05)
-                                drawLine(
-                                    color = Color.White.copy(alpha = 0.05f),
-                                    start = Offset(10.dp.toPx(), 1f),
-                                    end = Offset(size.width - 10.dp.toPx(), 1f),
-                                    strokeWidth = 1f
-                                )
-                                // Halo radial suave detrás del número
-                                drawCircle(
-                                    brush = Brush.radialGradient(
-                                        colors = listOf(
-                                            selectedPhaseColor.copy(alpha = 0.16f),
-                                            Color.Transparent
-                                        )
-                                    ),
-                                    center = Offset(size.width / 2f, size.height * 0.44f),
-                                    radius = size.width * 0.48f
-                                )
-                            }
+                        Modifier
+                            .offset(
+                                x = (dayWidth + spacing) * animatedIndex + (dayWidth - 39.dp) / 2,
+                                y = 17.dp
+                            )
+                            .size(39.dp).clip(CircleShape)
+                            .background(tokens.accentSoft)
+                            .border(1.4.dp, tokens.accent.copy(alpha = .9f), CircleShape)
                     )
                 }
-
-                // FILA DE LOS SIETE DÍAS (Colocados sobre el marcador)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    pageWeek.forEachIndexed { index, day ->
-                        val isDaySelected = day.date == effectiveSelectedDate
-                        val isDayToday = day.date == today
-                        val dayPhaseColor = phaseColorFor(day.phase, tokens, phaseColors)
-
-                        val interactionSource = remember { MutableInteractionSource() }
-
-                        Box(
-                            modifier = Modifier
-                                .width(columnWidth)
-                                .height(markerHeight)
-                                .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
-                                .clickable(
-                                    interactionSource = interactionSource,
-                                    indication = null,
-                                    role = Role.Button
-                                ) {
-                                    onSelectDate(day.date)
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.SpaceBetween,
-                                modifier = Modifier
-                                    .fillMaxHeight()
-                                    .padding(vertical = 5.dp)
-                            ) {
-                                // Weekday: 10sp Medium muted
-                                val weekdayText = day.weekdayLabel.take(3).replaceFirstChar { it.uppercase() }
-                                Text(
-                                    text = weekdayText,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = if (isDaySelected) tokens.text else tokens.muted
-                                )
-
-                                // Número del día + micro indicador de HOY (si está seleccionado otro día)
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = "${day.dayOfMonth}",
-                                        fontSize = if (isDaySelected) 15.sp else 14.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = if (isDaySelected) tokens.text else if (isDayToday) tokens.accent else tokens.text
-                                    )
-
-                                    // Si hoy no es el día seleccionado, muestra el micro punto acento de 2.5dp
-                                    if (isDayToday && !isDaySelected) {
-                                        Box(
-                                            modifier = Modifier
-                                                .align(Alignment.BottomCenter)
-                                                .offset(y = 10.dp)
-                                                .size(2.5.dp)
-                                                .clip(CircleShape)
-                                                .background(tokens.accent)
-                                        )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(spacing)) {
+                    week.forEach { day ->
+                        val selectedHere = day.date == selected
+                        val menstrual = day.phase == CyclePhase.MENSTRUAL
+                        val fertile = day.phase == CyclePhase.OVULATION
+                        val phaseDescription = when (day.phase) {
+                            CyclePhase.MENSTRUAL -> stringResource(R.string.pm_phase_menstrual)
+                            CyclePhase.OVULATION -> stringResource(R.string.phase_name_ovulation)
+                            CyclePhase.FOLLICULAR -> stringResource(R.string.pm_phase_follicular)
+                            CyclePhase.LUTEAL -> stringResource(R.string.pm_phase_luteal)
+                            else -> stringResource(R.string.lumi_cal_week_no_cycle)
+                        }
+                        val loggedDescription = if (day.hasLog)
+                            stringResource(R.string.cal_accessibility_with_log)
+                            else stringResource(R.string.cal_accessibility_no_log)
+                        val activityCount = activityCounts[day.date] ?: 0
+                        val bg = when {
+                            menstrual && !day.isPrediction -> colors.menstrual.copy(alpha = .85f)
+                            menstrual -> colors.menstrual.copy(alpha = .17f)
+                            fertile -> colors.ovulation.copy(alpha = if (day.isPrediction) .13f else .20f)
+                            else -> Color.Transparent
+                        }
+                        Column(
+                            modifier = Modifier.weight(1f).height(68.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable(role = Role.Button) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    if (onOpenDate != null) {
+                                        transientSelected = day.date
+                                        scope.launch {
+                                            delay(95)
+                                            onOpenDate(day.date)
+                                            delay(260)
+                                            transientSelected = null
+                                        }
+                                    } else {
+                                        onSelectDate(day.date)
                                     }
                                 }
-
-                                // Indicador de fase: punto sutil de 4.5dp
-                                Box(
-                                    modifier = Modifier
-                                        .size(4.5.dp)
-                                        .clip(CircleShape)
-                                        .background(dayPhaseColor)
+                                .semantics {
+                                    contentDescription = day.date.toString() + ", " +
+                                        phaseDescription + ", " + loggedDescription +
+                                        if (activityCount > 0) ", $activityCount actividades" else ""
+                                },
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = if (day.isToday)
+                                    stringResource(R.string.cal_today_cd).uppercase(locale)
+                                else day.weekdayLabel.take(3).replaceFirstChar { it.titlecase(locale) },
+                                color = if (day.isToday) tokens.accent else tokens.muted,
+                                fontSize = 9.5.sp, maxLines = 1,
+                                fontWeight = if (day.isToday) FontWeight.Bold else FontWeight.Medium,
+                                textAlign = TextAlign.Center
+                            )
+                            Box(
+                                Modifier.size(32.dp).clip(CircleShape).background(bg),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(day.dayOfMonth.toString(), fontSize = 15.sp,
+                                    fontWeight = if (selectedHere || day.isToday || menstrual)
+                                        FontWeight.Bold else FontWeight.Medium,
+                                    color = if (menstrual && !day.isPrediction) (if (tokens.isDark) tokens.bg else tokens.text) else tokens.text,
+                                    textAlign = TextAlign.Center)
+                            }
+                            Row(
+                                Modifier.height(11.dp),
+                                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (day.hasLog) Icon(
+                                    Icons.Rounded.Check,
+                                    contentDescription = stringResource(R.string.cal_accessibility_with_log),
+                                    tint = tokens.accent, modifier = Modifier.size(10.dp)
                                 )
+                                if (activityCount > 0) {
+                                    Box(
+                                        Modifier
+                                            .width(if (activityCount > 2) 10.dp else 6.dp)
+                                            .height(3.dp)
+                                            .clip(CircleShape)
+                                            .background(tokens.gold)
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
         }
-
-        // ── 3. FECHA DISTINTA DE HOY (ÚNICAMENTE cuando selectedDate != null) ─
-        val isDifferentDaySelected = selectedDate != null && !selectedDate.isEqual(today)
-
-        AnimatedVisibility(
-            visible = isDifferentDaySelected,
-            enter = fadeIn(tween(260, easing = LumiMotion.EaseOutExpo)) +
-                    slideInVertically(tween(260, easing = LumiMotion.EaseOutExpo)) { 8 },
-            exit = fadeOut(tween(180, easing = LumiMotion.EaseOutExpo)) +
-                    slideOutVertically(tween(180, easing = LumiMotion.EaseOutExpo)) { 8 }
+        Spacer(Modifier.height(7.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth().heightIn(min = 31.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(7.dp)
         ) {
-            val viewingText = remember(selectedDate, locale) {
-                selectedDate?.let {
-                    val dFmt = DateTimeFormatter.ofPattern("d MMM", locale)
-                    it.format(dFmt)
-                } ?: ""
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(28.dp)
-                    .padding(top = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.home_timeline_viewing_date, viewingText),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = tokens.muted
-                )
-
-                Box(
-                    modifier = Modifier
-                        .defaultMinSize(minHeight = 48.dp)
-                        .clickable(
-                            role = Role.Button,
-                            onClick = {
-                                onResetToToday()
-                                coroutineScope.launch {
-                                    pagerState.animateScrollToPage(todayWeekIndex)
-                                }
-                            }
-                        )
-                        .padding(horizontal = 4.dp, vertical = 2.dp),
-                    contentAlignment = Alignment.CenterEnd
-                ) {
-                    Text(
-                        text = stringResource(R.string.home_timeline_back_to_today),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = tokens.accent
-                    )
+            if (selectedModel?.hasLog == true) Icon(Icons.Rounded.Check,
+                contentDescription = null, tint = tokens.accent, modifier = Modifier.size(12.dp))
+            AnimatedContent(
+                targetState = selectedModel,
+                transitionSpec = { fadeIn(tween(230)) togetherWith fadeOut(tween(120)) },
+                label = "lumi_selected_day_context",
+                modifier = Modifier.weight(1f)
+            ) { day ->
+                val dayLabel = if (day == null || day.date == today)
+                    stringResource(R.string.cal_today_cd)
+                    else day.date.format(DateTimeFormatter.ofPattern("d MMM", locale))
+                val phaseLabel = when(day?.phase) {
+                    CyclePhase.MENSTRUAL -> stringResource(R.string.pm_phase_menstrual)
+                    CyclePhase.OVULATION -> stringResource(R.string.phase_name_ovulation)
+                    CyclePhase.FOLLICULAR -> stringResource(R.string.pm_phase_follicular)
+                    CyclePhase.LUTEAL -> stringResource(R.string.pm_phase_luteal)
+                    else -> stringResource(R.string.lumi_cal_week_no_cycle)
                 }
+                val qualified = if (day?.isPrediction == true && day.phase != CyclePhase.OVULATION)
+                    stringResource(R.string.lumi_cal_estimate_phase, phaseLabel) else phaseLabel
+                val logSuffix = if (day?.hasLog == true)
+                    " · " + stringResource(R.string.cal_accessibility_with_log) else ""
+                Text(
+                    text = dayLabel + " · " + qualified + logSuffix,
+                    fontSize = 11.sp, lineHeight = 16.sp,
+                    color = tokens.muted, maxLines = 2
+                )
+            }
+            if (selectedDate != null && selectedDate != today) {
+                Text(
+                    stringResource(R.string.home_timeline_back_to_today),
+                    fontSize = 10.5.sp, color = tokens.accent,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                        .clickable {
+                            onResetToToday()
+                            scope.launch { pager.animateScrollToPage(todayWeekIndex) }
+                        }
+                        .padding(horizontal = 4.dp, vertical = 7.dp)
+                )
             }
         }
     }
-}
-
-private fun formatTimelineRange(first: LocalDate, last: LocalDate, locale: Locale): String {
-    val monthName = last.month.getDisplayName(TextStyle.FULL, locale).uppercase()
-    return if (first.month == last.month) {
-        "${first.dayOfMonth} — ${last.dayOfMonth} $monthName"
-    } else {
-        val firstMonth = first.month.getDisplayName(TextStyle.SHORT, locale).uppercase()
-        "${first.dayOfMonth} $firstMonth — ${last.dayOfMonth} $monthName"
-    }
-}
-
-private fun phaseColorFor(
-    phase: CyclePhase,
-    tokens: com.jeremy.lumi.ui.theme.LumiDesignTokens,
-    phaseColors: com.jeremy.lumi.ui.theme.PhaseColors
-): Color = when (phase) {
-    CyclePhase.MENSTRUAL -> phaseColors.menstrual
-    CyclePhase.FOLLICULAR -> phaseColors.follicular
-    CyclePhase.OVULATION -> phaseColors.ovulation
-    CyclePhase.LUTEAL -> phaseColors.luteal
-    CyclePhase.PREGNANCY -> tokens.accent
-    CyclePhase.UNKNOWN -> tokens.muted.copy(alpha = 0.5f)
 }

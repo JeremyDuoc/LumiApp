@@ -9,6 +9,13 @@ import com.jeremy.lumi.domain.model.CyclePhase
  * significa que el color de fase es una estimación, no un dato real registrado.
  * La UI lo renderiza con opacidad reducida para diferenciarlo visualmente.
  */
+data class CalendarLogPreview(
+    val mood: String? = null,
+    val flow: String? = null,
+    val symptoms: List<String> = emptyList(),
+    val notes: String? = null
+)
+
 data class CalendarDay(
     val dayOfMonth: Int,
     val phase: CyclePhase = CyclePhase.UNKNOWN,
@@ -21,5 +28,6 @@ data class CalendarDay(
     // true solo si hubo relación sexual ese día Y la usuaria permitió mostrarlo en el calendario
     val showIntercourseHeart: Boolean = false,
     // null = no aplica / no mostrado. true = con protección, false = sin protección.
-    val intercourseProtected: Boolean? = null
+    val intercourseProtected: Boolean? = null,
+    val logPreview: CalendarLogPreview? = null
 )

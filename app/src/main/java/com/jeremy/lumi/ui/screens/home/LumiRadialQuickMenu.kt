@@ -74,13 +74,21 @@ fun LumiRadialQuickMenu(
         animationSpec = tween(duration, easing = easing),
         label = "lumi_radial_toggle"
     )
-    val toggleSurface by animateColorAsState(
-        targetValue = if (expanded) tokens.panel2 else tokens.accent,
+    // Misma familia de color del CTA "Proponer una idea".
+    // Evitar los colores fijos (#EAB0CE, #C6B1F4) del foro:
+    // los tokens responden al tema elegido (Noir, Salvia, Bosque, etc.).
+    val gradientFrom by animateColorAsState(
+        targetValue = if (expanded) lerp(tokens.rose, tokens.panel2, .16f) else tokens.rose,
         animationSpec = tween(duration),
-        label = "lumi_radial_surface"
+        label = "lumi_radial_gradient_from"
+    )
+    val gradientTo by animateColorAsState(
+        targetValue = if (expanded) lerp(tokens.accent, tokens.panel2, .16f) else tokens.accent,
+        animationSpec = tween(duration),
+        label = "lumi_radial_gradient_to"
     )
     val toggleInk by animateColorAsState(
-        targetValue = if (expanded) tokens.accent else if (tokens.isDark) tokens.bg else Color.White,
+        targetValue = if (tokens.isDark) tokens.bg else tokens.text,
         animationSpec = tween(duration),
         label = "lumi_radial_ink"
     )
@@ -169,7 +177,7 @@ fun LumiRadialQuickMenu(
                 .size(60.dp)
                 .shadow(if (expanded) 2.dp else 6.dp, CircleShape)
                 .clip(CircleShape)
-                .background(toggleSurface)
+                .background(Brush.horizontalGradient(listOf(gradientFrom, gradientTo)))
                 .border(1.dp, tokens.accent.copy(alpha = .28f), CircleShape)
                 .clickable(
                     role = Role.Button,

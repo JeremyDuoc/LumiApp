@@ -316,6 +316,14 @@ class CalendarViewModel @Inject constructor(
                     phase                = phase,
                     isToday              = isToday,
                     hasLog               = logForDay != null,
+                    logPreview           = logForDay?.let { entry ->
+                        CalendarLogPreview(
+                            mood = entry.dailyLog.mood?.takeIf { it.isNotBlank() },
+                            flow = entry.dailyLog.flowIntensity?.takeIf { it.isNotBlank() },
+                            symptoms = entry.symptoms.map { it.name }.distinct().take(3),
+                            notes = entry.dailyLog.notes?.takeIf { it.isNotBlank() }?.take(140)
+                        )
+                    },
                     isPrediction         = isPrediction,
                     isFuture             = isFuture,
                     showIntercourseHeart = showHeart,

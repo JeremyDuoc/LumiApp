@@ -49,6 +49,9 @@ import com.jeremy.lumi.R
 import com.jeremy.lumi.data.local.entity.DailyLogWithSymptoms
 import com.jeremy.lumi.data.local.entity.SymptomEntity
 import com.jeremy.lumi.domain.util.ClinicalLabels
+import com.jeremy.lumi.ui.theme.LumiSans
+import com.jeremy.lumi.ui.theme.LumiEditorialSerif
+import androidx.compose.ui.text.font.FontStyle
 import com.jeremy.lumi.ui.theme.LumiThemeTokens
 import com.popovanton0.heartswitch.HeartSwitch
 import kotlinx.coroutines.launch
@@ -672,7 +675,8 @@ private fun DailyLogHeader(
     stepLabel: String,
     onClose: () -> Unit
 ) {
-    val monthName = remember(month, year) {
+    val tokens = LumiThemeTokens.current
+    val monthName = remember(month, year, day) {
         val pattern = if (Locale.getDefault().language == "en") "MMMM d" else "d 'de' MMMM"
         LocalDate.of(year, month, day)
             .format(DateTimeFormatter.ofPattern(pattern, Locale.getDefault()))
@@ -694,14 +698,14 @@ private fun DailyLogHeader(
                     modifier = Modifier
                         .size(42.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
+                        .background(tokens.accentSoft),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = day.toString(),
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = tokens.accent
                     )
                 }
                 Spacer(Modifier.width(12.dp))
@@ -709,13 +713,17 @@ private fun DailyLogHeader(
                     Text(
                         text = stringResource(R.string.log_title),
                         fontSize = 19.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
+                        fontFamily = LumiSans,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = (-0.4).sp,
+                        color = tokens.text
                     )
                     Text(
                         text = monthName,
-                        fontSize = 12.5.sp,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.55f)
+                        fontSize = 14.sp,
+                        fontFamily = LumiEditorialSerif,
+                        fontStyle = FontStyle.Italic,
+                        color = tokens.accent
                     )
                 }
             }
@@ -725,13 +733,13 @@ private fun DailyLogHeader(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                    .background(tokens.panel)
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Close,
                     contentDescription = stringResource(R.string.btn_close),
                     modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                    tint = tokens.muted
                 )
             }
         }
@@ -1128,70 +1136,61 @@ private fun MoodGridSelector(
     selected: Int?,
     onSelect: (Int) -> Unit
 ) {
-    val chunked = options.chunked(3)
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        chunked.forEachIndexed { rowIndex, rowOptions ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                rowOptions.forEachIndexed { colIndex, optionRes ->
-                    val globalIndex = rowIndex * 3 + colIndex
-                    val isSelected = selected == optionRes
-                    val bg by animateColorAsState(
-                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
-                        else MaterialTheme.colorScheme.surfaceVariant,
-                        label = "mood_bg_$globalIndex"
+    val tokens = LumiThemeTokens.current
+    // Compact 44dp pill rows, still large enough to tap reliably.
+    // Three columns retain readable labels unlike an overcrowded four-column grid.
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        options.chunked(3).forEachIndexed { rowIndex, rowOptions ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                rowOptions.forEachIndexed { column, optionRes ->
+                    val index = rowIndex * 3 + column
+                    val active = selected == optionRes
+                    val background by animateColorAsState(
+                        targetValue = if (active) tokens.accentSoft else tokens.panel,
+                        animationSpec = tween(240),
+                        label = "lumi_mood_bg_$index"
                     )
-                    val fg by animateColorAsState(
-                        if (isSelected) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
-                        label = "mood_fg_$globalIndex"
+                    val foreground by animateColorAsState(
+                        targetValue = if (active) tokens.accent else tokens.text,
+                        animationSpec = tween(240),
+                        label = "lumi_mood_ink_$index"
                     )
-                    val border = if (isSelected) {
-                        Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
-                    } else Modifier
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(68.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .then(border)
-                            .background(bg)
+                    val outline by animateColorAsState(
+                        targetValue = if (active) tokens.accent.copy(alpha = .82f)
+                            else tokens.line.copy(alpha = .65f),
+                        animationSpec = tween(240),
+                        label = "lumi_mood_border_$index"
+                    )
+                    val shape = RoundedCornerShape(22.dp)
+                    Row(
+                        modifier = Modifier.weight(1f)
+                            .height(44.dp)
+                            .clip(shape)
+                            .background(background)
+                            .border(1.dp, outline, shape)
                             .clickable { onSelect(optionRes) }
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
-                        contentAlignment = Alignment.Center
+                            .padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                imageVector = moodIconList.getOrElse(globalIndex) { Icons.Rounded.SentimentSatisfied },
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = fg
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = stringResource(id = optionRes),
-                                fontSize = 11.5.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = fg,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
+                        Icon(
+                            imageVector = moodIconList.getOrElse(index) { Icons.Rounded.SentimentSatisfied },
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = foreground
+                        )
+                        Spacer(Modifier.width(5.dp))
+                        Text(
+                            text = stringResource(optionRes),
+                            fontSize = 11.sp,
+                            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
+                            color = foreground,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
-                // Si la última fila tiene menos de 3 elementos, agregamos spacers para que no se estiren
-                if (rowOptions.size < 3) {
-                    repeat(3 - rowOptions.size) {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
-                }
+                repeat(3 - rowOptions.size) { Spacer(modifier = Modifier.weight(1f)) }
             }
         }
     }
@@ -2346,6 +2345,7 @@ private fun DailyLogStickyFooter(
     onSaveClick: () -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
+    val tokens = LumiThemeTokens.current
 
     Column(
         modifier = Modifier
@@ -2388,8 +2388,8 @@ private fun DailyLogStickyFooter(
         // Botón principal de Guardar con degradado
         val gradient = Brush.horizontalGradient(
             listOf(
-                MaterialTheme.colorScheme.primary,
-                MaterialTheme.colorScheme.secondary
+                tokens.rose,
+                tokens.accent
             )
         )
 
@@ -2413,7 +2413,7 @@ private fun DailyLogStickyFooter(
                     CircularProgressIndicator(
                         modifier = Modifier.size(18.dp),
                         strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        color = if (tokens.isDark) tokens.bg else tokens.text
                     )
                     Spacer(Modifier.width(8.dp))
                 } else {
@@ -2430,7 +2430,7 @@ private fun DailyLogStickyFooter(
                            else stringResource(R.string.btn_save_log),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary,
+                    color = if (tokens.isDark) tokens.bg else tokens.text,
                     letterSpacing = 0.4.sp
                 )
             }

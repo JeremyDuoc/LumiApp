@@ -515,6 +515,7 @@ fun MainScreen(
     
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
+    var pendingCalendarDate by remember { mutableStateOf<java.time.LocalDate?>(null) }
     
     // Fix: Prevent crash when tabs size changes (e.g., normal to observer)
     LaunchedEffect(tabs.size) {
@@ -602,7 +603,8 @@ fun MainScreen(
                                     coroutineScope.launch { pagerState.animateScrollToPage(insightsIndex) }
                                 }
                             },
-                            onNavigateToCalendar = {
+                            onNavigateToCalendar = { date ->
+                                pendingCalendarDate = date
                                 val calIndex = tabs.indexOf(BottomNavItem.Calendar)
                                 if (calIndex >= 0) {
                                     coroutineScope.launch { pagerState.animateScrollToPage(calIndex) }
@@ -623,7 +625,10 @@ fun MainScreen(
                                 navController.navigate("conversations")
                             }
                         )
-                        BottomNavItem.Calendar -> CalendarScreen()
+                        BottomNavItem.Calendar -> CalendarScreen(
+                            initialDate = pendingCalendarDate,
+                            onInitialDateConsumed = { pendingCalendarDate = null }
+                        )
                         BottomNavItem.Insights -> InsightsScreen(
                             onNavigateBack = {
                                 coroutineScope.launch { pagerState.animateScrollToPage(0) }
